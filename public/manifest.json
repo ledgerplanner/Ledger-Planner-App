@@ -3,13 +3,13 @@
   "name": "Ledger Planner",
   "icons": [
     {
-      "src": "https://dummyimage.com/512x512/1877F2/ffffff.png&text=LP",
+      "src": "/Ledger Planner App Icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "https://dummyimage.com/192x192/1877F2/ffffff.png&text=LP",
+      "src": "/Ledger Planner App Icon.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"

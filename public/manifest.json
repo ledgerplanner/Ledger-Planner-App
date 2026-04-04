@@ -1,6 +1,6 @@
 {
-  "short_name": "Ledger",
-  "name": "Ledger Planner App",
+  "short_name": "Ledger Planner",
+  "name": "Ledger Planner",
   "icons": [
     {
       "src": "https://dummyimage.com/512x512/1877F2/ffffff.png&text=LP",
@@ -18,5 +18,5 @@
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#1877F2",
-  "background_color": "#F8FAFC"
+  "background_color": "#ffffff"
 }

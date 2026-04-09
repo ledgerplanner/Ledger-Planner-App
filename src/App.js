@@ -612,14 +612,24 @@ export default function App() {
           </div>
 
           <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-4 pt-2 -mx-2 px-3 snap-x">
+            {/* DUE NOW CARD */}
+            <div className={`min-w-[140px] p-4 rounded-3xl snap-center shrink-0 border transition-all ${billsByPayday["Due Now"]?.length > 0 ? isDarkMode ? "bg-red-900/10 border-red-900/30" : "bg-red-50/50 border-red-100 shadow-sm" : isDarkMode ? "bg-slate-800/30 border-dashed border-slate-700" : "bg-slate-50 border-dashed border-slate-200"}`}>
+              <p className={`text-[9px] font-black uppercase tracking-widest mb-2 ${billsByPayday["Due Now"]?.length > 0 ? "text-red-500" : "text-slate-400"}`}>Due Now</p>
+              <p className={`text-lg font-black tracking-tight mb-0.5 ${billsByPayday["Due Now"]?.length > 0 ? "text-red-500" : isDarkMode ? "text-slate-600" : "text-slate-300"}`}>
+                ${billsByPayday["Due Now"]?.filter(b => !b.isPaid).reduce((sum, b) => sum + b.amount, 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
+              </p>
+              <p className={`text-[9px] font-bold uppercase tracking-wider ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Action Required</p>
+            </div>
+
+            {/* PAYDAY CARDS */}
             {["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].map((pd) => {
               const pdSettings = paydayConfig[pd];
               const isSet = pdSettings && (pdSettings.date || pdSettings.income);
               return (
                 <div key={pd} className={`min-w-[140px] p-4 rounded-3xl snap-center shrink-0 border transition-all ${isSet ? isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100 shadow-sm" : isDarkMode ? "bg-slate-800/30 border-dashed border-slate-700" : "bg-slate-50 border-dashed border-slate-200"}`}>
                   <p className={`text-[9px] font-black uppercase tracking-widest mb-2 ${isSet ? "text-[#1877F2]" : "text-slate-400"}`}>{pd}</p>
-                  <p className={`text-lg font-black tracking-tight mb-0.5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                    {pdSettings?.income ? `$${parseFloat(pdSettings.income).toLocaleString()}` : "$0.00"}
+                  <p className={`text-lg font-black tracking-tight mb-0.5 ${isSet ? "text-emerald-500" : isDarkMode ? "text-slate-600" : "text-slate-300"}`}>
+                    {pdSettings?.income ? `$${parseFloat(pdSettings.income).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}
                   </p>
                   <p className={`text-[9px] font-bold uppercase tracking-wider ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
                     {pdSettings?.date ? formatPaydayDateStr(pdSettings.date) : "Unscheduled"}

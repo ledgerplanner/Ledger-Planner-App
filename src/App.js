@@ -1039,6 +1039,64 @@ export default function App() {
           </div>
         )}
 
+        {/* PAYDAY SETUP MODAL */}
+        {isPaydaySetupOpen && (
+          <div className="absolute inset-0 z-[70] flex items-end">
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => setIsPaydaySetupOpen(false)}></div>
+            <div className={`w-full rounded-t-[3rem] shadow-2xl animate-slide-up relative z-10 flex flex-col max-h-[90vh] transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+              <button onClick={() => setIsPaydaySetupOpen(false)} className={`absolute top-6 right-6 p-2 rounded-full transition-colors z-20 ${isDarkMode ? "bg-slate-800 text-slate-400 hover:text-white" : "bg-slate-100 text-slate-500 hover:text-slate-900"}`}><X size={18} strokeWidth={3} /></button>
+              <div className="px-8 pt-6 pb-12 overflow-y-auto hide-scrollbar">
+                <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-6"></div>
+                <h2 className={`text-xl font-black tracking-tight mb-6 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Payday Setup</h2>
+                <div className="space-y-4">
+                  {["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].map((pd) => (
+                    <div key={pd} className={`p-4 rounded-2xl border ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                      <h3 className={`text-[10px] font-black uppercase tracking-widest mb-3 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{pd}</h3>
+                      <div className="flex gap-3">
+                        <div className="flex-1 relative">
+                          <label className={`absolute left-3 top-1.5 text-[8px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Date</label>
+                          <input type="date" value={editPaydayConfig[pd]?.date || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...editPaydayConfig[pd], date: e.target.value}})} className={`w-full pt-5 pb-1.5 px-3 rounded-xl font-bold text-xs outline-none border transition-colors ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                        </div>
+                        <div className="flex-1 relative">
+                          <label className={`absolute left-3 top-1.5 text-[8px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Income</label>
+                          <input type="number" placeholder="0.00" value={editPaydayConfig[pd]?.income || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...editPaydayConfig[pd], income: e.target.value}})} className={`w-full pt-5 pb-1.5 px-3 rounded-xl font-bold text-xs outline-none border transition-colors ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button onClick={async () => {
+                    await setDoc(doc(db, "users", user.uid, "settings", "paydayConfig"), editPaydayConfig);
+                    setIsPaydaySetupOpen(false);
+                }} className="w-full mt-8 h-14 rounded-2xl font-bold text-lg shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2 bg-[#1877F2] text-white shadow-blue-500/30">
+                  Save Configuration
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* NOTIFICATIONS MODAL */}
+        {isNotificationsOpen && (
+          <div className="absolute inset-0 z-[70] flex items-end">
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => setIsNotificationsOpen(false)}></div>
+            <div className={`w-full rounded-t-[3rem] shadow-2xl animate-slide-up relative z-10 flex flex-col max-h-[90vh] transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+              <button onClick={() => setIsNotificationsOpen(false)} className={`absolute top-6 right-6 p-2 rounded-full transition-colors z-20 ${isDarkMode ? "bg-slate-800 text-slate-400 hover:text-white" : "bg-slate-100 text-slate-500 hover:text-slate-900"}`}><X size={18} strokeWidth={3} /></button>
+              <div className="px-8 pt-6 pb-12 overflow-y-auto hide-scrollbar">
+                <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-6"></div>
+                <h2 className={`text-xl font-black tracking-tight mb-6 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Notifications</h2>
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${isDarkMode ? "bg-slate-800 text-slate-500" : "bg-slate-100 text-slate-400"}`}>
+                    <Bell size={24} />
+                  </div>
+                  <p className={`font-bold text-sm ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>You're all caught up!</p>
+                  <p className={`text-xs mt-1 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>No new alerts at this time.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* QUICK ADD FAB */}
         {isFabOpen && (
           <div className="absolute inset-0 z-[60] flex items-end">

@@ -39,7 +39,7 @@ export default function Todo({
 
   // === GRAPHIC HEADER ===
   const graphicContent = (
-    <div className="flex items-center justify-between relative z-10 mb-6">
+    <div className="flex items-center justify-between relative z-10 mb-6 w-full">
       <div className="relative w-36 h-36 flex-shrink-0">
         <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
           <defs>
@@ -68,7 +68,7 @@ export default function Todo({
 
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
-      {renderHeroShell(`${userName}'s Action Center`, graphicContent)}
+      {renderHeroShell(`${userName}'s Tasks`, graphicContent)}
       <main className="px-6 space-y-8">
         
         {/* ADD TASK FORM */}

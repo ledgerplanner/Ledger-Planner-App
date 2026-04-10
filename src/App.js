@@ -504,7 +504,6 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* RESTORED EDIT & MARK PAID BUTTONS */}
                   <div className="grid grid-cols-2 gap-4 mt-auto">
                     <button 
                       onClick={() => { setIsEditingEntry(true); setEditEntryAmount(Math.abs(selectedEntry.amount).toString()); }} 
@@ -646,7 +645,18 @@ export default function App() {
               <div className="px-8 pt-6 pb-4 overflow-y-auto hide-scrollbar">
                 <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-6"></div>
                 <h2 className={`text-xl font-black tracking-tight mb-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Configure Roadmap</h2>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-8">Set your expected dates & income</p>
+                
+                {/* DYNAMIC HEADER WITH CLEAR BUTTON */}
+                <div className="flex justify-between items-center mb-8">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Set your expected dates & income</p>
+                  <button 
+                    onClick={() => setEditPaydayConfig({ "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } })}
+                    className="text-[10px] font-black text-red-500 uppercase tracking-widest hover:text-red-600 transition-colors"
+                  >
+                    Clear All
+                  </button>
+                </div>
+
                 <div className="space-y-4">
                   {["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].map((pd) => (
                     <div key={pd} className={`p-4 rounded-2xl border ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-slate-50 border-slate-200"}`}>

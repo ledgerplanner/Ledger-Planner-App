@@ -18,6 +18,13 @@ export default function Dashboard({
   renderHeroShell,
   changeTab
 }) {
+  // === TIME-BASED GREETING ENGINE ===
+  const currentHour = new Date().getHours();
+  let greetingStr = `Good Evening, ${userName} 🌇`;
+  if (currentHour >= 5 && currentHour < 12) { greetingStr = `Good Morning, ${userName} ☕`; }
+  else if (currentHour >= 12 && currentHour < 17) { greetingStr = `Good Afternoon, ${userName} ☀️`; }
+  else if (currentHour >= 22 || currentHour < 5) { greetingStr = `Late night numbers, ${userName}? 🌙`; }
+
   // === HERO MATH ENGINE ===
   const totalIncomeBalance = accounts.reduce((sum, a) => sum + a.balance, 0);
   const unpaidBillsAmount = bills.filter((b) => !b.isPaid).reduce((sum, b) => sum + b.amount, 0);
@@ -82,7 +89,7 @@ export default function Dashboard({
 
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
-      {renderHeroShell(`Hi, ${userName} 🚀`, graphicContent)}
+      {renderHeroShell(greetingStr, graphicContent)}
 
       <main className="px-6 space-y-4">
         
@@ -94,18 +101,16 @@ export default function Dashboard({
           </button>
         </div>
 
-        {/* HORIZONTAL PAYDAY CARDS (Includes Due Now & Green Balance Logic) */}
+        {/* HORIZONTAL PAYDAY CARDS */}
         <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-4 pt-2 -mx-2 px-3 snap-x">
           {["Due Now", "Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].map((pd) => {
             const pdSettings = paydayConfig[pd];
             const isDueNow = pd === "Due Now";
             
-            // Hide Due Now if empty
             if (isDueNow && billsByPayday["Due Now"].length === 0) return null;
             
             const isSet = isDueNow || (pdSettings && (pdSettings.date || pdSettings.income));
             
-            // Green Balance Calculation
             const expectedIncome = parseFloat(pdSettings?.income) || 0;
             const billsTotal = billsByPayday[pd]?.filter(b => !b.isPaid).reduce((sum, b) => sum + b.amount, 0) || 0;
             const remaining = expectedIncome - billsTotal;
@@ -119,7 +124,6 @@ export default function Dashboard({
                 <p className={`text-[9px] font-bold uppercase tracking-wider ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
                   {isDueNow ? "Currently Due" : pdSettings?.date ? formatPaydayDateStr(pdSettings.date) : "Unscheduled"}
                 </p>
-                {/* The "Green Balance" Indicator */}
                 {!isDueNow && isSet && (
                   <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700">
                     <p className={`text-[10px] font-black ${remaining >= 0 ? "text-[#10B981]" : "text-red-500"}`}>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { ArrowRightLeft, PlusCircle } from "lucide-react";
 
 export default function Accounts({
@@ -11,19 +11,49 @@ export default function Accounts({
   setEditAccountBalance,
   renderHeroShell
 }) {
-  // === NET WORTH MATH ENGINE ===
+  // Add local state for the interactive chart
+  const [activeChartNode, setActiveChartNode] = useState(5);
+
+  // === NET WORTH MATH & CHART ENGINE ===
   const netWorth = accounts.reduce((sum, a) => sum + a.balance, 0);
-  const historyData = [{ label: "Apr", val: netWorth }];
-  const activeDataPoint = historyData[0];
+  
+  // Generating a mocked visual curve leading up to current net worth
+  const historyData = [
+    { label: "Nov", val: netWorth * 0.45 }, 
+    { label: "Dec", val: netWorth * 0.55 },
+    { label: "Jan", val: netWorth * 0.4 }, 
+    { label: "Feb", val: netWorth * 0.7 },
+    { label: "Mar", val: netWorth * 0.85 }, 
+    { label: "Apr", val: netWorth },
+  ];
+  
+  const maxChartVal = Math.max(...historyData.map((d) => d.val), 1);
+  const activeDataPoint = historyData[activeChartNode];
 
   // === GRAPHIC HEADER ===
   const graphicContent = (
-    <div className="flex justify-between items-end mb-6">
-      <div>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Net Worth</p>
-        <p className={`text-5xl font-black tracking-tighter ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-          ${activeDataPoint.val.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-        </p>
+    <div className="relative z-10 mb-2">
+      <div className="flex justify-between items-end mb-6">
+        <div>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Net Worth • <span className="text-[#1877F2]">{activeDataPoint.label} 2026</span></p>
+          <p className={`text-5xl font-black tracking-tighter transition-all duration-300 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+            ${activeDataPoint.val.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+          </p>
+        </div>
+      </div>
+      <div className="flex items-end justify-between h-48 gap-2 border-b border-dashed border-slate-200 dark:border-slate-700 pb-2">
+        {historyData.map((item, i) => {
+          const heightPct = (item.val / maxChartVal) * 100;
+          const isActive = activeChartNode === i;
+          return (
+            <div key={i} onClick={() => setActiveChartNode(i)} className="flex flex-col items-center justify-end h-full flex-1 cursor-pointer group">
+              <div className="w-full relative flex justify-center h-full items-end">
+                <div className={`w-full max-w-[32px] rounded-t-xl transition-all duration-500 ease-out ${isActive ? "bg-[#1877F2] shadow-[0_0_15px_rgba(24,119,242,0.4)]" : isDarkMode ? "bg-slate-800 group-hover:bg-slate-700" : "bg-slate-100 group-hover:bg-slate-200"}`} style={{ height: `${heightPct}%`, minHeight: "8px" }}></div>
+              </div>
+              <span className={`text-[9px] font-black mt-3 uppercase tracking-wider transition-colors duration-300 ${isActive ? "text-[#1877F2]" : "text-slate-400"}`}>{item.label}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

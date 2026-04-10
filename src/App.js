@@ -169,7 +169,7 @@ export default function App() {
   // === HAPTIC FEEDBACK ENGINE ===
   const triggerHaptic = () => {
     if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) {
-      window.navigator.vibrate(50); // Small, satisfying bump
+      window.navigator.vibrate(50);
     }
   };
 
@@ -245,28 +245,34 @@ export default function App() {
     <header className={`px-6 pt-12 pb-5 rounded-b-[3rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden transition-colors duration-500 mb-8 ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
       <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#1877F2]/10 rounded-full blur-3xl"></div>
       
-      {/* HEADER CONTROLS */}
+      {/* HEADER CONTROLS (RE-ALIGNED) */}
       <div className="flex justify-between items-center mb-8 relative z-10 h-10">
-        <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
-          {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
-        <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center -top-1">
-          <span className="text-[11px] font-black text-[#1877F2] uppercase tracking-[0.2em] leading-none mb-0.5">Ledger</span>
-          <span className="text-[16px] font-black text-[#1877F2] uppercase tracking-[0.15em] leading-none">Planner</span>
-        </div>
+        
+        {/* LEFT CONTROLS: Dark Mode & Alerts */}
         <div className="flex items-center gap-2">
+          <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
+            {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
           <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
             <Bell size={18} />
             {bills.some(b => b.isOverdue || (!b.isPaid && b.payday === "Due Now")) && (
               <span className={`absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 ${isDarkMode ? "border-[#1E293B]" : "border-white"}`}></span>
             )}
           </button>
-          
-          {/* REPOSITIONED LOGOUT BUTTON */}
-          <button onClick={handleLogout} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-red-400 hover:bg-red-900/30" : "bg-white border-slate-100 text-red-500 hover:bg-red-50"}`}>
-            <LogOut size={16} />
-          </button>
         </div>
+
+        {/* CENTER LOGO */}
+        <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center -top-1">
+          <span className="text-[11px] font-black text-[#1877F2] uppercase tracking-[0.2em] leading-none mb-0.5">Ledger</span>
+          <span className="text-[16px] font-black text-[#1877F2] uppercase tracking-[0.15em] leading-none">Planner</span>
+        </div>
+        
+        {/* RIGHT CONTROLS: Text Logout Button */}
+        <button onClick={handleLogout} className={`h-10 px-3.5 rounded-full flex items-center justify-center gap-2 border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-red-400 hover:bg-red-900/30" : "bg-white border-slate-100 text-red-500 hover:bg-red-50"}`}>
+          <LogOut size={14} strokeWidth={2.5} />
+          <span className="text-[10px] font-black uppercase tracking-widest">Logout</span>
+        </button>
+
       </div>
       
       <div className="mb-6 relative z-10">
@@ -625,7 +631,7 @@ export default function App() {
                 </div>
                 <button onClick={updateAccountBalance} className={`w-full mt-4 h-14 rounded-2xl font-bold text-lg shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2 bg-[#1877F2] text-white hover:bg-blue-600 shadow-blue-500/30`}>Save Balance</button>
                 
-                {/* NEW SECURE ACCOUNT DELETION BUTTON */}
+                {/* SECURE ACCOUNT DELETION BUTTON */}
                 <button 
                   onClick={async () => { 
                     if (window.confirm(`Are you sure you want to close your ${selectedAccount.name} vault? This will permanently delete the account.`)) {

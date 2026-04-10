@@ -76,9 +76,11 @@ export default function Accounts({
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">All Accounts</h3>
           <div className={`rounded-[2rem] p-3 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
             {accounts.map((acc, idx) => {
-              const isDebt = acc.type === "Credit Card";
+              // BUG FIX: Now checking if the actual math is negative, not just the account type
+              const isNegative = acc.balance < 0;
+              
               return (
-                <div key={acc.id} onClick={() => { setSelectedAccount(acc); setEditAccountBalance(Math.abs(acc.balance).toString()); }} className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition-colors ${isDarkMode ? "hover:bg-slate-800/50" : "hover:bg-slate-50/50"} ${idx !== accounts.length - 1 ? "mb-1" : ""}`}>
+                <div key={acc.id} onClick={() => { setSelectedAccount(acc); setEditAccountBalance(acc.balance.toString()); }} className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition-colors ${isDarkMode ? "hover:bg-slate-800/50" : "hover:bg-slate-50/50"} ${idx !== accounts.length - 1 ? "mb-1" : ""}`}>
                   <div className="flex items-center gap-4">
                     <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center text-xl bg-opacity-10 ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-100"}`}>
                       {acc.icon}
@@ -88,8 +90,8 @@ export default function Accounts({
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{acc.description || acc.type}</p>
                     </div>
                   </div>
-                  <div className={`font-black text-sm tracking-tight ${isDebt ? "text-red-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>
-                    {isDebt ? "-" : ""}${Math.abs(acc.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                  <div className={`font-black text-sm tracking-tight ${isNegative ? "text-red-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>
+                    {isNegative ? "-" : ""}${Math.abs(acc.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                   </div>
                 </div>
               );

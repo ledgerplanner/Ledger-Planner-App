@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Home, Wallet, Calendar as CalendarIcon, CreditCard, CheckSquare,
-  Bell, Moon, Sun, X, Plus, ArrowRight, CheckCircle2, Trash2, ArrowDown, AlertCircle, Edit2
+  Bell, Moon, Sun, X, Plus, ArrowRight, CheckCircle2, Trash2, ArrowDown, AlertCircle, Edit2, LogOut
 } from "lucide-react";
 
 // === FIREBASE INITIALIZATION ===
@@ -166,6 +166,13 @@ export default function App() {
 
   const handleLogout = async () => { await signOut(auth); setActiveTab("home"); };
 
+  // === HAPTIC FEEDBACK ENGINE ===
+  const triggerHaptic = () => {
+    if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) {
+      window.navigator.vibrate(50); // Small, satisfying bump
+    }
+  };
+
   // === HELPERS & MATH ===
   const userName = user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || "Founder";
   const formattedDate = currentTime.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
@@ -202,6 +209,7 @@ export default function App() {
       const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
       await addDoc(collection(db, "users", user.uid, "transactions"), { name: `${newAccName} (Opening)`, icon: getIcon(newAccType), amount: Math.abs(startBal), date: autoTimeStamp, type: finalBalance < 0 ? "Expense" : "Income", category: finalBalance < 0 ? "Initial Debt" : "Opening Balance", accountId: accRef.id, createdAt: serverTimestamp() });
     }
+    triggerHaptic();
     setIsAddAccountOpen(false); setNewAccName(""); setNewAccBalance(""); setNewAccDesc(""); setNewAccType("Checking");
   };
 
@@ -212,6 +220,7 @@ export default function App() {
     const toAcc = accounts.find(a => a.id === transferTo);
     await updateDoc(doc(db, "users", user.uid, "accounts", fromAcc.id), { balance: fromAcc.balance - amt });
     await updateDoc(doc(db, "users", user.uid, "accounts", toAcc.id), { balance: toAcc.balance + amt });
+    triggerHaptic();
     setIsTransferOpen(false); setTransferAmount("0"); setTransferFrom(""); setTransferTo("");
   };
 
@@ -221,6 +230,7 @@ export default function App() {
     let finalBalance = newBal;
     if (selectedAccount.type === "Credit Card" && newBal > 0) finalBalance = -newBal;
     await updateDoc(doc(db, "users", user.uid, "accounts", selectedAccount.id), { balance: finalBalance });
+    triggerHaptic();
     setSelectedAccount(null);
   };
 
@@ -234,6 +244,8 @@ export default function App() {
   const renderHeroShell = (title, graphicContent) => (
     <header className={`px-6 pt-12 pb-5 rounded-b-[3rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden transition-colors duration-500 mb-8 ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
       <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#1877F2]/10 rounded-full blur-3xl"></div>
+      
+      {/* HEADER CONTROLS */}
       <div className="flex justify-between items-center mb-8 relative z-10 h-10">
         <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
           {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
@@ -242,18 +254,27 @@ export default function App() {
           <span className="text-[11px] font-black text-[#1877F2] uppercase tracking-[0.2em] leading-none mb-0.5">Ledger</span>
           <span className="text-[16px] font-black text-[#1877F2] uppercase tracking-[0.15em] leading-none">Planner</span>
         </div>
-        <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
-          <Bell size={18} />
-          {bills.some(b => b.isOverdue || (!b.isPaid && b.payday === "Due Now")) && (
-            <span className={`absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 ${isDarkMode ? "border-[#1E293B]" : "border-white"}`}></span>
-          )}
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
+            <Bell size={18} />
+            {bills.some(b => b.isOverdue || (!b.isPaid && b.payday === "Due Now")) && (
+              <span className={`absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 ${isDarkMode ? "border-[#1E293B]" : "border-white"}`}></span>
+            )}
+          </button>
+          
+          {/* REPOSITIONED LOGOUT BUTTON */}
+          <button onClick={handleLogout} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-red-400 hover:bg-red-900/30" : "bg-white border-slate-100 text-red-500 hover:bg-red-50"}`}>
+            <LogOut size={16} />
+          </button>
+        </div>
       </div>
-      <div className="flex justify-between items-end mb-6 relative z-10">
-        <h2 className={`text-3xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>{title}</h2>
-        <button onClick={handleLogout} className="text-xs font-bold text-slate-400 hover:text-red-500 transition-colors uppercase tracking-widest">Logout</button>
+      
+      <div className="mb-6 relative z-10">
+        <h2 className={`text-3xl font-black tracking-tight leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>{title}</h2>
       </div>
+      
       {graphicContent}
+      
       <div className={`relative z-10 pt-4 border-t flex justify-between items-center ${isDarkMode ? "border-slate-800" : "border-slate-50"}`}>
         <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">{formattedDate}</span>
         <span className="text-[9px] font-black uppercase tracking-wider text-[#1877F2]">{formattedTime}</span>
@@ -275,6 +296,7 @@ export default function App() {
       await updateDoc(doc(db, "users", user.uid, "bills", id), { isPaid: false, paidAmount: newPaidAmount, paidFromAccountId: null, linkedTxId: null });
       if (targetAcc) await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance + bill.amount });
       if (bill.linkedTxId) await deleteDoc(doc(db, "users", user.uid, "transactions", bill.linkedTxId));
+      triggerHaptic();
     }
   };
 
@@ -293,6 +315,7 @@ export default function App() {
     await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: true, paidAmount: newPaidAmt, paidFromAccountId: targetAcc.id, linkedTxId: txRef.id });
     await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance - bill.amount });
 
+    triggerHaptic();
     setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
   };
 
@@ -360,6 +383,7 @@ export default function App() {
         await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance + (isIncome ? amountToProcess : -amountToProcess) });
       }
     }
+    triggerHaptic();
     closeFab();
   };
 
@@ -393,9 +417,11 @@ export default function App() {
               await addDoc(collection(db, "users", user.uid, "todos"), { 
                 text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() 
               }); 
+              triggerHaptic();
               setNewTodoText(""); setNewTodoPriority(3); 
             }} 
             toggleTodoStatus={async (id) => { 
+              triggerHaptic();
               const todo = todos.find(t => t.id === id); 
               await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); 
             }} 
@@ -404,7 +430,7 @@ export default function App() {
         </div>
 
         {/* ========================================================= */}
-        {/* RE-INJECTED MODALS & DRAWERS */}
+        {/* MODALS & DRAWERS */}
         {/* ========================================================= */}
 
         {/* 1. ENTRY DETAIL / EDIT / DELETE MODAL */}
@@ -543,7 +569,7 @@ export default function App() {
           </div>
         )}
 
-        {/* 2. EDIT ACCOUNT BALANCE MODAL */}
+        {/* 2. EDIT / DELETE ACCOUNT BALANCE MODAL */}
         {selectedAccount && (
           <div className="absolute inset-0 z-[70] flex items-end">
             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedAccount(null)}></div>
@@ -598,6 +624,19 @@ export default function App() {
                   ))}
                 </div>
                 <button onClick={updateAccountBalance} className={`w-full mt-4 h-14 rounded-2xl font-bold text-lg shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2 bg-[#1877F2] text-white hover:bg-blue-600 shadow-blue-500/30`}>Save Balance</button>
+                
+                {/* NEW SECURE ACCOUNT DELETION BUTTON */}
+                <button 
+                  onClick={async () => { 
+                    if (window.confirm(`Are you sure you want to close your ${selectedAccount.name} vault? This will permanently delete the account.`)) {
+                      await deleteDoc(doc(db, "users", user.uid, "accounts", selectedAccount.id));
+                      setSelectedAccount(null);
+                    }
+                  }} 
+                  className="w-full mt-4 pt-4 pb-2 text-[10px] font-black uppercase text-red-500 tracking-widest flex items-center justify-center gap-2 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-colors"
+                >
+                  <Trash2 size={14} /> Close Vault
+                </button>
               </div>
             </div>
           </div>
@@ -646,7 +685,6 @@ export default function App() {
                 <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-6"></div>
                 <h2 className={`text-xl font-black tracking-tight mb-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Configure Roadmap</h2>
                 
-                {/* DYNAMIC HEADER WITH CLEAR BUTTON */}
                 <div className="flex justify-between items-center mb-8">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Set your expected dates & income</p>
                   <button 
@@ -810,7 +848,6 @@ export default function App() {
 
         {/* 8. QUICK ADD 2.0 (FAB) MODAL */}
         {isFabOpen && (() => {
-          // Dynamic Colors based on active tab
           const activeText = drawerTab === "bills" ? "text-[#1877F2]" : drawerTab === "income" ? "text-[#10B981]" : "text-[#F97316]";
           const activeBg = drawerTab === "bills" ? "bg-[#1877F2]" : drawerTab === "income" ? "bg-[#10B981]" : "bg-[#F97316]";
           const activeShadow = drawerTab === "bills" ? "shadow-blue-500/40" : drawerTab === "income" ? "shadow-emerald-500/40" : "shadow-orange-500/40";
@@ -823,7 +860,6 @@ export default function App() {
               <div className={`w-full rounded-t-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col max-h-[90vh] transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
                 <button onClick={closeFab} className="absolute top-5 right-5 p-2 rounded-full z-20"><X size={18} className={isDarkMode ? "text-slate-400" : "text-slate-500"} /></button>
                 
-                {/* DYNAMIC HEADER */}
                 <div className={`px-6 pt-6 pb-6 border-b shrink-0 transition-colors duration-500 ${activeSoftBg} rounded-t-[2.5rem]`}>
                   <div className={`w-12 h-1.5 rounded-full mx-auto mb-6 opacity-30 ${activeBg}`}></div>
                   

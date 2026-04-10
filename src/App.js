@@ -240,6 +240,22 @@ export default function App() {
     setIsPaydaySetupOpen(false);
   };
 
+  // === DYNAMIC TIME ENGINE ===
+  // Automatically shifts bills into "Due Now" / Overdue based on the real-world clock
+  const todayForDynamic = new Date();
+  todayForDynamic.setHours(0, 0, 0, 0);
+
+  const dynamicBills = bills.map(bill => {
+    if (bill.rawDate && !bill.isPaid) {
+      const bDate = new Date(bill.rawDate);
+      const localBDate = new Date(bDate.getUTCFullYear(), bDate.getUTCMonth(), bDate.getUTCDate());
+      if (localBDate <= todayForDynamic) {
+        return { ...bill, payday: "Due Now", isOverdue: localBDate < todayForDynamic };
+      }
+    }
+    return bill;
+  });
+
   // === GLOBAL RENDER HERO ===
   const renderHeroShell = (title, graphicContent) => (
     <header className={`px-6 pt-12 pb-5 rounded-b-[3rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden transition-colors duration-500 mb-8 ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
@@ -253,7 +269,7 @@ export default function App() {
           </button>
           <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
             <Bell size={18} />
-            {bills.some(b => b.isOverdue || (!b.isPaid && b.payday === "Due Now")) && (
+            {dynamicBills.some(b => b.isOverdue || (!b.isPaid && b.payday === "Due Now")) && (
               <span className={`absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 ${isDarkMode ? "border-[#1E293B]" : "border-white"}`}></span>
             )}
           </button>
@@ -277,7 +293,7 @@ export default function App() {
         </h2>
       </div>
       
-      {/* GRAPHIC CONTENT CONTAINER (Fixed Flex issue!) */}
+      {/* GRAPHIC CONTENT CONTAINER */}
       <div className="relative z-10 w-full">
         {graphicContent}
       </div>
@@ -291,7 +307,7 @@ export default function App() {
 
   // === SMART PAYMENT ENGINE ===
   const handleBillClick = async (id) => {
-    const bill = bills.find(b => b.id === id);
+    const bill = bills.find(b => b.id === id); // Uses static DB bill for writes
     if (!bill.isPaid) {
       setPaymentModalConfig({ isOpen: true, billId: id, accountId: accounts.find(a => a.type === "Checking" || a.type === "Cash")?.id || (accounts[0]?.id || "") });
     } else {
@@ -342,6 +358,14 @@ export default function App() {
   const calculatePaydayGroup = (dateString) => {
     if (!dateString) return "Payday 1";
     const billDate = new Date(dateString);
+
+    // DYNAMIC ENGINE: Instant Creation Check for Past/Today
+    const todayLocal = new Date();
+    todayLocal.setHours(0, 0, 0, 0);
+    const localBillDate = new Date(billDate.getUTCFullYear(), billDate.getUTCMonth(), billDate.getUTCDate());
+    if (localBillDate <= todayLocal) return "Due Now";
+
+    // Standard Math for Future Bills
     const activePaydays = [];
     for (let i = 1; i <= 5; i++) {
       const pdId = `Payday ${i}`;
@@ -350,9 +374,11 @@ export default function App() {
         if (!isNaN(d.getTime())) activePaydays.push({ id: pdId, date: d });
       }
     }
+    
     if (activePaydays.length === 0) return "Payday 1";
     activePaydays.sort((a, b) => a.date - b.date);
     if (billDate < activePaydays[0].date) return "Due Now";
+    
     let assignedPd = activePaydays[0].id;
     for (let i = 0; i < activePaydays.length; i++) {
       if (billDate >= activePaydays[i].date) assignedPd = activePaydays[i].id;
@@ -375,7 +401,7 @@ export default function App() {
       }
       await addDoc(collection(db, "users", user.uid, "bills"), {
         name: entryName || "New Bill", icon: entryIcon || "📋", amount: amountToProcess,
-        date: sortableDay, fullDate: displayDate, payday: calculatePaydayGroup(entryDate), isPaid: false, isOverdue: false,
+        date: sortableDay, fullDate: displayDate, rawDate: entryDate, payday: calculatePaydayGroup(entryDate), isPaid: false, isOverdue: false,
         isInstallment: entryIsInstallment, totalAmount: entryIsInstallment ? parseFloat(entryTotalAmount) || 0 : 0,
         paidAmount: entryIsInstallment ? parseFloat(entryPaidAmount) || 0 : 0, linkedTxId: null
       });
@@ -408,11 +434,11 @@ export default function App() {
     <div className={`h-screen font-sans relative overflow-hidden flex justify-center transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
       <div className={`w-full max-w-md h-full relative shadow-2xl flex flex-col transition-colors duration-500 overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
         
-        {/* MAIN VIEW ROUTER */}
+        {/* MAIN VIEW ROUTER (USING DYNAMIC BILLS) */}
         <div className="flex-1 overflow-y-auto hide-scrollbar" ref={scrollRef}>
-          {activeTab === "home" && <Dashboard userName={userName} accounts={accounts} bills={bills} transactions={transactions} paydayConfig={paydayConfig} setEditPaydayConfig={setEditPaydayConfig} setIsPaydaySetupOpen={setIsPaydaySetupOpen} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} handleBillClick={handleBillClick} setSelectedEntry={setSelectedEntry} isDarkMode={isDarkMode} formatPaydayDateStr={formatPaydayDateStr} renderHeroShell={renderHeroShell} changeTab={changeTab} />}
+          {activeTab === "home" && <Dashboard userName={userName} accounts={accounts} bills={dynamicBills} transactions={transactions} paydayConfig={paydayConfig} setEditPaydayConfig={setEditPaydayConfig} setIsPaydaySetupOpen={setIsPaydaySetupOpen} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} handleBillClick={handleBillClick} setSelectedEntry={setSelectedEntry} isDarkMode={isDarkMode} formatPaydayDateStr={formatPaydayDateStr} renderHeroShell={renderHeroShell} changeTab={changeTab} />}
           {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} />}
-          {activeTab === "bills" && <Bills userName={userName} bills={bills} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={setSelectedEntry} renderHeroShell={renderHeroShell} />}
+          {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={setSelectedEntry} renderHeroShell={renderHeroShell} />}
           {activeTab === "activity" && <Activity userName={userName} transactions={transactions} activitySearch={activitySearch} setActivitySearch={setActivitySearch} activityFilter={activityFilter} setActivityFilter={setActivityFilter} isDarkMode={isDarkMode} setSelectedEntry={setSelectedEntry} renderHeroShell={renderHeroShell} />}
           {activeTab === "todo" && <Todo 
             userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} 
@@ -651,7 +677,7 @@ export default function App() {
 
         {/* 3. CONFIRM PAYMENT ROUTING MODAL */}
         {paymentModalConfig.isOpen && (() => {
-          const bill = bills.find(b => b.id === paymentModalConfig.billId);
+          const bill = dynamicBills.find(b => b.id === paymentModalConfig.billId);
           return (
             <div className="absolute inset-0 z-[80] flex items-end">
                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" })}></div>
@@ -741,7 +767,7 @@ export default function App() {
                 <div className="space-y-4 pb-10 flex-1">
                   
                   {/* Overdue Bills Alert Generator */}
-                  {bills.filter(b => b.isOverdue || (!b.isPaid && b.payday === "Due Now")).map(overdueBill => (
+                  {dynamicBills.filter(b => b.isOverdue || (!b.isPaid && b.payday === "Due Now")).map(overdueBill => (
                     <div key={`alert-${overdueBill.id}`} className={`p-4 rounded-2xl border ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-slate-50 border-slate-100"}`}>
                       <div className="flex gap-4">
                         <div className="mt-1"><AlertCircle size={20} className="text-red-500" /></div>
@@ -758,7 +784,7 @@ export default function App() {
                     </div>
                   ))}
 
-                  {bills.filter(b => b.isOverdue || (!b.isPaid && b.payday === "Due Now")).length === 0 && (
+                  {dynamicBills.filter(b => b.isOverdue || (!b.isPaid && b.payday === "Due Now")).length === 0 && (
                     <div className="py-12 text-center text-slate-400 font-bold text-sm">
                       <CheckCircle2 size={32} className="mx-auto mb-3 text-[#10B981] opacity-50" />
                       All caught up! No active alerts.

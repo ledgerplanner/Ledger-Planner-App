@@ -184,8 +184,11 @@ export default function App() {
   const handleAddAccount = async () => {
     const startBal = parseFloat(newAccBalance);
     if (!newAccName.trim() || isNaN(startBal)) return;
-    const isCreditCard = newAccType === "Credit Card";
-    const finalBalance = isCreditCard ? -Math.abs(startBal) : Math.abs(startBal);
+    
+    // BUG FIX: Only force negative if it's a Credit Card and they typed a positive number.
+    // If they intentionally overdraw a checking account, it stays negative.
+    let finalBalance = startBal;
+    if (newAccType === "Credit Card" && startBal > 0) finalBalance = -startBal;
     
     const getIcon = (type) => {
       if (type === "Credit Card") return "💳";
@@ -199,7 +202,7 @@ export default function App() {
 
     if (Math.abs(startBal) > 0) {
       const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
-      await addDoc(collection(db, "users", user.uid, "transactions"), { name: `${newAccName} (Opening)`, icon: getIcon(newAccType), amount: Math.abs(startBal), date: autoTimeStamp, type: isCreditCard ? "Expense" : "Income", category: isCreditCard ? "Initial Debt" : "Opening Balance", accountId: accRef.id, createdAt: serverTimestamp() });
+      await addDoc(collection(db, "users", user.uid, "transactions"), { name: `${newAccName} (Opening)`, icon: getIcon(newAccType), amount: Math.abs(startBal), date: autoTimeStamp, type: finalBalance < 0 ? "Expense" : "Income", category: finalBalance < 0 ? "Initial Debt" : "Opening Balance", accountId: accRef.id, createdAt: serverTimestamp() });
     }
     setIsAddAccountOpen(false); setNewAccName(""); setNewAccBalance(""); setNewAccDesc(""); setNewAccType("Checking");
   };
@@ -217,8 +220,11 @@ export default function App() {
   const updateAccountBalance = async () => {
     const newBal = parseFloat(editAccountBalance);
     if (isNaN(newBal) || !selectedAccount) return;
-    const isCreditCard = selectedAccount.type === "Credit Card";
-    const finalBalance = isCreditCard ? -Math.abs(newBal) : Math.abs(newBal);
+    
+    // BUG FIX: Maintain the actual negative input if the user typed it
+    let finalBalance = newBal;
+    if (selectedAccount.type === "Credit Card" && newBal > 0) finalBalance = -newBal;
+    
     await updateDoc(doc(db, "users", user.uid, "accounts", selectedAccount.id), { balance: finalBalance });
     setSelectedAccount(null);
   };
@@ -544,12 +550,21 @@ export default function App() {
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Quick Update Balance</p>
                   </div>
                 </div>
-                <div className="text-center mt-8 mb-2 flex justify-center items-center relative">
-                  <span className={`text-5xl font-extrabold tracking-tighter ${selectedAccount.type === "Credit Card" ? "text-red-500" : "text-[#1877F2]"}`}>
-                    {selectedAccount.type === "Credit Card" ? "-" : ""}${editAccountBalance}
-                  </span>
-                  <button onClick={() => setEditAccountBalance(editAccountBalance.slice(0, -1) || "0")} className="absolute right-4 text-slate-400 p-2 hover:text-slate-600 transition-colors">⌫</button>
-                </div>
+                
+                {/* BUG FIX: Added logic to gracefully display negative symbols without breaking numpad */}
+                {(() => {
+                  const currentEditVal = parseFloat(editAccountBalance) || 0;
+                  const isEditingNegative = currentEditVal < 0 || editAccountBalance === "-";
+                  const displayEditVal = editAccountBalance.startsWith("-") ? editAccountBalance.substring(1) : editAccountBalance;
+                  return (
+                    <div className="text-center mt-8 mb-2 flex justify-center items-center relative">
+                      <span className={`text-5xl font-extrabold tracking-tighter ${isEditingNegative ? "text-red-500" : "text-[#1877F2]"}`}>
+                        {isEditingNegative ? "-" : ""}${displayEditVal}
+                      </span>
+                      <button onClick={() => setEditAccountBalance(editAccountBalance.slice(0, -1) || "0")} className="absolute right-4 text-slate-400 p-2 hover:text-slate-600 transition-colors">⌫</button>
+                    </div>
+                  );
+                })()}
               </div>
               <div className={`p-6 mt-auto rounded-b-[3rem] shrink-0 ${isDarkMode ? "bg-[#0F172A]" : "bg-slate-50"}`}>
                 <div className="grid grid-cols-4 gap-3">
@@ -560,6 +575,10 @@ export default function App() {
                             const toEval = editAccountBalance.replace(/×/g, "*").replace(/÷/g, "/");
                             if (/^[0-9+\-*/. ]+$/.test(toEval)) setEditAccountBalance(String(Function('"use strict";return (' + toEval + ")")()));
                           } catch (e) { setEditAccountBalance("0"); }
+                        } else if (btn === "-") {
+                          // Allow forcing a negative number
+                          if (editAccountBalance === "0" || editAccountBalance === "") setEditAccountBalance("-");
+                          else setEditAccountBalance(editAccountBalance + "-");
                         } else if (editAccountBalance === "0" && btn !== ".") { setEditAccountBalance(btn); }
                         else { setEditAccountBalance(editAccountBalance + btn); }
                       }}

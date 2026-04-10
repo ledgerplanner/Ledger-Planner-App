@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Home, Wallet, Calendar as CalendarIcon, CreditCard, CheckSquare,
-  Bell, Moon, Sun, X, Plus, ArrowRight, CheckCircle2, Trash2, ArrowDown, AlertCircle
+  Bell, Moon, Sun, X, Plus, ArrowRight, CheckCircle2, Trash2, ArrowDown, AlertCircle, Edit2
 } from "lucide-react";
 
 // === FIREBASE INITIALIZATION ===
@@ -187,7 +187,6 @@ export default function App() {
     const isCreditCard = newAccType === "Credit Card";
     const finalBalance = isCreditCard ? -Math.abs(startBal) : Math.abs(startBal);
     
-    // Updated Emoji Logic
     const getIcon = (type) => {
       if (type === "Credit Card") return "💳";
       if (type === "401k / Retirement") return "🌴";
@@ -215,7 +214,6 @@ export default function App() {
     setIsTransferOpen(false); setTransferAmount("0"); setTransferFrom(""); setTransferTo("");
   };
 
-  // Re-injected Update Account Balance Logic
   const updateAccountBalance = async () => {
     const newBal = parseFloat(editAccountBalance);
     if (isNaN(newBal) || !selectedAccount) return;
@@ -391,41 +389,144 @@ export default function App() {
         {/* RE-INJECTED MODALS & DRAWERS */}
         {/* ========================================================= */}
 
-        {/* 1. ENTRY DETAIL / DELETE MODAL */}
+        {/* 1. ENTRY DETAIL / EDIT / DELETE MODAL */}
         {selectedEntry && (
           <div className="absolute inset-0 z-[60] flex items-end">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedEntry(null)}></div>
-            <div className={`w-full rounded-t-[3rem] shadow-2xl animate-slide-up relative z-10 flex flex-col max-h-[90vh] transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
-              <button onClick={() => setSelectedEntry(null)} className="absolute top-6 right-6 p-2 rounded-full z-20"><X size={18} className={isDarkMode ? "text-slate-400" : "text-slate-500"} /></button>
-              <div className="px-8 pt-6 pb-12 flex flex-col h-full">
-                <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-8"></div>
-                <div className="flex justify-between mb-6">
-                  <div className="flex gap-5">
-                    <div className="w-16 h-16 rounded-[2rem] bg-slate-50 dark:bg-[#0F172A] border border-slate-100 dark:border-slate-800 flex items-center justify-center text-4xl shadow-sm">{selectedEntry.icon}</div>
-                    <div>
-                      <h2 className={`text-2xl font-black ${isDarkMode ? "text-white" : "text-slate-900"}`}>{selectedEntry.name}</h2>
-                      <p className="text-xs font-bold text-[#1877F2] uppercase">{selectedEntry.category || "Entry"}</p>
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => { setSelectedEntry(null); setIsEditingEntry(false); }}></div>
+            <div className={`w-full rounded-t-[3rem] shadow-2xl animate-slide-up relative z-10 flex flex-col border-t max-h-[90vh] transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+              <button onClick={() => { setSelectedEntry(null); setIsEditingEntry(false); }} className="absolute top-6 right-6 p-2 rounded-full z-20">
+                <X size={18} className={isDarkMode ? "text-slate-400" : "text-slate-500"} />
+              </button>
+
+              {isEditingEntry ? (
+                <>
+                  <div className="px-8 pt-6 pb-4 overflow-y-auto hide-scrollbar">
+                    <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-8"></div>
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className={`w-14 h-14 rounded-2xl border flex items-center justify-center text-2xl bg-opacity-10 ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-100"}`}>{selectedEntry.icon}</div>
+                      <div>
+                        <h2 className={`text-xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>Edit {selectedEntry.name}</h2>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Update Amount</p>
+                      </div>
+                    </div>
+                    <div className="text-center mt-8 mb-2 flex justify-center items-center relative">
+                      <span className={`text-5xl font-extrabold tracking-tighter ${selectedEntry.type === "Income" ? "text-emerald-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>${editEntryAmount}</span>
+                      <button onClick={() => setEditEntryAmount(editEntryAmount.slice(0, -1) || "0")} className="absolute right-4 text-slate-400 p-2 hover:text-slate-600 transition-colors">⌫</button>
                     </div>
                   </div>
-                  <div className="text-right mt-2"><p className={`text-3xl font-black ${selectedEntry.type === "Income" ? "text-emerald-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>${Math.abs(selectedEntry.amount).toFixed(2)}</p></div>
+                  <div className={`p-6 mt-auto rounded-b-[3rem] shrink-0 ${isDarkMode ? "bg-[#0F172A]" : "bg-slate-50"}`}>
+                    <div className="grid grid-cols-4 gap-3">
+                      {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", ".", "0", "=", "+"].map((btn) => (
+                        <button
+                          key={btn}
+                          onClick={() => {
+                            if (btn === "=") {
+                              try {
+                                const toEval = editEntryAmount.replace(/×/g, "*").replace(/÷/g, "/");
+                                if (/^[0-9+\-*/. ]+$/.test(toEval)) {
+                                  // eslint-disable-next-line no-new-func
+                                  setEditEntryAmount(String(Function('"use strict";return (' + toEval + ")")()));
+                                }
+                              } catch (e) { setEditEntryAmount("0"); }
+                            } else if (editEntryAmount === "0" && btn !== ".") {
+                              setEditEntryAmount(btn);
+                            } else { setEditEntryAmount(editEntryAmount + btn); }
+                          }}
+                          className={`h-14 rounded-2xl text-xl font-bold flex items-center justify-center transition-colors shadow-sm ${["÷", "×", "-", "+", "="].includes(btn) ? isDarkMode ? "bg-slate-800 text-slate-400 hover:bg-slate-700" : "bg-white text-slate-500 hover:bg-slate-100" : isDarkMode ? "bg-slate-800 text-white hover:bg-slate-700" : "bg-white text-slate-800 hover:bg-slate-100"}`}
+                        >
+                          {btn}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={async () => {
+                        const newAmount = parseFloat(editEntryAmount);
+                        if (!isNaN(newAmount)) {
+                          if (selectedEntry.fullDate) {
+                            await updateDoc(doc(db, "users", user.uid, "bills", selectedEntry.id), { amount: newAmount });
+                          } else {
+                            await updateDoc(doc(db, "users", user.uid, "transactions", selectedEntry.id), { amount: newAmount });
+                          }
+                        }
+                        setIsEditingEntry(false);
+                        setSelectedEntry(null);
+                      }}
+                      className={`w-full mt-4 h-14 rounded-2xl font-bold text-lg shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2 bg-[#1877F2] text-white hover:bg-blue-600 shadow-blue-500/30`}
+                    >
+                      Save Amount
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="px-8 pt-6 pb-12 flex flex-col h-full overflow-y-auto hide-scrollbar">
+                  <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-8"></div>
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-5">
+                      <div className="w-16 h-16 rounded-[2rem] bg-slate-50 dark:bg-[#0F172A] border border-slate-100 dark:border-slate-800 flex items-center justify-center text-4xl shadow-sm shrink-0">{selectedEntry.icon}</div>
+                      <div>
+                        <h2 className={`text-2xl font-black tracking-tight leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>{selectedEntry.name}</h2>
+                        <p className="text-xs font-bold text-[#1877F2] uppercase tracking-widest">{selectedEntry.category || "Recurring Bill"}</p>
+                      </div>
+                    </div>
+                    <div className="text-right mt-2 shrink-0">
+                      <p className={`text-3xl font-black tracking-tighter ${selectedEntry.type === "Income" ? "text-emerald-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>${Math.abs(selectedEntry.amount).toFixed(2)}</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase">{selectedEntry.fullDate || selectedEntry.date}</p>
+                    </div>
+                  </div>
+
+                  {selectedEntry.isInstallment && (
+                    <div className={`mt-2 mb-6 p-4 rounded-2xl border ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-slate-50 border-slate-100"}`}>
+                      <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-2 text-slate-400">
+                        <span className="text-[#1877F2]">${selectedEntry.paidAmount?.toLocaleString() || 0} Paid</span>
+                        <span>${selectedEntry.totalAmount?.toLocaleString() || 0} Total</span>
+                      </div>
+                      <div className="h-2 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div className="h-full bg-[#1877F2] transition-all" style={{ width: `${Math.min(((selectedEntry.paidAmount || 0) / (selectedEntry.totalAmount || 1)) * 100, 100)}%` }}></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* RESTORED EDIT & MARK PAID BUTTONS */}
+                  <div className="grid grid-cols-2 gap-4 mt-auto">
+                    <button 
+                      onClick={() => { setIsEditingEntry(true); setEditEntryAmount(Math.abs(selectedEntry.amount).toString()); }} 
+                      className={`py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${isDarkMode ? "bg-slate-800 text-slate-300 hover:bg-slate-700" : "bg-slate-50 text-slate-500 hover:bg-slate-100"}`}
+                    >
+                      <Edit2 size={16} /> Edit
+                    </button>
+                    {selectedEntry.fullDate && (
+                      <button 
+                        onClick={() => { handleBillClick(selectedEntry.id); setSelectedEntry(null); }} 
+                        className={`py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg transition-all ${selectedEntry.isPaid ? "bg-slate-200 text-slate-400" : "bg-slate-200 text-slate-400"}`}
+                      >
+                        {selectedEntry.isPaid ? "Mark Unpaid" : "Mark Paid"}
+                      </button>
+                    )}
+                  </div>
+                  
+                  <button 
+                    onClick={async () => { 
+                      if (selectedEntry.fullDate) await deleteDoc(doc(db, "users", user.uid, "bills", selectedEntry.id));
+                      else {
+                        if (selectedEntry.accountId) {
+                          const acc = accounts.find(a => a.id === selectedEntry.accountId);
+                          if (acc) await updateDoc(doc(db, "users", user.uid, "accounts", acc.id), { balance: selectedEntry.type === "Expense" ? acc.balance + selectedEntry.amount : acc.balance - selectedEntry.amount });
+                        }
+                        await deleteDoc(doc(db, "users", user.uid, "transactions", selectedEntry.id));
+                      }
+                      setSelectedEntry(null); 
+                    }} 
+                    className="w-full mt-4 pt-4 pb-2 text-[10px] font-black uppercase text-red-500 tracking-widest flex items-center justify-center gap-2 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-colors"
+                  >
+                    <Trash2 size={14} /> Delete Entry
+                  </button>
                 </div>
-                <button onClick={async () => { 
-                  if (selectedEntry.fullDate) await deleteDoc(doc(db, "users", user.uid, "bills", selectedEntry.id));
-                  else {
-                    if (selectedEntry.accountId) {
-                      const acc = accounts.find(a => a.id === selectedEntry.accountId);
-                      if (acc) await updateDoc(doc(db, "users", user.uid, "accounts", acc.id), { balance: selectedEntry.type === "Expense" ? acc.balance + selectedEntry.amount : acc.balance - selectedEntry.amount });
-                    }
-                    await deleteDoc(doc(db, "users", user.uid, "transactions", selectedEntry.id));
-                  }
-                  setSelectedEntry(null); 
-                }} className="w-full mt-4 pt-4 pb-2 text-[10px] font-black uppercase text-red-500 tracking-widest flex items-center justify-center gap-2 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl"><Trash2 size={14} /> Delete Entry</button>
-              </div>
+              )}
             </div>
           </div>
         )}
 
-        {/* 2. EDIT ACCOUNT BALANCE MODAL (RE-INJECTED) */}
+        {/* 2. EDIT ACCOUNT BALANCE MODAL */}
         {selectedAccount && (
           <div className="absolute inset-0 z-[70] flex items-end">
             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedAccount(null)}></div>

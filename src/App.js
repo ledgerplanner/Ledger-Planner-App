@@ -78,6 +78,7 @@ export default function App() {
   const [activityFilter, setActivityFilter] = useState("All");
   const [newTodoText, setNewTodoText] = useState("");
   const [newTodoPriority, setNewTodoPriority] = useState(3);
+  const [newTodoType, setNewTodoType] = useState("task"); // Re-added the Task/Shopping selector state
   const [selectedTodo, setSelectedTodo] = useState(null);
 
   // === FAB (QUICK ADD) STATE ===
@@ -184,9 +185,6 @@ export default function App() {
   const handleAddAccount = async () => {
     const startBal = parseFloat(newAccBalance);
     if (!newAccName.trim() || isNaN(startBal)) return;
-    
-    // BUG FIX: Only force negative if it's a Credit Card and they typed a positive number.
-    // If they intentionally overdraw a checking account, it stays negative.
     let finalBalance = startBal;
     if (newAccType === "Credit Card" && startBal > 0) finalBalance = -startBal;
     
@@ -220,11 +218,8 @@ export default function App() {
   const updateAccountBalance = async () => {
     const newBal = parseFloat(editAccountBalance);
     if (isNaN(newBal) || !selectedAccount) return;
-    
-    // BUG FIX: Maintain the actual negative input if the user typed it
     let finalBalance = newBal;
     if (selectedAccount.type === "Credit Card" && newBal > 0) finalBalance = -newBal;
-    
     await updateDoc(doc(db, "users", user.uid, "accounts", selectedAccount.id), { balance: finalBalance });
     setSelectedAccount(null);
   };
@@ -388,7 +383,26 @@ export default function App() {
           {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} />}
           {activeTab === "bills" && <Bills userName={userName} bills={bills} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={setSelectedEntry} renderHeroShell={renderHeroShell} />}
           {activeTab === "activity" && <Activity userName={userName} transactions={transactions} activitySearch={activitySearch} setActivitySearch={setActivitySearch} activityFilter={activityFilter} setActivityFilter={setActivityFilter} isDarkMode={isDarkMode} setSelectedEntry={setSelectedEntry} renderHeroShell={renderHeroShell} />}
-          {activeTab === "todo" && <Todo userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} isDarkMode={isDarkMode} handleAddTodo={async (e) => { e.preventDefault(); if(!newTodoText.trim()) return; await addDoc(collection(db, "users", user.uid, "todos"), { text: newTodoText, priority: newTodoPriority, type: "task", isCompleted: false, createdAt: serverTimestamp() }); setNewTodoText(""); setNewTodoPriority(3); }} toggleTodoStatus={async (id) => { const todo = todos.find(t => t.id === id); await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); }} setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} />}
+          
+          {/* UPDATED TODO ROUTE - PASSING newTodoType DOWN */}
+          {activeTab === "todo" && <Todo 
+            userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} 
+            newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} 
+            newTodoType={newTodoType} setNewTodoType={setNewTodoType} isDarkMode={isDarkMode} 
+            handleAddTodo={async (e) => { 
+              e.preventDefault(); 
+              if(!newTodoText.trim()) return; 
+              await addDoc(collection(db, "users", user.uid, "todos"), { 
+                text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() 
+              }); 
+              setNewTodoText(""); setNewTodoPriority(3); 
+            }} 
+            toggleTodoStatus={async (id) => { 
+              const todo = todos.find(t => t.id === id); 
+              await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); 
+            }} 
+            setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} 
+          />}
         </div>
 
         {/* ========================================================= */}
@@ -492,7 +506,6 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* RESTORED EDIT & MARK PAID BUTTONS */}
                   <div className="grid grid-cols-2 gap-4 mt-auto">
                     <button 
                       onClick={() => { setIsEditingEntry(true); setEditEntryAmount(Math.abs(selectedEntry.amount).toString()); }} 
@@ -551,7 +564,6 @@ export default function App() {
                   </div>
                 </div>
                 
-                {/* BUG FIX: Added logic to gracefully display negative symbols without breaking numpad */}
                 {(() => {
                   const currentEditVal = parseFloat(editAccountBalance) || 0;
                   const isEditingNegative = currentEditVal < 0 || editAccountBalance === "-";
@@ -576,7 +588,6 @@ export default function App() {
                             if (/^[0-9+\-*/. ]+$/.test(toEval)) setEditAccountBalance(String(Function('"use strict";return (' + toEval + ")")()));
                           } catch (e) { setEditAccountBalance("0"); }
                         } else if (btn === "-") {
-                          // Allow forcing a negative number
                           if (editAccountBalance === "0" || editAccountBalance === "") setEditAccountBalance("-");
                           else setEditAccountBalance(editAccountBalance + "-");
                         } else if (editAccountBalance === "0" && btn !== ".") { setEditAccountBalance(btn); }

@@ -245,10 +245,8 @@ export default function App() {
     <header className={`px-6 pt-12 pb-5 rounded-b-[3rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden transition-colors duration-500 mb-8 ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
       <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#1877F2]/10 rounded-full blur-3xl"></div>
       
-      {/* HEADER CONTROLS (RE-ALIGNED) */}
+      {/* HEADER CONTROLS */}
       <div className="flex justify-between items-center mb-8 relative z-10 h-10">
-        
-        {/* LEFT CONTROLS: Dark Mode & Alerts */}
         <div className="flex items-center gap-2">
           <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
             {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
@@ -261,18 +259,15 @@ export default function App() {
           </button>
         </div>
 
-        {/* CENTER LOGO */}
         <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center -top-1">
           <span className="text-[11px] font-black text-[#1877F2] uppercase tracking-[0.2em] leading-none mb-0.5">Ledger</span>
           <span className="text-[16px] font-black text-[#1877F2] uppercase tracking-[0.15em] leading-none">Planner</span>
         </div>
         
-        {/* RIGHT CONTROLS: Text Logout Button */}
         <button onClick={handleLogout} className={`h-10 px-3.5 rounded-full flex items-center justify-center gap-2 border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-red-400 hover:bg-red-900/30" : "bg-white border-slate-100 text-red-500 hover:bg-red-50"}`}>
           <LogOut size={14} strokeWidth={2.5} />
           <span className="text-[10px] font-black uppercase tracking-widest">Logout</span>
         </button>
-
       </div>
       
       {/* CENTERED & PROTECTED 1-LINE TEXT */}
@@ -976,6 +971,39 @@ export default function App() {
           </div>
         );
         })()}
+
+        {/* 9. TO-DO DELETE MODAL */}
+        {selectedTodo && (
+          <div className="absolute inset-0 z-[70] flex items-end">
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedTodo(null)}></div>
+            <div className={`w-full rounded-t-[3rem] shadow-2xl animate-slide-up relative z-10 flex flex-col max-h-[90vh] transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+              <button onClick={() => setSelectedTodo(null)} className={`absolute top-6 right-6 p-2 rounded-full transition-colors z-20 ${isDarkMode ? "bg-slate-800 text-slate-400 hover:text-white" : "bg-slate-100 text-slate-500 hover:text-slate-900"}`}>
+                <X size={18} strokeWidth={3} />
+              </button>
+
+              <div className="px-8 pt-6 pb-10 flex flex-col items-center text-center">
+                <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-8"></div>
+                <div className={`w-20 h-20 rounded-full flex items-center justify-center text-4xl mb-4 shadow-sm border ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-slate-50 border-slate-100"}`}>
+                   {selectedTodo.type === "shopping" ? "🛒" : "📋"}
+                </div>
+                <h3 className={`text-2xl font-black mb-1 tracking-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>{selectedTodo.text}</h3>
+                <p className={`text-[10px] font-bold uppercase tracking-widest mb-8 ${selectedTodo.isCompleted ? "text-emerald-500" : "text-[#1877F2]"}`}>
+                  {selectedTodo.isCompleted ? "Completed" : "Pending"} • Priority {selectedTodo.priority}
+                </p>
+                <button 
+                  onClick={async () => {
+                    await deleteDoc(doc(db, "users", user.uid, "todos", selectedTodo.id));
+                    triggerHaptic();
+                    setSelectedTodo(null);
+                  }}
+                  className="w-full h-14 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/30 transition-transform active:scale-95"
+                >
+                  <Trash2 size={18} /> Delete {selectedTodo.type === "shopping" ? "Item" : "Task"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* BOTTOM NAV */}
         <div className="absolute bottom-24 right-6 z-40">

@@ -18,12 +18,12 @@ export default function Dashboard({
   renderHeroShell,
   changeTab
 }) {
-  // === TIME-BASED GREETING ENGINE (CLEAN TEXT) ===
+  // === TIME-BASED GREETING ENGINE (PUNCHY TEXT) ===
   const currentHour = new Date().getHours();
-  let greetingStr = `Good Evening, ${userName}`;
-  if (currentHour >= 5 && currentHour < 12) { greetingStr = `Good Morning, ${userName}`; }
-  else if (currentHour >= 12 && currentHour < 17) { greetingStr = `Good Afternoon, ${userName}`; }
-  else if (currentHour >= 22 || currentHour < 5) { greetingStr = `Late night numbers, ${userName}?`; }
+  let greetingStr = `Evening, ${userName}`;
+  if (currentHour >= 5 && currentHour < 12) { greetingStr = `Morning, ${userName}`; }
+  else if (currentHour >= 12 && currentHour < 17) { greetingStr = `Afternoon, ${userName}`; }
+  else if (currentHour >= 22 || currentHour < 5) { greetingStr = `Up late, ${userName}?`; }
 
   // === HERO MATH ENGINE ===
   const totalIncomeBalance = accounts.reduce((sum, a) => sum + a.balance, 0);
@@ -42,7 +42,7 @@ export default function Dashboard({
 
   // === GRAPHIC HEADER ===
   const graphicContent = (
-    <div className="flex items-center justify-between relative z-10 mb-6">
+    <div className="flex items-center justify-between relative z-10 mb-6 w-full">
       <div className="relative w-36 h-36 flex-shrink-0">
         <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
           <defs>

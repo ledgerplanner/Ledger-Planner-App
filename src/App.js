@@ -186,10 +186,13 @@ export default function App() {
     if (!newAccName.trim() || isNaN(startBal)) return;
     const isCreditCard = newAccType === "Credit Card";
     const finalBalance = isCreditCard ? -Math.abs(startBal) : Math.abs(startBal);
+    
+    // Updated Emoji Logic
     const getIcon = (type) => {
       if (type === "Credit Card") return "💳";
       if (type === "401k / Retirement") return "🌴";
       if (type === "Savings") return "📈";
+      if (type === "Cash") return "💵";
       return "🏦";
     };
 
@@ -210,6 +213,16 @@ export default function App() {
     await updateDoc(doc(db, "users", user.uid, "accounts", fromAcc.id), { balance: fromAcc.balance - amt });
     await updateDoc(doc(db, "users", user.uid, "accounts", toAcc.id), { balance: toAcc.balance + amt });
     setIsTransferOpen(false); setTransferAmount("0"); setTransferFrom(""); setTransferTo("");
+  };
+
+  // Re-injected Update Account Balance Logic
+  const updateAccountBalance = async () => {
+    const newBal = parseFloat(editAccountBalance);
+    if (isNaN(newBal) || !selectedAccount) return;
+    const isCreditCard = selectedAccount.type === "Credit Card";
+    const finalBalance = isCreditCard ? -Math.abs(newBal) : Math.abs(newBal);
+    await updateDoc(doc(db, "users", user.uid, "accounts", selectedAccount.id), { balance: finalBalance });
+    setSelectedAccount(null);
   };
 
   const savePaydayConfig = async () => {
@@ -412,7 +425,56 @@ export default function App() {
           </div>
         )}
 
-        {/* 2. CONFIRM PAYMENT ROUTING MODAL */}
+        {/* 2. EDIT ACCOUNT BALANCE MODAL (RE-INJECTED) */}
+        {selectedAccount && (
+          <div className="absolute inset-0 z-[70] flex items-end">
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedAccount(null)}></div>
+            <div className={`w-full rounded-t-[3rem] shadow-2xl animate-slide-up relative z-10 flex flex-col max-h-[90vh] transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+              <button onClick={() => setSelectedAccount(null)} className={`absolute top-6 right-6 p-2 rounded-full transition-colors z-20 ${isDarkMode ? "bg-slate-800 text-slate-400 hover:text-white" : "bg-slate-100 text-slate-500 hover:text-slate-900"}`}>
+                <X size={18} strokeWidth={3} />
+              </button>
+
+              <div className="px-8 pt-6 pb-4 overflow-y-auto hide-scrollbar">
+                <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-6"></div>
+                <div className="flex items-center gap-4 mb-6">
+                  <div className={`w-14 h-14 rounded-2xl border flex items-center justify-center text-2xl bg-opacity-10 ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-100"}`}>{selectedAccount.icon}</div>
+                  <div>
+                    <h2 className={`text-xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>{selectedAccount.name}</h2>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Quick Update Balance</p>
+                  </div>
+                </div>
+                <div className="text-center mt-8 mb-2 flex justify-center items-center relative">
+                  <span className={`text-5xl font-extrabold tracking-tighter ${selectedAccount.type === "Credit Card" ? "text-red-500" : "text-[#1877F2]"}`}>
+                    {selectedAccount.type === "Credit Card" ? "-" : ""}${editAccountBalance}
+                  </span>
+                  <button onClick={() => setEditAccountBalance(editAccountBalance.slice(0, -1) || "0")} className="absolute right-4 text-slate-400 p-2 hover:text-slate-600 transition-colors">⌫</button>
+                </div>
+              </div>
+              <div className={`p-6 mt-auto rounded-b-[3rem] shrink-0 ${isDarkMode ? "bg-[#0F172A]" : "bg-slate-50"}`}>
+                <div className="grid grid-cols-4 gap-3">
+                  {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", ".", "0", "=", "+"].map((btn) => (
+                    <button key={btn} onClick={() => {
+                        if (btn === "=") {
+                          try {
+                            const toEval = editAccountBalance.replace(/×/g, "*").replace(/÷/g, "/");
+                            if (/^[0-9+\-*/. ]+$/.test(toEval)) setEditAccountBalance(String(Function('"use strict";return (' + toEval + ")")()));
+                          } catch (e) { setEditAccountBalance("0"); }
+                        } else if (editAccountBalance === "0" && btn !== ".") { setEditAccountBalance(btn); }
+                        else { setEditAccountBalance(editAccountBalance + btn); }
+                      }}
+                      className={`h-14 rounded-2xl text-xl font-bold flex items-center justify-center transition-colors shadow-sm ${["÷", "×", "-", "+", "="].includes(btn) ? isDarkMode ? "bg-slate-800 text-slate-400 hover:bg-slate-700" : "bg-white text-slate-500 hover:bg-slate-100" : isDarkMode ? "bg-slate-800 text-white hover:bg-slate-700" : "bg-white text-slate-800 hover:bg-slate-100"}`}
+                    >
+                      {btn}
+                    </button>
+                  ))}
+                </div>
+                <button onClick={updateAccountBalance} className={`w-full mt-4 h-14 rounded-2xl font-bold text-lg shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2 bg-[#1877F2] text-white hover:bg-blue-600 shadow-blue-500/30`}>Save Balance</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 3. CONFIRM PAYMENT ROUTING MODAL */}
         {paymentModalConfig.isOpen && (() => {
           const bill = bills.find(b => b.id === paymentModalConfig.billId);
           return (
@@ -445,7 +507,7 @@ export default function App() {
           )
         })()}
 
-        {/* 3. CONFIGURE PAYDAYS MODAL */}
+        {/* 4. CONFIGURE PAYDAYS MODAL */}
         {isPaydaySetupOpen && (
           <div className="absolute inset-0 z-[70] flex items-end">
             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => setIsPaydaySetupOpen(false)}></div>
@@ -482,7 +544,7 @@ export default function App() {
           </div>
         )}
 
-        {/* 4. NOTIFICATIONS / ALERTS MODAL */}
+        {/* 5. NOTIFICATIONS / ALERTS MODAL */}
         {isNotificationsOpen && (
           <div className="absolute inset-0 z-[70] flex items-end">
             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => setIsNotificationsOpen(false)}></div>
@@ -524,7 +586,7 @@ export default function App() {
           </div>
         )}
 
-        {/* 5. ADD ACCOUNT MODAL */}
+        {/* 6. ADD ACCOUNT MODAL */}
         {isAddAccountOpen && (
           <div className="absolute inset-0 z-[70] flex items-end">
             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => setIsAddAccountOpen(false)}></div>
@@ -553,7 +615,7 @@ export default function App() {
           </div>
         )}
 
-        {/* 6. TRANSFER FUNDS MODAL */}
+        {/* 7. TRANSFER FUNDS MODAL */}
         {isTransferOpen && (
           <div className="absolute inset-0 z-[70] flex items-end">
             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => setIsTransferOpen(false)}></div>
@@ -606,7 +668,7 @@ export default function App() {
           </div>
         )}
 
-        {/* 7. QUICK ADD (FAB) MODAL */}
+        {/* 8. QUICK ADD (FAB) MODAL */}
         {isFabOpen && (
           <div className="absolute inset-0 z-[60] flex items-end">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeFab}></div>

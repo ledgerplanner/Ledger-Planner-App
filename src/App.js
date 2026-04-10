@@ -275,8 +275,11 @@ export default function App() {
 
       </div>
       
-      <div className="mb-6 relative z-10">
-        <h2 className={`text-3xl font-black tracking-tight leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>{title}</h2>
+      {/* CENTERED & PROTECTED 1-LINE TEXT */}
+      <div className="mb-6 relative z-10 w-full text-center px-1">
+        <h2 title={title} className={`text-3xl font-black tracking-tight leading-tight truncate ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+          {title}
+        </h2>
       </div>
       
       {graphicContent}

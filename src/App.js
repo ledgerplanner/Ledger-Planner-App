@@ -266,18 +266,21 @@ export default function App() {
         
         <button onClick={handleLogout} className={`h-10 px-3.5 rounded-full flex items-center justify-center gap-2 border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-red-400 hover:bg-red-900/30" : "bg-white border-slate-100 text-red-500 hover:bg-red-50"}`}>
           <LogOut size={14} strokeWidth={2.5} />
-          <span className="text-[10px] font-black uppercase tracking-widest">Logout</span>
+          <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Logout</span>
         </button>
       </div>
       
       {/* CENTERED & PROTECTED 1-LINE TEXT */}
-      <div className="mb-6 relative z-10 w-full text-center px-1">
-        <h2 title={title} className={`text-3xl font-black tracking-tight leading-tight truncate ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+      <div className="mb-6 relative z-10 flex justify-center px-1">
+        <h2 title={title} className={`text-3xl font-black tracking-tight leading-tight truncate max-w-full ${isDarkMode ? "text-white" : "text-slate-900"}`}>
           {title}
         </h2>
       </div>
       
-      {graphicContent}
+      {/* GRAPHIC CONTENT CONTAINER (Fixed Flex issue!) */}
+      <div className="relative z-10 w-full">
+        {graphicContent}
+      </div>
       
       <div className={`relative z-10 pt-4 border-t flex justify-between items-center ${isDarkMode ? "border-slate-800" : "border-slate-50"}`}>
         <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">{formattedDate}</span>

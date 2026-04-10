@@ -78,7 +78,7 @@ export default function App() {
   const [activityFilter, setActivityFilter] = useState("All");
   const [newTodoText, setNewTodoText] = useState("");
   const [newTodoPriority, setNewTodoPriority] = useState(3);
-  const [newTodoType, setNewTodoType] = useState("task"); // Re-added the Task/Shopping selector state
+  const [newTodoType, setNewTodoType] = useState("task");
   const [selectedTodo, setSelectedTodo] = useState(null);
 
   // === FAB (QUICK ADD) STATE ===
@@ -296,7 +296,7 @@ export default function App() {
     setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
   };
 
-  // === FAB (QUICK ADD) ACTIONS ===
+  // === FAB (QUICK ADD 2.0) ACTIONS ===
   const closeFab = () => { setIsFabOpen(false); setFabStep(1); setInputValue("0"); setEntryName(""); setEntryDate(""); setEntryIcon("🏠"); setEntryAccount(""); setEntryIsInstallment(false); setEntryTotalAmount(""); setEntryPaidAmount(""); };
   
   const handleNumpad = (btn) => {
@@ -383,8 +383,6 @@ export default function App() {
           {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} />}
           {activeTab === "bills" && <Bills userName={userName} bills={bills} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={setSelectedEntry} renderHeroShell={renderHeroShell} />}
           {activeTab === "activity" && <Activity userName={userName} transactions={transactions} activitySearch={activitySearch} setActivitySearch={setActivitySearch} activityFilter={activityFilter} setActivityFilter={setActivityFilter} isDarkMode={isDarkMode} setSelectedEntry={setSelectedEntry} renderHeroShell={renderHeroShell} />}
-          
-          {/* UPDATED TODO ROUTE - PASSING newTodoType DOWN */}
           {activeTab === "todo" && <Todo 
             userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} 
             newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} 
@@ -506,6 +504,7 @@ export default function App() {
                     </div>
                   )}
 
+                  {/* RESTORED EDIT & MARK PAID BUTTONS */}
                   <div className="grid grid-cols-2 gap-4 mt-auto">
                     <button 
                       onClick={() => { setIsEditingEntry(true); setEditEntryAmount(Math.abs(selectedEntry.amount).toString()); }} 
@@ -799,54 +798,129 @@ export default function App() {
           </div>
         )}
 
-        {/* 8. QUICK ADD (FAB) MODAL */}
-        {isFabOpen && (
-          <div className="absolute inset-0 z-[60] flex items-end">
-            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeFab}></div>
-            <div className={`w-full rounded-t-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col max-h-[90vh] transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
-              <button onClick={closeFab} className="absolute top-5 right-5 p-2 rounded-full z-20"><X size={18} className={isDarkMode ? "text-slate-400" : "text-slate-500"} /></button>
-              <div className={`px-6 pt-6 pb-4 border-b shrink-0 ${isDarkMode ? "border-slate-800" : "border-slate-50"}`}>
-                <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-6"></div>
-                {fabStep === 1 ? (
-                  <div className={`flex rounded-xl p-1 mb-6 mr-8 ${isDarkMode ? "bg-slate-800" : "bg-slate-100"}`}>
-                    <button onClick={() => { setDrawerTab("bills"); setEntryIcon("🏠"); }} className={`flex-1 py-2 text-sm font-bold rounded-lg ${drawerTab === "bills" ? (isDarkMode ? "bg-slate-700 text-[#1877F2]" : "bg-white text-[#1877F2]") : "text-slate-400"}`}>Bills</button>
-                    <button onClick={() => setDrawerTab("income")} className={`flex-1 py-2 text-sm font-bold rounded-lg ${drawerTab === "income" ? (isDarkMode ? "bg-slate-700 text-emerald-400" : "bg-white text-[#10B981]") : "text-slate-400"}`}>Income</button>
-                    <button onClick={() => { setDrawerTab("transactions"); setEntryIcon("💳"); }} className={`flex-1 py-2 text-sm font-bold rounded-lg ${drawerTab === "transactions" ? (isDarkMode ? "bg-slate-700 text-orange-400" : "bg-white text-[#F97316]") : "text-slate-400"}`}>Activity</button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-4 mb-6 -mt-2"><button onClick={() => setFabStep(1)} className="p-2 rounded-full text-slate-400 hover:text-slate-600">←</button><h3 className="font-bold text-sm uppercase tracking-widest text-[#1877F2]">Add Details</h3></div>
-                )}
-                <div className="text-center mb-4 relative flex justify-center items-center"><span className="text-5xl font-extrabold tracking-tighter text-[#1877F2]">${inputValue}</span>{fabStep === 1 && <button onClick={() => setInputValue(inputValue.slice(0, -1) || "0")} className="absolute right-0 text-slate-400 p-2">⌫</button>}</div>
-              </div>
-              <div className={`p-6 mt-auto rounded-b-[2.5rem] flex-1 flex flex-col overflow-y-auto ${isDarkMode ? "bg-[#0F172A]" : "bg-slate-50"}`}>
-                {fabStep === 1 ? (
-                  <>
-                    <div className="grid grid-cols-4 gap-3">
-                      {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", ".", "0", "=", "+"].map((btn) => (
-                        <button key={btn} onClick={() => handleNumpad(btn)} className={`h-14 rounded-2xl text-xl font-bold flex items-center justify-center transition-colors shadow-sm ${["÷", "×", "-", "+", "="].includes(btn) ? isDarkMode ? "bg-slate-800 text-slate-400" : "bg-white text-slate-500" : isDarkMode ? "bg-slate-800 text-white" : "bg-white text-slate-800"}`}>{btn}</button>
-                      ))}
+        {/* 8. QUICK ADD 2.0 (FAB) MODAL */}
+        {isFabOpen && (() => {
+          // Dynamic Colors based on active tab
+          const activeText = drawerTab === "bills" ? "text-[#1877F2]" : drawerTab === "income" ? "text-[#10B981]" : "text-[#F97316]";
+          const activeBg = drawerTab === "bills" ? "bg-[#1877F2]" : drawerTab === "income" ? "bg-[#10B981]" : "bg-[#F97316]";
+          const activeShadow = drawerTab === "bills" ? "shadow-blue-500/40" : drawerTab === "income" ? "shadow-emerald-500/40" : "shadow-orange-500/40";
+          const activeSoftBg = drawerTab === "bills" ? (isDarkMode ? "bg-blue-900/20" : "bg-blue-50") : drawerTab === "income" ? (isDarkMode ? "bg-emerald-900/20" : "bg-emerald-50") : (isDarkMode ? "bg-orange-900/20" : "bg-orange-50");
+          const activeLabel = drawerTab === "bills" ? "New Bill" : drawerTab === "income" ? "New Income" : "New Expense";
+          
+          return (
+            <div className="absolute inset-0 z-[60] flex items-end">
+              <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={closeFab}></div>
+              <div className={`w-full rounded-t-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col max-h-[90vh] transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+                <button onClick={closeFab} className="absolute top-5 right-5 p-2 rounded-full z-20"><X size={18} className={isDarkMode ? "text-slate-400" : "text-slate-500"} /></button>
+                
+                {/* DYNAMIC HEADER */}
+                <div className={`px-6 pt-6 pb-6 border-b shrink-0 transition-colors duration-500 ${activeSoftBg} rounded-t-[2.5rem]`}>
+                  <div className={`w-12 h-1.5 rounded-full mx-auto mb-6 opacity-30 ${activeBg}`}></div>
+                  
+                  {fabStep === 1 ? (
+                    <div className={`flex rounded-xl p-1 mb-6 mx-auto max-w-[280px] border shadow-sm ${isDarkMode ? "bg-slate-800/80 border-slate-700" : "bg-white/80 border-slate-200 backdrop-blur-md"}`}>
+                      <button onClick={() => { setDrawerTab("bills"); setEntryIcon("🏠"); }} className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${drawerTab === "bills" ? `${activeBg} text-white shadow-md` : "text-slate-400"}`}>Bills</button>
+                      <button onClick={() => setDrawerTab("income")} className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${drawerTab === "income" ? `${activeBg} text-white shadow-md` : "text-slate-400"}`}>Income</button>
+                      <button onClick={() => { setDrawerTab("transactions"); setEntryIcon("💳"); }} className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${drawerTab === "transactions" ? `${activeBg} text-white shadow-md` : "text-slate-400"}`}>Activity</button>
                     </div>
-                    <button onClick={() => { if (parseFloat(inputValue) > 0) setFabStep(2); }} disabled={parseFloat(inputValue) <= 0 || isNaN(parseFloat(inputValue))} className={`w-full mt-4 h-14 rounded-2xl font-bold text-lg text-white shadow-lg flex items-center justify-center gap-2 ${parseFloat(inputValue) <= 0 || isNaN(parseFloat(inputValue)) ? "bg-slate-300 opacity-50" : "bg-[#1877F2]"}`}>Next Step <ArrowRight size={20} /></button>
-                  </>
-                ) : (
-                  <div className="flex flex-col h-full">
-                    <div className="space-y-4 flex-1 pb-6">
-                      <input type="text" placeholder="Name" value={entryName} onChange={(e) => setEntryName(e.target.value)} className={`w-full py-4 px-5 rounded-2xl font-bold text-sm border ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-white" : "bg-white border-slate-200"}`} />
-                      {drawerTab === "bills" && <input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} className={`w-full py-4 px-5 rounded-2xl font-bold text-sm border ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-white" : "bg-white border-slate-200"}`} />}
-                      {(drawerTab === "income" || drawerTab === "transactions") && (
-                        <select value={entryAccount} onChange={(e) => setEntryAccount(e.target.value)} className={`w-full py-4 px-5 rounded-2xl font-bold text-sm border ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-white" : "bg-white border-slate-200"}`}>
-                          <option value="" disabled>Select Account</option>
-                          {accounts.map((a) => (<option key={a.id} value={a.id}>{a.name} (${a.balance.toFixed(2)})</option>))}
-                        </select>
-                      )}
+                  ) : (
+                    <div className="flex items-center gap-4 mb-6 -mt-2">
+                      <button onClick={() => setFabStep(1)} className={`p-2 rounded-full transition-colors ${activeText} hover:bg-white/50`}><ArrowRight className="rotate-180" size={20} /></button>
+                      <div className="flex flex-col">
+                        <h3 className={`font-black text-sm uppercase tracking-widest ${activeText}`}>{activeLabel} Details</h3>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Step 2 of 2</p>
+                      </div>
                     </div>
-                    <button onClick={handleConfirmAction} className="w-full mt-4 h-14 shrink-0 rounded-2xl font-bold text-lg text-white shadow-lg flex items-center justify-center gap-2 bg-[#1877F2]">Confirm Entry</button>
+                  )}
+                  
+                  <div className="text-center relative flex justify-center items-center">
+                    <span className={`text-6xl font-extrabold tracking-tighter drop-shadow-sm transition-colors duration-300 ${activeText}`}>${inputValue}</span>
+                    {fabStep === 1 && <button onClick={() => setInputValue(inputValue.slice(0, -1) || "0")} className={`absolute right-4 p-3 rounded-full hover:bg-white/50 transition-colors ${activeText} opacity-70 hover:opacity-100`}>⌫</button>}
                   </div>
-                )}
+                </div>
+
+                <div className={`p-6 mt-auto rounded-b-[2.5rem] flex-1 flex flex-col overflow-y-auto ${isDarkMode ? "bg-[#0F172A]" : "bg-white"}`}>
+                  {fabStep === 1 ? (
+                    <>
+                      <div className="grid grid-cols-4 gap-3 mt-2">
+                        {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", ".", "0", "=", "+"].map((btn) => {
+                          const isOp = ["÷", "×", "-", "+", "="].includes(btn);
+                          return (
+                            <button 
+                              key={btn} 
+                              onClick={() => handleNumpad(btn)} 
+                              className={`h-14 rounded-2xl text-2xl font-bold flex items-center justify-center transition-all active:scale-95 ${isOp ? isDarkMode ? "bg-slate-800 text-slate-300 border border-slate-700" : "bg-slate-100 text-slate-500 border border-slate-200" : isDarkMode ? "bg-[#1E293B] text-white shadow-sm" : "bg-white text-slate-800 shadow-sm border border-slate-100"}`}
+                            >
+                              {btn}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <button onClick={() => { if (parseFloat(inputValue) > 0) setFabStep(2); }} disabled={parseFloat(inputValue) <= 0 || isNaN(parseFloat(inputValue))} className={`w-full mt-6 h-16 rounded-2xl font-black uppercase tracking-widest text-sm text-white shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 ${parseFloat(inputValue) <= 0 || isNaN(parseFloat(inputValue)) ? "bg-slate-300 opacity-50 shadow-none cursor-not-allowed" : `${activeBg} ${activeShadow} hover:-translate-y-1`}`}>
+                        Continue to Details <ArrowRight size={18} />
+                      </button>
+                    </>
+                  ) : (
+                    <div className="flex flex-col h-full animate-fade-in">
+                      <div className="space-y-5 flex-1 pb-6">
+                        
+                        <div className="relative">
+                           <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>{drawerTab === 'income' ? 'Source / Payer' : drawerTab === 'transactions' ? 'Merchant' : 'Bill Name'}</label>
+                           <input type="text" placeholder="e.g., Netflix, Salary, Target" value={entryName} onChange={(e) => setEntryName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-sm border focus:outline-none transition-colors ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-white focus:border-slate-500" : "bg-slate-50 border-slate-200 text-slate-900 focus:border-slate-400"}`} />
+                        </div>
+
+                        {drawerTab === "bills" && (
+                          <div className="relative">
+                             <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Due Date</label>
+                             <input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-sm border focus:outline-none transition-colors ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-white focus:border-slate-500" : "bg-slate-50 border-slate-200 text-slate-900 focus:border-slate-400"}`} />
+                          </div>
+                        )}
+
+                        {(drawerTab === "income" || drawerTab === "transactions") && (
+                          <div className="relative">
+                             <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Select Account</label>
+                             <select value={entryAccount} onChange={(e) => setEntryAccount(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-sm border focus:outline-none transition-colors appearance-none ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
+                               <option value="" disabled>Select Account...</option>
+                               {accounts.map((a) => (<option key={a.id} value={a.id}>{a.name} (${a.balance.toFixed(2)})</option>))}
+                             </select>
+                          </div>
+                        )}
+
+                        <div className="relative">
+                           <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Icon / Emoji</label>
+                           <select value={entryIcon} onChange={(e) => setEntryIcon(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-xl border focus:outline-none transition-colors appearance-none ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
+                             {categoryEmojis.map((emoji) => (<option key={emoji} value={emoji}>{emoji}</option>))}
+                           </select>
+                        </div>
+
+                        {drawerTab === "bills" && (
+                          <div className={`p-4 rounded-2xl border ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                            <div className="flex items-center justify-between cursor-pointer" onClick={() => setEntryIsInstallment(!entryIsInstallment)}>
+                              <span className={`text-[10px] font-black uppercase tracking-widest ${entryIsInstallment ? activeText : "text-slate-400"}`}>Installment Plan?</span>
+                              <div className={`w-10 h-6 rounded-full p-1 transition-colors ${entryIsInstallment ? activeBg : "bg-slate-300 dark:bg-slate-600"}`}>
+                                <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${entryIsInstallment ? "translate-x-4" : "translate-x-0"}`}></div>
+                              </div>
+                            </div>
+                            {entryIsInstallment && (
+                              <div className="mt-4 space-y-3 animate-fade-in">
+                                <input type="number" placeholder="Total Full Balance (e.g., 5000)" value={entryTotalAmount} onChange={(e) => setEntryTotalAmount(e.target.value)} className={`w-full py-3 px-4 rounded-xl font-bold text-sm border focus:outline-none ${isDarkMode ? "bg-slate-800 border-slate-600 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                                <input type="number" placeholder="Already Paid (Optional)" value={entryPaidAmount} onChange={(e) => setEntryPaidAmount(e.target.value)} className={`w-full py-3 px-4 rounded-xl font-bold text-sm border focus:outline-none ${isDarkMode ? "bg-slate-800 border-slate-600 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                      </div>
+                      <button onClick={handleConfirmAction} className={`w-full mt-4 h-16 shrink-0 rounded-2xl font-black text-sm uppercase tracking-widest text-white shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2 ${activeBg} ${activeShadow}`}>
+                        Confirm & Save <CheckCircle2 size={18} />
+                      </button>
+                    </div>
+                  )}
               </div>
             </div>
           </div>
-        )}
+        );
+        })()}
 
         {/* BOTTOM NAV */}
         <div className="absolute bottom-24 right-6 z-40">

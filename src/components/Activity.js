@@ -1,107 +1,156 @@
 import React from "react";
-import { Search } from "lucide-react";
+import { Search, ArrowUpRight, ArrowDownRight } from "lucide-react";
 
-export default function Activity({
-  userName,
-  transactions,
-  activitySearch,
-  setActivitySearch,
-  activityFilter,
-  setActivityFilter,
-  isDarkMode,
-  setSelectedEntry,
-  renderHeroShell
+export default function Activity({ 
+  userName, transactions, activitySearch, setActivitySearch, 
+  activityFilter, setActivityFilter, isDarkMode, setSelectedEntry, renderHeroShell 
 }) {
-  // === ACTIVITY MATH & FILTER ENGINE ===
-  const filteredTxs = transactions.filter((tx) => {
-    const matchesSearch = tx.name.toLowerCase().includes(activitySearch.toLowerCase()) || 
-                          (tx.category && tx.category.toLowerCase().includes(activitySearch.toLowerCase()));
+
+  // === SEARCH & FILTER ENGINE ===
+  const filteredTransactions = transactions.filter(tx => {
+    const matchesSearch = tx.name.toLowerCase().includes(activitySearch.toLowerCase());
     const matchesFilter = activityFilter === "All" || tx.type === activityFilter;
     return matchesSearch && matchesFilter;
   });
 
-  const totalIncome = transactions.filter((t) => t.type === "Income").reduce((sum, t) => sum + t.amount, 0);
-  const totalExpense = transactions.filter((t) => t.type === "Expense").reduce((sum, t) => sum + t.amount, 0);
-  const totalActivity = totalIncome + totalExpense;
-  const incomePct = totalActivity === 0 ? 50 : (totalIncome / totalActivity) * 100;
-  const netFlow = totalIncome - totalExpense;
+  // === DYNAMIC DONUT CHART MATH ===
+  // Only calculate chart data based on "Expenses"
+  const expenses = transactions.filter(t => t.type === "Expense");
+  const totalExpenses = expenses.reduce((sum, t) => sum + t.amount, 0);
+
+  // Group expenses automatically by their emoji icon
+  const expensesByIcon = expenses.reduce((acc, t) => {
+    acc[t.icon] = (acc[t.icon] || 0) + t.amount;
+    return acc;
+  }, {});
+
+  // Sort them largest to smallest and take the top 4
+  const sortedIcons = Object.entries(expensesByIcon).sort((a, b) => b[1] - a[1]);
+  const topCategories = sortedIcons.slice(0, 4);
+  
+  // Group anything else into a general "Other" box
+  const otherAmount = sortedIcons.slice(4).reduce((sum, [_, amt]) => sum + amt, 0);
+  if (otherAmount > 0) topCategories.push(["📦", otherAmount]);
+
+  // Chart Rendering Setup
+  const colors = ["#1877F2", "#F59E0B", "#10B981", "#8B5CF6", "#64748B"];
+  let currentOffset = 0;
+  const radius = 40;
+  const circumference = 2 * Math.PI * radius;
+
+  const chartSegments = topCategories.map(([icon, amount], index) => {
+    const percentage = totalExpenses > 0 ? amount / totalExpenses : 0;
+    const strokeDasharray = `${percentage * circumference} ${circumference}`;
+    const strokeDashoffset = -currentOffset;
+    currentOffset += percentage * circumference;
+    return { icon, amount, percentage, strokeDasharray, strokeDashoffset, color: colors[index] };
+  });
 
   // === GRAPHIC HEADER ===
   const graphicContent = (
-    <div className="flex flex-col relative z-10 mb-6">
-      <div className="text-center mb-6">
-        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Net Cash Flow</span>
-        <p className={`text-5xl font-black tracking-tighter ${netFlow >= 0 ? "text-emerald-500" : "text-orange-500"}`}>
-          {netFlow >= 0 ? "+" : "-"}${Math.abs(netFlow).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-        </p>
-      </div>
-      <div className="flex w-full h-10 rounded-2xl overflow-hidden shadow-inner bg-slate-100 dark:bg-slate-800">
-        <div style={{ width: `${incomePct}%` }} className="bg-[#10B981] flex items-center pl-4 transition-all duration-1000">
-          <span className="text-[10px] font-black text-white tracking-widest uppercase shadow-sm">In</span>
-        </div>
-        <div style={{ width: `${100 - incomePct}%` }} className="bg-[#F97316] flex items-center justify-end pr-4 transition-all duration-1000">
-          <span className="text-[10px] font-black text-white tracking-widest uppercase shadow-sm">Out</span>
-        </div>
-      </div>
+    <div className="relative z-10 mb-2">
+       <div className="flex justify-between items-end mb-6">
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Cash Flow • <span className="text-[#1877F2]">All Time</span></p>
+            <p className={`text-4xl font-black tracking-tighter transition-all duration-300 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+              ${transactions.reduce((sum, t) => t.type === "Income" ? sum + t.amount : sum - t.amount, 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+            </p>
+          </div>
+       </div>
     </div>
   );
 
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
-      {renderHeroShell(`${userName}'s Activities`, graphicContent)}
+      {renderHeroShell(`${userName}'s Activity`, graphicContent)}
+
       <main className="px-6 space-y-6">
-        
-        {/* SEARCH & FILTERS */}
-        <div className="relative shadow-sm">
-          <input 
-            type="text" 
-            placeholder="Search transactions..." 
-            value={activitySearch} 
-            onChange={(e) => setActivitySearch(e.target.value)} 
-            className={`w-full py-4 pl-12 pr-4 rounded-2xl font-bold text-sm outline-none border transition-colors ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-white placeholder-slate-500 focus:border-[#1877F2]" : "bg-white border-slate-100 text-slate-900 placeholder-slate-400 focus:border-[#1877F2]"}`} 
-          />
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-        </div>
-        
-        <div className="flex gap-2">
-          {["All", "Income", "Expense"].map((filterOption) => (
-            <button 
-              key={filterOption} 
-              onClick={() => setActivityFilter(filterOption)} 
-              className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 ${activityFilter === filterOption ? "bg-[#1877F2] text-white shadow-[0_4px_15px_rgba(24,119,242,0.3)]" : isDarkMode ? "bg-slate-800 text-slate-400 border border-slate-700" : "bg-white text-slate-500 border border-slate-100 shadow-sm"}`}
-            >
-              {filterOption}
-            </button>
-          ))}
-        </div>
 
-        {/* TRANSACTIONS LIST */}
-        <div className={`rounded-[2rem] p-3 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
-          {filteredTxs.length === 0 ? (
-            <div className={`p-8 text-center rounded-xl border border-dashed ${isDarkMode ? "border-slate-700 text-slate-500" : "border-slate-200 text-slate-400"}`}>
-              <p className="font-bold text-sm">No results found.</p>
-              <p className="text-[10px] mt-1 uppercase tracking-widest">Try adjusting your filters</p>
-            </div>
-          ) : (
-            filteredTxs.map((tx, idx) => (
-              <div key={tx.id} onClick={() => setSelectedEntry(tx)} className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition-colors ${isDarkMode ? "hover:bg-slate-800/50" : "hover:bg-slate-50/50"} ${idx !== filteredTxs.length - 1 ? "mb-1" : ""}`}>
-                <div className="flex items-center gap-4">
-                  <div className={`w-11 h-11 rounded-2xl border flex items-center justify-center text-xl ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-100"}`}>
-                    {tx.icon}
-                  </div>
-                  <div>
-                    <p className={`font-bold text-sm ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{tx.name}</p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{tx.date}</p>
-                  </div>
-                </div>
-                <div className={`font-black text-sm tracking-tight ${tx.type === "Income" ? "text-emerald-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>
-                  {tx.type === "Income" ? "+" : "-"}${Math.abs(tx.amount).toFixed(2)}
-                </div>
+        {/* 📊 DYNAMIC DONUT CHART SECTION */}
+        {totalExpenses > 0 && (
+          <div className={`p-5 rounded-3xl border shadow-sm flex items-center gap-6 ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
+            <div className="relative w-28 h-28 shrink-0">
+              <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+                <circle cx="50" cy="50" r={radius} fill="transparent" stroke={isDarkMode ? "#334155" : "#F1F5F9"} strokeWidth="12" />
+                {chartSegments.map((seg, i) => (
+                  <circle
+                    key={i} cx="50" cy="50" r={radius} fill="transparent"
+                    stroke={seg.color} strokeWidth="12"
+                    strokeDasharray={seg.strokeDasharray} strokeDashoffset={seg.strokeDashoffset}
+                    strokeLinecap="round" className="transition-all duration-1000 ease-out"
+                  />
+                ))}
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                 <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Spent</span>
               </div>
-            ))
-          )}
+            </div>
+            
+            {/* Chart Legend */}
+            <div className="flex-1 space-y-2">
+              {chartSegments.slice(0, 3).map((seg, i) => (
+                <div key={i} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">{seg.icon}</span>
+                    <span className={`text-[10px] font-bold uppercase ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
+                      {Math.round(seg.percentage * 100)}%
+                    </span>
+                  </div>
+                  <span className={`text-xs font-black ${isDarkMode ? "text-white" : "text-slate-900"}`}>${seg.amount.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* SEARCH & FILTER CONTROLS */}
+        <div className="flex gap-2">
+          <div className={`flex-1 flex items-center px-4 rounded-2xl border ${isDarkMode ? "bg-[#1E293B] border-slate-800 text-white" : "bg-white border-slate-50 text-slate-900"}`}>
+            <Search size={16} className="text-slate-400 shrink-0" />
+            <input 
+              type="text" placeholder="Search activity..." value={activitySearch} onChange={(e) => setActivitySearch(e.target.value)}
+              className="w-full py-3.5 px-3 bg-transparent text-sm font-bold outline-none placeholder-slate-400"
+            />
+          </div>
+          <select 
+            value={activityFilter} onChange={(e) => setActivityFilter(e.target.value)}
+            className={`px-4 rounded-2xl font-black text-[10px] uppercase tracking-widest outline-none border appearance-none ${isDarkMode ? "bg-[#1E293B] border-slate-800 text-slate-300" : "bg-white border-slate-50 text-slate-600"}`}
+          >
+            <option value="All">All</option>
+            <option value="Income">Income</option>
+            <option value="Expense">Expenses</option>
+          </select>
         </div>
 
+        {/* ACTIVITY LIST */}
+        <div className="space-y-4">
+          <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Transactions</h3>
+          <div className={`rounded-[2rem] p-3 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
+            {filteredTransactions.length === 0 ? (
+              <div className="py-8 text-center text-slate-400 font-bold text-sm">No transactions found.</div>
+            ) : (
+              filteredTransactions.map((tx, idx) => (
+                <div key={tx.id} onClick={() => setSelectedEntry(tx)} className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition-colors ${isDarkMode ? "hover:bg-slate-800/50" : "hover:bg-slate-50/50"} ${idx !== filteredTransactions.length - 1 ? "mb-1" : ""}`}>
+                  <div className="flex items-center gap-4">
+                    <div className={`w-11 h-11 rounded-2xl border flex items-center justify-center text-xl relative ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-100"}`}>
+                      {tx.icon}
+                      <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center border-2 ${isDarkMode ? "border-[#1E293B]" : "border-white"} ${tx.type === 'Income' ? "bg-emerald-500" : "bg-slate-800"}`}>
+                         {tx.type === 'Income' ? <ArrowUpRight size={8} className="text-white"/> : <ArrowDownRight size={8} className="text-white"/>}
+                      </div>
+                    </div>
+                    <div>
+                      <p className={`font-bold text-sm ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{tx.name}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{tx.date}</p>
+                    </div>
+                  </div>
+                  <div className={`font-black text-sm tracking-tight ${tx.type === "Income" ? "text-emerald-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>
+                    {tx.type === "Income" ? "+" : "-"}${tx.amount.toFixed(2)}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </main>
     </div>
   );

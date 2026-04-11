@@ -18,22 +18,27 @@ export default function Dashboard({
   renderHeroShell,
   changeTab
 }) {
-  // === TIME-BASED GREETING ENGINE (PUNCHY TEXT) ===
+  // === TIME-BASED GREETING ENGINE ===
   const currentHour = new Date().getHours();
   let greetingStr = `Evening, ${userName}`;
   if (currentHour >= 5 && currentHour < 12) { greetingStr = `Morning, ${userName}`; }
   else if (currentHour >= 12 && currentHour < 17) { greetingStr = `Afternoon, ${userName}`; }
   else if (currentHour >= 22 || currentHour < 5) { greetingStr = `Up late, ${userName}?`; }
 
-  // === HERO MATH ENGINE ===
+  // === GAS GAUGE & SHIELD MATH ENGINE ===
   const totalIncomeBalance = accounts.reduce((sum, a) => sum + a.balance, 0);
   const unpaidBillsAmount = bills.filter((b) => !b.isPaid).reduce((sum, b) => sum + b.amount, 0);
-  const aaronsBalance = totalIncomeBalance - unpaidBillsAmount;
-  const isNegative = aaronsBalance < 0;
+  const safeToSpend = totalIncomeBalance - unpaidBillsAmount;
+
+  // The Gas Gauge: How much of your cash is eaten by debt? (0 = Good, 100 = Bad)
+  const debtRatio = totalIncomeBalance > 0 ? Math.max(0, Math.min((unpaidBillsAmount / totalIncomeBalance) * 100, 100)) : (unpaidBillsAmount > 0 ? 100 : 0);
+  
+  const isCritical = debtRatio >= 85 || safeToSpend < 0;
+  const isWarning = debtRatio >= 60 && debtRatio < 85;
 
   const strokeDasharray = 251.2;
-  const safePercentage = totalIncomeBalance > 0 ? Math.max(0, Math.min((aaronsBalance / totalIncomeBalance) * 100, 100)) : 0;
-  const strokeDashoffset = strokeDasharray - (strokeDasharray * safePercentage) / 100;
+  // Empty = 251.2, Full = 0
+  const strokeDashoffset = strokeDasharray - (strokeDasharray * debtRatio) / 100;
 
   // === PAYDAY ROUTING LOGIC ===
   const billsByPayday = {};
@@ -43,42 +48,56 @@ export default function Dashboard({
   // === GRAPHIC HEADER ===
   const graphicContent = (
     <div className="flex items-center justify-between relative z-10 mb-6 w-full">
-      <div className="relative w-36 h-36 flex-shrink-0">
+      {/* THE GAS GAUGE RING (MASSIVE w-40) */}
+      <div className="relative w-40 h-40 flex-shrink-0">
         <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
           <defs>
             <linearGradient id="blueGlow" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#3B82F6" /><stop offset="100%" stopColor="#1D4ED8" />
+            </linearGradient>
+            <linearGradient id="orangeGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#F59E0B" /><stop offset="100%" stopColor="#D97706" />
             </linearGradient>
             <linearGradient id="redGlow" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#EF4444" /><stop offset="100%" stopColor="#991B1B" />
             </linearGradient>
           </defs>
           <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "#334155" : "#F1F5F9"} strokeWidth="12" />
-          <circle cx="50" cy="50" r="40" fill="transparent" stroke={isNegative ? "url(#redGlow)" : "url(#blueGlow)"} strokeWidth="12" strokeLinecap="round" strokeDasharray={strokeDasharray} strokeDashoffset={strokeDashoffset} className="transition-all duration-1000 ease-out" />
+          <circle 
+            cx="50" cy="50" r="40" fill="transparent" 
+            stroke={isCritical ? "url(#redGlow)" : isWarning ? "url(#orangeGlow)" : "url(#blueGlow)"} 
+            strokeWidth="12" strokeLinecap="round" 
+            strokeDasharray={strokeDasharray} strokeDashoffset={strokeDashoffset} 
+            className="transition-all duration-1000 ease-out" 
+          />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Left</span>
-          <span className={`text-2xl font-black ${isNegative ? "text-red-500" : "text-[#1877F2]"}`}>{Math.round(safePercentage)}%</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Debt Load</span>
+          <span className={`text-3xl font-black ${isCritical ? "text-red-500" : isWarning ? "text-orange-500" : "text-[#1877F2]"}`}>
+            {Math.round(debtRatio)}%
+          </span>
         </div>
       </div>
-      <div className="flex-1 pl-6 text-right">
+      
+      {/* THE SAFE SPEND SHIELD */}
+      <div className="flex-1 pl-4 text-right">
         <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border mb-3 ${isDarkMode ? "bg-slate-800/80 border-slate-700 text-slate-300" : "bg-slate-50 border-slate-100 text-slate-500"}`}>
-          <div className={`w-1.5 h-1.5 rounded-full ${isNegative ? "bg-red-500" : "bg-emerald-500 animate-pulse"}`}></div>
-          <span className="text-[10px] font-bold uppercase tracking-wider">{userName}'s Balance</span>
+          <div className={`w-1.5 h-1.5 rounded-full ${safeToSpend < 0 ? "bg-red-500" : "bg-emerald-500 animate-pulse"}`}></div>
+          <span className="text-[10px] font-bold uppercase tracking-wider">Safe to Spend</span>
         </div>
-        <p className={`text-4xl font-black tracking-tighter mb-4 ${isNegative ? "text-red-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>
-          ${aaronsBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+        <p className={`text-4xl font-black tracking-tighter mb-4 ${safeToSpend < 0 ? "text-red-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>
+          ${safeToSpend.toLocaleString("en-US", { minimumFractionDigits: 2 })}
         </p>
         <div className="flex flex-col gap-2">
           <div className="flex justify-end gap-2 text-xs font-bold uppercase">
-            <span className="text-slate-400 text-[10px]">Total Income</span>
-            <span className={isDarkMode ? "text-emerald-400 bg-emerald-900/30 px-2 rounded" : "text-emerald-600 bg-emerald-50 px-2 rounded"}>
+            <span className="text-slate-400 text-[10px]">Total Cash</span>
+            <span className={isDarkMode ? "text-slate-300 bg-slate-800 px-2 rounded" : "text-slate-700 bg-slate-100 px-2 rounded"}>
               ${totalIncomeBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
             </span>
           </div>
           <div className="flex justify-end gap-2 text-xs font-bold uppercase">
-            <span className="text-slate-400 text-[10px]">Unpaid</span>
-            <span className={isDarkMode ? "text-slate-300 bg-slate-800 px-2 rounded" : "text-slate-700 bg-slate-100 px-2 rounded"}>
+            <span className="text-slate-400 text-[10px]">Unpaid Bills</span>
+            <span className={isDarkMode ? "text-red-400 bg-red-900/30 px-2 rounded" : "text-red-600 bg-red-50 px-2 rounded"}>
               ${unpaidBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
             </span>
           </div>

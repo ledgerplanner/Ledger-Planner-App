@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Home, Wallet, Calendar as CalendarIcon, CreditCard, CheckSquare,
-  Bell, Moon, Sun, X, Plus, ArrowRight, CheckCircle2, Trash2, ArrowDown, AlertCircle, Edit2, LogOut, ArrowRightLeft, PlusCircle
+  Bell, Moon, Sun, X, Plus, ArrowRight, CheckCircle2, Trash2, ArrowDown, AlertCircle, Edit2, LogOut, ArrowRightLeft, PlusCircle, RefreshCw
 } from "lucide-react";
 
 // === FIREBASE INITIALIZATION ===
@@ -323,6 +323,126 @@ export default function App() {
     await Promise.all(batchPromises); triggerHaptic();
   };
 
+  // === SMART NOTIFICATION ENGINE ===
+  const generateAlerts = () => {
+    const currentAlerts = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // 1. Action Required (Overdue/Due Now)
+    const actionBills = dynamicBills.filter(b => b.isOverdue || (!b.isPaid && b.payday === "Due Now"));
+    actionBills.forEach(b => {
+      currentAlerts.push({
+        id: `action-${b.id}`,
+        type: 'danger',
+        icon: <AlertCircle size={20} className="text-red-500" />,
+        title: 'Action Required',
+        message: `Your ${b.name} bill is ${b.isOverdue ? 'past due' : 'due now'}.`,
+        amount: b.amount,
+        time: b.isOverdue ? 'URGENT' : 'TODAY',
+        action: () => { setIsNotificationsOpen(false); changeTab("bills"); }
+      });
+    });
+
+    // 2. The Subscription Nudge (48 hrs)
+    const upcomingRecurring = dynamicBills.filter(b => !b.isPaid && b.isRecurring && !b.isOverdue && b.payday !== "Due Now");
+    upcomingRecurring.forEach(b => {
+      if (b.rawDate) {
+        const bDate = new Date(b.rawDate);
+        const diffDays = Math.ceil((bDate - today) / (1000 * 60 * 60 * 24));
+        if (diffDays >= 0 && diffDays <= 2) {
+          currentAlerts.push({
+            id: `sub-${b.id}`,
+            type: 'info',
+            icon: <RefreshCw size={20} className="text-[#1877F2]" />,
+            title: 'Subscription Nudge',
+            message: `${b.name} is recurring in ${diffDays} day(s). Cancel or keep?`,
+            amount: b.amount,
+            time: `${diffDays}D`,
+            action: () => { setIsNotificationsOpen(false); changeTab("bills"); }
+          });
+        }
+      }
+    });
+
+    // 3. Upcoming Payday Nudge & 4. Liquidity Gap
+    ["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].forEach(pdId => {
+      const config = paydayConfig[pdId];
+      if (config && config.date) {
+        const pdDate = new Date(config.date);
+        pdDate.setUTCHours(0, 0, 0, 0);
+        const diffDays = Math.ceil((pdDate - today) / (1000 * 60 * 60 * 24));
+        
+        // Payday Nudge
+        if (diffDays >= 0 && diffDays <= 3) {
+          currentAlerts.push({
+            id: `payday-${pdId}`,
+            type: 'info',
+            icon: <CalendarIcon size={20} className="text-[#1877F2]" />,
+            title: 'Upcoming Payday',
+            message: `${pdId} allocation window is approaching.`,
+            time: `${diffDays}D`,
+            action: () => { setIsNotificationsOpen(false); setIsPaydaySetupOpen(true); }
+          });
+        }
+
+        // Liquidity Gap
+        const pdBills = bills.filter(b => b.payday === pdId && !b.isPaid);
+        const pdTotal = pdBills.reduce((sum, b) => sum + b.amount, 0);
+        const pdIncome = parseFloat(config.income) || 0;
+        
+        if (pdTotal > pdIncome && pdIncome > 0) {
+          currentAlerts.push({
+            id: `gap-${pdId}`,
+            type: 'warning',
+            icon: <ArrowDown size={20} className="text-orange-500" />,
+            title: 'Liquidity Gap',
+            message: `${pdId} income is $${(pdTotal - pdIncome).toFixed(2)} short.`,
+            time: 'WARNING',
+            action: () => { setIsNotificationsOpen(false); changeTab("bills"); }
+          });
+        }
+      }
+    });
+
+    // 5. Safe to Spend Redline
+    const liquidCash = accounts.filter(a => a.type === "Checking" || a.type === "Cash").reduce((sum, acc) => sum + acc.balance, 0);
+    const upcomingBills = bills.filter(b => !b.isPaid && !b.isOverdue);
+    const upcomingBurn = upcomingBills.reduce((sum, b) => sum + b.amount, 0);
+    const safeToSpend = liquidCash - upcomingBurn;
+
+    if (safeToSpend < 100 && safeToSpend >= 0) {
+      currentAlerts.push({
+        id: `redline`,
+        type: 'danger',
+        icon: <AlertCircle size={20} className="text-red-500" />,
+        title: 'Safe to Spend Redline',
+        message: `Your buffer is critically low ($${safeToSpend.toFixed(2)}).`,
+        time: 'ALERT',
+        action: () => { setIsNotificationsOpen(false); changeTab("home"); }
+      });
+    }
+
+    // 6. Transfer Complete
+    const recentTransfers = transactions.filter(tx => tx.category === "Transfers (Venmo/Zelle)" && tx.type === "Income");
+    if (recentTransfers.length > 0) {
+      const latestTransfer = recentTransfers[0];
+      currentAlerts.push({
+        id: `transfer-${latestTransfer.id}`,
+        type: 'success',
+        icon: <CheckCircle2 size={20} className="text-[#10B981]" />,
+        title: 'Transfer Complete',
+        message: `$${latestTransfer.amount.toFixed(2)} was successfully moved.`,
+        time: latestTransfer.date.split(',')[0], 
+        action: () => { setIsNotificationsOpen(false); changeTab("activity"); }
+      });
+    }
+
+    return currentAlerts;
+  };
+
+  const activeAlerts = generateAlerts();
+
   // === NON-COLLAPSING GLOBAL RENDER HERO ===
   const renderHeroShell = (title, graphicContent) => (
     <header className={`px-6 pt-12 pb-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden mb-8 z-30 rounded-b-[3rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
@@ -335,7 +455,7 @@ export default function App() {
           
           <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
             <Bell size={18} />
-            {dynamicBills.some(b => b.isOverdue || (!b.isPaid && b.payday === "Due Now")) && (
+            {activeAlerts.some(a => a.type === 'danger' || a.type === 'warning') && (
               <span className={`absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 ${isDarkMode ? "border-[#1E293B]" : "border-white"}`}></span>
             )}
           </button>
@@ -650,7 +770,7 @@ export default function App() {
         )}
 
         {/* ========================================================= */}
-        {/* THE NOTIFICATIONS / ALERTS MODAL */}
+        {/* THE SMART NOTIFICATIONS / ALERTS MODAL */}
         {/* ========================================================= */}
         {isNotificationsOpen && (
           <div className="absolute inset-0 z-[60] flex items-end">
@@ -659,24 +779,27 @@ export default function App() {
               <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <Bell size={20} className="text-[#1877F2]" />
-                  <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Alerts</h3>
+                  <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Ledger Alerts</h3>
                 </div>
                 <button onClick={() => setIsNotificationsOpen(false)} className="p-2 rounded-full"><X size={18} className={isDarkMode ? "text-slate-400" : "text-slate-500"} /></button>
               </div>
               <div className="p-6 overflow-y-auto space-y-3">
-                {dynamicBills.filter(b => b.isOverdue || (!b.isPaid && b.payday === "Due Now")).length === 0 ? (
+                {activeAlerts.length === 0 ? (
                   <div className="text-center py-8 text-slate-400 font-bold uppercase tracking-widest text-xs">You are all caught up!</div>
                 ) : (
-                  dynamicBills.filter(b => b.isOverdue || (!b.isPaid && b.payday === "Due Now")).map(bill => (
-                    <div key={bill.id} onClick={() => { setIsNotificationsOpen(false); changeTab("bills"); }} className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
-                      <div className="flex items-center gap-3">
-                        <AlertCircle size={20} className="text-red-500" />
-                        <div>
-                          <p className={`font-bold text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>{bill.name}</p>
-                          <p className="text-[10px] font-bold text-red-500 uppercase">{bill.isOverdue ? "Overdue" : "Due Now"}</p>
+                  activeAlerts.map(alert => (
+                    <div key={alert.id} onClick={alert.action} className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                      <div className="flex items-center gap-4">
+                        {alert.icon}
+                        <div className="pr-2">
+                          <p className={`font-bold text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>{alert.title}</p>
+                          <p className={`text-[10px] font-bold uppercase tracking-wide mt-0.5 ${alert.type === 'danger' ? 'text-red-500' : alert.type === 'warning' ? 'text-orange-500' : 'text-slate-500'}`}>{alert.message}</p>
                         </div>
                       </div>
-                      <span className={`font-black text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>${bill.amount.toFixed(2)}</span>
+                      <div className="flex flex-col items-end shrink-0 pl-2">
+                        {alert.amount !== undefined && <span className={`font-black text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>${alert.amount.toFixed(2)}</span>}
+                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">{alert.time}</span>
+                      </div>
                     </div>
                   ))
                 )}

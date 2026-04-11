@@ -48,7 +48,7 @@ export default function Activity({
 
   // === GRAPHIC HEADER ===
   const graphicContent = (
-    <div className="relative z-10 mb-2">
+    <div className="relative z-10 mb-2 w-full">
        <div className="flex justify-between items-end mb-6">
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Cash Flow • <span className="text-[#1877F2]">All Time</span></p>
@@ -66,10 +66,10 @@ export default function Activity({
 
       <main className="px-6 space-y-6">
 
-        {/* 📊 DYNAMIC DONUT CHART SECTION */}
+        {/* 📊 MASSIVE DYNAMIC DONUT CHART SECTION */}
         {totalExpenses > 0 && (
           <div className={`p-5 rounded-3xl border shadow-sm flex items-center gap-6 ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
-            <div className="relative w-28 h-28 shrink-0">
+            <div className="relative w-36 h-36 shrink-0">
               <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
                 <circle cx="50" cy="50" r={radius} fill="transparent" stroke={isDarkMode ? "#334155" : "#F1F5F9"} strokeWidth="12" />
                 {chartSegments.map((seg, i) => (
@@ -82,7 +82,7 @@ export default function Activity({
                 ))}
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                 <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Spent</span>
+                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Spent</span>
               </div>
             </div>
             

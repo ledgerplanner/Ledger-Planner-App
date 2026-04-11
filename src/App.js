@@ -87,7 +87,7 @@ export default function App() {
   const [inputValue, setInputValue] = useState("0");
   const [entryName, setEntryName] = useState("");
   const [entryDate, setEntryDate] = useState("");
-  const [entryIcon, setEntryIcon] = useState("🧾"); // 🔥 Default is now Receipt!
+  const [entryIcon, setEntryIcon] = useState("🧾"); 
   const [entryCategory, setEntryCategory] = useState(""); 
   const [entryAccount, setEntryAccount] = useState("");
   const [entryIsRecurring, setEntryIsRecurring] = useState(true);
@@ -95,7 +95,7 @@ export default function App() {
   const [entryTotalAmount, setEntryTotalAmount] = useState("");
   const [entryPaidAmount, setEntryPaidAmount] = useState("");
 
-  const categoryEmojis = ["🧾", "📋", "🏠", "💧", "⚡", "📺", "🚗", "⛽", "🚕", "🚇", "✈️", "🌴", "🏋️", "💳", "🎓", "🛒", "🛍️", "👗", "👟", "💅", "💈", "🍔", "🌮", "🍣", "☕", "🍻", "🍹", "🏥", "💊", "🐶", "🐾", "🎉", "🎟️", "🎬", "🎮", "🕹️", "📱", "💻", "💼", "💵", "💰", "₿", "💎", "⌚"];
+  const categoryEmojis = ["💵", "💲", "🧾", "📋", "🏠", "💧", "⚡", "📺", "🚗", "⛽", "🚕", "🚇", "✈️", "🌴", "🏋️", "💳", "🎓", "🛒", "🛍️", "👗", "👟", "💅", "💈", "🍔", "🌮", "🍣", "☕", "🍻", "🍹", "🏥", "💊", "🐶", "🐾", "🎉", "🎟️", "🎬", "🎮", "🕹️", "📱", "💻", "💼", "💰", "₿", "💎", "⌚"];
 
   const modernCategories = [
     { group: "Income & Wealth", items: ["Primary Salary", "Side Hustle / Gig", "Tips / Cash", "Investments / Crypto", "Transfers (Venmo/Zelle)", "Refunds & Adjustments"] },
@@ -461,6 +461,11 @@ export default function App() {
     />;
   }
 
+  // 🔥 FILTER LOGIC FOR CATEGORIES based on the selected QAB Tab
+  const categoriesToRender = drawerTab === 'income' 
+    ? modernCategories.filter(g => g.group === "Income & Wealth") 
+    : modernCategories;
+
   return (
     <div className={`h-screen font-sans relative overflow-hidden flex justify-center transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
       <div className={`w-full max-w-md h-full relative shadow-2xl flex flex-col transition-colors duration-500 overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
@@ -808,7 +813,8 @@ export default function App() {
                     <div className={`flex rounded-xl p-1 mb-6 mx-auto max-w-[280px] border shadow-sm ${isDarkMode ? "bg-slate-800/80 border-slate-700" : "bg-white/80 border-slate-200 backdrop-blur-md"}`}>
                       {/* 🔥 Bills Default set to Receipt */}
                       <button onClick={() => { setDrawerTab("bills"); setEntryIcon("🧾"); setEntryCategory(""); }} className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${drawerTab === "bills" ? `${activeBg} text-white shadow-md` : "text-slate-400"}`}>Bills</button>
-                      <button onClick={() => { setDrawerTab("income"); setEntryCategory(""); }} className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${drawerTab === "income" ? `${activeBg} text-white shadow-md` : "text-slate-400"}`}>Income</button>
+                      {/* 🔥 Income Default set to Money Stack */}
+                      <button onClick={() => { setDrawerTab("income"); setEntryIcon("💵"); setEntryCategory(""); }} className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${drawerTab === "income" ? `${activeBg} text-white shadow-md` : "text-slate-400"}`}>Income</button>
                       <button onClick={() => { setDrawerTab("transactions"); setEntryIcon("💳"); setEntryCategory(""); }} className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${drawerTab === "transactions" ? `${activeBg} text-white shadow-md` : "text-slate-400"}`}>Activity</button>
                     </div>
                   ) : (
@@ -856,12 +862,12 @@ export default function App() {
                            <input type="text" placeholder="e.g., Netflix, Salary, Target" value={entryName} onChange={(e) => setEntryName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-sm border focus:outline-none transition-colors ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-white focus:border-slate-500" : "bg-slate-50 border-slate-200 text-slate-900 focus:border-slate-400"}`} />
                         </div>
 
-                        {/* 🔥 CLEAN CATEGORY PLACEHOLDER AND BOLD HEADERS */}
+                        {/* 🔥 CLEAN CATEGORY PLACEHOLDER AND BOLD HEADERS (DYNAMICALLY FILTERED) */}
                         <div className="relative">
                            <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Category</label>
                            <select value={entryCategory} onChange={(e) => setEntryCategory(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-sm border focus:outline-none transition-colors appearance-none ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
                              <option value="" disabled>Select a category...</option>
-                             {modernCategories.map(group => (
+                             {categoriesToRender.map(group => (
                                <optgroup key={group.group} label={group.group} className="font-black text-slate-900 dark:text-white">
                                  {group.items.map(item => <option key={item} value={item} className="font-bold text-slate-600 dark:text-slate-300">{item}</option>)}
                                </optgroup>
@@ -880,7 +886,8 @@ export default function App() {
                           <div className="relative">
                              <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Select Account</label>
                              <select value={entryAccount} onChange={(e) => setEntryAccount(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-sm border focus:outline-none transition-colors appearance-none ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
-                               <option value="" disabled>Select Account...</option>
+                               {/* 🔥 HUMANIZED QUESTION FOR ACCOUNT SELECTION */}
+                               <option value="" disabled>Which Account Does This Go Into?</option>
                                {accounts.map((a) => (<option key={a.id} value={a.id}>{a.name} (${a.balance.toFixed(2)})</option>))}
                              </select>
                           </div>

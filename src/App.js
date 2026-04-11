@@ -90,6 +90,7 @@ export default function App() {
   const [entryDate, setEntryDate] = useState("");
   const [entryIcon, setEntryIcon] = useState("🏠");
   const [entryAccount, setEntryAccount] = useState("");
+  const [entryIsRecurring, setEntryIsRecurring] = useState(true); // NEW: Recurring Tracker
   const [entryIsInstallment, setEntryIsInstallment] = useState(false);
   const [entryTotalAmount, setEntryTotalAmount] = useState("");
   const [entryPaidAmount, setEntryPaidAmount] = useState("");
@@ -112,7 +113,6 @@ export default function App() {
     }
     const userRef = doc(db, "users", user.uid);
 
-    // DYNAMIC FILTER: Ignore Archived Accounts!
     const unsubAcc = onSnapshot(collection(userRef, "accounts"), (snap) => {
       const allAccs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       setAccounts(allAccs.filter(a => !a.isArchived));
@@ -249,6 +249,36 @@ export default function App() {
   const todayForDynamic = new Date();
   todayForDynamic.setHours(0, 0, 0, 0);
 
+  const calculatePaydayGroup = (dateString) => {
+    if (!dateString) return "Payday 1";
+    const billDate = new Date(dateString);
+
+    const todayLocal = new Date();
+    todayLocal.setHours(0, 0, 0, 0);
+    const localBillDate = new Date(billDate.getUTCFullYear(), billDate.getUTCMonth(), billDate.getUTCDate());
+    if (localBillDate <= todayLocal) return "Due Now";
+
+    const activePaydays = [];
+    for (let i = 1; i <= 5; i++) {
+      const pdId = `Payday ${i}`;
+      if (paydayConfig[pdId] && paydayConfig[pdId].date) {
+        const d = new Date(paydayConfig[pdId].date);
+        if (!isNaN(d.getTime())) activePaydays.push({ id: pdId, date: d });
+      }
+    }
+    
+    if (activePaydays.length === 0) return "Payday 1";
+    activePaydays.sort((a, b) => a.date - b.date);
+    if (billDate < activePaydays[0].date) return "Due Now";
+    
+    let assignedPd = activePaydays[0].id;
+    for (let i = 0; i < activePaydays.length; i++) {
+      if (billDate >= activePaydays[i].date) assignedPd = activePaydays[i].id;
+      else break;
+    }
+    return assignedPd;
+  };
+
   const dynamicBills = bills.map(bill => {
     if (bill.rawDate && !bill.isPaid) {
       const bDate = new Date(bill.rawDate);
@@ -259,6 +289,50 @@ export default function App() {
     }
     return bill;
   });
+
+  // === NEW: SMART ROLLOVER ENGINE ===
+  const handleRolloverMonth = async () => {
+    if (!window.confirm("Ready to start a new month? Paid recurring bills will automatically bump to next month, and one-time bills will be cleared from the board.")) return;
+    
+    const batchPromises = [];
+    bills.forEach(bill => {
+      if (bill.isPaid) {
+        if (bill.isRecurring !== false) { 
+          // It is recurring -> bump the date 1 month forward and mark unpaid
+          let newRawDate = bill.rawDate;
+          let displayDate = bill.fullDate;
+          let newPayday = "Payday 1";
+          
+          if (bill.rawDate) {
+            const oldDate = new Date(bill.rawDate);
+            oldDate.setUTCMonth(oldDate.getUTCMonth() + 1);
+            newRawDate = oldDate.toISOString().split('T')[0];
+            displayDate = oldDate.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+            newPayday = calculatePaydayGroup(newRawDate);
+          }
+          
+          let newPaidAmt = bill.isInstallment ? bill.paidAmount : 0;
+          
+          batchPromises.push(updateDoc(doc(db, "users", user.uid, "bills", bill.id), {
+            isPaid: false,
+            paidAmount: newPaidAmt,
+            linkedTxId: null,
+            paidFromAccountId: null,
+            rawDate: newRawDate,
+            fullDate: displayDate,
+            payday: newPayday,
+            isOverdue: false
+          }));
+        } else {
+          // It was a one-time bill -> delete from board (receipt stays in Activity)
+          batchPromises.push(deleteDoc(doc(db, "users", user.uid, "bills", bill.id)));
+        }
+      }
+    });
+    
+    await Promise.all(batchPromises);
+    triggerHaptic();
+  };
 
   // === GLOBAL RENDER HERO ===
   const renderHeroShell = (title, graphicContent) => (
@@ -344,7 +418,7 @@ export default function App() {
   };
 
   // === FAB (QUICK ADD 2.0) ACTIONS ===
-  const closeFab = () => { setIsFabOpen(false); setFabStep(1); setInputValue("0"); setEntryName(""); setEntryDate(""); setEntryIcon("🏠"); setEntryAccount(""); setEntryIsInstallment(false); setEntryTotalAmount(""); setEntryPaidAmount(""); };
+  const closeFab = () => { setIsFabOpen(false); setFabStep(1); setInputValue("0"); setEntryName(""); setEntryDate(""); setEntryIcon("🏠"); setEntryAccount(""); setEntryIsRecurring(true); setEntryIsInstallment(false); setEntryTotalAmount(""); setEntryPaidAmount(""); };
   
   const handleNumpad = (btn) => {
     if (btn === "=") {
@@ -354,36 +428,6 @@ export default function App() {
       } catch (e) { setInputValue("Error"); setTimeout(() => setInputValue("0"), 1000); }
     } else if (inputValue === "0" && btn !== ".") setInputValue(btn);
     else setInputValue(inputValue + btn);
-  };
-
-  const calculatePaydayGroup = (dateString) => {
-    if (!dateString) return "Payday 1";
-    const billDate = new Date(dateString);
-
-    const todayLocal = new Date();
-    todayLocal.setHours(0, 0, 0, 0);
-    const localBillDate = new Date(billDate.getUTCFullYear(), billDate.getUTCMonth(), billDate.getUTCDate());
-    if (localBillDate <= todayLocal) return "Due Now";
-
-    const activePaydays = [];
-    for (let i = 1; i <= 5; i++) {
-      const pdId = `Payday ${i}`;
-      if (paydayConfig[pdId] && paydayConfig[pdId].date) {
-        const d = new Date(paydayConfig[pdId].date);
-        if (!isNaN(d.getTime())) activePaydays.push({ id: pdId, date: d });
-      }
-    }
-    
-    if (activePaydays.length === 0) return "Payday 1";
-    activePaydays.sort((a, b) => a.date - b.date);
-    if (billDate < activePaydays[0].date) return "Due Now";
-    
-    let assignedPd = activePaydays[0].id;
-    for (let i = 0; i < activePaydays.length; i++) {
-      if (billDate >= activePaydays[i].date) assignedPd = activePaydays[i].id;
-      else break;
-    }
-    return assignedPd;
   };
 
   const handleConfirmAction = async () => {
@@ -401,6 +445,7 @@ export default function App() {
       await addDoc(collection(db, "users", user.uid, "bills"), {
         name: entryName || "New Bill", icon: entryIcon || "📋", amount: amountToProcess,
         date: sortableDay, fullDate: displayDate, rawDate: entryDate, payday: calculatePaydayGroup(entryDate), isPaid: false, isOverdue: false,
+        isRecurring: entryIsRecurring, // SAVES THE TOGGLE
         isInstallment: entryIsInstallment, totalAmount: entryIsInstallment ? parseFloat(entryTotalAmount) || 0 : 0,
         paidAmount: entryIsInstallment ? parseFloat(entryPaidAmount) || 0 : 0, linkedTxId: null
       });
@@ -433,11 +478,14 @@ export default function App() {
     <div className={`h-screen font-sans relative overflow-hidden flex justify-center transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
       <div className={`w-full max-w-md h-full relative shadow-2xl flex flex-col transition-colors duration-500 overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
         
-        {/* MAIN VIEW ROUTER (USING DYNAMIC BILLS) */}
+        {/* MAIN VIEW ROUTER (PASSING ROLLOVER LOGIC) */}
         <div className="flex-1 overflow-y-auto hide-scrollbar" ref={scrollRef}>
           {activeTab === "home" && <Dashboard userName={userName} accounts={accounts} bills={dynamicBills} transactions={transactions} paydayConfig={paydayConfig} setEditPaydayConfig={setEditPaydayConfig} setIsPaydaySetupOpen={setIsPaydaySetupOpen} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} handleBillClick={handleBillClick} setSelectedEntry={setSelectedEntry} isDarkMode={isDarkMode} formatPaydayDateStr={formatPaydayDateStr} renderHeroShell={renderHeroShell} changeTab={changeTab} />}
           {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} />}
-          {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={setSelectedEntry} renderHeroShell={renderHeroShell} />}
+          
+          {/* UPDATED BILLS COMPONENT */}
+          {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={setSelectedEntry} renderHeroShell={renderHeroShell} handleRolloverMonth={handleRolloverMonth} />}
+          
           {activeTab === "activity" && <Activity userName={userName} transactions={transactions} activitySearch={activitySearch} setActivitySearch={setActivitySearch} activityFilter={activityFilter} setActivityFilter={setActivityFilter} isDarkMode={isDarkMode} setSelectedEntry={setSelectedEntry} renderHeroShell={renderHeroShell} />}
           {activeTab === "todo" && <Todo 
             userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} 
@@ -974,12 +1022,22 @@ export default function App() {
 
                         {drawerTab === "bills" && (
                           <div className={`p-4 rounded-2xl border ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                            
+                            {/* NEW: RECURRING TOGGLE */}
+                            <div className="flex items-center justify-between cursor-pointer mb-5" onClick={() => setEntryIsRecurring(!entryIsRecurring)}>
+                              <span className={`text-[10px] font-black uppercase tracking-widest ${entryIsRecurring ? activeText : "text-slate-400"}`}>Recurring Monthly?</span>
+                              <div className={`w-10 h-6 rounded-full p-1 transition-colors ${entryIsRecurring ? activeBg : "bg-slate-300 dark:bg-slate-600"}`}>
+                                <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${entryIsRecurring ? "translate-x-4" : "translate-x-0"}`}></div>
+                              </div>
+                            </div>
+                            
                             <div className="flex items-center justify-between cursor-pointer" onClick={() => setEntryIsInstallment(!entryIsInstallment)}>
                               <span className={`text-[10px] font-black uppercase tracking-widest ${entryIsInstallment ? activeText : "text-slate-400"}`}>Installment Plan?</span>
                               <div className={`w-10 h-6 rounded-full p-1 transition-colors ${entryIsInstallment ? activeBg : "bg-slate-300 dark:bg-slate-600"}`}>
                                 <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${entryIsInstallment ? "translate-x-4" : "translate-x-0"}`}></div>
                               </div>
                             </div>
+                            
                             {entryIsInstallment && (
                               <div className="mt-4 space-y-3 animate-fade-in">
                                 <input type="number" placeholder="Total Full Balance (e.g., 5000)" value={entryTotalAmount} onChange={(e) => setEntryTotalAmount(e.target.value)} className={`w-full py-3 px-4 rounded-xl font-bold text-sm border focus:outline-none ${isDarkMode ? "bg-slate-800 border-slate-600 text-white" : "bg-white border-slate-200 text-slate-900"}`} />

@@ -4,6 +4,7 @@ import { ArrowRightLeft, PlusCircle } from "lucide-react";
 export default function Accounts({
   userName,
   accounts,
+  transactions,
   isDarkMode,
   setIsTransferOpen,
   setIsAddAccountOpen,
@@ -11,21 +12,42 @@ export default function Accounts({
   setEditAccountBalance,
   renderHeroShell
 }) {
-  // Add local state for the interactive chart
   const [activeChartNode, setActiveChartNode] = useState(5);
 
-  // === NET WORTH MATH & CHART ENGINE ===
+  // === DYNAMIC TIME-MACHINE CHART ENGINE ===
   const netWorth = accounts.reduce((sum, a) => sum + a.balance, 0);
   
-  // Generating a mocked visual curve leading up to current net worth
-  const historyData = [
-    { label: "Nov", val: netWorth * 0.45 }, 
-    { label: "Dec", val: netWorth * 0.55 },
-    { label: "Jan", val: netWorth * 0.4 }, 
-    { label: "Feb", val: netWorth * 0.7 },
-    { label: "Mar", val: netWorth * 0.85 }, 
-    { label: "Apr", val: netWorth },
-  ];
+  const historyData = [];
+  let currentCalcNW = netWorth;
+  const today = new Date();
+
+  // We trace backward 6 months to perfectly reconstruct your historical net worth
+  for(let i=0; i<6; i++) {
+    const targetDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    const monthName = targetDate.toLocaleString('default', { month: 'short' });
+    
+    if (i === 0) {
+        historyData.unshift({ label: monthName, val: Math.max(0, currentCalcNW), month: targetDate.getMonth(), year: targetDate.getFullYear() });
+    } else {
+        const monthAhead = historyData[0]; // Grab the month we just processed
+        
+        // Find all transactions that happened in that month
+        const txsInMonthAhead = transactions.filter(tx => {
+            if (!tx.createdAt) return false;
+            const d = typeof tx.createdAt.toDate === 'function' ? tx.createdAt.toDate() : new Date(tx.createdAt);
+            return d.getMonth() === monthAhead.month && d.getFullYear() === monthAhead.year;
+        });
+        
+        // Calculate the net cash flow of that month
+        const netCashFlowMonthAhead = txsInMonthAhead.reduce((sum, tx) => {
+            return sum + (tx.type === "Income" ? tx.amount : -tx.amount);
+        }, 0);
+        
+        // Subtract the cash flow to find out what you had BEFORE that month started
+        currentCalcNW -= netCashFlowMonthAhead;
+        historyData.unshift({ label: monthName, val: Math.max(0, currentCalcNW), month: targetDate.getMonth(), year: targetDate.getFullYear() });
+    }
+  }
   
   const maxChartVal = Math.max(...historyData.map((d) => d.val), 1);
   const activeDataPoint = historyData[activeChartNode];
@@ -35,7 +57,7 @@ export default function Accounts({
     <div className="relative z-10 mb-2">
       <div className="flex justify-between items-end mb-6">
         <div>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Net Worth • <span className="text-[#1877F2]">{activeDataPoint.label} 2026</span></p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Net Worth • <span className="text-[#1877F2]">{activeDataPoint.label} {activeDataPoint.year}</span></p>
           <p className={`text-5xl font-black tracking-tighter transition-all duration-300 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
             ${activeDataPoint.val.toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </p>
@@ -76,11 +98,9 @@ export default function Accounts({
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">All Accounts</h3>
           <div className={`rounded-[2rem] p-3 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
             {accounts.map((acc, idx) => {
-              // BUG FIX: Now checking if the actual math is negative, not just the account type
               const isNegative = acc.balance < 0;
-              
               return (
-                <div key={acc.id} onClick={() => { setSelectedAccount(acc); setEditAccountBalance(acc.balance.toString()); }} className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition-colors ${isDarkMode ? "hover:bg-slate-800/50" : "hover:bg-slate-50/50"} ${idx !== accounts.length - 1 ? "mb-1" : ""}`}>
+                <div key={acc.id} onClick={() => { setSelectedAccount(acc); setEditAccountBalance(Math.abs(acc.balance).toString()); }} className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition-colors ${isDarkMode ? "hover:bg-slate-800/50" : "hover:bg-slate-50/50"} ${idx !== accounts.length - 1 ? "mb-1" : ""}`}>
                   <div className="flex items-center gap-4">
                     <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center text-xl bg-opacity-10 ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-100"}`}>
                       {acc.icon}

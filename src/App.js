@@ -63,7 +63,6 @@ export default function App() {
   const [paymentModalConfig, setPaymentModalConfig] = useState({ isOpen: false, billId: null, accountId: "" });
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   
-  // THE MISSING ACCOUNTS STATE
   const [isTransferOpen, setIsTransferOpen] = useState(false);
   const [transferFrom, setTransferFrom] = useState("");
   const [transferTo, setTransferTo] = useState("");
@@ -283,7 +282,6 @@ export default function App() {
           <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
             {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          
           <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
             <Bell size={18} />
             {dynamicBills.some(b => b.isOverdue || (!b.isPaid && b.payday === "Due Now")) && (
@@ -615,6 +613,111 @@ export default function App() {
                     </div>
                   ))
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* PAY BILL CONFIRMATION MODAL */}
+        {/* ========================================================= */}
+        {paymentModalConfig.isOpen && (
+          <div className="absolute inset-0 z-[60] flex items-end">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" })}></div>
+            <div className={`w-full rounded-t-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={20} className="text-[#1877F2]" />
+                  <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Confirm Payment</h3>
+                </div>
+                <button onClick={() => setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" })} className="p-2 rounded-full"><X size={18} className={isDarkMode ? "text-slate-400" : "text-slate-500"} /></button>
+              </div>
+              <div className="p-6 space-y-4">
+                <p className={`text-sm font-bold text-center ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
+                  Which account are you paying this bill from?
+                </p>
+                <div className="relative">
+                   <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Pay From</label>
+                   <select value={paymentModalConfig.accountId} onChange={(e) => setPaymentModalConfig({...paymentModalConfig, accountId: e.target.value})} className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-sm border focus:outline-none transition-colors appearance-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
+                     {accounts.map((a) => (<option key={a.id} value={a.id}>{a.name} (${a.balance.toFixed(2)})</option>))}
+                   </select>
+                </div>
+                <button onClick={confirmPaymentRoute} className="w-full h-14 mt-2 rounded-2xl font-black uppercase tracking-widest text-sm text-white bg-[#1877F2] shadow-lg shadow-blue-500/30 transition-transform active:scale-95 flex items-center justify-center gap-2">
+                  Mark as Paid <CheckCircle2 size={18} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* TRANSACTION / BILL ENTRY DETAILS & DELETE MODAL */}
+        {/* ========================================================= */}
+        {selectedEntry && (
+          <div className="absolute inset-0 z-[60] flex items-end">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedEntry(null)}></div>
+            <div className={`w-full rounded-t-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${isDarkMode ? "bg-slate-800" : "bg-slate-100"}`}>{selectedEntry.icon}</div>
+                  <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Entry Details</h3>
+                </div>
+                <button onClick={() => setSelectedEntry(null)} className="p-2 rounded-full"><X size={18} className={isDarkMode ? "text-slate-400" : "text-slate-500"} /></button>
+              </div>
+              <div className="p-6 space-y-6">
+                <div className="text-center">
+                  <h2 className={`text-xl font-black mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{selectedEntry.name}</h2>
+                  <p className={`text-5xl font-black tracking-tighter ${selectedEntry.type === 'Income' ? 'text-[#10B981]' : selectedEntry.isPaid ? 'text-slate-400' : isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                    {selectedEntry.type === 'Income' ? '+' : selectedEntry.type === 'Expense' ? '-' : ''}${selectedEntry.amount?.toFixed(2)}
+                  </p>
+                  <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border dark:border-slate-700">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{selectedEntry.date || selectedEntry.fullDate}</span>
+                  </div>
+                </div>
+                
+                <div className={`rounded-2xl p-4 border ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                  <div className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Category</span>
+                    <span className={`text-xs font-black ${isDarkMode ? "text-slate-200" : "text-slate-700"}`}>{selectedEntry.category || "Bill / Subscription"}</span>
+                  </div>
+                  {selectedEntry.type && (
+                    <div className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Type</span>
+                      <span className={`text-xs font-black ${selectedEntry.type === "Income" ? "text-[#10B981]" : "text-[#F97316]"}`}>{selectedEntry.type}</span>
+                    </div>
+                  )}
+                  {selectedEntry.payday && (
+                    <div className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Assigned To</span>
+                      <span className={`text-xs font-black ${isDarkMode ? "text-slate-200" : "text-slate-700"}`}>{selectedEntry.payday}</span>
+                    </div>
+                  )}
+                  {selectedEntry.isOverdue !== undefined && (
+                    <div className="flex justify-between py-2">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Status</span>
+                      <span className={`text-xs font-black ${selectedEntry.isPaid ? "text-[#10B981]" : selectedEntry.isOverdue ? "text-red-500" : "text-[#F97316]"}`}>
+                        {selectedEntry.isPaid ? "Paid" : selectedEntry.isOverdue ? "Overdue" : "Pending"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                
+                <button onClick={async () => {
+                  if(window.confirm("Are you sure you want to delete this entry?")) {
+                    const colName = selectedEntry.fullDate ? "bills" : "transactions";
+                    await deleteDoc(doc(db, "users", user.uid, colName, selectedEntry.id));
+                    if(!selectedEntry.fullDate && selectedEntry.accountId) {
+                      const acc = accounts.find(a => a.id === selectedEntry.accountId);
+                      if(acc) {
+                         const revAmount = selectedEntry.type === "Income" ? -selectedEntry.amount : selectedEntry.amount;
+                         await updateDoc(doc(db, "users", user.uid, "accounts", acc.id), { balance: acc.balance + revAmount });
+                      }
+                    }
+                    setSelectedEntry(null); triggerHaptic();
+                  }
+                }} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-red-500 border transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${isDarkMode ? "bg-red-900/10 border-red-900/30 hover:bg-red-900/20" : "bg-red-50/50 border-red-100 hover:bg-red-50"}`}>
+                  <Trash2 size={16} /> Delete Entry
+                </button>
               </div>
             </div>
           </div>

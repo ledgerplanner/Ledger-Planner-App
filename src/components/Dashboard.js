@@ -1,5 +1,6 @@
 import React from "react";
-import { CheckCircle2, Circle, RefreshCw, ArrowUpRight, ArrowDownRight, Wallet, ShieldCheck, ArrowRight } from "lucide-react";
+// 🔥 BUG FIX: AlertCircle is officially back in the building!
+import { CheckCircle2, Circle, RefreshCw, Wallet, ShieldCheck, ArrowRight, AlertCircle } from "lucide-react";
 
 export default function Dashboard({ 
   userName, accounts, bills, transactions, 

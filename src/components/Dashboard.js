@@ -1,6 +1,5 @@
 import React from "react";
-// 🔥 BUG FIX: AlertCircle is officially back in the building!
-import { CheckCircle2, Circle, RefreshCw, Wallet, ShieldCheck, ArrowRight, AlertCircle } from "lucide-react";
+import { CheckCircle2, Circle, RefreshCw, Wallet, ShieldCheck, ArrowRight, AlertCircle, ChevronDown, ChevronUp, Settings } from "lucide-react";
 
 export default function Dashboard({ 
   userName, accounts, bills, transactions, 
@@ -13,29 +12,54 @@ export default function Dashboard({
   const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
   const liquidCash = accounts.filter(a => a.type === "Checking" || a.type === "Cash").reduce((sum, acc) => sum + acc.balance, 0);
   
-  // Safe to Spend = Liquid Cash minus Unpaid Bills due in the next 14 days
+  // Safe to Spend = Liquid Cash minus Unpaid Bills
   const upcomingBills = bills.filter(b => !b.isPaid && !b.isOverdue);
   const upcomingBurn = upcomingBills.reduce((sum, b) => sum + b.amount, 0);
-  const safeToSpend = liquidCash - upcomingBurn;
+  const safeToSpend = Math.max(0, liquidCash - upcomingBurn);
+  
+  // Ring Math
+  const ringPct = liquidCash > 0 ? Math.round((safeToSpend / liquidCash) * 100) : 0;
+  const radius = 42;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (ringPct / 100) * circumference;
 
-  // === PREMIUM HERO CONTENT ===
+  // === PREMIUM HERO CONTENT (WITH RING) ===
   const graphicContent = (
-    <div className="relative z-10 w-full text-center px-4">
-      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Net Worth</p>
-      <p className={`text-6xl font-black tracking-tighter transition-colors duration-300 ${totalBalance >= 0 ? isDarkMode ? "text-white" : "text-slate-900" : "text-red-500"}`}>
-        ${Math.abs(totalBalance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-      </p>
-
-      {/* Safe to Spend Shield */}
-      <div className={`mt-6 inline-flex items-center gap-2 px-5 py-3 rounded-full border shadow-sm ${isDarkMode ? "bg-slate-800/80 border-slate-700" : "bg-white/80 border-slate-100 backdrop-blur-md"}`}>
-         <ShieldCheck size={16} className={safeToSpend >= 0 ? "text-[#10B981]" : "text-red-500"} />
-         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Safe to Spend</span>
-         <span className={`text-sm font-black ${safeToSpend >= 0 ? "text-[#10B981]" : "text-red-500"}`}>${Math.abs(safeToSpend).toLocaleString()}</span>
+    <div className="relative z-10 w-full flex items-center justify-between px-2 pt-2 pb-4">
+      {/* 📊 THE MASSIVE SHIELD RING (LEFT ALIGNED) */}
+      <div className="relative w-40 h-40 shrink-0 drop-shadow-xl">
+        <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+          <circle cx="50" cy="50" r={radius} fill="transparent" stroke={isDarkMode ? "#334155" : "#F1F5F9"} strokeWidth="12" />
+          <circle
+            cx="50" cy="50" r={radius} fill="transparent"
+            stroke={ringPct > 20 ? "#10B981" : "#F97316"} strokeWidth="12"
+            strokeDasharray={circumference} strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round" className="transition-all duration-1000 ease-out"
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+           <ShieldCheck size={24} className={`mb-1 ${ringPct > 20 ? "text-[#10B981]" : "text-[#F97316]"}`} />
+           <span className={`text-xl font-black tracking-tighter transition-colors duration-500 ${ringPct > 20 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
+             {ringPct}%
+           </span>
+        </div>
+      </div>
+      
+      {/* 📊 MACRO STATS (RIGHT ALIGNED) */}
+      <div className="flex-1 flex flex-col items-end text-right space-y-2">
+        <p className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Total Net Worth</p>
+        <p className={`text-4xl font-black tracking-tighter leading-none transition-all duration-300 ${totalBalance >= 0 ? isDarkMode ? "text-white" : "text-slate-900" : "text-red-500"}`}>
+          ${Math.abs(totalBalance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+        </p>
+        <div className={`mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border shadow-sm ${isDarkMode ? "bg-slate-800/80 border-slate-700" : "bg-white/80 border-slate-100 backdrop-blur-md"}`}>
+           <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Safe To Spend:</span>
+           <span className={`text-[10px] font-black ${safeToSpend >= 0 ? "text-[#10B981]" : "text-red-500"}`}>${Math.abs(safeToSpend).toLocaleString()}</span>
+        </div>
       </div>
     </div>
   );
 
-  // === 🔥 THE NEW BILL CARD (WITH PROGRESS BAR & ARROWS) ===
+  // === 🔥 THE PREMIUM BILL CARD (WITH PROGRESS BAR & ARROWS) ===
   const renderBillCard = (bill) => (
     <div key={bill.id} className={`relative flex items-center justify-between p-4 rounded-2xl transition-all shadow-sm border mb-2 
       ${bill.isPaid 
@@ -95,6 +119,31 @@ export default function Dashboard({
 
       <main className="px-6 space-y-8 mt-4">
         
+        {/* === INCOME ENGINES (SCROLLING PAYDAY CARDS) === */}
+        <section>
+          <div className="flex items-center justify-between mb-3 px-2">
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Income Engines</h3>
+            <button onClick={() => setIsPaydaySetupOpen(true)} className="text-[10px] font-bold text-[#1877F2] uppercase tracking-widest flex items-center gap-1">Configure <Settings size={10} /></button>
+          </div>
+          <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-2">
+            {["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].map((pd) => {
+              if (!paydayConfig[pd]?.date) return null;
+              return (
+                <div key={pd} onClick={() => setIsPaydaySetupOpen(true)} className={`min-w-[140px] p-4 rounded-3xl border shadow-sm shrink-0 cursor-pointer transition-colors ${isDarkMode ? "bg-[#1E293B] border-slate-800 hover:bg-slate-800" : "bg-white border-slate-50 hover:bg-slate-50"}`}>
+                  <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{pd}</p>
+                  <p className={`font-black text-sm truncate mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{formatPaydayDateStr(paydayConfig[pd].date)}</p>
+                  <p className="text-[10px] font-bold text-[#10B981]">+${parseFloat(paydayConfig[pd].income || 0).toLocaleString()}</p>
+                </div>
+              );
+            })}
+            {Object.values(paydayConfig).every(pd => !pd.date) && (
+               <div onClick={() => setIsPaydaySetupOpen(true)} className={`w-full p-6 rounded-[2rem] border border-dashed text-center flex flex-col items-center justify-center cursor-pointer ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Tap to configure paydays</p>
+               </div>
+            )}
+          </div>
+        </section>
+
         {/* === LIQUIDITY (ACCOUNTS MINI-VIEW) === */}
         <section>
           <div className="flex items-center justify-between mb-3 px-2">
@@ -119,7 +168,7 @@ export default function Dashboard({
           </div>
         </section>
 
-        {/* === THE FLIGHT PATH (UPCOMING BILLS) === */}
+        {/* === THE FLIGHT PATH (COLLAPSIBLE BILLS) === */}
         <section>
           <div className="flex items-center justify-between mb-3 px-2">
             <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400">The Flight Path</h3>
@@ -134,22 +183,40 @@ export default function Dashboard({
                </div>
             ) : (
               <>
-                {/* Due Now / Overdue */}
+                {/* Due Now / Overdue (Never Collapses) */}
                 {bills.filter(b => (b.payday === "Due Now" || b.isOverdue) && !b.isPaid).length > 0 && (
-                  <div className="mb-4">
-                    <h4 className="text-[9px] font-black uppercase tracking-widest text-red-500 mb-2 pl-2 flex items-center gap-1"><AlertCircle size={10} /> Action Required</h4>
+                  <div className="mb-6">
+                    <h4 className="text-[9px] font-black uppercase tracking-widest text-red-500 mb-3 pl-2 flex items-center gap-1"><AlertCircle size={10} /> Action Required</h4>
                     {bills.filter(b => (b.payday === "Due Now" || b.isOverdue) && !b.isPaid).map(renderBillCard)}
                   </div>
                 )}
                 
-                {/* Next Up (Payday 1 or earliest upcoming) */}
+                {/* Payday Groups (Collapsible) */}
                 {["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].map(pdId => {
                    const pdBills = bills.filter(b => b.payday === pdId && !b.isPaid);
                    if (pdBills.length === 0) return null;
+                   
+                   const isCollapsed = collapsedPaydays[pdId];
+                   const pdTotal = pdBills.reduce((sum, b) => sum + b.amount, 0);
+                   
                    return (
                      <div key={pdId} className="mb-4 last:mb-0">
-                       <h4 className={`text-[9px] font-black uppercase tracking-widest mb-2 pl-2 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Upcoming • {formatPaydayDateStr(paydayConfig[pdId]?.date)}</h4>
-                       {pdBills.slice(0, 3).map(renderBillCard)}
+                       <div onClick={() => toggleCollapse(pdId)} className="flex items-center justify-between mb-3 px-2 cursor-pointer group">
+                         <div className="flex items-center gap-2">
+                           <h4 className={`text-[10px] font-black uppercase tracking-widest transition-colors ${isDarkMode ? "text-slate-400 group-hover:text-white" : "text-slate-500 group-hover:text-slate-900"}`}>
+                             {pdId} <span className="opacity-50 mx-1">•</span> {formatPaydayDateStr(paydayConfig[pdId]?.date)}
+                           </h4>
+                           {isCollapsed ? <ChevronDown size={14} className="text-slate-400" /> : <ChevronUp size={14} className="text-slate-400" />}
+                         </div>
+                         <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>${pdTotal.toFixed(2)}</span>
+                       </div>
+                       
+                       {/* Only render cards if NOT collapsed */}
+                       {!isCollapsed && (
+                         <div className="animate-fade-in space-y-2">
+                           {pdBills.map(renderBillCard)}
+                         </div>
+                       )}
                      </div>
                    )
                 })}

@@ -172,7 +172,16 @@ export default function App() {
     return dateString;
   };
 
-  const changeTab = (tabId) => { setActiveTab(tabId); if (scrollRef.current) scrollRef.current.scrollTo({ top: 0, behavior: "smooth" }); };
+  // 🔥 THE FRESH SLATE ROUTER UPGRADE
+  const changeTab = (tabId) => { 
+    setActiveTab(tabId); 
+    if (tabId === "activity") {
+       setActivityFilter("All");
+       setActivitySearch("");
+    }
+    if (scrollRef.current) scrollRef.current.scrollTo({ top: 0, behavior: "smooth" }); 
+  };
+  
   const toggleCollapse = (payday) => setCollapsedPaydays((prev) => ({ ...prev, [payday]: !prev[payday] }));
 
   // === MODAL FUNCTIONS ===
@@ -244,7 +253,6 @@ export default function App() {
     triggerHaptic(); setSelectedAccount(null);
   };
 
-  // 🔥 NEW: Clear All Payday Configs Function
   const clearPaydayConfig = () => {
     setEditPaydayConfig({
       "Payday 1": { date: "", income: "" },

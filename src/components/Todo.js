@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-// 🔥 BUG FIX: CheckSquare is properly imported!
+// 🔥 BUG FIX: CheckSquare and ShoppingBag are now properly imported!
 import { CheckCircle2, Circle, Trash2, X, Plus, Zap, ShoppingBag, AlertCircle, Flame, Star, CheckSquare } from "lucide-react";
 import { doc, deleteDoc } from "firebase/firestore";
 import { db, auth } from "../firebase"; 
@@ -19,7 +19,7 @@ export default function Todo({
   const pendingShopping = sortTasks(todos.filter(t => !t.isCompleted && t.type === "shopping"));
   const completedTasks = sortTasks(todos.filter(t => t.isCompleted));
 
-  // === MOMENTUM MATH (MASSIVE RING) ===
+  // === MOMENTUM MATH (MASSIVE RING, LEFT ALIGNED) ===
   const totalTasks = todos.length;
   const completedCount = completedTasks.length;
   const momentumPct = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
@@ -54,13 +54,13 @@ export default function Todo({
     );
   };
 
-  // === PREMIUM HERO CONTENT (MASSIVE CENTERED RING) ===
+  // === PREMIUM HERO CARD (NOW WITH MASSIVE RING ON THE LEFT) ===
   const graphicContent = (
-    <div className="relative z-10 mb-2 w-full text-center px-4">
-      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Execution Momentum</p>
-      
-      {/* 📊 MASSIVE CATEGORY RING COMPONENT */}
-      <div className="relative w-40 h-40 shrink-0 drop-shadow-2xl mx-auto mt-6 mb-2">
+    <div className={`p-6 rounded-[2rem] shadow-2xl transition-colors duration-500 relative flex gap-6 items-center ${isDarkMode ? "bg-[#1E293B] border border-slate-700" : "bg-white"}`}>
+       <div className="absolute -top-16 -right-16 w-52 h-52 bg-[#1877F2]/10 rounded-full blur-3xl"></div>
+
+      {/* 📊 THE MASSIVE SPEEOMETER RING (LEFT ALIGNED) */}
+      <div className="relative w-40 h-40 shrink-0 drop-shadow-2xl">
         <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
           <circle cx="50" cy="50" r={radius} fill="transparent" stroke={isDarkMode ? "#334155" : "#F1F5F9"} strokeWidth="12" />
           <circle
@@ -74,18 +74,24 @@ export default function Todo({
            <span className={`text-4xl font-black tracking-tighter transition-colors duration-500 ${momentumPct === 100 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
              {momentumPct}%
            </span>
-           <div className="flex items-center gap-1 mt-1">
-              <Flame size={12} className={momentumPct > 0 ? "text-[#F97316]" : "text-slate-300 dark:text-slate-700"} />
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{completedCount} / {totalTasks}</span>
-           </div>
         </div>
+      </div>
+      
+      {/* 📊 DAILY OPERATIONS STATS (RIGHT ALIGNED) */}
+      <div className="flex-1 space-y-2 relative z-10">
+        <p className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>DAILY OPERATIONS</p>
+        <div className="flex items-end gap-1.5 mb-1.5">
+          <p className={`text-6xl font-black tracking-tighter leading-none transition-all duration-300 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{completedCount}</p>
+          <p className={`text-3xl font-black tracking-tighter leading-none mb-1 opacity-50 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>/ {totalTasks}</p>
+        </div>
+        <p className={`text-sm font-bold truncate leading-snug ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>Total completed tasks</p>
       </div>
     </div>
   );
 
-  // === PREMIUM TASK RENDERER ===
+  // === PREMIUM TASK RENDERER (NO GLOW, GOLD STARS) ===
   const renderTaskCard = (task) => {
-    const isFiveStar = parseInt(task.priority) === 5; 
+    // 🔥 Removed the conditional glow logic for simplicity
     
     return (
       <div 
@@ -93,10 +99,8 @@ export default function Todo({
         onClick={() => setActiveModalTodo(task)}
         className={`relative flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all active:scale-[0.98] shadow-sm border
           ${task.isCompleted 
-            ? isDarkMode ? "bg-slate-800/40 border-transparent opacity-60" : "bg-white/60 border-transparent opacity-70" 
-            : isFiveStar
-              ? isDarkMode ? "bg-[#1E293B] border-yellow-900/50 shadow-[0_0_15px_rgba(251,191,36,0.08)]" : "bg-white border-yellow-200 shadow-[0_0_15px_rgba(251,191,36,0.15)]"
-              : isDarkMode ? "bg-[#1E293B] border-slate-700/50" : "bg-white border-slate-100"
+            ? isDarkMode ? "bg-slate-800 border-transparent" : "bg-white border-transparent" 
+            : isDarkMode ? "bg-[#1E293B] border-slate-700/50" : "bg-white border-slate-100"
           }
         `}
       >
@@ -104,21 +108,25 @@ export default function Todo({
           {/* Checkbox (Stops click from opening modal so you can just check it off) */}
           <button 
             onClick={(e) => { e.stopPropagation(); toggleTodoStatus(task.id); }}
-            className={`shrink-0 transition-colors ${task.isCompleted ? "text-[#10B981]" : "text-slate-300 hover:text-[#1877F2]"}`}
+            className={`shrink-0 transition-colors 
+              ${task.isCompleted 
+                ? parseInt(task.priority) === 5 ? "text-[#FBBF24]" : "text-[#F97316]" // Completed card now uses orange/gold checkmarks
+                : "text-slate-300 hover:text-[#1877F2]"
+              }
+            `}
           >
             {task.isCompleted ? <CheckCircle2 size={24} /> : <Circle size={24} />}
           </button>
           
           <div className="truncate pr-4">
-            <p className={`font-bold text-sm truncate transition-all ${task.isCompleted ? "line-through text-slate-400" : isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
+            {/* Completed text NO LONGER has line-through and RETAINS details! */}
+            <p className={`font-bold text-sm truncate transition-all ${task.isCompleted ? isDarkMode ? "text-slate-200" : "text-slate-800" : isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
               {task.text}
             </p>
-            {!task.isCompleted && (
-              <div className="flex items-center gap-2 mt-1">
-                {task.type === "shopping" ? <ShoppingBag size={10} className="text-[#10B981]" /> : <Zap size={10} className="text-[#1877F2]" />}
-                {renderStars(task.priority)}
-              </div>
-            )}
+            <div className="flex items-center gap-2 mt-1">
+              {task.type === "shopping" ? <ShoppingBag size={10} className="text-[#10B981]" /> : <Zap size={10} className="text-[#1877F2]" />}
+              {renderStars(task.priority)}
+            </div>
           </div>
         </div>
       </div>
@@ -127,12 +135,18 @@ export default function Todo({
 
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
-      {/* Title pulls the CEO's name! */}
-      {renderHeroShell(`${userName}'s Tasks`, graphicContent)}
-
-      <main className="px-6 space-y-6 mt-4">
+      {/* Non-collapsing shell (App.js handles header context) */}
+      <div className="px-6 space-y-6 mt-4 pt-10">
         
-        {/* PREMIUM ADD TASK INPUT */}
+        {/* Title pulls the CEO's name! */}
+        <div className="relative z-10 flex justify-center px-1 mb-8">
+          <h2 className={`text-3xl font-black tracking-tight leading-tight truncate max-w-full ${isDarkMode ? "text-white" : "text-slate-900"}`}>{userName}'s Tasks</h2>
+        </div>
+        
+        {/* 📊 PREMIUM HERO CARD */}
+        {renderHeroShell(`${userName}'s Tasks`, graphicContent)}
+
+        {/* PREMIUM ADD TASK INPUT (CAPSULE DESIGN) */}
         <div className={`p-4 rounded-[2rem] border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
           <div className="flex gap-2 mb-3">
              <button onClick={() => setNewTodoType("task")} className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors ${newTodoType === "task" ? "bg-[#1877F2] text-white shadow-md shadow-blue-500/20" : isDarkMode ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-400"}`}>Action</button>
@@ -218,7 +232,7 @@ export default function Todo({
             </div>
           </section>
         )}
-      </main>
+      </div>
 
       {/* ========================================================= */}
       {/* THE ACTION DRAWER (MODAL) - NOW BUG FREE! */}
@@ -229,7 +243,7 @@ export default function Todo({
           <div className={`w-full rounded-t-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <CheckSquare size={20} className={activeModalTodo.isCompleted ? "text-[#10B981]" : "text-[#1877F2]"} />
+                <CheckSquare size={20} className={activeModalTodo.isCompleted ? parseInt(activeModalTodo.priority) === 5 ? "text-[#FBBF24]" : "text-[#F97316]" : "text-[#1877F2]"} />
                 <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Task Details</h3>
               </div>
               <button onClick={() => setActiveModalTodo(null)} className="p-2 rounded-full"><X size={18} className={isDarkMode ? "text-slate-400" : "text-slate-500"} /></button>

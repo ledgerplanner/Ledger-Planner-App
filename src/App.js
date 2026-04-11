@@ -198,6 +198,14 @@ export default function App() {
     triggerHaptic(); setIsAddAccountOpen(false); setNewAccName(""); setNewAccBalance(""); setNewAccDesc(""); setNewAccType("Checking");
   };
 
+  const handleTransferNumpad = (btn) => {
+    if (btn === "=") {
+      try { const toEval = transferAmount.replace(/×/g, "*").replace(/÷/g, "/"); if (/^[0-9+\-*/. ]+$/.test(toEval)) setTransferAmount(String(Function('"use strict";return (' + toEval + ")")())); } 
+      catch (e) { setTransferAmount("Error"); setTimeout(() => setTransferAmount("0"), 1000); }
+    } else if (transferAmount === "0" && btn !== ".") setTransferAmount(btn);
+    else setTransferAmount(transferAmount + btn);
+  };
+
   const executeTransfer = async () => { 
     const amt = parseFloat(transferAmount);
     if (isNaN(amt) || amt <= 0 || !transferFrom || !transferTo) return;
@@ -647,12 +655,12 @@ export default function App() {
         )}
 
         {/* ========================================================= */}
-        {/* TRANSFER FUNDS MODAL */}
+        {/* TRANSFER FUNDS MODAL (UPGRADED WITH NUMPAD) */}
         {/* ========================================================= */}
         {isTransferOpen && (
           <div className="absolute inset-0 z-[60] flex items-end">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsTransferOpen(false)}></div>
-            <div className={`w-full rounded-t-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+            <div className={`w-full rounded-t-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col transition-colors duration-500 max-h-[95vh] ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
               <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <ArrowRightLeft size={20} className="text-[#10B981]" />
@@ -660,35 +668,65 @@ export default function App() {
                 </div>
                 <button onClick={() => setIsTransferOpen(false)} className="p-2 rounded-full"><X size={18} className={isDarkMode ? "text-slate-400" : "text-slate-500"} /></button>
               </div>
-              <div className="p-6 space-y-4">
-                <div className="relative">
-                   <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>From Account</label>
-                   <select value={transferFrom} onChange={(e) => setTransferFrom(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-sm border focus:outline-none transition-colors appearance-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
-                     <option value="" disabled>Select Source...</option>
-                     {accounts.map((a) => (<option key={a.id} value={a.id}>{a.name} (${a.balance.toFixed(2)})</option>))}
-                   </select>
+              
+              <div className="flex-1 overflow-y-auto hide-scrollbar">
+                <div className="p-6 space-y-4">
+                  <div className="relative">
+                     <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>From Account</label>
+                     <select value={transferFrom} onChange={(e) => setTransferFrom(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-sm border focus:outline-none transition-colors appearance-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
+                       <option value="" disabled>Select Source...</option>
+                       {accounts.map((a) => (<option key={a.id} value={a.id}>{a.name} (${a.balance.toFixed(2)})</option>))}
+                     </select>
+                  </div>
+                  
+                  <div className="flex justify-center -my-2 relative z-10 pointer-events-none">
+                    <div className={`w-8 h-8 rounded-full border flex items-center justify-center ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-slate-400" : "bg-white border-slate-200 text-slate-400"}`}>
+                      <ArrowDown size={14} />
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                     <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>To Account</label>
+                     <select value={transferTo} onChange={(e) => setTransferTo(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-sm border focus:outline-none transition-colors appearance-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
+                       <option value="" disabled>Select Destination...</option>
+                       {accounts.map((a) => (<option key={a.id} value={a.id}>{a.name} (${a.balance.toFixed(2)})</option>))}
+                     </select>
+                  </div>
+
+                  {/* 🔥 MASSIVE NUMERIC DISPLAY */}
+                  <div className="text-center relative flex justify-center items-center py-6">
+                    <span className={`text-6xl font-extrabold tracking-tighter drop-shadow-sm transition-colors duration-300 text-[#10B981]`}>${transferAmount}</span>
+                    <button onClick={() => setTransferAmount(transferAmount.slice(0, -1) || "0")} className="absolute right-4 p-3 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 opacity-70 hover:opacity-100">⌫</button>
+                  </div>
                 </div>
-                <div className="relative">
-                   <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>To Account</label>
-                   <select value={transferTo} onChange={(e) => setTransferTo(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-sm border focus:outline-none transition-colors appearance-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
-                     <option value="" disabled>Select Destination...</option>
-                     {accounts.map((a) => (<option key={a.id} value={a.id}>{a.name} (${a.balance.toFixed(2)})</option>))}
-                   </select>
+
+                {/* 🔥 CUSTOM NUMPAD GRID */}
+                <div className={`p-6 mt-auto border-t ${isDarkMode ? "bg-[#0F172A] border-slate-800" : "bg-slate-50/50 border-slate-100"}`}>
+                  <div className="grid grid-cols-4 gap-3 mb-4">
+                    {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", ".", "0", "=", "+"].map((btn) => {
+                      const isOp = ["÷", "×", "-", "+", "="].includes(btn);
+                      return (
+                        <button 
+                          key={btn} onClick={() => handleTransferNumpad(btn)} 
+                          className={`h-14 rounded-2xl text-2xl font-bold flex items-center justify-center transition-all active:scale-95 ${isOp ? isDarkMode ? "bg-slate-800 text-slate-300 border border-slate-700" : "bg-slate-100 text-slate-500 border border-slate-200" : isDarkMode ? "bg-[#1E293B] text-white shadow-sm" : "bg-white text-slate-800 shadow-sm border border-slate-100"}`}
+                        >
+                          {btn}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  
+                  <button onClick={executeTransfer} disabled={!transferFrom || !transferTo || parseFloat(transferAmount) <= 0 || isNaN(parseFloat(transferAmount))} className={`w-full h-16 rounded-2xl font-black uppercase tracking-widest text-sm text-white shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2 ${(!transferFrom || !transferTo || parseFloat(transferAmount) <= 0 || isNaN(parseFloat(transferAmount))) ? "bg-slate-300 shadow-none" : "bg-[#10B981] shadow-emerald-500/30"}`}>
+                    Confirm Transfer <CheckCircle2 size={18} />
+                  </button>
                 </div>
-                <div className="relative">
-                   <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Amount</label>
-                   <input type="number" placeholder="0.00" value={transferAmount} onChange={(e) => setTransferAmount(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-sm border focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`} />
-                </div>
-                <button onClick={executeTransfer} disabled={!transferFrom || !transferTo || !transferAmount} className={`w-full h-14 mt-2 rounded-2xl font-black uppercase tracking-widest text-sm text-white shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2 ${!transferFrom || !transferTo || !transferAmount ? "bg-slate-300 shadow-none" : "bg-[#10B981] shadow-emerald-500/30"}`}>
-                  Execute Transfer <CheckCircle2 size={18} />
-                </button>
               </div>
             </div>
           </div>
         )}
 
         {/* ========================================================= */}
-        {/* EDIT ACCOUNT MODAL */}
+        {/* EDIT ACCOUNT MODAL (RENAMED TO QUICK BALANCE UPDATE) */}
         {/* ========================================================= */}
         {selectedAccount && (
           <div className="absolute inset-0 z-[60] flex items-end">
@@ -697,7 +735,8 @@ export default function App() {
               <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <Edit2 size={20} className="text-[#1877F2]" />
-                  <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Update Account</h3>
+                  {/* 🔥 TITLE UPDATED HERE */}
+                  <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Quick Balance Update</h3>
                 </div>
                 <button onClick={() => setSelectedAccount(null)} className="p-2 rounded-full"><X size={18} className={isDarkMode ? "text-slate-400" : "text-slate-500"} /></button>
               </div>

@@ -112,7 +112,12 @@ export default function App() {
     }
     const userRef = doc(db, "users", user.uid);
 
-    const unsubAcc = onSnapshot(collection(userRef, "accounts"), (snap) => setAccounts(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    // DYNAMIC FILTER: Ignore Archived Accounts!
+    const unsubAcc = onSnapshot(collection(userRef, "accounts"), (snap) => {
+      const allAccs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setAccounts(allAccs.filter(a => !a.isArchived));
+    });
+    
     const unsubBills = onSnapshot(collection(userRef, "bills"), (snap) => setBills(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     const unsubTxs = onSnapshot(query(collection(userRef, "transactions"), orderBy("createdAt", "desc")), (snap) => setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     const unsubTodos = onSnapshot(query(collection(userRef, "todos"), orderBy("createdAt", "desc")), (snap) => setTodos(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
@@ -203,7 +208,7 @@ export default function App() {
       return "🏦";
     };
 
-    const accRef = await addDoc(collection(db, "users", user.uid, "accounts"), { name: newAccName, type: newAccType, description: newAccDesc, balance: finalBalance, icon: getIcon(newAccType) });
+    const accRef = await addDoc(collection(db, "users", user.uid, "accounts"), { name: newAccName, type: newAccType, description: newAccDesc, balance: finalBalance, icon: getIcon(newAccType), isArchived: false });
 
     if (Math.abs(startBal) > 0) {
       const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
@@ -241,7 +246,6 @@ export default function App() {
   };
 
   // === DYNAMIC TIME ENGINE ===
-  // Automatically shifts bills into "Due Now" / Overdue based on the real-world clock
   const todayForDynamic = new Date();
   todayForDynamic.setHours(0, 0, 0, 0);
 
@@ -261,7 +265,6 @@ export default function App() {
     <header className={`px-6 pt-12 pb-5 rounded-b-[3rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden transition-colors duration-500 mb-8 ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
       <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#1877F2]/10 rounded-full blur-3xl"></div>
       
-      {/* HEADER CONTROLS */}
       <div className="flex justify-between items-center mb-8 relative z-10 h-10">
         <div className="flex items-center gap-2">
           <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
@@ -286,14 +289,12 @@ export default function App() {
         </button>
       </div>
       
-      {/* CENTERED & PROTECTED 1-LINE TEXT */}
       <div className="mb-6 relative z-10 flex justify-center px-1">
         <h2 title={title} className={`text-3xl font-black tracking-tight leading-tight truncate max-w-full ${isDarkMode ? "text-white" : "text-slate-900"}`}>
           {title}
         </h2>
       </div>
       
-      {/* GRAPHIC CONTENT CONTAINER */}
       <div className="relative z-10 w-full">
         {graphicContent}
       </div>
@@ -307,7 +308,7 @@ export default function App() {
 
   // === SMART PAYMENT ENGINE ===
   const handleBillClick = async (id) => {
-    const bill = bills.find(b => b.id === id); // Uses static DB bill for writes
+    const bill = bills.find(b => b.id === id); 
     if (!bill.isPaid) {
       setPaymentModalConfig({ isOpen: true, billId: id, accountId: accounts.find(a => a.type === "Checking" || a.type === "Cash")?.id || (accounts[0]?.id || "") });
     } else {
@@ -359,13 +360,11 @@ export default function App() {
     if (!dateString) return "Payday 1";
     const billDate = new Date(dateString);
 
-    // DYNAMIC ENGINE: Instant Creation Check for Past/Today
     const todayLocal = new Date();
     todayLocal.setHours(0, 0, 0, 0);
     const localBillDate = new Date(billDate.getUTCFullYear(), billDate.getUTCMonth(), billDate.getUTCDate());
     if (localBillDate <= todayLocal) return "Due Now";
 
-    // Standard Math for Future Bills
     const activePaydays = [];
     for (let i = 1; i <= 5; i++) {
       const pdId = `Payday ${i}`;
@@ -602,7 +601,7 @@ export default function App() {
           </div>
         )}
 
-        {/* 2. EDIT / DELETE ACCOUNT BALANCE MODAL */}
+        {/* 2. EDIT / ARCHIVE ACCOUNT BALANCE MODAL */}
         {selectedAccount && (
           <div className="absolute inset-0 z-[70] flex items-end">
             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedAccount(null)}></div>
@@ -658,17 +657,18 @@ export default function App() {
                 </div>
                 <button onClick={updateAccountBalance} className={`w-full mt-4 h-14 rounded-2xl font-bold text-lg shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2 bg-[#1877F2] text-white hover:bg-blue-600 shadow-blue-500/30`}>Save Balance</button>
                 
-                {/* SECURE ACCOUNT DELETION BUTTON */}
+                {/* SECURE ACCOUNT ARCHIVE BUTTON */}
                 <button 
                   onClick={async () => { 
-                    if (window.confirm(`Are you sure you want to close your ${selectedAccount.name} vault? This will permanently delete the account.`)) {
-                      await deleteDoc(doc(db, "users", user.uid, "accounts", selectedAccount.id));
+                    if (window.confirm(`Are you sure you want to close your ${selectedAccount.name} vault? This will safely archive the account and preserve your historical data.`)) {
+                      await updateDoc(doc(db, "users", user.uid, "accounts", selectedAccount.id), { isArchived: true, balance: 0 });
+                      triggerHaptic();
                       setSelectedAccount(null);
                     }
                   }} 
                   className="w-full mt-4 pt-4 pb-2 text-[10px] font-black uppercase text-red-500 tracking-widest flex items-center justify-center gap-2 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-colors"
                 >
-                  <Trash2 size={14} /> Close Vault
+                  <Trash2 size={14} /> Archive Vault
                 </button>
               </div>
             </div>

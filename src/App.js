@@ -34,7 +34,6 @@ export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   
-  // === SCROLL ENGINE ===
   const [isScrolled, setIsScrolled] = useState(false);
   const scrollRef = useRef(null);
   const handleScroll = (e) => { setIsScrolled(e.target.scrollTop > 20); };
@@ -44,7 +43,6 @@ export default function App() {
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState("");
 
-  // === FIREBASE CLOUD DATA STATE ===
   const [bills, setBills] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [accounts, setAccounts] = useState([]);
@@ -52,8 +50,6 @@ export default function App() {
 
   // === UI & MODAL STATE ===
   const [selectedEntry, setSelectedEntry] = useState(null);
-  const [isEditingEntry, setIsEditingEntry] = useState(false);
-  const [editEntryAmount, setEditEntryAmount] = useState("0");
   const [collapsedPaydays, setCollapsedPaydays] = useState({ "Payday 2": true, "Payday 3": true, "Payday 4": true, "Payday 5": true });
   
   const [isPaydaySetupOpen, setIsPaydaySetupOpen] = useState(false);
@@ -194,22 +190,66 @@ export default function App() {
     triggerHaptic(); setIsAddAccountOpen(false); setNewAccName(""); setNewAccBalance(""); setNewAccDesc(""); setNewAccType("Checking");
   };
 
+  // 🔥 UPGRADED: Double-Entry Accounting for Transfers
   const executeTransfer = async () => { 
     const amt = parseFloat(transferAmount);
     if (isNaN(amt) || amt <= 0 || !transferFrom || !transferTo) return;
     const fromAcc = accounts.find(a => a.id === transferFrom);
     const toAcc = accounts.find(a => a.id === transferTo);
+    
     await updateDoc(doc(db, "users", user.uid, "accounts", fromAcc.id), { balance: fromAcc.balance - amt });
     await updateDoc(doc(db, "users", user.uid, "accounts", toAcc.id), { balance: toAcc.balance + amt });
+
+    const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+    
+    // Log the transfer out
+    await addDoc(collection(db, "users", user.uid, "transactions"), { name: `Transfer to ${toAcc.name}`, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Expense", category: "Transfers (Venmo/Zelle)", accountId: fromAcc.id, createdAt: serverTimestamp() });
+    // Log the transfer in
+    await addDoc(collection(db, "users", user.uid, "transactions"), { name: `Transfer from ${fromAcc.name}`, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: toAcc.id, createdAt: serverTimestamp() });
+
     triggerHaptic(); setIsTransferOpen(false); setTransferAmount("0"); setTransferFrom(""); setTransferTo("");
   };
 
+  // 🔥 UPGRADED: Auto-Logging for Manual Balance Changes
   const updateAccountBalance = async () => { 
     const newBal = parseFloat(editAccountBalance);
     if (isNaN(newBal) || !selectedAccount) return;
     let finalBalance = newBal;
     if (selectedAccount.type === "Credit Card" && newBal > 0) finalBalance = -newBal;
+    
+    const diff = finalBalance - selectedAccount.balance;
+    if (Math.abs(diff) > 0.01) {
+      const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+      await addDoc(collection(db, "users", user.uid, "transactions"), { name: "Balance Adjustment", icon: "⚖️", amount: Math.abs(diff), date: autoTimeStamp, type: diff > 0 ? "Income" : "Expense", category: "Refunds & Adjustments", accountId: selectedAccount.id, createdAt: serverTimestamp() });
+    }
+
     await updateDoc(doc(db, "users", user.uid, "accounts", selectedAccount.id), { balance: finalBalance });
+    triggerHaptic(); setSelectedAccount(null);
+  };
+
+  // 🔥 NEW: Cascading Delete Logic
+  const deleteAccount = async () => {
+    if (!selectedAccount) return;
+    if (!window.confirm(`Are you sure you want to delete ${selectedAccount.name}? This will permanently remove the account and delete all its transaction history.`)) return;
+    
+    const accId = selectedAccount.id;
+    
+    // 1. Delete Account
+    await deleteDoc(doc(db, "users", user.uid, "accounts", accId));
+    
+    // 2. Wipe attached transactions
+    const txsToDelete = transactions.filter(tx => tx.accountId === accId);
+    const batchPromises = txsToDelete.map(tx => deleteDoc(doc(db, "users", user.uid, "transactions", tx.id)));
+    
+    // 3. "Un-pay" any bills that were paid from this ghost account
+    const billsToReset = bills.filter(b => b.paidFromAccountId === accId);
+    billsToReset.forEach(b => {
+       batchPromises.push(updateDoc(doc(db, "users", user.uid, "bills", b.id), {
+         isPaid: false, paidAmount: b.isInstallment ? b.paidAmount - b.amount : 0, paidFromAccountId: null, linkedTxId: null
+       }));
+    });
+    
+    await Promise.all(batchPromises);
     triggerHaptic(); setSelectedAccount(null);
   };
 
@@ -282,6 +322,7 @@ export default function App() {
           <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
             {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
           </button>
+          
           <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
             <Bell size={18} />
             {dynamicBills.some(b => b.isOverdue || (!b.isPaid && b.payday === "Due Now")) && (
@@ -414,10 +455,10 @@ export default function App() {
     <div className={`h-screen font-sans relative overflow-hidden flex justify-center transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
       <div className={`w-full max-w-md h-full relative shadow-2xl flex flex-col transition-colors duration-500 overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
         
-        {/* MAIN VIEW ROUTER */}
+        {/* MAIN VIEW ROUTER (Upgraded to pass transactions to Accounts) */}
         <div className="flex-1 overflow-y-auto hide-scrollbar" ref={scrollRef} onScroll={handleScroll}>
           {activeTab === "home" && <Dashboard userName={userName} accounts={accounts} bills={dynamicBills} transactions={transactions} paydayConfig={paydayConfig} setEditPaydayConfig={setEditPaydayConfig} setIsPaydaySetupOpen={setIsPaydaySetupOpen} setIsNotificationsOpen={setIsNotificationsOpen} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} handleBillClick={handleBillClick} setSelectedEntry={setSelectedEntry} isDarkMode={isDarkMode} formatPaydayDateStr={formatPaydayDateStr} renderHeroShell={renderHeroShell} changeTab={changeTab} />}
-          {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} />}
+          {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} />}
           {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={setSelectedEntry} renderHeroShell={renderHeroShell} handleRolloverMonth={handleRolloverMonth} />}
           {activeTab === "activity" && <Activity userName={userName} transactions={transactions} activitySearch={activitySearch} setActivitySearch={setActivitySearch} activityFilter={activityFilter} setActivityFilter={setActivityFilter} isDarkMode={isDarkMode} setSelectedEntry={setSelectedEntry} renderHeroShell={renderHeroShell} />}
           {activeTab === "todo" && <Todo userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} newTodoType={newTodoType} setNewTodoType={setNewTodoType} isDarkMode={isDarkMode} handleAddTodo={async (e) => { e.preventDefault(); if(!newTodoText.trim()) return; await addDoc(collection(db, "users", user.uid, "todos"), { text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() }); triggerHaptic(); setNewTodoText(""); setNewTodoPriority(3); }} toggleTodoStatus={async (id) => { triggerHaptic(); const todo = todos.find(t => t.id === id); await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); }} setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} />}
@@ -512,7 +553,7 @@ export default function App() {
         )}
 
         {/* ========================================================= */}
-        {/* EDIT ACCOUNT MODAL */}
+        {/* EDIT ACCOUNT MODAL (NOW WITH CASCADING DELETE) */}
         {/* ========================================================= */}
         {selectedAccount && (
           <div className="absolute inset-0 z-[60] flex items-end">
@@ -521,7 +562,7 @@ export default function App() {
               <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <Edit2 size={20} className="text-[#1877F2]" />
-                  <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Update Balance</h3>
+                  <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Update Account</h3>
                 </div>
                 <button onClick={() => setSelectedAccount(null)} className="p-2 rounded-full"><X size={18} className={isDarkMode ? "text-slate-400" : "text-slate-500"} /></button>
               </div>
@@ -539,9 +580,15 @@ export default function App() {
                    <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>New Absolute Balance</label>
                    <input type="number" placeholder="0.00" value={editAccountBalance} onChange={(e) => setEditAccountBalance(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-sm border focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`} />
                 </div>
-                <button onClick={updateAccountBalance} disabled={!editAccountBalance} className={`w-full h-14 mt-2 rounded-2xl font-black uppercase tracking-widest text-sm text-white shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2 ${!editAccountBalance ? "bg-slate-300 shadow-none" : "bg-[#1877F2] shadow-blue-500/30"}`}>
-                  Save Balance <CheckCircle2 size={18} />
-                </button>
+                
+                <div className="flex gap-2 mt-2">
+                  <button onClick={deleteAccount} className={`flex-1 h-14 rounded-2xl font-black uppercase tracking-widest text-sm text-red-500 border transition-transform active:scale-95 flex items-center justify-center gap-2 ${isDarkMode ? "border-red-900/30 bg-red-900/10 hover:bg-red-900/20" : "border-red-100 bg-red-50 hover:bg-red-100"}`}>
+                     <Trash2 size={18} /> Delete
+                  </button>
+                  <button onClick={updateAccountBalance} disabled={!editAccountBalance} className={`flex-[2] h-14 rounded-2xl font-black uppercase tracking-widest text-sm text-white shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2 ${!editAccountBalance ? "bg-slate-300 shadow-none" : "bg-[#1877F2] shadow-blue-500/30"}`}>
+                    Save Balance <CheckCircle2 size={18} />
+                  </button>
+                </div>
               </div>
             </div>
           </div>

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-// 🔥 BUG FIX: Added CheckSquare and Star to the imports!
+// 🔥 BUG FIX: CheckSquare is properly imported!
 import { CheckCircle2, Circle, Trash2, X, Plus, Zap, ShoppingBag, AlertCircle, Flame, Star, CheckSquare } from "lucide-react";
 import { doc, deleteDoc } from "firebase/firestore";
 import { db, auth } from "../firebase"; 
@@ -11,18 +11,21 @@ export default function Todo({
 }) {
   const [activeModalTodo, setActiveModalTodo] = useState(null);
 
-  // === DATA SORTING ===
-  const pendingActions = todos.filter(t => !t.isCompleted && t.type === "task");
-  const pendingShopping = todos.filter(t => !t.isCompleted && t.type === "shopping");
-  const completedTasks = todos.filter(t => t.isCompleted);
+  // === DATA SORTING & PRIORITY LOGIC ===
+  // Sorts dynamically: 5 Stars at the top, 1 Star at the bottom
+  const sortTasks = (tasks) => tasks.sort((a, b) => parseInt(b.priority || 1) - parseInt(a.priority || 1));
 
-  // === MOMENTUM MATH (HERO RING) ===
+  const pendingActions = sortTasks(todos.filter(t => !t.isCompleted && t.type === "task"));
+  const pendingShopping = sortTasks(todos.filter(t => !t.isCompleted && t.type === "shopping"));
+  const completedTasks = sortTasks(todos.filter(t => t.isCompleted));
+
+  // === MOMENTUM MATH (MASSIVE RING) ===
   const totalTasks = todos.length;
   const completedCount = completedTasks.length;
   const momentumPct = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
 
-  // SVG Math for the Progress Ring
-  const radius = 38;
+  // SVG Math matching the Dashboard & Activity Ring (Radius 42, Width 12)
+  const radius = 42;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (momentumPct / 100) * circumference;
 
@@ -39,42 +42,42 @@ export default function Todo({
     }
   };
 
-  // Helper to render stars
+  // Helper to render premium GOLD stars
   const renderStars = (priorityNum) => {
     const p = parseInt(priorityNum) || 1;
     return (
       <div className="flex gap-0.5">
         {[1, 2, 3, 4, 5].map(i => (
-          <Star key={i} size={10} className={i <= p ? "text-[#F59E0B] fill-[#F59E0B]" : "text-slate-200 dark:text-slate-700"} />
+          <Star key={i} size={10} className={i <= p ? "text-[#FBBF24] fill-[#FBBF24]" : "text-slate-200 dark:text-slate-700"} />
         ))}
       </div>
     );
   };
 
-  // === PREMIUM HERO CONTENT (NOW WITH RING) ===
+  // === PREMIUM HERO CONTENT (MASSIVE CENTERED RING) ===
   const graphicContent = (
-    <div className="relative z-10 mb-2 w-full px-4 flex justify-between items-center">
-      <div>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Execution Momentum</p>
-        <div className="flex items-center gap-2 mb-2">
-           <Flame size={16} className={momentumPct > 0 ? "text-[#F97316]" : "text-slate-300 dark:text-slate-700"} />
-           <span className="text-xs font-black text-slate-400 uppercase tracking-widest">{completedCount} / {totalTasks} Completed</span>
-        </div>
-      </div>
-
-      {/* 🔥 THE NEW MOMENTUM RING */}
-      <div className="relative w-20 h-20 shrink-0 drop-shadow-xl">
+    <div className="relative z-10 mb-2 w-full text-center px-4">
+      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Execution Momentum</p>
+      
+      {/* 📊 MASSIVE CATEGORY RING COMPONENT */}
+      <div className="relative w-40 h-40 shrink-0 drop-shadow-2xl mx-auto mt-6 mb-2">
         <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-          <circle cx="50" cy="50" r={radius} fill="transparent" stroke={isDarkMode ? "#334155" : "#F1F5F9"} strokeWidth="10" />
+          <circle cx="50" cy="50" r={radius} fill="transparent" stroke={isDarkMode ? "#334155" : "#F1F5F9"} strokeWidth="12" />
           <circle
             cx="50" cy="50" r={radius} fill="transparent"
-            stroke={momentumPct === 100 ? "#10B981" : "#1877F2"} strokeWidth="10"
+            stroke={momentumPct === 100 ? "#10B981" : "#1877F2"} strokeWidth="12"
             strokeDasharray={circumference} strokeDashoffset={strokeDashoffset}
             strokeLinecap="round" className="transition-all duration-1000 ease-out"
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-           <span className={`text-sm font-black tracking-tighter ${momentumPct === 100 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>{momentumPct}%</span>
+           <span className={`text-4xl font-black tracking-tighter transition-colors duration-500 ${momentumPct === 100 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
+             {momentumPct}%
+           </span>
+           <div className="flex items-center gap-1 mt-1">
+              <Flame size={12} className={momentumPct > 0 ? "text-[#F97316]" : "text-slate-300 dark:text-slate-700"} />
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{completedCount} / {totalTasks}</span>
+           </div>
         </div>
       </div>
     </div>
@@ -88,12 +91,12 @@ export default function Todo({
       <div 
         key={task.id} 
         onClick={() => setActiveModalTodo(task)}
-        className={`relative flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all active:scale-[0.98] mb-2 shadow-sm border
+        className={`relative flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all active:scale-[0.98] shadow-sm border
           ${task.isCompleted 
-            ? isDarkMode ? "bg-slate-800/30 border-transparent opacity-60" : "bg-slate-50 border-transparent opacity-60" 
+            ? isDarkMode ? "bg-slate-800/40 border-transparent opacity-60" : "bg-white/60 border-transparent opacity-70" 
             : isFiveStar
-              ? isDarkMode ? "bg-[#1E293B] border-orange-900/50 shadow-[0_0_15px_rgba(245,158,11,0.05)]" : "bg-white border-orange-100 shadow-[0_0_15px_rgba(245,158,11,0.05)]"
-              : isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"
+              ? isDarkMode ? "bg-[#1E293B] border-yellow-900/50 shadow-[0_0_15px_rgba(251,191,36,0.08)]" : "bg-white border-yellow-200 shadow-[0_0_15px_rgba(251,191,36,0.15)]"
+              : isDarkMode ? "bg-[#1E293B] border-slate-700/50" : "bg-white border-slate-100"
           }
         `}
       >
@@ -124,15 +127,15 @@ export default function Todo({
 
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
-      {renderHeroShell(`Output & Tasks`, graphicContent)}
+      {/* Title pulls the CEO's name! */}
+      {renderHeroShell(`${userName}'s Tasks`, graphicContent)}
 
-      <main className="px-6 space-y-8 mt-2">
+      <main className="px-6 space-y-6 mt-4">
         
         {/* PREMIUM ADD TASK INPUT */}
-        <div className={`p-4 rounded-3xl border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
+        <div className={`p-4 rounded-[2rem] border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
           <div className="flex gap-2 mb-3">
              <button onClick={() => setNewTodoType("task")} className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors ${newTodoType === "task" ? "bg-[#1877F2] text-white shadow-md shadow-blue-500/20" : isDarkMode ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-400"}`}>Action</button>
-             {/* 🔥 Shopping is now Emerald Green */}
              <button onClick={() => setNewTodoType("shopping")} className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors ${newTodoType === "shopping" ? "bg-[#10B981] text-white shadow-md shadow-emerald-500/20" : isDarkMode ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-400"}`}>Shopping</button>
           </div>
           <form onSubmit={handleAddTodo} className="flex items-center gap-2">
@@ -152,16 +155,16 @@ export default function Todo({
             </button>
           </form>
           
-          {/* 🔥 NEW 5-STAR PRIORITY SELECTOR */}
+          {/* 5-STAR GOLD PRIORITY SELECTOR */}
           <div className="flex items-center justify-between mt-4 px-2">
              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Priority Level</span>
              <div className="flex gap-1.5">
                {[1, 2, 3, 4, 5].map(star => (
                  <Star 
                    key={star} 
-                   size={22} 
+                   size={24} 
                    onClick={() => setNewTodoPriority(star)}
-                   className={`cursor-pointer transition-colors active:scale-90 ${star <= newTodoPriority ? "text-[#F59E0B] fill-[#F59E0B]" : "text-slate-200 dark:text-slate-700 hover:text-orange-300"}`} 
+                   className={`cursor-pointer transition-colors active:scale-90 ${star <= newTodoPriority ? "text-[#FBBF24] fill-[#FBBF24]" : "text-slate-200 dark:text-slate-700 hover:text-[#FDE68A]"}`} 
                  />
                ))}
              </div>
@@ -177,36 +180,42 @@ export default function Todo({
            </div>
         )}
 
-        {/* PENDING ACTIONS */}
+        {/* PENDING ACTIONS (BLUE CARD CONTAINER) */}
         {pendingActions.length > 0 && (
-          <section className="animate-fade-in">
-            <div className="flex items-center gap-2 mb-3 px-2">
-              <Zap size={14} className="text-[#1877F2]" />
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Pending Actions</h3>
+          <section className={`p-4 rounded-[2rem] border shadow-sm animate-fade-in transition-colors ${isDarkMode ? "bg-blue-900/10 border-blue-900/30" : "bg-blue-50/60 border-blue-100"}`}>
+            <div className="flex items-center gap-2 mb-4 px-2">
+              <Zap size={16} className="text-[#1877F2]" />
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-[#1877F2]">Pending Actions</h3>
             </div>
-            {pendingActions.map(renderTaskCard)}
+            <div className="space-y-2">
+              {pendingActions.map(renderTaskCard)}
+            </div>
           </section>
         )}
 
-        {/* PENDING SHOPPING */}
+        {/* PENDING SHOPPING (GREEN CARD CONTAINER) */}
         {pendingShopping.length > 0 && (
-          <section className="animate-fade-in">
-            <div className="flex items-center gap-2 mb-3 px-2">
-              <ShoppingBag size={14} className="text-[#10B981]" />
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Pending Shopping</h3>
+          <section className={`p-4 rounded-[2rem] border shadow-sm animate-fade-in transition-colors ${isDarkMode ? "bg-emerald-900/10 border-emerald-900/30" : "bg-emerald-50/60 border-emerald-100"}`}>
+            <div className="flex items-center gap-2 mb-4 px-2">
+              <ShoppingBag size={16} className="text-[#10B981]" />
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-[#10B981]">Pending Shopping</h3>
             </div>
-            {pendingShopping.map(renderTaskCard)}
+            <div className="space-y-2">
+              {pendingShopping.map(renderTaskCard)}
+            </div>
           </section>
         )}
 
-        {/* COMPLETED TASKS */}
+        {/* COMPLETED TASKS (ORANGE CARD CONTAINER) */}
         {completedTasks.length > 0 && (
-          <section className="animate-fade-in">
-            <div className="flex items-center gap-2 mb-3 px-2">
-              <CheckCircle2 size={14} className="text-[#10B981]" />
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Completed Tasks</h3>
+          <section className={`p-4 rounded-[2rem] border shadow-sm animate-fade-in transition-colors ${isDarkMode ? "bg-orange-900/10 border-orange-900/30" : "bg-orange-50/60 border-orange-100"}`}>
+            <div className="flex items-center gap-2 mb-4 px-2">
+              <CheckCircle2 size={16} className="text-[#F97316]" />
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-[#F97316]">Completed Tasks</h3>
             </div>
-            {completedTasks.map(renderTaskCard)}
+            <div className="space-y-2">
+              {completedTasks.map(renderTaskCard)}
+            </div>
           </section>
         )}
       </main>
@@ -244,8 +253,8 @@ export default function Todo({
                     {activeModalTodo.isCompleted ? "Completed" : "Pending"}
                   </span>
                 </div>
-                {/* 🔥 Drawer shows the Stars now! */}
-                <div className="flex justify-between items-center py-2 border-b border-slate-200 dark:border-slate-700">
+                {/* Drawer shows the Gold Stars! */}
+                <div className="flex justify-between items-center py-2">
                   <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Priority Level</span>
                   <div>{renderStars(activeModalTodo.priority)}</div>
                 </div>

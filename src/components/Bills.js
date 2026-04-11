@@ -1,131 +1,155 @@
 import React from "react";
-import { CheckCircle2, Circle, RefreshCw } from "lucide-react";
+import { CheckCircle2, Circle, RefreshCw, Calendar, ArrowRight, AlertCircle } from "lucide-react";
 
-export default function Bills({
-  userName,
-  bills,
-  isDarkMode,
-  handleBillClick,
-  setSelectedEntry,
-  renderHeroShell,
-  handleRolloverMonth
+export default function Bills({ 
+  userName, bills, isDarkMode, 
+  handleBillClick, setSelectedEntry, renderHeroShell, handleRolloverMonth 
 }) {
-  // === SORTING & MATH ENGINE ===
-  const unpaidBills = bills.filter((b) => !b.isPaid).sort((a, b) => a.date - b.date);
-  const paidBills = bills.filter((b) => b.isPaid).sort((a, b) => a.date - b.date);
 
-  const totalBillsAmount = bills.reduce((sum, b) => sum + b.amount, 0);
-  const paidBillsAmount = paidBills.reduce((sum, b) => sum + b.amount, 0);
-  const progressPercentage = totalBillsAmount === 0 ? 0 : Math.max(0, Math.min((paidBillsAmount / totalBillsAmount) * 100, 100));
+  // === MACRO MATH ===
+  const upcomingBills = bills.filter(b => !b.isPaid);
+  const totalUpcomingBurn = upcomingBills.reduce((sum, b) => sum + b.amount, 0);
+  
+  const paidBills = bills.filter(b => b.isPaid);
+  const totalPaid = paidBills.reduce((sum, b) => sum + b.amount, 0);
 
-  // === GRAPHIC HEADER ===
+  // === PREMIUM HERO CONTENT ===
   const graphicContent = (
-    <div className="flex items-center justify-between relative z-10 mb-6 w-full">
-      {/* MASSIVE CHECKLIST PROGRESS RING */}
-      <div className="relative w-40 h-40 flex-shrink-0">
-        <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
-          <defs>
-            <linearGradient id="billGlow" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#10B981" />
-              <stop offset="100%" stopColor="#059669" />
-            </linearGradient>
-          </defs>
-          <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "#1E293B" : "#F1F5F9"} strokeWidth="12" />
-          <circle cx="50" cy="50" r="40" fill="transparent" stroke="url(#billGlow)" strokeWidth="12" strokeLinecap="round" strokeDasharray={251.2} strokeDashoffset={251.2 - (251.2 * progressPercentage) / 100} className="transition-all duration-1000 ease-out" />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={`text-3xl font-black ${isDarkMode ? "text-white" : "text-slate-900"}`}>{Math.round(progressPercentage)}%</span>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Paid</span>
-        </div>
+    <div className="relative z-10 w-full text-center px-4">
+      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Unpaid Bills</p>
+      <p className={`text-6xl font-black tracking-tighter transition-colors duration-300 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+        ${totalUpcomingBurn.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+      </p>
+
+      {/* Paid So Far Badge */}
+      <div className={`mt-6 inline-flex items-center gap-2 px-5 py-3 rounded-full border shadow-sm ${isDarkMode ? "bg-slate-800/80 border-slate-700" : "bg-white/80 border-slate-100 backdrop-blur-md"}`}>
+         <CheckCircle2 size={16} className="text-[#10B981]" />
+         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Paid This Month</span>
+         <span className="text-sm font-black text-[#10B981]">${totalPaid.toLocaleString()}</span>
       </div>
-      <div className="flex-1 pl-4 text-right">
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Monthly Progress</p>
-        <p className={`text-4xl font-black tracking-tighter mb-4 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-          ${paidBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 0 })} <span className="text-xl text-slate-400">/ {totalBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
-        </p>
-        
-        {/* THE SMART ROLLOVER BUTTON */}
-        <button onClick={handleRolloverMonth} className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-sm ${isDarkMode ? "bg-slate-800 text-[#10B981] hover:bg-slate-700" : "bg-white border-slate-200 border text-[#10B981] hover:bg-emerald-50"}`}>
-          <RefreshCw size={14} strokeWidth={3} /> Start New Month
+    </div>
+  );
+
+  // === 🔥 THE NEW BILL CARD (WITH PROGRESS BAR & ARROWS) ===
+  const renderBillCard = (bill) => (
+    <div key={bill.id} className={`relative flex items-center justify-between p-4 rounded-2xl transition-all shadow-sm border mb-2 
+      ${bill.isPaid 
+        ? isDarkMode ? "bg-slate-800 border-transparent" : "bg-white border-transparent" 
+        : bill.isOverdue 
+          ? isDarkMode ? "bg-[#1E293B] border-red-900/50" : "bg-white border-red-100"
+          : isDarkMode ? "bg-[#1E293B] border-slate-700/50" : "bg-white border-slate-100"
+      }`}
+    >
+      <div className="flex items-center gap-4 w-full">
+        <button onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }} className={`shrink-0 transition-colors ${bill.isPaid ? "text-[#10B981]" : bill.isOverdue ? "text-red-500" : "text-slate-300 hover:text-[#1877F2]"}`}>
+          {bill.isPaid ? <CheckCircle2 size={24} /> : <Circle size={24} />}
         </button>
+        <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setSelectedEntry(bill)}>
+          
+          <div className="flex justify-between items-start w-full">
+            <div className="flex flex-col truncate pr-2">
+              <div className="flex items-center gap-1.5">
+                <p className={`font-bold text-sm truncate ${bill.isPaid ? "text-slate-400 line-through" : isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
+                  {bill.name}
+                </p>
+                {/* 🔄 The Recurring Icon */}
+                {bill.isRecurring && !bill.isPaid && <RefreshCw size={10} className="text-slate-400 shrink-0" />}
+              </div>
+              <p className={`text-[9px] font-bold uppercase tracking-widest truncate mt-0.5 ${bill.isPaid ? "text-slate-400" : bill.isOverdue ? "text-red-500" : "text-slate-400"}`}>
+                {bill.isPaid ? `Paid • ${bill.fullDate}` : bill.isOverdue ? `Overdue • ${bill.fullDate}` : `Due ${bill.fullDate}`}
+              </p>
+            </div>
+            <div className={`font-black text-sm tracking-tight shrink-0 pl-2 ${bill.isPaid ? "text-slate-400" : isDarkMode ? "text-white" : "text-slate-900"}`}>
+              ${bill.amount.toFixed(2)}
+            </div>
+          </div>
+
+          {/* 📊 The Installment Progress Bar */}
+          {bill.isInstallment && !bill.isPaid && (
+            <div className="mt-3 w-full animate-fade-in pr-2">
+              <div className="flex justify-between items-end mb-1.5">
+                <span className="text-[8px] font-black uppercase tracking-widest text-[#1877F2]">${(bill.paidAmount || 0).toLocaleString()} PAID</span>
+                <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">${(bill.totalAmount || 0).toLocaleString()} TOTAL</span>
+              </div>
+              <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-700" : "bg-slate-200"}`}>
+                <div 
+                  className="h-full bg-[#1877F2]" 
+                  style={{ width: `${Math.min(((bill.paidAmount || 0) / (bill.totalAmount || 1)) * 100, 100)}%` }}
+                ></div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
-      {renderHeroShell(`${userName}'s Bills`, graphicContent)}
+      {renderHeroShell(`Bill Center`, graphicContent)}
 
-      <main className="px-6 space-y-8">
+      <main className="px-6 space-y-8 mt-4">
         
-        {/* UNPAID BILLS LIST */}
-        <div className="space-y-4">
-          <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Unpaid Bills</h3>
-          {unpaidBills.length === 0 ? (
-            <div className={`p-8 text-center rounded-[2rem] border border-dashed ${isDarkMode ? "border-slate-700 bg-slate-800/30 text-slate-400" : "border-slate-300 bg-slate-50 text-slate-500"}`}>
-              <CheckCircle2 size={32} className="mx-auto mb-3 text-[#10B981] opacity-50" />
-              <p className="font-bold text-sm">All Caught Up</p>
-              <p className="text-xs mt-1 opacity-70">You have no unpaid bills on the board.</p>
-            </div>
-          ) : (
-            <div className={`rounded-[2rem] p-3 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
-              {unpaidBills.map((bill, idx) => (
-                <div key={bill.id} className={`flex flex-col p-3 rounded-2xl transition-all duration-300 ${isDarkMode ? "hover:bg-slate-800/50" : "hover:bg-slate-50/50"} ${idx !== unpaidBills.length - 1 ? "mb-1" : ""}`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="relative p-1 z-10 cursor-pointer" onClick={() => handleBillClick(bill.id)}>
-                        <Circle className={`${isDarkMode ? "text-slate-600 hover:text-slate-500" : "text-slate-300 hover:text-slate-400"} hover:scale-110 transition-transform`} size={28} />
-                      </div>
-                      <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => setSelectedEntry(bill)}>
-                        <div className={`w-11 h-11 rounded-2xl border flex items-center justify-center text-xl shrink-0 ${bill.isOverdue || bill.payday === "Due Now" ? isDarkMode ? "bg-red-900/20 border-red-900/50" : "bg-red-50 border-red-100" : isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-100"}`}>{bill.icon}</div>
-                        <div>
-                          <p className={`font-bold text-sm ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{bill.name}</p>
-                          <p className={`text-[10px] font-bold uppercase tracking-wider ${bill.isOverdue || bill.payday === "Due Now" ? "text-red-500" : isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
-                            {bill.isOverdue ? "Overdue • " : bill.payday === "Due Now" ? "Due Now • " : "Due "} 
-                            {bill.fullDate}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className={`font-black text-sm tracking-tight cursor-pointer ${bill.isOverdue || bill.payday === "Due Now" ? "text-red-500" : isDarkMode ? "text-white" : "text-slate-900"}`} onClick={() => setSelectedEntry(bill)}>
-                      ${bill.amount.toFixed(2)}
-                    </div>
-                  </div>
+        {/* BLANK SLATE MESSAGE */}
+        {bills.length === 0 ? (
+           <div className="text-center py-12 px-4">
+              <div className="w-16 h-16 mx-auto bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4"><Calendar size={32} className="text-slate-300 dark:text-slate-600" /></div>
+              <h3 className={`text-lg font-black mb-2 ${isDarkMode ? "text-white" : "text-slate-800"}`}>The slate is clean.</h3>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-relaxed">No bills pending.<br/>Use the + button to add obligations.</p>
+           </div>
+        ) : (
+          <div className="space-y-6">
+            
+            {/* Due Now / Overdue */}
+            {bills.filter(b => (b.payday === "Due Now" || b.isOverdue) && !b.isPaid).length > 0 && (
+              <section className="animate-fade-in">
+                <div className="flex items-center gap-2 mb-3 px-2">
+                  <AlertCircle size={14} className="text-red-500" />
+                  <h3 className="text-[10px] font-black uppercase tracking-widest text-red-500">Action Required</h3>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+                {bills.filter(b => (b.payday === "Due Now" || b.isOverdue) && !b.isPaid).map(renderBillCard)}
+              </section>
+            )}
 
-        {/* PAID BILLS LIST */}
-        {paidBills.length > 0 && (
-          <div className="space-y-4 mt-8">
-            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Paid & Settled</h3>
-            <div className={`rounded-[2rem] p-3 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
-              {paidBills.map((bill, idx) => (
-                <div key={bill.id} className={`flex flex-col p-3 rounded-2xl transition-all duration-300 opacity-60 grayscale-[0.3] ${isDarkMode ? "hover:bg-slate-800/50 hover:opacity-100" : "hover:bg-slate-50/50 hover:opacity-100"} ${idx !== paidBills.length - 1 ? "mb-1" : ""}`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="relative p-1 z-10 cursor-pointer" onClick={() => handleBillClick(bill.id)}>
-                        <CheckCircle2 className="text-[#10B981] hover:scale-110 transition-transform" size={28} />
-                      </div>
-                      <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => setSelectedEntry(bill)}>
-                        <div className={`w-11 h-11 rounded-2xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-100"}`}>{bill.icon}</div>
-                        <div>
-                          <p className={`font-bold text-sm line-through ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{bill.name}</p>
-                          <p className={`text-[10px] font-bold uppercase tracking-wider ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
-                            {bill.isRecurring === false ? "One-Time" : "Recurring"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className={`font-black text-sm tracking-tight cursor-pointer ${isDarkMode ? "text-slate-400" : "text-slate-500"}`} onClick={() => setSelectedEntry(bill)}>
-                      ${bill.amount.toFixed(2)}
-                    </div>
-                  </div>
+            {/* Organized by Paydays */}
+            {["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].map(pdId => {
+               const pdBills = bills.filter(b => b.payday === pdId && !b.isPaid);
+               if (pdBills.length === 0) return null;
+               
+               const pdTotal = pdBills.reduce((sum, b) => sum + b.amount, 0);
+               
+               return (
+                 <section key={pdId} className="animate-fade-in">
+                   <div className="flex items-center justify-between mb-3 px-2">
+                     <h3 className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>{pdId}</h3>
+                     <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>${pdTotal.toFixed(2)}</span>
+                   </div>
+                   {pdBills.map(renderBillCard)}
+                 </section>
+               )
+            })}
+
+            {/* Completed / Paid Bills */}
+            {bills.filter(b => b.isPaid).length > 0 && (
+              <section className="animate-fade-in mt-8 opacity-70">
+                <div className="flex items-center justify-between mb-3 px-2">
+                  <h3 className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Completed</h3>
+                  <span className={`text-[10px] font-black uppercase tracking-widest text-[#10B981]`}>${totalPaid.toFixed(2)}</span>
                 </div>
-              ))}
-            </div>
+                {bills.filter(b => b.isPaid).map(renderBillCard)}
+              </section>
+            )}
+            
+            {/* Rollover Month Button */}
+            {bills.filter(b => b.isPaid).length > 0 && (
+              <button 
+                onClick={handleRolloverMonth}
+                className={`w-full mt-8 h-16 rounded-[1.5rem] font-black uppercase tracking-widest text-sm transition-transform active:scale-95 flex items-center justify-center gap-2 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-slate-300 hover:bg-slate-800" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+              >
+                <RefreshCw size={18} className="text-[#1877F2]" /> Start New Month
+              </button>
+            )}
+
           </div>
         )}
 

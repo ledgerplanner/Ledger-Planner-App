@@ -931,6 +931,16 @@ export default function App() {
                   )}
                 </div>
                 
+                {/* 🔥 MARK AS PAID INJECTED INTO DETAILS DRAWER */}
+                {selectedEntry.isOverdue !== undefined && !selectedEntry.isPaid && (
+                  <button onClick={() => {
+                    setSelectedEntry(null);
+                    setPaymentModalConfig({ isOpen: true, billId: selectedEntry.id, accountId: accounts.find(a => a.type === "Checking" || a.type === "Cash")?.id || (accounts[0]?.id || "") });
+                  }} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-lg shadow-blue-500/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+                    <CheckCircle2 size={16} /> Mark as Paid
+                  </button>
+                )}
+
                 <button onClick={async () => {
                   if(window.confirm("Are you sure you want to delete this entry?")) {
                     const colName = selectedEntry.fullDate ? "bills" : "transactions";

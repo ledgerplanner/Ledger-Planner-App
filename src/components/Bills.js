@@ -128,8 +128,8 @@ export default function Bills({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4 flex-1">
                       <div className="relative p-1 z-10 cursor-pointer" onClick={() => handleBillClick(bill.id)}>
-                        {/* 🔥 ORANGE CHECKMARKS INJECTED SAFELY */}
-                        <CheckCircle2 className="text-[#F97316] hover:scale-110 transition-transform" size={28} />
+                        {/* 🔥 GREEN CHECKMARKS INJECTED SAFELY */}
+                        <CheckCircle2 className="text-[#10B981] hover:scale-110 transition-transform" size={28} />
                       </div>
                       <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => setSelectedEntry(bill)}>
                         <div className={`w-11 h-11 rounded-2xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-100"}`}>{bill.icon}</div>

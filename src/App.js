@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Home, Wallet, Calendar as CalendarIcon, CreditCard, CheckSquare,
-  Bell, Moon, Sun, X, Plus, ArrowRight, CheckCircle2, Trash2, ArrowDown, AlertCircle, Edit2, LogOut
+  Bell, Moon, Sun, X, Plus, ArrowRight, CheckCircle2, Trash2, ArrowDown, AlertCircle, Edit2, LogOut, ArrowRightLeft, PlusCircle
 } from "lucide-react";
 
 // === FIREBASE INITIALIZATION ===
@@ -34,7 +34,7 @@ export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   
-  // === SCROLL ENGINE (Removed from Hero, kept for other uses) ===
+  // === SCROLL ENGINE ===
   const [isScrolled, setIsScrolled] = useState(false);
   const scrollRef = useRef(null);
   const handleScroll = (e) => { setIsScrolled(e.target.scrollTop > 20); };
@@ -63,6 +63,7 @@ export default function App() {
   const [paymentModalConfig, setPaymentModalConfig] = useState({ isOpen: false, billId: null, accountId: "" });
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   
+  // THE MISSING ACCOUNTS STATE
   const [isTransferOpen, setIsTransferOpen] = useState(false);
   const [transferFrom, setTransferFrom] = useState("");
   const [transferTo, setTransferTo] = useState("");
@@ -70,6 +71,7 @@ export default function App() {
   
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [editAccountBalance, setEditAccountBalance] = useState("0");
+  
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
   const [newAccName, setNewAccName] = useState("");
   const [newAccBalance, setNewAccBalance] = useState("");
@@ -138,9 +140,7 @@ export default function App() {
 
   // === AUTH ACTIONS ===
   const handleAuthSubmit = async (e) => {
-    e.preventDefault();
-    setIsAuthLoading(true);
-    setAuthError("");
+    e.preventDefault(); setIsAuthLoading(true); setAuthError("");
     try {
       if (isLoginMode) { await signInWithEmailAndPassword(auth, email, password); } 
       else {
@@ -164,7 +164,6 @@ export default function App() {
   };
 
   const handleLogout = async () => { await signOut(auth); setActiveTab("home"); };
-
   const triggerHaptic = () => { if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) window.navigator.vibrate(50); };
 
   const userName = user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || "Founder";
@@ -285,7 +284,6 @@ export default function App() {
             {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
           </button>
           
-          {/* THE NOTIFICATION BELL */}
           <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
             <Bell size={18} />
             {dynamicBills.some(b => b.isOverdue || (!b.isPaid && b.payday === "Due Now")) && (
@@ -294,7 +292,6 @@ export default function App() {
           </button>
         </div>
         
-        {/* LOCKED PREMIUM LOGO */}
         <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center z-20 origin-top -top-5">
           <img src="/login-logo.png" alt="Ledger Planner" className={`w-16 h-16 rounded-full shadow-[0_8px_20px_rgba(24,119,242,0.2)] object-cover border-[3px] transition-colors ${isDarkMode ? "border-slate-800" : "border-white"}`} />
         </div>
@@ -429,7 +426,131 @@ export default function App() {
         </div>
 
         {/* ========================================================= */}
-        {/* THE NEW PAYDAY SETUP MODAL */}
+        {/* ADD NEW ACCOUNT MODAL */}
+        {/* ========================================================= */}
+        {isAddAccountOpen && (
+          <div className="absolute inset-0 z-[60] flex items-end">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsAddAccountOpen(false)}></div>
+            <div className={`w-full rounded-t-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <PlusCircle size={20} className="text-[#1877F2]" />
+                  <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Add Account</h3>
+                </div>
+                <button onClick={() => setIsAddAccountOpen(false)} className="p-2 rounded-full"><X size={18} className={isDarkMode ? "text-slate-400" : "text-slate-500"} /></button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="relative">
+                   <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Account Name</label>
+                   <input type="text" placeholder="e.g. Chase Checking" value={newAccName} onChange={(e) => setNewAccName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-sm border focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`} />
+                </div>
+                <div className="flex gap-4">
+                  <div className="relative flex-1">
+                     <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Starting Balance</label>
+                     <input type="number" placeholder="0.00" value={newAccBalance} onChange={(e) => setNewAccBalance(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-sm border focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`} />
+                  </div>
+                  <div className="relative flex-1">
+                     <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Type</label>
+                     <select value={newAccType} onChange={(e) => setNewAccType(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-sm border focus:outline-none transition-colors appearance-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
+                       <option value="Checking">Checking</option>
+                       <option value="Savings">Savings</option>
+                       <option value="Credit Card">Credit Card</option>
+                       <option value="Cash">Cash</option>
+                       <option value="401k / Retirement">Retirement</option>
+                     </select>
+                  </div>
+                </div>
+                <div className="relative">
+                   <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Description (Optional)</label>
+                   <input type="text" placeholder="e.g. Joint Account" value={newAccDesc} onChange={(e) => setNewAccDesc(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-sm border focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`} />
+                </div>
+                <button onClick={handleAddAccount} disabled={!newAccName || !newAccBalance} className={`w-full h-14 mt-2 rounded-2xl font-black uppercase tracking-widest text-sm text-white shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2 ${!newAccName || !newAccBalance ? "bg-slate-300 shadow-none" : "bg-[#1877F2] shadow-blue-500/30"}`}>
+                  Create Account <CheckCircle2 size={18} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* TRANSFER FUNDS MODAL */}
+        {/* ========================================================= */}
+        {isTransferOpen && (
+          <div className="absolute inset-0 z-[60] flex items-end">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsTransferOpen(false)}></div>
+            <div className={`w-full rounded-t-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <ArrowRightLeft size={20} className="text-[#10B981]" />
+                  <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Transfer Funds</h3>
+                </div>
+                <button onClick={() => setIsTransferOpen(false)} className="p-2 rounded-full"><X size={18} className={isDarkMode ? "text-slate-400" : "text-slate-500"} /></button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="relative">
+                   <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>From Account</label>
+                   <select value={transferFrom} onChange={(e) => setTransferFrom(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-sm border focus:outline-none transition-colors appearance-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
+                     <option value="" disabled>Select Source...</option>
+                     {accounts.map((a) => (<option key={a.id} value={a.id}>{a.name} (${a.balance.toFixed(2)})</option>))}
+                   </select>
+                </div>
+                <div className="relative">
+                   <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>To Account</label>
+                   <select value={transferTo} onChange={(e) => setTransferTo(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-sm border focus:outline-none transition-colors appearance-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
+                     <option value="" disabled>Select Destination...</option>
+                     {accounts.map((a) => (<option key={a.id} value={a.id}>{a.name} (${a.balance.toFixed(2)})</option>))}
+                   </select>
+                </div>
+                <div className="relative">
+                   <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Amount</label>
+                   <input type="number" placeholder="0.00" value={transferAmount} onChange={(e) => setTransferAmount(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-sm border focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`} />
+                </div>
+                <button onClick={executeTransfer} disabled={!transferFrom || !transferTo || !transferAmount} className={`w-full h-14 mt-2 rounded-2xl font-black uppercase tracking-widest text-sm text-white shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2 ${!transferFrom || !transferTo || !transferAmount ? "bg-slate-300 shadow-none" : "bg-[#10B981] shadow-emerald-500/30"}`}>
+                  Execute Transfer <CheckCircle2 size={18} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* EDIT ACCOUNT MODAL */}
+        {/* ========================================================= */}
+        {selectedAccount && (
+          <div className="absolute inset-0 z-[60] flex items-end">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedAccount(null)}></div>
+            <div className={`w-full rounded-t-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Edit2 size={20} className="text-[#1877F2]" />
+                  <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Update Balance</h3>
+                </div>
+                <button onClick={() => setSelectedAccount(null)} className="p-2 rounded-full"><X size={18} className={isDarkMode ? "text-slate-400" : "text-slate-500"} /></button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center text-xl bg-opacity-10 ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-slate-50 border-slate-100"}`}>
+                    {selectedAccount.icon}
+                  </div>
+                  <div>
+                    <p className={`font-bold text-lg ${isDarkMode ? "text-white" : "text-slate-900"}`}>{selectedAccount.name}</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Current: ${Math.abs(selectedAccount.balance).toFixed(2)}</p>
+                  </div>
+                </div>
+                <div className="relative">
+                   <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>New Absolute Balance</label>
+                   <input type="number" placeholder="0.00" value={editAccountBalance} onChange={(e) => setEditAccountBalance(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-sm border focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`} />
+                </div>
+                <button onClick={updateAccountBalance} disabled={!editAccountBalance} className={`w-full h-14 mt-2 rounded-2xl font-black uppercase tracking-widest text-sm text-white shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2 ${!editAccountBalance ? "bg-slate-300 shadow-none" : "bg-[#1877F2] shadow-blue-500/30"}`}>
+                  Save Balance <CheckCircle2 size={18} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* THE PAYDAY SETUP MODAL */}
         {/* ========================================================= */}
         {isPaydaySetupOpen && (
           <div className="absolute inset-0 z-[60] flex items-end">
@@ -464,7 +585,7 @@ export default function App() {
         )}
 
         {/* ========================================================= */}
-        {/* THE NEW NOTIFICATIONS / ALERTS MODAL */}
+        {/* THE NOTIFICATIONS / ALERTS MODAL */}
         {/* ========================================================= */}
         {isNotificationsOpen && (
           <div className="absolute inset-0 z-[60] flex items-end">

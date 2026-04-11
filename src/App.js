@@ -190,7 +190,6 @@ export default function App() {
     triggerHaptic(); setIsAddAccountOpen(false); setNewAccName(""); setNewAccBalance(""); setNewAccDesc(""); setNewAccType("Checking");
   };
 
-  // 🔥 UPGRADED: Double-Entry Accounting for Transfers
   const executeTransfer = async () => { 
     const amt = parseFloat(transferAmount);
     if (isNaN(amt) || amt <= 0 || !transferFrom || !transferTo) return;
@@ -202,15 +201,12 @@ export default function App() {
 
     const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
     
-    // Log the transfer out
     await addDoc(collection(db, "users", user.uid, "transactions"), { name: `Transfer to ${toAcc.name}`, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Expense", category: "Transfers (Venmo/Zelle)", accountId: fromAcc.id, createdAt: serverTimestamp() });
-    // Log the transfer in
     await addDoc(collection(db, "users", user.uid, "transactions"), { name: `Transfer from ${fromAcc.name}`, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: toAcc.id, createdAt: serverTimestamp() });
 
     triggerHaptic(); setIsTransferOpen(false); setTransferAmount("0"); setTransferFrom(""); setTransferTo("");
   };
 
-  // 🔥 UPGRADED: Auto-Logging for Manual Balance Changes
   const updateAccountBalance = async () => { 
     const newBal = parseFloat(editAccountBalance);
     if (isNaN(newBal) || !selectedAccount) return;
@@ -227,21 +223,16 @@ export default function App() {
     triggerHaptic(); setSelectedAccount(null);
   };
 
-  // 🔥 NEW: Cascading Delete Logic
   const deleteAccount = async () => {
     if (!selectedAccount) return;
     if (!window.confirm(`Are you sure you want to delete ${selectedAccount.name}? This will permanently remove the account and delete all its transaction history.`)) return;
     
     const accId = selectedAccount.id;
-    
-    // 1. Delete Account
     await deleteDoc(doc(db, "users", user.uid, "accounts", accId));
     
-    // 2. Wipe attached transactions
     const txsToDelete = transactions.filter(tx => tx.accountId === accId);
     const batchPromises = txsToDelete.map(tx => deleteDoc(doc(db, "users", user.uid, "transactions", tx.id)));
     
-    // 3. "Un-pay" any bills that were paid from this ghost account
     const billsToReset = bills.filter(b => b.paidFromAccountId === accId);
     billsToReset.forEach(b => {
        batchPromises.push(updateDoc(doc(db, "users", user.uid, "bills", b.id), {
@@ -251,6 +242,18 @@ export default function App() {
     
     await Promise.all(batchPromises);
     triggerHaptic(); setSelectedAccount(null);
+  };
+
+  // 🔥 NEW: Clear All Payday Configs Function
+  const clearPaydayConfig = () => {
+    setEditPaydayConfig({
+      "Payday 1": { date: "", income: "" },
+      "Payday 2": { date: "", income: "" },
+      "Payday 3": { date: "", income: "" },
+      "Payday 4": { date: "", income: "" },
+      "Payday 5": { date: "", income: "" }
+    });
+    triggerHaptic();
   };
 
   const savePaydayConfig = async () => { setPaydayConfig(editPaydayConfig); await setDoc(doc(db, "users", user.uid, "settings", "paydayConfig"), editPaydayConfig); setIsPaydaySetupOpen(false); };
@@ -455,7 +458,7 @@ export default function App() {
     <div className={`h-screen font-sans relative overflow-hidden flex justify-center transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
       <div className={`w-full max-w-md h-full relative shadow-2xl flex flex-col transition-colors duration-500 overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
         
-        {/* MAIN VIEW ROUTER (Upgraded to pass transactions to Accounts) */}
+        {/* MAIN VIEW ROUTER */}
         <div className="flex-1 overflow-y-auto hide-scrollbar" ref={scrollRef} onScroll={handleScroll}>
           {activeTab === "home" && <Dashboard userName={userName} accounts={accounts} bills={dynamicBills} transactions={transactions} paydayConfig={paydayConfig} setEditPaydayConfig={setEditPaydayConfig} setIsPaydaySetupOpen={setIsPaydaySetupOpen} setIsNotificationsOpen={setIsNotificationsOpen} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} handleBillClick={handleBillClick} setSelectedEntry={setSelectedEntry} isDarkMode={isDarkMode} formatPaydayDateStr={formatPaydayDateStr} renderHeroShell={renderHeroShell} changeTab={changeTab} />}
           {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} />}
@@ -553,7 +556,7 @@ export default function App() {
         )}
 
         {/* ========================================================= */}
-        {/* EDIT ACCOUNT MODAL (NOW WITH CASCADING DELETE) */}
+        {/* EDIT ACCOUNT MODAL (WITH CASCADING DELETE) */}
         {/* ========================================================= */}
         {selectedAccount && (
           <div className="absolute inset-0 z-[60] flex items-end">
@@ -595,7 +598,7 @@ export default function App() {
         )}
 
         {/* ========================================================= */}
-        {/* THE PAYDAY SETUP MODAL */}
+        {/* THE PAYDAY SETUP MODAL (NOW WITH CLEAR BUTTON) */}
         {/* ========================================================= */}
         {isPaydaySetupOpen && (
           <div className="absolute inset-0 z-[60] flex items-end">
@@ -622,8 +625,13 @@ export default function App() {
                   </div>
                 ))}
               </div>
-              <div className="p-6 border-t border-slate-100 dark:border-slate-800">
-                <button onClick={savePaydayConfig} className="w-full h-14 rounded-2xl bg-[#1877F2] text-white font-black uppercase tracking-widest text-sm shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2">Save Setup <CheckCircle2 size={18} /></button>
+              <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex gap-2">
+                <button onClick={clearPaydayConfig} className={`flex-1 h-14 rounded-2xl font-black uppercase tracking-widest text-sm text-red-500 border transition-transform active:scale-95 flex items-center justify-center gap-2 ${isDarkMode ? "border-red-900/30 bg-red-900/10 hover:bg-red-900/20" : "border-red-100 bg-red-50 hover:bg-red-100"}`}>
+                   <Trash2 size={18} /> Clear
+                </button>
+                <button onClick={savePaydayConfig} className="flex-[2] h-14 rounded-2xl bg-[#1877F2] text-white font-black uppercase tracking-widest text-sm shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2">
+                   Save Setup <CheckCircle2 size={18} />
+                </button>
               </div>
             </div>
           </div>

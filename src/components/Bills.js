@@ -21,7 +21,8 @@ export default function Bills({
   // === GRAPHIC HEADER ===
   const graphicContent = (
     <div className="flex items-center justify-between relative z-10 mb-6 w-full">
-      <div className="relative w-36 h-36 flex-shrink-0">
+      {/* MASSIVE CHECKLIST PROGRESS RING */}
+      <div className="relative w-40 h-40 flex-shrink-0">
         <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
           <defs>
             <linearGradient id="billGlow" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -33,11 +34,11 @@ export default function Bills({
           <circle cx="50" cy="50" r="40" fill="transparent" stroke="url(#billGlow)" strokeWidth="12" strokeLinecap="round" strokeDasharray={251.2} strokeDashoffset={251.2 - (251.2 * progressPercentage) / 100} className="transition-all duration-1000 ease-out" />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={`text-2xl font-black ${isDarkMode ? "text-white" : "text-slate-900"}`}>{Math.round(progressPercentage)}%</span>
-          <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Paid</span>
+          <span className={`text-3xl font-black ${isDarkMode ? "text-white" : "text-slate-900"}`}>{Math.round(progressPercentage)}%</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Paid</span>
         </div>
       </div>
-      <div className="flex-1 pl-8 text-right">
+      <div className="flex-1 pl-4 text-right">
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Monthly Progress</p>
         <p className={`text-4xl font-black tracking-tighter mb-4 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
           ${paidBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 0 })} <span className="text-xl text-slate-400">/ {totalBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>

@@ -90,10 +90,13 @@ export default function App() {
   const [entryIcon, setEntryIcon] = useState("🧾"); 
   const [entryCategory, setEntryCategory] = useState(""); 
   const [entryAccount, setEntryAccount] = useState("");
-  const [entryIsRecurring, setEntryIsRecurring] = useState(false); // 🔥 Auto-off per new spec
+  const [entryIsRecurring, setEntryIsRecurring] = useState(false); 
   const [entryIsInstallment, setEntryIsInstallment] = useState(false);
   const [entryTotalAmount, setEntryTotalAmount] = useState("");
   const [entryPaidAmount, setEntryPaidAmount] = useState("");
+
+  // 🔥 CONFETTI STATE
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const categoryEmojis = ["💵", "💲", "🧾", "📋", "🏠", "💧", "⚡", "📺", "🚗", "⛽", "🚕", "🚇", "✈️", "🌴", "🏋️", "💳", "🎓", "🛒", "🛍️", "👗", "👟", "💅", "💈", "🍔", "🌮", "🍣", "☕", "🍻", "🍹", "🏥", "💊", "🐶", "🐾", "🎉", "🎟️", "🎬", "🎮", "🕹️", "📱", "💻", "💼", "💰", "₿", "💎", "⌚"];
 
@@ -159,7 +162,15 @@ export default function App() {
   };
 
   const handleLogout = async () => { await signOut(auth); setActiveTab("home"); };
+  
+  // 🔥 THE NEW HAPTIC ENGINE
   const triggerHaptic = () => { if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) window.navigator.vibrate(50); };
+  
+  const triggerVictory = () => {
+    triggerHaptic();
+    setShowConfetti(true);
+    setTimeout(() => setShowConfetti(false), 1200); // Dissipates after 1.2s
+  };
 
   const userName = user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || "Founder";
   const formattedDate = currentTime.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
@@ -195,7 +206,7 @@ export default function App() {
       const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
       await addDoc(collection(db, "users", user.uid, "transactions"), { name: `${newAccName} (Opening)`, icon: getIcon(newAccType), amount: Math.abs(startBal), date: autoTimeStamp, type: finalBalance < 0 ? "Expense" : "Income", category: finalBalance < 0 ? "Initial Debt" : "Opening Balance", accountId: accRef.id, createdAt: serverTimestamp() });
     }
-    triggerHaptic(); setIsAddAccountOpen(false); setNewAccName(""); setNewAccBalance(""); setNewAccDesc(""); setNewAccType("Checking");
+    triggerVictory(); setIsAddAccountOpen(false); setNewAccName(""); setNewAccBalance(""); setNewAccDesc(""); setNewAccType("Checking");
   };
 
   const handleTransferNumpad = (btn) => {
@@ -220,7 +231,7 @@ export default function App() {
     await addDoc(collection(db, "users", user.uid, "transactions"), { name: `Transfer to ${toAcc.name}`, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Expense", category: "Transfers (Venmo/Zelle)", accountId: fromAcc.id, createdAt: serverTimestamp() });
     await addDoc(collection(db, "users", user.uid, "transactions"), { name: `Transfer from ${fromAcc.name}`, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: toAcc.id, createdAt: serverTimestamp() });
 
-    triggerHaptic(); setIsTransferOpen(false); setTransferAmount("0"); setTransferFrom(""); setTransferTo("");
+    triggerVictory(); setIsTransferOpen(false); setTransferAmount("0"); setTransferFrom(""); setTransferTo("");
   };
 
   const updateAccountBalance = async () => { 
@@ -236,7 +247,7 @@ export default function App() {
     }
 
     await updateDoc(doc(db, "users", user.uid, "accounts", selectedAccount.id), { balance: finalBalance });
-    triggerHaptic(); setSelectedAccount(null);
+    triggerVictory(); setSelectedAccount(null);
   };
 
   const deleteAccount = async () => {
@@ -271,7 +282,7 @@ export default function App() {
     triggerHaptic();
   };
 
-  const savePaydayConfig = async () => { setPaydayConfig(editPaydayConfig); await setDoc(doc(db, "users", user.uid, "settings", "paydayConfig"), editPaydayConfig); setIsPaydaySetupOpen(false); };
+  const savePaydayConfig = async () => { setPaydayConfig(editPaydayConfig); await setDoc(doc(db, "users", user.uid, "settings", "paydayConfig"), editPaydayConfig); setIsPaydaySetupOpen(false); triggerVictory(); };
 
   // === DYNAMIC TIME ENGINE ===
   const todayForDynamic = new Date(); todayForDynamic.setHours(0, 0, 0, 0);
@@ -328,7 +339,7 @@ export default function App() {
         } else { batchPromises.push(deleteDoc(doc(db, "users", user.uid, "bills", bill.id))); }
       }
     });
-    await Promise.all(batchPromises); triggerHaptic();
+    await Promise.all(batchPromises); triggerVictory();
   };
 
   // === SMART NOTIFICATION ENGINE ===
@@ -381,7 +392,6 @@ export default function App() {
         pdDate.setUTCHours(0, 0, 0, 0);
         const diffDays = Math.ceil((pdDate - today) / (1000 * 60 * 60 * 24));
         
-        // Payday Nudge
         if (diffDays >= 0 && diffDays <= 3) {
           currentAlerts.push({
             id: `payday-${pdId}`,
@@ -394,7 +404,6 @@ export default function App() {
           });
         }
 
-        // Liquidity Gap
         const pdBills = bills.filter(b => b.payday === pdId && !b.isPaid);
         const pdTotal = pdBills.reduce((sum, b) => sum + b.amount, 0);
         const pdIncome = parseFloat(config.income) || 0;
@@ -463,7 +472,6 @@ export default function App() {
           
           <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
             <Bell size={18} />
-            {/* 🔥 UPDATED DOT LOGIC HERE */}
             {activeAlerts.length > 0 && (
               <span className={`absolute top-2 right-2.5 w-2 h-2 rounded-full border-2 ${isDarkMode ? "border-[#1E293B]" : "border-white"} ${activeAlerts.some(a => a.type === 'danger' || a.type === 'warning') ? "bg-red-500" : "bg-[#1877F2]"}`}></span>
             )}
@@ -521,7 +529,7 @@ export default function App() {
     let newPaidAmt = bill.paidAmount; if (bill.isInstallment) newPaidAmt = bill.paidAmount + bill.amount;
     await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: true, paidAmount: newPaidAmt, paidFromAccountId: targetAcc.id, linkedTxId: txRef.id });
     await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance - bill.amount });
-    triggerHaptic(); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
+    triggerVictory(); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
   };
 
   // === QAB (QUICK ADD BUTTON) ACTIONS ===
@@ -564,7 +572,7 @@ export default function App() {
         await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance + (isIncome ? amountToProcess : -amountToProcess) });
       }
     }
-    triggerHaptic(); closeQab();
+    triggerVictory(); closeQab();
   };
 
   // === RENDER LOGIC ===
@@ -590,7 +598,6 @@ export default function App() {
     />;
   }
 
-  // 🔥 FILTER LOGIC FOR CATEGORIES based on the selected QAB Tab
   const categoriesToRender = drawerTab === 'income' 
     ? modernCategories.filter(g => g.group === "Income & Wealth") 
     : modernCategories;
@@ -605,7 +612,7 @@ export default function App() {
           {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} />}
           {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={setSelectedEntry} renderHeroShell={renderHeroShell} handleRolloverMonth={handleRolloverMonth} />}
           {activeTab === "activity" && <Activity userName={userName} transactions={transactions} activitySearch={activitySearch} setActivitySearch={setActivitySearch} activityFilter={activityFilter} setActivityFilter={setActivityFilter} isDarkMode={isDarkMode} setSelectedEntry={setSelectedEntry} renderHeroShell={renderHeroShell} />}
-          {activeTab === "todo" && <Todo userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} newTodoType={newTodoType} setNewTodoType={setNewTodoType} isDarkMode={isDarkMode} handleAddTodo={async (e) => { e.preventDefault(); if(!newTodoText.trim()) return; await addDoc(collection(db, "users", user.uid, "todos"), { text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() }); triggerHaptic(); setNewTodoText(""); setNewTodoPriority(3); }} toggleTodoStatus={async (id) => { triggerHaptic(); const todo = todos.find(t => t.id === id); await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); }} setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} />}
+          {activeTab === "todo" && <Todo userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} newTodoType={newTodoType} setNewTodoType={setNewTodoType} isDarkMode={isDarkMode} handleAddTodo={async (e) => { e.preventDefault(); if(!newTodoText.trim()) return; await addDoc(collection(db, "users", user.uid, "todos"), { text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() }); triggerVictory(); setNewTodoText(""); setNewTodoPriority(3); }} toggleTodoStatus={async (id) => { triggerHaptic(); const todo = todos.find(t => t.id === id); await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); }} setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} />}
         </div>
 
         {/* ========================================================= */}
@@ -656,7 +663,7 @@ export default function App() {
         )}
 
         {/* ========================================================= */}
-        {/* TRANSFER FUNDS MODAL (UPGRADED WITH NUMPAD) */}
+        {/* TRANSFER FUNDS MODAL */}
         {/* ========================================================= */}
         {isTransferOpen && (
           <div className="absolute inset-0 z-[60] flex items-end">
@@ -694,14 +701,12 @@ export default function App() {
                      </select>
                   </div>
 
-                  {/* 🔥 MASSIVE NUMERIC DISPLAY */}
                   <div className="text-center relative flex justify-center items-center py-6">
                     <span className={`text-6xl font-extrabold tracking-tighter drop-shadow-sm transition-colors duration-300 text-[#10B981]`}>${transferAmount}</span>
                     <button onClick={() => setTransferAmount(transferAmount.slice(0, -1) || "0")} className="absolute right-4 p-3 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 opacity-70 hover:opacity-100">⌫</button>
                   </div>
                 </div>
 
-                {/* 🔥 CUSTOM NUMPAD GRID */}
                 <div className={`p-6 mt-auto border-t ${isDarkMode ? "bg-[#0F172A] border-slate-800" : "bg-slate-50/50 border-slate-100"}`}>
                   <div className="grid grid-cols-4 gap-3 mb-4">
                     {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", ".", "0", "=", "+"].map((btn) => {
@@ -727,7 +732,7 @@ export default function App() {
         )}
 
         {/* ========================================================= */}
-        {/* EDIT ACCOUNT MODAL (RENAMED TO QUICK BALANCE UPDATE) */}
+        {/* EDIT ACCOUNT MODAL */}
         {/* ========================================================= */}
         {selectedAccount && (
           <div className="absolute inset-0 z-[60] flex items-end">
@@ -736,7 +741,6 @@ export default function App() {
               <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <Edit2 size={20} className="text-[#1877F2]" />
-                  {/* 🔥 TITLE UPDATED HERE */}
                   <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Quick Balance Update</h3>
                 </div>
                 <button onClick={() => setSelectedAccount(null)} className="p-2 rounded-full"><X size={18} className={isDarkMode ? "text-slate-400" : "text-slate-500"} /></button>
@@ -932,7 +936,6 @@ export default function App() {
                   )}
                 </div>
                 
-                {/* 🔥 MARK AS PAID INJECTED INTO DETAILS DRAWER */}
                 {selectedEntry.isOverdue !== undefined && !selectedEntry.isPaid && (
                   <button onClick={() => {
                     setSelectedEntry(null);
@@ -984,9 +987,7 @@ export default function App() {
                   
                   {qabStep === 1 ? (
                     <div className={`flex rounded-xl p-1 mb-6 mx-auto max-w-[280px] border shadow-sm ${isDarkMode ? "bg-slate-800/80 border-slate-700" : "bg-white/80 border-slate-200 backdrop-blur-md"}`}>
-                      {/* 🔥 Bills Default set to Receipt */}
                       <button onClick={() => { setDrawerTab("bills"); setEntryIcon("🧾"); setEntryCategory(""); }} className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${drawerTab === "bills" ? `${activeBg} text-white shadow-md` : "text-slate-400"}`}>Bills</button>
-                      {/* 🔥 Income Default set to Money Stack */}
                       <button onClick={() => { setDrawerTab("income"); setEntryIcon("💵"); setEntryCategory(""); }} className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${drawerTab === "income" ? `${activeBg} text-white shadow-md` : "text-slate-400"}`}>Income</button>
                       <button onClick={() => { setDrawerTab("transactions"); setEntryIcon("💳"); setEntryCategory(""); }} className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${drawerTab === "transactions" ? `${activeBg} text-white shadow-md` : "text-slate-400"}`}>Activity</button>
                     </div>
@@ -1035,7 +1036,6 @@ export default function App() {
                            <input type="text" placeholder="e.g., Netflix, Salary, Target" value={entryName} onChange={(e) => setEntryName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-sm border focus:outline-none transition-colors ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-white focus:border-slate-500" : "bg-slate-50 border-slate-200 text-slate-900 focus:border-slate-400"}`} />
                         </div>
 
-                        {/* 🔥 CLEAN CATEGORY PLACEHOLDER AND BOLD HEADERS (DYNAMICALLY FILTERED) */}
                         <div className="relative">
                            <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Category</label>
                            <select value={entryCategory} onChange={(e) => setEntryCategory(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-sm border focus:outline-none transition-colors appearance-none ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
@@ -1120,6 +1120,36 @@ export default function App() {
             </button>
           ))}
         </div>
+
+        {/* 🔥 THE CUSTOM CSS CONFETTI OVERLAY 🔥 */}
+        {showConfetti && (
+          <div className="absolute inset-0 z-[100] pointer-events-none flex items-center justify-center overflow-hidden">
+            {[...Array(40)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute w-2.5 h-2.5 rounded-sm"
+                style={{
+                  backgroundColor: ['#1877F2', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#FFFFFF'][Math.floor(Math.random() * 6)],
+                  left: '50%',
+                  top: '50%',
+                  transform: `translate(-50%, -50%)`,
+                  animation: `explode 1.2s ease-out forwards`,
+                  '--tx': `${(Math.random() - 0.5) * 400}px`,
+                  '--ty': `${(Math.random() - 0.5) * 400}px`,
+                  '--rot': `${Math.random() * 360}deg`,
+                }}
+              />
+            ))}
+            <style>{`
+              @keyframes explode {
+                0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); opacity: 1; }
+                80% { opacity: 1; }
+                100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) rotate(calc(var(--rot) + 180deg)) scale(0); opacity: 0; }
+              }
+            `}</style>
+          </div>
+        )}
+
       </div>
     </div>
   );

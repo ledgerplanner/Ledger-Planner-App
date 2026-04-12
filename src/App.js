@@ -463,8 +463,9 @@ export default function App() {
           
           <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
             <Bell size={18} />
-            {activeAlerts.some(a => a.type === 'danger' || a.type === 'warning') && (
-              <span className={`absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 ${isDarkMode ? "border-[#1E293B]" : "border-white"}`}></span>
+            {/* 🔥 UPDATED DOT LOGIC HERE */}
+            {activeAlerts.length > 0 && (
+              <span className={`absolute top-2 right-2.5 w-2 h-2 rounded-full border-2 ${isDarkMode ? "border-[#1E293B]" : "border-white"} ${activeAlerts.some(a => a.type === 'danger' || a.type === 'warning') ? "bg-red-500" : "bg-[#1877F2]"}`}></span>
             )}
           </button>
         </div>

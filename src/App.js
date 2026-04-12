@@ -95,7 +95,6 @@ export default function App() {
   const [entryTotalAmount, setEntryTotalAmount] = useState("");
   const [entryPaidAmount, setEntryPaidAmount] = useState("");
 
-  // 🔥 CONFETTI STATE
   const [showConfetti, setShowConfetti] = useState(false);
 
   const categoryEmojis = ["💵", "💲", "🧾", "📋", "🏠", "💧", "⚡", "📺", "🚗", "⛽", "🚕", "🚇", "✈️", "🌴", "🏋️", "💳", "🎓", "🛒", "🛍️", "👗", "👟", "💅", "💈", "🍔", "🌮", "🍣", "☕", "🍻", "🍹", "🏥", "💊", "🐶", "🐾", "🎉", "🎟️", "🎬", "🎮", "🕹️", "📱", "💻", "💼", "💰", "₿", "💎", "⌚"];
@@ -162,14 +161,13 @@ export default function App() {
   };
 
   const handleLogout = async () => { await signOut(auth); setActiveTab("home"); };
-  
-  // 🔥 THE NEW HAPTIC ENGINE
   const triggerHaptic = () => { if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) window.navigator.vibrate(50); };
   
+  // 🔥 THE NEW HAPTIC ENGINE (NOW EXTENDED)
   const triggerVictory = () => {
     triggerHaptic();
     setShowConfetti(true);
-    setTimeout(() => setShowConfetti(false), 1200); // Dissipates after 1.2s
+    setTimeout(() => setShowConfetti(false), 1500); // Dissipates after 1.5s now
   };
 
   const userName = user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || "Founder";
@@ -1124,18 +1122,22 @@ export default function App() {
         {/* 🔥 THE CUSTOM CSS CONFETTI OVERLAY 🔥 */}
         {showConfetti && (
           <div className="absolute inset-0 z-[100] pointer-events-none flex items-center justify-center overflow-hidden">
-            {[...Array(40)].map((_, i) => (
+            {/* 🔥 INCREASED PARTICLE COUNT TO 80 FOR A MASSIVE EXPLOSION 🔥 */}
+            {[...Array(80)].map((_, i) => (
               <div
                 key={i}
-                className="absolute w-2.5 h-2.5 rounded-sm"
+                // 🔥 INCREASED SIZE FOR VISIBILITY 🔥
+                className="absolute w-3 h-3 rounded-sm"
                 style={{
                   backgroundColor: ['#1877F2', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#FFFFFF'][Math.floor(Math.random() * 6)],
                   left: '50%',
                   top: '50%',
                   transform: `translate(-50%, -50%)`,
-                  animation: `explode 1.2s ease-out forwards`,
-                  '--tx': `${(Math.random() - 0.5) * 400}px`,
-                  '--ty': `${(Math.random() - 0.5) * 400}px`,
+                  // 🔥 INCREASED DURATION slightly for larger travel time 🔥
+                  animation: `explode 1.5s ease-out forwards`,
+                  // 🔥 MASSIVELY INCREASED SPREAD RANGE (800px spread) 🔥
+                  '--tx': `${(Math.random() - 0.5) * 800}px`,
+                  '--ty': `${(Math.random() - 0.5) * 800}px`,
                   '--rot': `${Math.random() * 360}deg`,
                 }}
               />

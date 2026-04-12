@@ -163,11 +163,11 @@ export default function App() {
   const handleLogout = async () => { await signOut(auth); setActiveTab("home"); };
   const triggerHaptic = () => { if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) window.navigator.vibrate(50); };
   
-  // 🔥 THE NEW HAPTIC ENGINE (NOW EXTENDED)
+  // 🔥 CONFETTI ENGINE
   const triggerVictory = () => {
     triggerHaptic();
     setShowConfetti(true);
-    setTimeout(() => setShowConfetti(false), 1500); // Dissipates after 1.5s now
+    setTimeout(() => setShowConfetti(false), 1500); 
   };
 
   const userName = user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || "Founder";
@@ -183,10 +183,7 @@ export default function App() {
 
   const changeTab = (tabId) => { 
     setActiveTab(tabId); 
-    if (tabId === "activity") {
-       setActivityFilter("All");
-       setActivitySearch("");
-    }
+    if (tabId === "activity") { setActivityFilter("All"); setActivitySearch(""); }
     if (scrollRef.current) scrollRef.current.scrollTo({ top: 0, behavior: "smooth" }); 
   };
   
@@ -270,13 +267,7 @@ export default function App() {
   };
 
   const clearPaydayConfig = () => {
-    setEditPaydayConfig({
-      "Payday 1": { date: "", income: "" },
-      "Payday 2": { date: "", income: "" },
-      "Payday 3": { date: "", income: "" },
-      "Payday 4": { date: "", income: "" },
-      "Payday 5": { date: "", income: "" }
-    });
+    setEditPaydayConfig({ "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } });
     triggerHaptic();
   };
 
@@ -346,112 +337,35 @@ export default function App() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // 1. Action Required (Overdue/Due Now)
     const actionBills = dynamicBills.filter(b => b.isOverdue || (!b.isPaid && b.payday === "Due Now"));
-    actionBills.forEach(b => {
-      currentAlerts.push({
-        id: `action-${b.id}`,
-        type: 'danger',
-        icon: <AlertCircle size={20} className="text-red-500" />,
-        title: 'Action Required',
-        message: `Your ${b.name} bill is ${b.isOverdue ? 'past due' : 'due now'}.`,
-        amount: b.amount,
-        time: b.isOverdue ? 'URGENT' : 'TODAY',
-        action: () => { setIsNotificationsOpen(false); changeTab("bills"); }
-      });
-    });
+    actionBills.forEach(b => { currentAlerts.push({ id: `action-${b.id}`, type: 'danger', icon: <AlertCircle size={20} className="text-red-500" />, title: 'Action Required', message: `Your ${b.name} bill is ${b.isOverdue ? 'past due' : 'due now'}.`, amount: b.amount, time: b.isOverdue ? 'URGENT' : 'TODAY', action: () => { setIsNotificationsOpen(false); changeTab("bills"); } }); });
 
-    // 2. The Subscription Nudge (48 hrs)
     const upcomingRecurring = dynamicBills.filter(b => !b.isPaid && b.isRecurring && !b.isOverdue && b.payday !== "Due Now");
-    upcomingRecurring.forEach(b => {
-      if (b.rawDate) {
-        const bDate = new Date(b.rawDate);
-        const diffDays = Math.ceil((bDate - today) / (1000 * 60 * 60 * 24));
-        if (diffDays >= 0 && diffDays <= 2) {
-          currentAlerts.push({
-            id: `sub-${b.id}`,
-            type: 'info',
-            icon: <RefreshCw size={20} className="text-[#1877F2]" />,
-            title: 'Subscription Nudge',
-            message: `${b.name} is recurring in ${diffDays} day(s). Cancel or keep?`,
-            amount: b.amount,
-            time: `${diffDays}D`,
-            action: () => { setIsNotificationsOpen(false); changeTab("bills"); }
-          });
-        }
-      }
-    });
+    upcomingRecurring.forEach(b => { if (b.rawDate) { const bDate = new Date(b.rawDate); const diffDays = Math.ceil((bDate - today) / (1000 * 60 * 60 * 24)); if (diffDays >= 0 && diffDays <= 2) { currentAlerts.push({ id: `sub-${b.id}`, type: 'info', icon: <RefreshCw size={20} className="text-[#1877F2]" />, title: 'Subscription Nudge', message: `${b.name} is recurring in ${diffDays} day(s). Cancel or keep?`, amount: b.amount, time: `${diffDays}D`, action: () => { setIsNotificationsOpen(false); changeTab("bills"); } }); } } });
 
-    // 3. Upcoming Payday Nudge & 4. Liquidity Gap
     ["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].forEach(pdId => {
       const config = paydayConfig[pdId];
       if (config && config.date) {
-        const pdDate = new Date(config.date);
-        pdDate.setUTCHours(0, 0, 0, 0);
+        const pdDate = new Date(config.date); pdDate.setUTCHours(0, 0, 0, 0);
         const diffDays = Math.ceil((pdDate - today) / (1000 * 60 * 60 * 24));
+        if (diffDays >= 0 && diffDays <= 3) { currentAlerts.push({ id: `payday-${pdId}`, type: 'info', icon: <CalendarIcon size={20} className="text-[#1877F2]" />, title: 'Upcoming Payday', message: `${pdId} allocation window is approaching.`, time: `${diffDays}D`, action: () => { setIsNotificationsOpen(false); setIsPaydaySetupOpen(true); } }); }
         
-        if (diffDays >= 0 && diffDays <= 3) {
-          currentAlerts.push({
-            id: `payday-${pdId}`,
-            type: 'info',
-            icon: <CalendarIcon size={20} className="text-[#1877F2]" />,
-            title: 'Upcoming Payday',
-            message: `${pdId} allocation window is approaching.`,
-            time: `${diffDays}D`,
-            action: () => { setIsNotificationsOpen(false); setIsPaydaySetupOpen(true); }
-          });
-        }
-
         const pdBills = bills.filter(b => b.payday === pdId && !b.isPaid);
         const pdTotal = pdBills.reduce((sum, b) => sum + b.amount, 0);
         const pdIncome = parseFloat(config.income) || 0;
-        
-        if (pdTotal > pdIncome && pdIncome > 0) {
-          currentAlerts.push({
-            id: `gap-${pdId}`,
-            type: 'warning',
-            icon: <ArrowDown size={20} className="text-orange-500" />,
-            title: 'Liquidity Gap',
-            message: `${pdId} income is $${(pdTotal - pdIncome).toFixed(2)} short.`,
-            time: 'WARNING',
-            action: () => { setIsNotificationsOpen(false); changeTab("bills"); }
-          });
-        }
+        if (pdTotal > pdIncome && pdIncome > 0) { currentAlerts.push({ id: `gap-${pdId}`, type: 'warning', icon: <ArrowDown size={20} className="text-orange-500" />, title: 'Liquidity Gap', message: `${pdId} income is $${(pdTotal - pdIncome).toFixed(2)} short.`, time: 'WARNING', action: () => { setIsNotificationsOpen(false); changeTab("bills"); } }); }
       }
     });
 
-    // 5. Safe to Spend Redline
     const liquidCash = accounts.filter(a => a.type === "Checking" || a.type === "Cash").reduce((sum, acc) => sum + acc.balance, 0);
     const upcomingBills = bills.filter(b => !b.isPaid && !b.isOverdue);
     const upcomingBurn = upcomingBills.reduce((sum, b) => sum + b.amount, 0);
     const safeToSpend = liquidCash - upcomingBurn;
 
-    if (safeToSpend < 100 && safeToSpend >= 0) {
-      currentAlerts.push({
-        id: `redline`,
-        type: 'danger',
-        icon: <AlertCircle size={20} className="text-red-500" />,
-        title: 'Safe to Spend Redline',
-        message: `Your buffer is critically low ($${safeToSpend.toFixed(2)}).`,
-        time: 'ALERT',
-        action: () => { setIsNotificationsOpen(false); changeTab("home"); }
-      });
-    }
+    if (safeToSpend < 100 && safeToSpend >= 0) { currentAlerts.push({ id: `redline`, type: 'danger', icon: <AlertCircle size={20} className="text-red-500" />, title: 'Safe to Spend Redline', message: `Your buffer is critically low ($${safeToSpend.toFixed(2)}).`, time: 'ALERT', action: () => { setIsNotificationsOpen(false); changeTab("home"); } }); }
 
-    // 6. Transfer Complete
     const recentTransfers = transactions.filter(tx => tx.category === "Transfers (Venmo/Zelle)" && tx.type === "Income");
-    if (recentTransfers.length > 0) {
-      const latestTransfer = recentTransfers[0];
-      currentAlerts.push({
-        id: `transfer-${latestTransfer.id}`,
-        type: 'success',
-        icon: <CheckCircle2 size={20} className="text-[#10B981]" />,
-        title: 'Transfer Complete',
-        message: `$${latestTransfer.amount.toFixed(2)} was successfully moved.`,
-        time: latestTransfer.date.split(',')[0], 
-        action: () => { setIsNotificationsOpen(false); changeTab("activity"); }
-      });
-    }
+    if (recentTransfers.length > 0) { const latestTransfer = recentTransfers[0]; currentAlerts.push({ id: `transfer-${latestTransfer.id}`, type: 'success', icon: <CheckCircle2 size={20} className="text-[#10B981]" />, title: 'Transfer Complete', message: `$${latestTransfer.amount.toFixed(2)} was successfully moved.`, time: latestTransfer.date.split(',')[0], action: () => { setIsNotificationsOpen(false); changeTab("activity"); } }); }
 
     return currentAlerts;
   };
@@ -470,17 +384,15 @@ export default function App() {
           
           <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
             <Bell size={18} />
-            {activeAlerts.length > 0 && (
-              <span className={`absolute top-2 right-2.5 w-2 h-2 rounded-full border-2 ${isDarkMode ? "border-[#1E293B]" : "border-white"} ${activeAlerts.some(a => a.type === 'danger' || a.type === 'warning') ? "bg-red-500" : "bg-[#1877F2]"}`}></span>
-            )}
+            {activeAlerts.length > 0 && <span className={`absolute top-2 right-2.5 w-2 h-2 rounded-full border-2 ${isDarkMode ? "border-[#1E293B]" : "border-white"} ${activeAlerts.some(a => a.type === 'danger' || a.type === 'warning') ? "bg-red-500" : "bg-[#1877F2]"}`}></span>}
           </button>
         </div>
         
-        <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center z-20 origin-top -top-5">
+        <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center z-20 origin-top -top-5 lg:hidden">
           <img src="/login-logo.png" alt="Ledger Planner" className={`w-16 h-16 rounded-full shadow-[0_8px_20px_rgba(24,119,242,0.2)] object-cover border-[3px] transition-colors ${isDarkMode ? "border-slate-800" : "border-white"}`} />
         </div>
         
-        <button onClick={handleLogout} className={`h-10 px-3.5 rounded-full flex items-center justify-center gap-2 border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-red-400 hover:bg-red-900/30" : "bg-white border-slate-100 text-red-500 hover:bg-red-50"}`}>
+        <button onClick={handleLogout} className={`h-10 px-3.5 rounded-full flex items-center justify-center gap-2 border transition-colors shadow-sm lg:hidden ${isDarkMode ? "bg-slate-800 border-slate-700 text-red-400 hover:bg-red-900/30" : "bg-white border-slate-100 text-red-500 hover:bg-red-50"}`}>
           <LogOut size={14} strokeWidth={2.5} />
           <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Logout</span>
         </button>
@@ -596,30 +508,94 @@ export default function App() {
     />;
   }
 
-  const categoriesToRender = drawerTab === 'income' 
-    ? modernCategories.filter(g => g.group === "Income & Wealth") 
-    : modernCategories;
+  const categoriesToRender = drawerTab === 'income' ? modernCategories.filter(g => g.group === "Income & Wealth") : modernCategories;
 
   return (
-    <div className={`h-screen font-sans relative overflow-hidden flex justify-center transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
-      <div className={`w-full max-w-md h-full relative shadow-2xl flex flex-col transition-colors duration-500 overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
+    <div className={`h-screen font-sans relative flex justify-center transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-slate-100"}`}>
+      
+      {/* 🔥 THE RESPONSIVE SHELL CONTAINER 🔥 */}
+      <div className={`w-full max-w-md md:max-w-2xl lg:max-w-[1200px] h-full relative shadow-2xl flex flex-col lg:flex-row transition-colors duration-500 overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
         
-        {/* MAIN VIEW ROUTER */}
-        <div className="flex-1 overflow-y-auto hide-scrollbar" ref={scrollRef} onScroll={handleScroll}>
-          {activeTab === "home" && <Dashboard userName={userName} accounts={accounts} bills={dynamicBills} transactions={transactions} paydayConfig={paydayConfig} setEditPaydayConfig={setEditPaydayConfig} setIsPaydaySetupOpen={setIsPaydaySetupOpen} setIsNotificationsOpen={setIsNotificationsOpen} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} handleBillClick={handleBillClick} setSelectedEntry={setSelectedEntry} isDarkMode={isDarkMode} formatPaydayDateStr={formatPaydayDateStr} renderHeroShell={renderHeroShell} changeTab={changeTab} />}
-          {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} />}
-          {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={setSelectedEntry} renderHeroShell={renderHeroShell} handleRolloverMonth={handleRolloverMonth} />}
-          {activeTab === "activity" && <Activity userName={userName} transactions={transactions} activitySearch={activitySearch} setActivitySearch={setActivitySearch} activityFilter={activityFilter} setActivityFilter={setActivityFilter} isDarkMode={isDarkMode} setSelectedEntry={setSelectedEntry} renderHeroShell={renderHeroShell} />}
-          {activeTab === "todo" && <Todo userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} newTodoType={newTodoType} setNewTodoType={setNewTodoType} isDarkMode={isDarkMode} handleAddTodo={async (e) => { e.preventDefault(); if(!newTodoText.trim()) return; await addDoc(collection(db, "users", user.uid, "todos"), { text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() }); triggerVictory(); setNewTodoText(""); setNewTodoPriority(3); }} toggleTodoStatus={async (id) => { triggerHaptic(); const todo = todos.find(t => t.id === id); await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); }} setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} />}
+        {/* ========================================================= */}
+        {/* DESKTOP SIDEBAR (Path 2) - Hidden on Mobile & Tablet */}
+        {/* ========================================================= */}
+        <div className={`hidden lg:flex w-[280px] flex-col border-r z-40 p-6 transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-100"}`}>
+          
+          <div className="flex items-center gap-4 mb-10 mt-4">
+            <img src="/login-logo.png" alt="Ledger Planner" className={`w-12 h-12 rounded-full shadow-[0_4px_15px_rgba(24,119,242,0.2)] object-cover border-[2px] transition-colors ${isDarkMode ? "border-slate-700" : "border-slate-100"}`} />
+            <div>
+              <h1 className={`font-black tracking-tighter text-lg leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>Ledger Planner</h1>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Master Engine</p>
+            </div>
+          </div>
+
+          <div className="space-y-2 flex-1">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 ml-2">Navigation</p>
+            {[{ id: "home", icon: Home, label: "Dashboard" }, { id: "accounts", icon: Wallet, label: "Accounts" }, { id: "bills", icon: CalendarIcon, label: "Bills & Plans" }, { id: "activity", icon: CreditCard, label: "Activity" }, { id: "todo", icon: CheckSquare, label: "To-Do List" }].map((tab) => (
+              <button key={tab.id} onClick={() => changeTab(tab.id)} className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 ${activeTab === tab.id ? isDarkMode ? "bg-slate-800 text-[#1877F2]" : "bg-blue-50 text-[#1877F2]" : isDarkMode ? "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"}`}>
+                <tab.icon size={20} strokeWidth={activeTab === tab.id ? 2.5 : 2} />
+                <span className="text-xs font-black uppercase tracking-widest">{tab.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-auto space-y-4">
+            {/* DESKTOP QAB BUTTON */}
+            <button onClick={() => setIsQabOpen(true)} className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-white bg-[#1877F2] shadow-[0_8px_20px_rgba(24,119,242,0.3)] font-black uppercase tracking-widest text-xs transition-transform active:scale-95 hover:-translate-y-1`}>
+              <Plus size={18} /> Quick Add (QAB)
+            </button>
+            
+            <button onClick={handleLogout} className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800/50 border-slate-700 text-red-400 hover:bg-red-900/30" : "bg-white border-slate-100 text-red-500 hover:bg-red-50"}`}>
+              <LogOut size={16} strokeWidth={2.5} />
+              <span className="text-[10px] font-black uppercase tracking-widest">Logout</span>
+            </button>
+          </div>
         </div>
 
         {/* ========================================================= */}
-        {/* ADD NEW ACCOUNT MODAL */}
+        {/* MAIN CONTENT WRAPPER (Mobile, Tablet, Desktop Right Side) */}
         {/* ========================================================= */}
+        <div className="flex-1 flex flex-col relative h-full overflow-hidden">
+          
+          {/* MAIN VIEW ROUTER */}
+          <div className="flex-1 overflow-y-auto hide-scrollbar lg:pb-0 pb-24" ref={scrollRef} onScroll={handleScroll}>
+            {activeTab === "home" && <Dashboard userName={userName} accounts={accounts} bills={dynamicBills} transactions={transactions} paydayConfig={paydayConfig} setEditPaydayConfig={setEditPaydayConfig} setIsPaydaySetupOpen={setIsPaydaySetupOpen} setIsNotificationsOpen={setIsNotificationsOpen} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} handleBillClick={handleBillClick} setSelectedEntry={setSelectedEntry} isDarkMode={isDarkMode} formatPaydayDateStr={formatPaydayDateStr} renderHeroShell={renderHeroShell} changeTab={changeTab} />}
+            {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} />}
+            {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={setSelectedEntry} renderHeroShell={renderHeroShell} handleRolloverMonth={handleRolloverMonth} />}
+            {activeTab === "activity" && <Activity userName={userName} transactions={transactions} activitySearch={activitySearch} setActivitySearch={setActivitySearch} activityFilter={activityFilter} setActivityFilter={setActivityFilter} isDarkMode={isDarkMode} setSelectedEntry={setSelectedEntry} renderHeroShell={renderHeroShell} />}
+            {activeTab === "todo" && <Todo userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} newTodoType={newTodoType} setNewTodoType={setNewTodoType} isDarkMode={isDarkMode} handleAddTodo={async (e) => { e.preventDefault(); if(!newTodoText.trim()) return; await addDoc(collection(db, "users", user.uid, "todos"), { text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() }); triggerVictory(); setNewTodoText(""); setNewTodoPriority(3); }} toggleTodoStatus={async (id) => { triggerHaptic(); const todo = todos.find(t => t.id === id); await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); }} setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} />}
+          </div>
+
+          {/* ========================================================= */}
+          {/* FLOATING QAB (Mobile / Tablet Only) */}
+          {/* ========================================================= */}
+          <div className="absolute bottom-24 right-6 z-40 lg:hidden">
+            <button onClick={() => setIsQabOpen(true)} className={`w-14 h-14 rounded-full flex items-center justify-center text-white bg-[#1877F2] shadow-[0_12px_24px_rgba(24,119,242,0.4)] border-4 ${isDarkMode ? "border-[#0F172A]" : "border-white"}`}><Plus size={28} /></button>
+          </div>
+
+          {/* ========================================================= */}
+          {/* BOTTOM NAV (Mobile / Tablet Only) */}
+          {/* ========================================================= */}
+          <div className={`lg:hidden absolute bottom-0 left-0 w-full backdrop-blur-md border-t px-2 pt-3 pb-6 flex justify-between items-center z-40 ${isDarkMode ? "bg-[#1E293B]/95 border-slate-800" : "bg-white/95 border-slate-100"}`}>
+            {[{ id: "home", icon: Home, label: "Home" }, { id: "accounts", icon: Wallet, label: "Accounts" }, { id: "bills", icon: CalendarIcon, label: "Bills" }, { id: "activity", icon: CreditCard, label: "Activity" }, { id: "todo", icon: CheckSquare, label: "To-Do" }].map((tab) => (
+              <button key={tab.id} onClick={() => changeTab(tab.id)} className="flex-1 flex flex-col items-center gap-1 group">
+                <tab.icon size={24} strokeWidth={activeTab === tab.id ? 2.5 : 2} className={`transition-all duration-300 ${activeTab === tab.id ? "text-[#1877F2] transform -translate-y-1" : isDarkMode ? "text-slate-500" : "text-slate-400"}`} />
+                <span className={`text-[9px] font-black uppercase tracking-widest ${activeTab === tab.id ? "text-[#1877F2]" : isDarkMode ? "text-slate-500" : "text-slate-400"}`}>{tab.label}</span>
+              </button>
+            ))}
+          </div>
+
+        </div>
+
+        {/* ========================================================= */}
+        {/* ALL MODALS (Unchanged) */}
+        {/* ========================================================= */}
+
+        {/* ADD NEW ACCOUNT MODAL */}
         {isAddAccountOpen && (
-          <div className="absolute inset-0 z-[60] flex items-end">
+          <div className="absolute inset-0 z-[60] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsAddAccountOpen(false)}></div>
-            <div className={`w-full rounded-t-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+            <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
               <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <PlusCircle size={20} className="text-[#1877F2]" />
@@ -660,13 +636,11 @@ export default function App() {
           </div>
         )}
 
-        {/* ========================================================= */}
         {/* TRANSFER FUNDS MODAL */}
-        {/* ========================================================= */}
         {isTransferOpen && (
-          <div className="absolute inset-0 z-[60] flex items-end">
+          <div className="absolute inset-0 z-[60] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsTransferOpen(false)}></div>
-            <div className={`w-full rounded-t-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col transition-colors duration-500 max-h-[95vh] ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+            <div className={`w-full lg:max-w-md lg:h-auto rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col transition-colors duration-500 max-h-[95vh] ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
               <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <ArrowRightLeft size={20} className="text-[#10B981]" />
@@ -705,7 +679,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className={`p-6 mt-auto border-t ${isDarkMode ? "bg-[#0F172A] border-slate-800" : "bg-slate-50/50 border-slate-100"}`}>
+                <div className={`p-6 mt-auto border-t lg:rounded-b-[2.5rem] ${isDarkMode ? "bg-[#0F172A] border-slate-800" : "bg-slate-50/50 border-slate-100"}`}>
                   <div className="grid grid-cols-4 gap-3 mb-4">
                     {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", ".", "0", "=", "+"].map((btn) => {
                       const isOp = ["÷", "×", "-", "+", "="].includes(btn);
@@ -729,13 +703,11 @@ export default function App() {
           </div>
         )}
 
-        {/* ========================================================= */}
         {/* EDIT ACCOUNT MODAL */}
-        {/* ========================================================= */}
         {selectedAccount && (
-          <div className="absolute inset-0 z-[60] flex items-end">
+          <div className="absolute inset-0 z-[60] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedAccount(null)}></div>
-            <div className={`w-full rounded-t-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+            <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
               <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <Edit2 size={20} className="text-[#1877F2]" />
@@ -771,13 +743,11 @@ export default function App() {
           </div>
         )}
 
-        {/* ========================================================= */}
         {/* THE PAYDAY SETUP MODAL */}
-        {/* ========================================================= */}
         {isPaydaySetupOpen && (
-          <div className="absolute inset-0 z-[60] flex items-end">
+          <div className="absolute inset-0 z-[60] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsPaydaySetupOpen(false)}></div>
-            <div className={`w-full rounded-t-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col max-h-[85vh] transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+            <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col max-h-[85vh] transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
               <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                 <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Configure Paydays</h3>
                 <button onClick={() => setIsPaydaySetupOpen(false)} className="p-2 rounded-full"><X size={18} className={isDarkMode ? "text-slate-400" : "text-slate-500"} /></button>
@@ -799,7 +769,7 @@ export default function App() {
                   </div>
                 ))}
               </div>
-              <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex gap-2">
+              <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex gap-2 lg:rounded-b-[2.5rem]">
                 <button onClick={clearPaydayConfig} className={`flex-1 h-14 rounded-2xl font-black uppercase tracking-widest text-sm text-red-500 border transition-transform active:scale-95 flex items-center justify-center gap-2 ${isDarkMode ? "border-red-900/30 bg-red-900/10 hover:bg-red-900/20" : "border-red-100 bg-red-50 hover:bg-red-100"}`}>
                    <Trash2 size={18} /> Clear
                 </button>
@@ -811,13 +781,11 @@ export default function App() {
           </div>
         )}
 
-        {/* ========================================================= */}
         {/* THE SMART NOTIFICATIONS / ALERTS MODAL */}
-        {/* ========================================================= */}
         {isNotificationsOpen && (
-          <div className="absolute inset-0 z-[60] flex items-end">
+          <div className="absolute inset-0 z-[60] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsNotificationsOpen(false)}></div>
-            <div className={`w-full rounded-t-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col max-h-[85vh] transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+            <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col max-h-[85vh] transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
               <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <Bell size={20} className="text-[#1877F2]" />
@@ -850,13 +818,11 @@ export default function App() {
           </div>
         )}
 
-        {/* ========================================================= */}
         {/* PAY BILL CONFIRMATION MODAL */}
-        {/* ========================================================= */}
         {paymentModalConfig.isOpen && (
-          <div className="absolute inset-0 z-[60] flex items-end">
+          <div className="absolute inset-0 z-[60] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" })}></div>
-            <div className={`w-full rounded-t-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+            <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
               <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 size={20} className="text-[#1877F2]" />
@@ -882,13 +848,11 @@ export default function App() {
           </div>
         )}
 
-        {/* ========================================================= */}
         {/* TRANSACTION / BILL ENTRY DETAILS MODAL */}
-        {/* ========================================================= */}
         {selectedEntry && (
-          <div className="absolute inset-0 z-[60] flex items-end">
+          <div className="absolute inset-0 z-[60] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedEntry(null)}></div>
-            <div className={`w-full rounded-t-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+            <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
               <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${isDarkMode ? "bg-slate-800" : "bg-slate-100"}`}>{selectedEntry.icon}</div>
@@ -964,9 +928,7 @@ export default function App() {
           </div>
         )}
 
-        {/* ========================================================= */}
         {/* QUICK ADD BUTTON (QAB) MODAL */}
-        {/* ========================================================= */}
         {isQabOpen && (() => {
           const activeText = drawerTab === "bills" ? "text-[#1877F2]" : drawerTab === "income" ? "text-[#10B981]" : "text-[#F97316]";
           const activeBg = drawerTab === "bills" ? "bg-[#1877F2]" : drawerTab === "income" ? "bg-[#10B981]" : "bg-[#F97316]";
@@ -975,13 +937,13 @@ export default function App() {
           const activeLabel = drawerTab === "bills" ? "New Bill" : drawerTab === "income" ? "New Income" : "New Expense";
           
           return (
-            <div className="absolute inset-0 z-[60] flex items-end">
+            <div className="absolute inset-0 z-[60] flex items-end lg:items-center lg:justify-center">
               <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={closeQab}></div>
-              <div className={`w-full rounded-t-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col max-h-[95vh] transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+              <div className={`w-full lg:max-w-md lg:h-[80vh] rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col max-h-[95vh] transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
                 <button onClick={closeQab} className="absolute top-5 right-5 p-2 rounded-full z-20"><X size={18} className={isDarkMode ? "text-slate-400" : "text-slate-500"} /></button>
                 
                 <div className={`px-6 pt-6 pb-6 border-b shrink-0 transition-colors duration-500 ${activeSoftBg} rounded-t-[2.5rem]`}>
-                  <div className={`w-12 h-1.5 rounded-full mx-auto mb-6 opacity-30 ${activeBg}`}></div>
+                  <div className={`w-12 h-1.5 rounded-full mx-auto mb-6 opacity-30 lg:hidden ${activeBg}`}></div>
                   
                   {qabStep === 1 ? (
                     <div className={`flex rounded-xl p-1 mb-6 mx-auto max-w-[280px] border shadow-sm ${isDarkMode ? "bg-slate-800/80 border-slate-700" : "bg-white/80 border-slate-200 backdrop-blur-md"}`}>
@@ -1005,7 +967,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className={`p-6 mt-auto rounded-b-[2.5rem] flex-1 flex flex-col overflow-y-auto ${isDarkMode ? "bg-[#0F172A]" : "bg-white"}`}>
+                <div className={`p-6 mt-auto lg:rounded-b-[2.5rem] flex-1 flex flex-col overflow-y-auto ${isDarkMode ? "bg-[#0F172A]" : "bg-white"}`}>
                   {qabStep === 1 ? (
                     <>
                       <div className="grid grid-cols-4 gap-3 mt-2">
@@ -1105,37 +1067,19 @@ export default function App() {
         );
         })()}
 
-        {/* BOTTOM NAV */}
-        <div className="absolute bottom-24 right-6 z-40">
-          <button onClick={() => setIsQabOpen(true)} className={`w-14 h-14 rounded-full flex items-center justify-center text-white bg-[#1877F2] shadow-[0_12px_24px_rgba(24,119,242,0.4)] border-4 ${isDarkMode ? "border-[#0F172A]" : "border-white"}`}><Plus size={28} /></button>
-        </div>
-
-        <div className={`absolute bottom-0 left-0 w-full backdrop-blur-md border-t px-2 pt-3 pb-6 flex justify-between items-center z-40 ${isDarkMode ? "bg-[#1E293B]/95 border-slate-800" : "bg-white/95 border-slate-100"}`}>
-          {[{ id: "home", icon: Home, label: "Home" }, { id: "accounts", icon: Wallet, label: "Accounts" }, { id: "bills", icon: CalendarIcon, label: "Bills" }, { id: "activity", icon: CreditCard, label: "Activity" }, { id: "todo", icon: CheckSquare, label: "To-Do" }].map((tab) => (
-            <button key={tab.id} onClick={() => changeTab(tab.id)} className="flex-1 flex flex-col items-center gap-1 group">
-              <tab.icon size={24} strokeWidth={activeTab === tab.id ? 2.5 : 2} className={`transition-all duration-300 ${activeTab === tab.id ? "text-[#1877F2] transform -translate-y-1" : isDarkMode ? "text-slate-500" : "text-slate-400"}`} />
-              <span className={`text-[9px] font-black uppercase tracking-widest ${activeTab === tab.id ? "text-[#1877F2]" : isDarkMode ? "text-slate-500" : "text-slate-400"}`}>{tab.label}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* 🔥 THE CUSTOM CSS CONFETTI OVERLAY 🔥 */}
+        {/* 🔥 CONFETTI OVERLAY 🔥 */}
         {showConfetti && (
           <div className="absolute inset-0 z-[100] pointer-events-none flex items-center justify-center overflow-hidden">
-            {/* 🔥 INCREASED PARTICLE COUNT TO 80 FOR A MASSIVE EXPLOSION 🔥 */}
             {[...Array(80)].map((_, i) => (
               <div
                 key={i}
-                // 🔥 INCREASED SIZE FOR VISIBILITY 🔥
                 className="absolute w-3 h-3 rounded-sm"
                 style={{
                   backgroundColor: ['#1877F2', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#FFFFFF'][Math.floor(Math.random() * 6)],
                   left: '50%',
                   top: '50%',
                   transform: `translate(-50%, -50%)`,
-                  // 🔥 INCREASED DURATION slightly for larger travel time 🔥
                   animation: `explode 1.5s ease-out forwards`,
-                  // 🔥 MASSIVELY INCREASED SPREAD RANGE (800px spread) 🔥
                   '--tx': `${(Math.random() - 0.5) * 800}px`,
                   '--ty': `${(Math.random() - 0.5) * 800}px`,
                   '--rot': `${Math.random() * 360}deg`,

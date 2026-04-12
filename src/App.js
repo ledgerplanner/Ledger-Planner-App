@@ -90,7 +90,7 @@ export default function App() {
   const [entryIcon, setEntryIcon] = useState("🧾"); 
   const [entryCategory, setEntryCategory] = useState(""); 
   const [entryAccount, setEntryAccount] = useState("");
-  const [entryIsRecurring, setEntryIsRecurring] = useState(true);
+  const [entryIsRecurring, setEntryIsRecurring] = useState(false); // 🔥 Auto-off per new spec
   const [entryIsInstallment, setEntryIsInstallment] = useState(false);
   const [entryTotalAmount, setEntryTotalAmount] = useState("");
   const [entryPaidAmount, setEntryPaidAmount] = useState("");
@@ -524,7 +524,7 @@ export default function App() {
   };
 
   // === QAB (QUICK ADD BUTTON) ACTIONS ===
-  const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0"); setEntryName(""); setEntryDate(""); setEntryIcon("🧾"); setEntryCategory(""); setEntryAccount(""); setEntryIsRecurring(true); setEntryIsInstallment(false); setEntryTotalAmount(""); setEntryPaidAmount(""); };
+  const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0"); setEntryName(""); setEntryDate(""); setEntryIcon("🧾"); setEntryCategory(""); setEntryAccount(""); setEntryIsRecurring(false); setEntryIsInstallment(false); setEntryTotalAmount(""); setEntryPaidAmount(""); };
   
   const handleNumpad = (btn) => {
     if (btn === "=") {
@@ -1058,8 +1058,7 @@ export default function App() {
                           <div className="relative">
                              <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Select Account</label>
                              <select value={entryAccount} onChange={(e) => setEntryAccount(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-sm border focus:outline-none transition-colors appearance-none ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
-                               {/* 🔥 HUMANIZED QUESTION FOR ACCOUNT SELECTION */}
-                               <option value="" disabled>Which Account Does This Go Into?</option>
+                               <option value="" disabled>{drawerTab === 'income' ? 'Which Account Does This Go Into?' : 'Which account is paying for this?'}</option>
                                {accounts.map((a) => (<option key={a.id} value={a.id}>{a.name} (${a.balance.toFixed(2)})</option>))}
                              </select>
                           </div>

@@ -82,7 +82,7 @@ export default function Bills({
                           {/* 🔥 RECURRING ARROWS INJECTED SAFELY */}
                           <div className="flex items-center gap-1.5">
                             <p className={`font-bold text-sm ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{bill.name}</p>
-                            {bill.isRecurring && !bill.isPaid && <RefreshCw size={12} className="text-slate-400 shrink-0" />}
+                            {bill.isRecurring && !bill.isPaid && <RefreshCw size={12} className="text-[#10B981] shrink-0" />}
                           </div>
                           <p className={`text-[10px] font-bold uppercase tracking-wider ${bill.isOverdue || bill.payday === "Due Now" ? "text-red-500" : isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
                             {bill.isOverdue ? "Overdue • " : bill.payday === "Due Now" ? "Due Now • " : "Due "} 

@@ -82,7 +82,7 @@ export default function App() {
   const [newTodoType, setNewTodoType] = useState("task");
   const [selectedTodo, setSelectedTodo] = useState(null);
 
-  // === QUICK ADD BUTTON (QAB) STATE ===
+  // === QUICK ADD BUTTON STATE ===
   const [isQabOpen, setIsQabOpen] = useState(false);
   const [qabStep, setQabStep] = useState(1);
   const [drawerTab, setDrawerTab] = useState("bills");
@@ -167,7 +167,7 @@ export default function App() {
   const handleLogout = async () => { await signOut(auth); setActiveTab("home"); };
   const triggerHaptic = () => { if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) window.navigator.vibrate(50); };
   
-  const triggerVictory = () => { triggerHaptic(); setShowConfetti(true); setTimeout(() => setShowConfetti(false), 1500); };
+  const triggerVictory = () => { triggerHaptic(); setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2000); };
 
   const userName = user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || "Founder";
   const formattedDate = currentTime.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
@@ -287,7 +287,7 @@ export default function App() {
     const todayLocal = new Date(); todayLocal.setHours(0, 0, 0, 0);
     const localBillDate = new Date(billDate.getUTCFullYear(), billDate.getUTCMonth(), billDate.getUTCDate());
     
-    if (localBillDate < todayLocal) return "Due Now"; // 🔥 Routed directly to Due Now
+    if (localBillDate < todayLocal) return "Due Now";
     if (localBillDate.getTime() === todayLocal.getTime()) return "Due Now";
 
     const activePaydays = [];
@@ -312,7 +312,7 @@ export default function App() {
     if (bill.rawDate && !bill.isPaid) {
       const bDate = new Date(bill.rawDate);
       const localBDate = new Date(bDate.getUTCFullYear(), bDate.getUTCMonth(), bDate.getUTCDate());
-      if (localBDate < todayForDynamic) return { ...bill, payday: "Due Now", isOverdue: true }; // 🔥 Routed directly to Due Now
+      if (localBDate < todayForDynamic) return { ...bill, payday: "Due Now", isOverdue: true };
       if (localBDate.getTime() === todayForDynamic.getTime()) return { ...bill, payday: "Due Now", isOverdue: false };
     }
     return bill;
@@ -525,7 +525,6 @@ export default function App() {
             ))}
           </div>
           <div className="mt-auto space-y-4">
-            {/* 🔥 FIX 2: SCRUBBED "QAB" JARGON */}
             <button onClick={() => setIsQabOpen(true)} className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-white bg-[#1877F2] shadow-[0_8px_20px_rgba(24,119,242,0.3)] font-black uppercase tracking-widest text-xs transition-transform active:scale-95 hover:-translate-y-1`}><Plus size={18} /> Quick Add</button>
             <button onClick={handleLogout} className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800/50 border-slate-700 text-red-400 hover:bg-red-900/30" : "bg-white border-slate-100 text-red-500 hover:bg-red-50"}`}><LogOut size={16} strokeWidth={2.5} /><span className="text-[10px] font-black uppercase tracking-widest">Logout</span></button>
           </div>
@@ -959,13 +958,20 @@ export default function App() {
         );
         })()}
 
-        {/* 🔥 CONFETTI OVERLAY 🔥 */}
+        {/* 🔥 MEGA-BURST CONFETTI OVERLAY 🔥 */}
         {showConfetti && (
           <div className="absolute inset-0 z-[100] pointer-events-none flex items-center justify-center overflow-hidden">
-            {[...Array(80)].map((_, i) => (
-              <div key={i} className="absolute w-3 h-3 rounded-sm" style={{ backgroundColor: ['#1877F2', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#FFFFFF'][Math.floor(Math.random() * 6)], left: '50%', top: '50%', transform: `translate(-50%, -50%)`, animation: `explode 1.5s ease-out forwards`, '--tx': `${(Math.random() - 0.5) * 800}px`, '--ty': `${(Math.random() - 0.5) * 800}px`, '--rot': `${Math.random() * 360}deg` }} />
+            {[...Array(200)].map((_, i) => (
+              <div key={i} className="absolute w-3 h-3 rounded-sm" style={{ 
+                backgroundColor: ['#1877F2', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#FFFFFF', '#FFD700', '#059669'][Math.floor(Math.random() * 8)], 
+                left: '50%', top: '50%', transform: `translate(-50%, -50%)`, 
+                animation: `explode 2s ease-out forwards`, 
+                '--tx': `${(Math.random() - 0.5) * 1500}px`, 
+                '--ty': `${(Math.random() - 0.5) * 1500}px`, 
+                '--rot': `${Math.random() * 720}deg` 
+              }} />
             ))}
-            <style>{`@keyframes explode { 0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); opacity: 1; } 80% { opacity: 1; } 100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) rotate(calc(var(--rot) + 180deg)) scale(0); opacity: 0; } }`}</style>
+            <style>{`@keyframes explode { 0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); opacity: 1; } 80% { opacity: 1; } 100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) rotate(calc(var(--rot))) scale(0); opacity: 0; } }`}</style>
           </div>
         )}
 

@@ -59,6 +59,10 @@ export default function App() {
   const [editPaydayConfig, setEditPaydayConfig] = useState(paydayConfig);
   
   const [paymentModalConfig, setPaymentModalConfig] = useState({ isOpen: false, billId: null, accountId: "" });
+  
+  // 🔥 NEW: INSTALLMENT PROMPT STATE
+  const [installmentPromptConfig, setInstallmentPromptConfig] = useState({ isOpen: false, billId: null, nextDate: "" });
+
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   
   const [isTransferOpen, setIsTransferOpen] = useState(false);
@@ -432,6 +436,7 @@ export default function App() {
     }
   };
 
+  // 🔥 SURGICAL UPGRADE: INSTALLMENT LOGIC
   const confirmPaymentRoute = async () => {
     const bill = bills.find(b => b.id === paymentModalConfig.billId);
     const targetAcc = accounts.find(a => a.id === paymentModalConfig.accountId);
@@ -439,10 +444,51 @@ export default function App() {
     const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
     
     const txRef = await addDoc(collection(db, "users", user.uid, "transactions"), { name: bill.name, icon: bill.icon, amount: bill.amount, date: autoTimeStamp, type: "Expense", category: bill.category || "Bill Payment", accountId: targetAcc.id, createdAt: serverTimestamp() });
-    let newPaidAmt = bill.paidAmount; if (bill.isInstallment) newPaidAmt = bill.paidAmount + bill.amount;
-    await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: true, paidAmount: newPaidAmt, paidFromAccountId: targetAcc.id, linkedTxId: txRef.id });
+    
     await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance - bill.amount });
-    triggerVictory(); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
+
+    if (bill.isInstallment) {
+      const newPaidAmt = (bill.paidAmount || 0) + bill.amount;
+      const isFullyPaid = newPaidAmt >= bill.totalAmount;
+
+      if (isFullyPaid) {
+        await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: true, paidAmount: newPaidAmt, paidFromAccountId: targetAcc.id, linkedTxId: txRef.id });
+        triggerVictory();
+        setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
+      } else {
+        await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { paidAmount: newPaidAmt, isOverdue: false });
+        triggerHaptic();
+        setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
+        setInstallmentPromptConfig({ isOpen: true, billId: bill.id, nextDate: "" });
+      }
+    } else {
+      await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: true, paidAmount: 0, paidFromAccountId: targetAcc.id, linkedTxId: txRef.id });
+      triggerVictory();
+      setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
+    }
+  };
+
+  // 🔥 SURGICAL UPGRADE: SAVE NEXT INSTALLMENT DATE
+  const handleSaveNextInstallmentDate = async () => {
+    if (!installmentPromptConfig.nextDate) return;
+    const bill = bills.find(b => b.id === installmentPromptConfig.billId);
+    if(!bill) return;
+
+    const dateObj = new Date(installmentPromptConfig.nextDate);
+    const sortableDay = dateObj.getUTCDate();
+    const displayDate = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+    const newPayday = calculatePaydayGroup(installmentPromptConfig.nextDate);
+
+    await updateDoc(doc(db, "users", user.uid, "bills", bill.id), {
+        rawDate: installmentPromptConfig.nextDate,
+        date: sortableDay,
+        fullDate: displayDate,
+        payday: newPayday,
+        isOverdue: false
+    });
+
+    triggerVictory();
+    setInstallmentPromptConfig({ isOpen: false, billId: null, nextDate: "" });
   };
 
   const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0"); setEntryName(""); setEntryDate(""); setEntryIcon("🧾"); setEntryCategory(""); setEntryAccount(""); setEntryIsRecurring(false); setEntryIsInstallment(false); setEntryTotalAmount(""); setEntryPaidAmount(""); setIsCategorySelectorOpen(false); };
@@ -957,6 +1003,30 @@ export default function App() {
           </div>
         );
         })()}
+
+        {/* 9. INSTALLMENT NEXT DATE MODAL */}
+        {installmentPromptConfig.isOpen && (
+          <div className="absolute inset-0 z-[60] flex items-end lg:items-center lg:justify-center">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setInstallmentPromptConfig({ isOpen: false, billId: null, nextDate: "" })}></div>
+            <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+              <div className={`p-6 border-b flex justify-between items-center shrink-0 ${isDarkMode ? "border-slate-800" : "border-slate-100"}`}>
+                <h3 className={`font-black uppercase tracking-widest text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Next Installment Date</h3>
+                <button onClick={() => setInstallmentPromptConfig({ isOpen: false, billId: null, nextDate: "" })} className={`p-2 rounded-full ${isDarkMode ? "text-slate-400 hover:bg-slate-800" : "text-slate-500 hover:bg-slate-200"}`}><X size={18}/></button>
+              </div>
+              <div className="p-6 space-y-6">
+                <div className="text-center">
+                  <h2 className={`text-lg font-black mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Payment Logged!</h2>
+                  <p className={`text-xs font-bold ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>When is your next payment due for this installment plan?</p>
+                </div>
+                <div className="relative">
+                   <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Next Due Date</label>
+                   <input type="date" value={installmentPromptConfig.nextDate} onChange={(e) => setInstallmentPromptConfig({...installmentPromptConfig, nextDate: e.target.value})} className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-sm border focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white focus:border-slate-500" : "bg-slate-50 border-slate-200 text-slate-900 focus:border-slate-400"}`} />
+                </div>
+                <button onClick={handleSaveNextInstallmentDate} disabled={!installmentPromptConfig.nextDate} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${!installmentPromptConfig.nextDate ? "bg-slate-300 opacity-50 shadow-none cursor-not-allowed" : "bg-[#1877F2] shadow-blue-500/30"}`}><CalendarIcon size={16}/> Route to Payday</button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 🔥 MEGA-BURST CONFETTI OVERLAY 🔥 */}
         {showConfetti && (

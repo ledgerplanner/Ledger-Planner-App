@@ -287,7 +287,7 @@ export default function App() {
     const todayLocal = new Date(); todayLocal.setHours(0, 0, 0, 0);
     const localBillDate = new Date(billDate.getUTCFullYear(), billDate.getUTCMonth(), billDate.getUTCDate());
     
-    if (localBillDate < todayLocal) return "Overdue";
+    if (localBillDate < todayLocal) return "Due Now"; // 🔥 Routed directly to Due Now
     if (localBillDate.getTime() === todayLocal.getTime()) return "Due Now";
 
     const activePaydays = [];
@@ -312,7 +312,7 @@ export default function App() {
     if (bill.rawDate && !bill.isPaid) {
       const bDate = new Date(bill.rawDate);
       const localBDate = new Date(bDate.getUTCFullYear(), bDate.getUTCMonth(), bDate.getUTCDate());
-      if (localBDate < todayForDynamic) return { ...bill, payday: "Overdue", isOverdue: true };
+      if (localBDate < todayForDynamic) return { ...bill, payday: "Due Now", isOverdue: true }; // 🔥 Routed directly to Due Now
       if (localBDate.getTime() === todayForDynamic.getTime()) return { ...bill, payday: "Due Now", isOverdue: false };
     }
     return bill;
@@ -502,7 +502,6 @@ export default function App() {
 
   const categoriesToRender = drawerTab === 'income' ? modernCategories.filter(g => g.group === "Income & Wealth") : modernCategories;
 
-  // 🔥 100% EDGE-TO-EDGE DESKTOP WIDTH FIX APPLIED HERE
   return (
     <div className={`h-screen w-full font-sans relative flex transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
       <div className={`w-full h-full relative flex flex-col lg:flex-row transition-colors duration-500 overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
@@ -526,7 +525,8 @@ export default function App() {
             ))}
           </div>
           <div className="mt-auto space-y-4">
-            <button onClick={() => setIsQabOpen(true)} className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-white bg-[#1877F2] shadow-[0_8px_20px_rgba(24,119,242,0.3)] font-black uppercase tracking-widest text-xs transition-transform active:scale-95 hover:-translate-y-1`}><Plus size={18} /> Quick Add (QAB)</button>
+            {/* 🔥 FIX 2: SCRUBBED "QAB" JARGON */}
+            <button onClick={() => setIsQabOpen(true)} className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-white bg-[#1877F2] shadow-[0_8px_20px_rgba(24,119,242,0.3)] font-black uppercase tracking-widest text-xs transition-transform active:scale-95 hover:-translate-y-1`}><Plus size={18} /> Quick Add</button>
             <button onClick={handleLogout} className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800/50 border-slate-700 text-red-400 hover:bg-red-900/30" : "bg-white border-slate-100 text-red-500 hover:bg-red-50"}`}><LogOut size={16} strokeWidth={2.5} /><span className="text-[10px] font-black uppercase tracking-widest">Logout</span></button>
           </div>
         </div>
@@ -553,7 +553,7 @@ export default function App() {
         </div>
 
         {/* ========================================================= */}
-        {/* RECONSTRUCTED MODALS (Payday, Notifications, Transfers, Add Account, Payment, Entry Drawer, QAB) */}
+        {/* RECONSTRUCTED MODALS */}
         {/* ========================================================= */}
 
         {/* 1. NOTIFICATIONS MODAL */}
@@ -727,7 +727,7 @@ export default function App() {
           </div>
         )}
 
-        {/* 7. ENTRY DETAILS & EDIT MODAL (Surgical Update 5) */}
+        {/* 7. ENTRY DETAILS & EDIT MODAL */}
         {selectedEntry && !selectedAccount && (
           <div className="absolute inset-0 z-[60] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={closeEntryDrawer}></div>
@@ -830,7 +830,7 @@ export default function App() {
           </div>
         )}
 
-        {/* 8. QUICK ADD BUTTON (QAB) MODAL */}
+        {/* 8. QUICK ADD BUTTON MODAL */}
         {isQabOpen && (() => {
           const activeText = drawerTab === "bills" ? "text-[#1877F2]" : drawerTab === "income" ? "text-[#10B981]" : "text-[#F97316]";
           const activeBg = drawerTab === "bills" ? "bg-[#1877F2]" : drawerTab === "income" ? "bg-[#10B981]" : "bg-[#F97316]";

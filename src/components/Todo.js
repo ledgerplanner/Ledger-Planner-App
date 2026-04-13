@@ -47,7 +47,7 @@ export default function Todo({
     return (
       <div className="flex gap-0.5">
         {[1, 2, 3, 4, 5].map(i => (
-          <Star key={i} size={10} className={i <= p ? "text-[#FBBF24] fill-[#FBBF24]" : "text-slate-200 dark:text-slate-700"} />
+          <Star key={i} size={10} className={i <= p ? "text-[#FBBF24] fill-[#FBBF24]" : (isDarkMode ? "text-slate-700" : "text-slate-200")} />
         ))}
       </div>
     );
@@ -146,7 +146,7 @@ export default function Todo({
               placeholder="What needs to get done?" 
               value={newTodoText} 
               onChange={(e) => setNewTodoText(e.target.value)}
-              className="flex-1 py-3 px-4 rounded-xl text-sm font-bold bg-transparent border outline-none transition-colors dark:border-slate-700 dark:text-white dark:focus:border-[#1877F2] focus:border-[#1877F2]"
+              className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold bg-transparent border outline-none transition-colors focus:border-[#1877F2] ${isDarkMode ? "text-white border-slate-700" : "text-slate-900 border-slate-200"}`}
             />
             <button 
               type="submit" 
@@ -166,7 +166,7 @@ export default function Todo({
                    key={star} 
                    size={24} 
                    onClick={() => setNewTodoPriority(star)}
-                   className={`cursor-pointer transition-colors active:scale-90 ${star <= newTodoPriority ? "text-[#FBBF24] fill-[#FBBF24]" : "text-slate-200 dark:text-slate-700 hover:text-[#FDE68A]"}`} 
+                   className={`cursor-pointer transition-colors active:scale-90 ${star <= newTodoPriority ? "text-[#FBBF24] fill-[#FBBF24]" : (isDarkMode ? "text-slate-700 hover:text-[#FDE68A]" : "text-slate-200 hover:text-[#FDE68A]")}`} 
                  />
                ))}
              </div>
@@ -176,7 +176,9 @@ export default function Todo({
         {/* BLANK SLATE MESSAGE */}
         {todos.length === 0 && (
            <div className="text-center py-12 px-4">
-              <div className="w-16 h-16 mx-auto bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4"><CheckCircle2 size={32} className="text-slate-300 dark:text-slate-600" /></div>
+              <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4 ${isDarkMode ? "bg-slate-800" : "bg-slate-100"}`}>
+                 <CheckCircle2 size={32} className={isDarkMode ? "text-slate-600" : "text-slate-300"} />
+              </div>
               <h3 className={`text-lg font-black mb-2 ${isDarkMode ? "text-white" : "text-slate-800"}`}>The slate is clean.</h3>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-relaxed">No tasks pending.<br/>Build your empire.</p>
            </div>
@@ -229,7 +231,7 @@ export default function Todo({
         <div className="absolute inset-0 z-[60] flex items-end">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setActiveModalTodo(null)}></div>
           <div className={`w-full rounded-t-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+            <div className={`p-6 border-b flex justify-between items-center ${isDarkMode ? "border-slate-800" : "border-slate-100"}`}>
               <div className="flex items-center gap-2">
                 <CheckSquare size={20} className={activeModalTodo.isCompleted ? parseInt(activeModalTodo.priority) === 5 ? "text-[#FBBF24]" : "text-[#F97316]" : "text-[#1877F2]"} />
                 <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Task Details</h3>
@@ -240,7 +242,7 @@ export default function Todo({
             <div className="p-6 space-y-6">
               <div className="text-center px-4">
                 <h2 className={`text-xl font-black leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>{activeModalTodo.text}</h2>
-                <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full border dark:border-slate-700">
+                <div className={`mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full border ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
                   {activeModalTodo.type === "shopping" ? <ShoppingBag size={12} className="text-[#10B981]" /> : <Zap size={12} className="text-[#1877F2]" />}
                   <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
                     {activeModalTodo.type === "shopping" ? "Shopping List" : "Action Item"}
@@ -249,7 +251,7 @@ export default function Todo({
               </div>
               
               <div className={`rounded-2xl p-4 border ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
-                <div className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700">
+                <div className={`flex justify-between py-2 border-b ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
                   <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Status</span>
                   <span className={`text-xs font-black ${activeModalTodo.isCompleted ? "text-[#10B981]" : "text-[#F59E0B]"}`}>
                     {activeModalTodo.isCompleted ? "Completed" : "Pending"}

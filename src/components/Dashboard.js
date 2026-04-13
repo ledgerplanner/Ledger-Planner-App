@@ -19,6 +19,24 @@ export default function Dashboard({
   renderHeroShell,
   changeTab
 }) {
+  // === 🔥 SURGICAL OCTAGON SORTING ENGINE ===
+  const sortBillsSurgically = (billList) => {
+    return [...billList].sort((a, b) => {
+      // 1. Overdue pinned to the absolute top (Red Alert)
+      if (a.isOverdue && !b.isOverdue) return -1;
+      if (!a.isOverdue && b.isOverdue) return 1;
+      
+      // 2. Due Now is right below Overdue (Yellow Alert)
+      if (a.payday === "Due Now" && b.payday !== "Due Now") return -1;
+      if (a.payday !== "Due Now" && b.payday === "Due Now") return 1;
+      
+      // 3. Chronological sorting for the remaining runway
+      if (!a.rawDate) return 1;
+      if (!b.rawDate) return -1;
+      return new Date(a.rawDate) - new Date(b.rawDate);
+    });
+  };
+
   // === TIME-BASED GREETING ENGINE ===
   const currentHour = new Date().getHours();
   let greetingStr = `Evening, ${userName}`;
@@ -31,14 +49,12 @@ export default function Dashboard({
   const unpaidBillsAmount = bills.filter((b) => !b.isPaid).reduce((sum, b) => sum + b.amount, 0);
   const safeToSpend = totalIncomeBalance - unpaidBillsAmount;
 
-  // The Gas Gauge: How much of your cash is eaten by debt? (0 = Good, 100 = Bad)
   const debtRatio = totalIncomeBalance > 0 ? Math.max(0, Math.min((unpaidBillsAmount / totalIncomeBalance) * 100, 100)) : (unpaidBillsAmount > 0 ? 100 : 0);
   
   const isCritical = debtRatio >= 85 || safeToSpend < 0;
   const isWarning = debtRatio >= 60 && debtRatio < 85;
 
   const strokeDasharray = 251.2;
-  // Empty = 251.2, Full = 0
   const strokeDashoffset = strokeDasharray - (strokeDasharray * debtRatio) / 100;
 
   // === PAYDAY ROUTING LOGIC ===
@@ -49,7 +65,6 @@ export default function Dashboard({
   // === GRAPHIC HEADER ===
   const graphicContent = (
     <div className="flex items-center justify-between relative z-10 mb-6 w-full">
-      {/* THE GAS GAUGE RING (MASSIVE w-40) */}
       <div className="relative w-40 h-40 flex-shrink-0">
         <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
           <defs>
@@ -80,7 +95,6 @@ export default function Dashboard({
         </div>
       </div>
       
-      {/* THE SAFE SPEND SHIELD */}
       <div className="flex-1 pl-4 text-right">
         <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border mb-3 ${isDarkMode ? "bg-slate-800/80 border-slate-700 text-slate-300" : "bg-slate-50 border-slate-100 text-slate-500"}`}>
           <div className={`w-1.5 h-1.5 rounded-full ${safeToSpend < 0 ? "bg-red-500" : "bg-emerald-500 animate-pulse"}`}></div>
@@ -113,7 +127,6 @@ export default function Dashboard({
 
       <main className="px-6 space-y-4">
         
-        {/* HEADER & CONFIGURE */}
         <div className="flex justify-between items-center px-1 mt-2">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Pay Day Setup</h3>
           <button onClick={() => { setEditPaydayConfig(paydayConfig); setIsPaydaySetupOpen(true); }} className={`text-[9px] font-black uppercase flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 text-[#1877F2] hover:bg-slate-700" : "bg-white border text-[#1877F2] hover:bg-blue-50"}`}>
@@ -121,7 +134,6 @@ export default function Dashboard({
           </button>
         </div>
 
-        {/* HORIZONTAL PAYDAY CARDS */}
         <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-4 pt-2 -mx-2 px-3 snap-x">
           {["Due Now", "Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].map((pd) => {
             const pdSettings = paydayConfig[pd];
@@ -156,7 +168,6 @@ export default function Dashboard({
           })}
         </div>
 
-        {/* VERTICAL BILLS ROUTING LIST */}
         <div className="space-y-4">
           {Object.entries(billsByPayday).map(([payday, groupBills]) => {
             if (payday === "Due Now" && groupBills.length === 0) return null;
@@ -168,7 +179,9 @@ export default function Dashboard({
             const checkTotal = groupBills.filter((b) => !b.isPaid).reduce((sum, b) => sum + b.amount, 0);
             const expectedDateStr = isDueNow ? "Currently Due" : pdSettings?.date ? formatPaydayDateStr(pdSettings.date) : "Unscheduled";
             const expectedIncomeStr = pdSettings && pdSettings.income ? `+$${parseFloat(pdSettings.income).toLocaleString()} Expected` : "";
-            const sortedBills = [...groupBills].sort((a, b) => a.date - b.date);
+            
+            // 🔥 SURGICAL SORTING APPLIED HERE
+            const sortedBills = sortBillsSurgically(groupBills);
 
             return (
               <div key={payday} className="space-y-2">
@@ -202,7 +215,6 @@ export default function Dashboard({
                               <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => setSelectedEntry(bill)}>
                                 <div className={`w-11 h-11 rounded-2xl border flex items-center justify-center text-xl shrink-0 ${bill.isOverdue ? isDarkMode ? "bg-red-900/20 border-red-900/50" : "bg-red-50 border-red-100" : isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-100"}`}>{bill.icon}</div>
                                 <div>
-                                  {/* 🔥 RECURRING ARROWS INJECTED SAFELY */}
                                   <div className="flex items-center gap-1.5">
                                     <p className={`font-bold text-sm ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{bill.name}</p>
                                     {bill.isRecurring && !bill.isPaid && <RefreshCw size={12} className="text-[#10B981] shrink-0" />}
@@ -216,7 +228,6 @@ export default function Dashboard({
                             </div>
                           </div>
                           
-                          {/* 🔥 INSTALLMENT PROGRESS BAR INJECTED SAFELY */}
                           {bill.isInstallment && !bill.isPaid && (
                             <div className="mt-3 ml-[4.5rem] w-full max-w-[85%] animate-fade-in pr-2">
                               <div className="flex justify-between items-end mb-1.5">
@@ -241,7 +252,6 @@ export default function Dashboard({
           })}
         </div>
 
-        {/* RECENT ACTIVITY SECTION */}
         <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800 mt-8">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Recent Activity</h3>
           <div className={`rounded-[2rem] p-3 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>

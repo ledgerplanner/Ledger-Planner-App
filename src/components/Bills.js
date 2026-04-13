@@ -10,9 +10,26 @@ export default function Bills({
   renderHeroShell,
   handleRolloverMonth
 }) {
-  // === SORTING & MATH ENGINE ===
-  const unpaidBills = bills.filter((b) => !b.isPaid).sort((a, b) => a.date - b.date);
-  const paidBills = bills.filter((b) => b.isPaid).sort((a, b) => a.date - b.date);
+  // === 🔥 SURGICAL OCTAGON SORTING ENGINE ===
+  const sortBillsSurgically = (billList) => {
+    return [...billList].sort((a, b) => {
+      // 1. Overdue pinned to the absolute top (Red Alert)
+      if (a.isOverdue && !b.isOverdue) return -1;
+      if (!a.isOverdue && b.isOverdue) return 1;
+      
+      // 2. Due Now is right below Overdue (Yellow Alert)
+      if (a.payday === "Due Now" && b.payday !== "Due Now") return -1;
+      if (a.payday !== "Due Now" && b.payday === "Due Now") return 1;
+      
+      // 3. Chronological sorting for the remaining runway
+      if (!a.rawDate) return 1;
+      if (!b.rawDate) return -1;
+      return new Date(a.rawDate) - new Date(b.rawDate);
+    });
+  };
+
+  const unpaidBills = sortBillsSurgically(bills.filter((b) => !b.isPaid));
+  const paidBills = bills.filter((b) => b.isPaid).sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate)); // Show most recently paid first
 
   const totalBillsAmount = bills.reduce((sum, b) => sum + b.amount, 0);
   const paidBillsAmount = paidBills.reduce((sum, b) => sum + b.amount, 0);
@@ -21,7 +38,6 @@ export default function Bills({
   // === GRAPHIC HEADER ===
   const graphicContent = (
     <div className="flex items-center justify-between relative z-10 mb-6 w-full">
-      {/* MASSIVE CHECKLIST PROGRESS RING */}
       <div className="relative w-40 h-40 flex-shrink-0">
         <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
           <defs>
@@ -44,7 +60,6 @@ export default function Bills({
           ${paidBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 0 })} <span className="text-xl text-slate-400">/ {totalBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
         </p>
         
-        {/* THE SMART ROLLOVER BUTTON */}
         <button onClick={handleRolloverMonth} className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-sm ${isDarkMode ? "bg-slate-800 text-[#10B981] hover:bg-slate-700" : "bg-white border-slate-200 border text-[#10B981] hover:bg-emerald-50"}`}>
           <RefreshCw size={14} strokeWidth={3} /> Start New Month
         </button>
@@ -79,7 +94,6 @@ export default function Bills({
                       <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => setSelectedEntry(bill)}>
                         <div className={`w-11 h-11 rounded-2xl border flex items-center justify-center text-xl shrink-0 ${bill.isOverdue || bill.payday === "Due Now" ? isDarkMode ? "bg-red-900/20 border-red-900/50" : "bg-red-50 border-red-100" : isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-100"}`}>{bill.icon}</div>
                         <div>
-                          {/* 🔥 RECURRING ARROWS INJECTED SAFELY */}
                           <div className="flex items-center gap-1.5">
                             <p className={`font-bold text-sm ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{bill.name}</p>
                             {bill.isRecurring && !bill.isPaid && <RefreshCw size={12} className="text-[#10B981] shrink-0" />}
@@ -96,7 +110,6 @@ export default function Bills({
                     </div>
                   </div>
 
-                  {/* 🔥 INSTALLMENT PROGRESS BAR INJECTED SAFELY */}
                   {bill.isInstallment && !bill.isPaid && (
                     <div className="mt-3 ml-[4.5rem] w-full max-w-[85%] animate-fade-in pr-2">
                       <div className="flex justify-between items-end mb-1.5">
@@ -128,7 +141,6 @@ export default function Bills({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4 flex-1">
                       <div className="relative p-1 z-10 cursor-pointer" onClick={() => handleBillClick(bill.id)}>
-                        {/* 🔥 GREEN CHECKMARKS INJECTED SAFELY */}
                         <CheckCircle2 className="text-[#10B981] hover:scale-110 transition-transform" size={28} />
                       </div>
                       <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => setSelectedEntry(bill)}>

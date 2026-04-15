@@ -1,5 +1,7 @@
 import React from "react";
 import { Circle, CheckCircle2, ChevronUp, ChevronDown, Settings2, List, AlertCircle, RefreshCw } from "lucide-react";
+import { getToken } from "firebase/messaging";
+import { messaging } from "../firebase";
 
 export default function Dashboard({
   userName,
@@ -19,6 +21,34 @@ export default function Dashboard({
   renderHeroShell,
   changeTab
 }) {
+  // === 🔔 PUSH NOTIFICATION ENGINE ===
+  const enablePushNotifications = async () => {
+    try {
+      console.log("Requesting notification permission...");
+      const permission = await Notification.requestPermission();
+      
+      if (permission === "granted") {
+        console.log("Permission granted! Fetching token...");
+        const currentToken = await getToken(messaging, { 
+          vapidKey: "BDubfUXfP5DhFRpZ5ZwQp0o88f2avvtfu0rfFr9ySjHgTZmQ4gsr0GWzE-cJQxgbwq93GlgcCc5ip6KksvngmXY" 
+        });
+
+        if (currentToken) {
+          console.log("Push Token Generated:", currentToken);
+          alert("Push Notifications Enabled! Vault secured.");
+          // TODO: Save this 'currentToken' to the user's Firestore document in future build
+        } else {
+          console.log("No registration token available. Request permission to generate one.");
+        }
+      } else {
+        console.log("User denied push notifications.");
+        alert("You denied notifications. You will only see alerts inside the app.");
+      }
+    } catch (error) {
+      console.error("An error occurred while retrieving token. ", error);
+    }
+  };
+
   // === 🔥 SURGICAL OCTAGON SORTING ENGINE ===
   const sortBillsSurgically = (billList) => {
     return [...billList].sort((a, b) => {
@@ -129,9 +159,14 @@ export default function Dashboard({
         
         <div className="flex justify-between items-center px-1 mt-2">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Pay Day Setup</h3>
-          <button onClick={() => { setEditPaydayConfig(paydayConfig); setIsPaydaySetupOpen(true); }} className={`text-[9px] font-black uppercase flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 text-[#1877F2] hover:bg-slate-700" : "bg-white border text-[#1877F2] hover:bg-blue-50"}`}>
-            <Settings2 size={12} strokeWidth={3} /> Configure
-          </button>
+          <div className="flex gap-2">
+            <button onClick={enablePushNotifications} className={`text-[9px] font-black uppercase flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 text-emerald-400 hover:bg-slate-700" : "bg-emerald-50 border border-emerald-100 text-emerald-600 hover:bg-emerald-100"}`}>
+              <AlertCircle size={12} strokeWidth={3} /> Enable Push
+            </button>
+            <button onClick={() => { setEditPaydayConfig(paydayConfig); setIsPaydaySetupOpen(true); }} className={`text-[9px] font-black uppercase flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 text-[#1877F2] hover:bg-slate-700" : "bg-white border text-[#1877F2] hover:bg-blue-50"}`}>
+              <Settings2 size={12} strokeWidth={3} /> Configure
+            </button>
+          </div>
         </div>
 
         <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-4 pt-2 -mx-2 px-3 snap-x">

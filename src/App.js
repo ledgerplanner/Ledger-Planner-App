@@ -17,6 +17,9 @@ import {
 } from "firebase/auth";
 import { collection, doc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp } from "firebase/firestore";
 
+// === DEMO DATA IMPORT ===
+import { demoAccounts, demoBills, demoTransactions, demoTodos, demoPaydayConfig } from "./demoData";
+
 // === COMPONENTS ===
 import Login from "./components/Login";
 import Dashboard from "./components/Dashboard";
@@ -26,9 +29,12 @@ import Activity from "./components/Activity";
 import Todo from "./components/Todo";
 
 export default function App() {
+  // === DEMO TRIPWIRE ===
+  const isDemoMode = window.location.hostname.startsWith("demo");
+
   // === APP & AUTH STATE ===
-  const [user, setUser] = useState(null);
-  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [user, setUser] = useState(isDemoMode ? { uid: "demo123", displayName: "Demo User", email: "demo@ledgerplanner.com" } : null);
+  const [isAuthLoading, setIsAuthLoading] = useState(!isDemoMode);
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [activeTab, setActiveTab] = useState("home");
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -43,10 +49,10 @@ export default function App() {
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState("");
 
-  const [bills, setBills] = useState([]);
-  const [transactions, setTransactions] = useState([]);
-  const [accounts, setAccounts] = useState([]);
-  const [todos, setTodos] = useState([]);
+  const [bills, setBills] = useState(isDemoMode ? demoBills : []);
+  const [transactions, setTransactions] = useState(isDemoMode ? demoTransactions : []);
+  const [accounts, setAccounts] = useState(isDemoMode ? demoAccounts : []);
+  const [todos, setTodos] = useState(isDemoMode ? demoTodos : []);
 
   // === UI & MODAL STATE ===
   const [selectedEntry, setSelectedEntry] = useState(null);
@@ -55,12 +61,11 @@ export default function App() {
   const [collapsedPaydays, setCollapsedPaydays] = useState({ "Payday 2": true, "Payday 3": true, "Payday 4": true, "Payday 5": true });
   
   const [isPaydaySetupOpen, setIsPaydaySetupOpen] = useState(false);
-  const [paydayConfig, setPaydayConfig] = useState({ "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } });
+  const [paydayConfig, setPaydayConfig] = useState(isDemoMode ? demoPaydayConfig : { "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } });
   const [editPaydayConfig, setEditPaydayConfig] = useState(paydayConfig);
   
   const [paymentModalConfig, setPaymentModalConfig] = useState({ isOpen: false, billId: null, accountId: "" });
   
-  // 🔥 NEW: INSTALLMENT PROMPT STATE
   const [installmentPromptConfig, setInstallmentPromptConfig] = useState({ isOpen: false, billId: null, nextDate: "" });
 
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -120,14 +125,16 @@ export default function App() {
 
   // === CLOUD SYNC ENGINE ===
   useEffect(() => {
+    if (isDemoMode) return; // Do not run Firebase auth listener in Demo Mode
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setTimeout(() => setIsAuthLoading(false), 1200);
     });
     return () => unsubscribeAuth();
-  }, []);
+  }, [isDemoMode]);
 
   useEffect(() => {
+    if (isDemoMode) return; // Do not fetch from Firebase in Demo Mode
     if (!user) { setAccounts([]); setBills([]); setTransactions([]); setTodos([]); return; }
     const userRef = doc(db, "users", user.uid);
     const unsubAcc = onSnapshot(collection(userRef, "accounts"), (snap) => setAccounts(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(a => !a.isArchived)));
@@ -136,7 +143,7 @@ export default function App() {
     const unsubTodos = onSnapshot(query(collection(userRef, "todos"), orderBy("createdAt", "desc")), (snap) => setTodos(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     const unsubConfig = onSnapshot(doc(userRef, "settings", "paydayConfig"), (docSnap) => { if (docSnap.exists()) setPaydayConfig(docSnap.data()); });
     return () => { unsubAcc(); unsubBills(); unsubTxs(); unsubTodos(); unsubConfig(); };
-  }, [user]);
+  }, [user, isDemoMode]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -168,12 +175,18 @@ export default function App() {
     catch (error) { setAuthError("Google Sign-In failed."); setIsAuthLoading(false); }
   };
 
-  const handleLogout = async () => { await signOut(auth); setActiveTab("home"); };
-  const triggerHaptic = () => { if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) window.navigator.vibrate(50); };
+  const handleLogout = async () => { 
+    if (isDemoMode) {
+      window.location.href = "https://ledgerplanner.com";
+      return;
+    }
+    await signOut(auth); setActiveTab("home"); 
+  };
   
+  const triggerHaptic = () => { if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) window.navigator.vibrate(50); };
   const triggerVictory = () => { triggerHaptic(); setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2000); };
 
-  const userName = user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || "Founder";
+  const userName = isDemoMode ? "Aaron" : user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || "Founder";
   const formattedDate = currentTime.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
   const formattedTime = currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 
@@ -214,7 +227,17 @@ export default function App() {
             if (localBillDate.getTime() === todayLocal.getTime()) updatePayload.payday = "Due Now";
         }
     }
-    await updateDoc(doc(db, "users", user.uid, colName, selectedEntry.id), updatePayload);
+    
+    if (isDemoMode) {
+      if (colName === "bills") {
+        setBills(bills.map(b => b.id === selectedEntry.id ? { ...b, ...updatePayload } : b));
+      } else {
+        setTransactions(transactions.map(t => t.id === selectedEntry.id ? { ...t, ...updatePayload } : t));
+      }
+    } else {
+      await updateDoc(doc(db, "users", user.uid, colName, selectedEntry.id), updatePayload);
+    }
+    
     setSelectedEntry({ ...selectedEntry, ...updatePayload });
     setIsEditingEntry(false); triggerVictory();
   };
@@ -225,10 +248,16 @@ export default function App() {
     let finalBalance = startBal;
     if (newAccType === "Credit Card" && startBal > 0) finalBalance = -startBal;
     const getIcon = (type) => { if (type === "Credit Card") return "💳"; if (type === "401k / Retirement") return "🌴"; if (type === "Savings") return "📈"; if (type === "Cash") return "💵"; return "🏦"; };
-    const accRef = await addDoc(collection(db, "users", user.uid, "accounts"), { name: newAccName, type: newAccType, description: newAccDesc, balance: finalBalance, icon: getIcon(newAccType), isArchived: false });
-    if (Math.abs(startBal) > 0) {
-      const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
-      await addDoc(collection(db, "users", user.uid, "transactions"), { name: `${newAccName} (Opening)`, icon: getIcon(newAccType), amount: Math.abs(startBal), date: autoTimeStamp, type: finalBalance < 0 ? "Expense" : "Income", category: finalBalance < 0 ? "Initial Debt" : "Opening Balance", accountId: accRef.id, createdAt: serverTimestamp() });
+    
+    if (isDemoMode) {
+      const newAcc = { id: `acc_demo_${Date.now()}`, name: newAccName, type: newAccType, description: newAccDesc, balance: finalBalance, icon: getIcon(newAccType) };
+      setAccounts([...accounts, newAcc]);
+    } else {
+      const accRef = await addDoc(collection(db, "users", user.uid, "accounts"), { name: newAccName, type: newAccType, description: newAccDesc, balance: finalBalance, icon: getIcon(newAccType), isArchived: false });
+      if (Math.abs(startBal) > 0) {
+        const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+        await addDoc(collection(db, "users", user.uid, "transactions"), { name: `${newAccName} (Opening)`, icon: getIcon(newAccType), amount: Math.abs(startBal), date: autoTimeStamp, type: finalBalance < 0 ? "Expense" : "Income", category: finalBalance < 0 ? "Initial Debt" : "Opening Balance", accountId: accRef.id, createdAt: serverTimestamp() });
+      }
     }
     triggerVictory(); setIsAddAccountOpen(false); setNewAccName(""); setNewAccBalance(""); setNewAccDesc(""); setNewAccType("Checking");
   };
@@ -246,11 +275,20 @@ export default function App() {
     if (isNaN(amt) || amt <= 0 || !transferFrom || !transferTo) return;
     const fromAcc = accounts.find(a => a.id === transferFrom);
     const toAcc = accounts.find(a => a.id === transferTo);
-    await updateDoc(doc(db, "users", user.uid, "accounts", fromAcc.id), { balance: fromAcc.balance - amt });
-    await updateDoc(doc(db, "users", user.uid, "accounts", toAcc.id), { balance: toAcc.balance + amt });
-    const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
-    await addDoc(collection(db, "users", user.uid, "transactions"), { name: `Transfer to ${toAcc.name}`, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Expense", category: "Transfers (Venmo/Zelle)", accountId: fromAcc.id, createdAt: serverTimestamp() });
-    await addDoc(collection(db, "users", user.uid, "transactions"), { name: `Transfer from ${fromAcc.name}`, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: toAcc.id, createdAt: serverTimestamp() });
+    
+    if (isDemoMode) {
+       setAccounts(accounts.map(a => {
+         if(a.id === fromAcc.id) return { ...a, balance: a.balance - amt };
+         if(a.id === toAcc.id) return { ...a, balance: a.balance + amt };
+         return a;
+       }));
+    } else {
+      await updateDoc(doc(db, "users", user.uid, "accounts", fromAcc.id), { balance: fromAcc.balance - amt });
+      await updateDoc(doc(db, "users", user.uid, "accounts", toAcc.id), { balance: toAcc.balance + amt });
+      const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+      await addDoc(collection(db, "users", user.uid, "transactions"), { name: `Transfer to ${toAcc.name}`, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Expense", category: "Transfers (Venmo/Zelle)", accountId: fromAcc.id, createdAt: serverTimestamp() });
+      await addDoc(collection(db, "users", user.uid, "transactions"), { name: `Transfer from ${fromAcc.name}`, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: toAcc.id, createdAt: serverTimestamp() });
+    }
     triggerVictory(); setIsTransferOpen(false); setTransferAmount("0"); setTransferFrom(""); setTransferTo("");
   };
 
@@ -260,11 +298,16 @@ export default function App() {
     let finalBalance = newBal;
     if (selectedAccount.type === "Credit Card" && newBal > 0) finalBalance = -newBal;
     const diff = finalBalance - selectedAccount.balance;
-    if (Math.abs(diff) > 0.01) {
-      const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
-      await addDoc(collection(db, "users", user.uid, "transactions"), { name: "Balance Adjustment", icon: "⚖️", amount: Math.abs(diff), date: autoTimeStamp, type: diff > 0 ? "Income" : "Expense", category: "Refunds & Adjustments", accountId: selectedAccount.id, createdAt: serverTimestamp() });
+    
+    if (isDemoMode) {
+      setAccounts(accounts.map(a => a.id === selectedAccount.id ? { ...a, balance: finalBalance } : a));
+    } else {
+      if (Math.abs(diff) > 0.01) {
+        const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+        await addDoc(collection(db, "users", user.uid, "transactions"), { name: "Balance Adjustment", icon: "⚖️", amount: Math.abs(diff), date: autoTimeStamp, type: diff > 0 ? "Income" : "Expense", category: "Refunds & Adjustments", accountId: selectedAccount.id, createdAt: serverTimestamp() });
+      }
+      await updateDoc(doc(db, "users", user.uid, "accounts", selectedAccount.id), { balance: finalBalance });
     }
-    await updateDoc(doc(db, "users", user.uid, "accounts", selectedAccount.id), { balance: finalBalance });
     triggerVictory(); setSelectedAccount(null);
   };
 
@@ -272,17 +315,28 @@ export default function App() {
     if (!selectedAccount) return;
     if (!window.confirm(`Are you sure you want to delete ${selectedAccount.name}?`)) return;
     const accId = selectedAccount.id;
-    await deleteDoc(doc(db, "users", user.uid, "accounts", accId));
-    const txsToDelete = transactions.filter(tx => tx.accountId === accId);
-    const batchPromises = txsToDelete.map(tx => deleteDoc(doc(db, "users", user.uid, "transactions", tx.id)));
-    const billsToReset = bills.filter(b => b.paidFromAccountId === accId);
-    billsToReset.forEach(b => { batchPromises.push(updateDoc(doc(db, "users", user.uid, "bills", b.id), { isPaid: false, paidAmount: b.isInstallment ? b.paidAmount - b.amount : 0, paidFromAccountId: null, linkedTxId: null })); });
-    await Promise.all(batchPromises);
+    
+    if (isDemoMode) {
+      setAccounts(accounts.filter(a => a.id !== accId));
+    } else {
+      await deleteDoc(doc(db, "users", user.uid, "accounts", accId));
+      const txsToDelete = transactions.filter(tx => tx.accountId === accId);
+      const batchPromises = txsToDelete.map(tx => deleteDoc(doc(db, "users", user.uid, "transactions", tx.id)));
+      const billsToReset = bills.filter(b => b.paidFromAccountId === accId);
+      billsToReset.forEach(b => { batchPromises.push(updateDoc(doc(db, "users", user.uid, "bills", b.id), { isPaid: false, paidAmount: b.isInstallment ? b.paidAmount - b.amount : 0, paidFromAccountId: null, linkedTxId: null })); });
+      await Promise.all(batchPromises);
+    }
     triggerHaptic(); setSelectedAccount(null);
   };
 
   const clearPaydayConfig = () => { setEditPaydayConfig({ "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } }); triggerHaptic(); };
-  const savePaydayConfig = async () => { setPaydayConfig(editPaydayConfig); await setDoc(doc(db, "users", user.uid, "settings", "paydayConfig"), editPaydayConfig); setIsPaydaySetupOpen(false); triggerVictory(); };
+  const savePaydayConfig = async () => { 
+    setPaydayConfig(editPaydayConfig); 
+    if (!isDemoMode) {
+      await setDoc(doc(db, "users", user.uid, "settings", "paydayConfig"), editPaydayConfig); 
+    }
+    setIsPaydaySetupOpen(false); triggerVictory(); 
+  };
 
   const todayForDynamic = new Date(); todayForDynamic.setHours(0, 0, 0, 0);
   const calculatePaydayGroup = (dateString) => {
@@ -331,6 +385,12 @@ export default function App() {
 
   const handleRolloverMonth = async () => {
     if (!window.confirm("Ready to start a new month? Paid recurring bills will automatically bump to next month, and one-time bills will be cleared from the board.")) return;
+    
+    if (isDemoMode) {
+      alert("Rollover is disabled in Demo Mode.");
+      return;
+    }
+
     const batchPromises = [];
     bills.forEach(bill => {
       if (bill.isPaid) {
@@ -429,9 +489,16 @@ export default function App() {
       const refundAccountId = bill.paidFromAccountId;
       const targetAcc = accounts.find(a => a.id === refundAccountId);
       let newPaidAmount = bill.paidAmount; if (bill.isInstallment) newPaidAmount = bill.paidAmount - bill.amount;
-      await updateDoc(doc(db, "users", user.uid, "bills", id), { isPaid: false, paidAmount: newPaidAmount, paidFromAccountId: null, linkedTxId: null });
-      if (targetAcc) await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance + bill.amount });
-      if (bill.linkedTxId) await deleteDoc(doc(db, "users", user.uid, "transactions", bill.linkedTxId));
+      
+      if (isDemoMode) {
+        setBills(bills.map(b => b.id === id ? { ...b, isPaid: false, paidAmount: newPaidAmount, paidFromAccountId: null, linkedTxId: null } : b));
+        if (targetAcc) setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: a.balance + bill.amount } : a));
+        if (bill.linkedTxId) setTransactions(transactions.filter(t => t.id !== bill.linkedTxId));
+      } else {
+        await updateDoc(doc(db, "users", user.uid, "bills", id), { isPaid: false, paidAmount: newPaidAmount, paidFromAccountId: null, linkedTxId: null });
+        if (targetAcc) await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance + bill.amount });
+        if (bill.linkedTxId) await deleteDoc(doc(db, "users", user.uid, "transactions", bill.linkedTxId));
+      }
       triggerHaptic();
     }
   };
@@ -443,28 +510,51 @@ export default function App() {
     if (!bill || !targetAcc) return;
     const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
     
-    const txRef = await addDoc(collection(db, "users", user.uid, "transactions"), { name: bill.name, icon: bill.icon, amount: bill.amount, date: autoTimeStamp, type: "Expense", category: bill.category || "Bill Payment", accountId: targetAcc.id, createdAt: serverTimestamp() });
-    
-    await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance - bill.amount });
-
-    if (bill.isInstallment) {
-      const newPaidAmt = (bill.paidAmount || 0) + bill.amount;
-      const isFullyPaid = newPaidAmt >= bill.totalAmount;
-
-      if (isFullyPaid) {
-        await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: true, paidAmount: newPaidAmt, paidFromAccountId: targetAcc.id, linkedTxId: txRef.id });
+    if (isDemoMode) {
+      const txId = `tx_demo_${Date.now()}`;
+      setTransactions([{ id: txId, name: bill.name, icon: bill.icon, amount: bill.amount, date: autoTimeStamp, type: "Expense", category: bill.category || "Bill Payment", accountId: targetAcc.id }, ...transactions]);
+      setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: a.balance - bill.amount } : a));
+      
+      if (bill.isInstallment) {
+        const newPaidAmt = (bill.paidAmount || 0) + bill.amount;
+        if (newPaidAmt >= bill.totalAmount) {
+          setBills(bills.map(b => b.id === bill.id ? { ...b, isPaid: true, paidAmount: newPaidAmt, paidFromAccountId: targetAcc.id, linkedTxId: txId } : b));
+          triggerVictory();
+          setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
+        } else {
+          setBills(bills.map(b => b.id === bill.id ? { ...b, paidAmount: newPaidAmt, isOverdue: false } : b));
+          triggerHaptic();
+          setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
+          setInstallmentPromptConfig({ isOpen: true, billId: bill.id, nextDate: "" });
+        }
+      } else {
+        setBills(bills.map(b => b.id === bill.id ? { ...b, isPaid: true, paidAmount: 0, paidFromAccountId: targetAcc.id, linkedTxId: txId } : b));
         triggerVictory();
         setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
-      } else {
-        await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { paidAmount: newPaidAmt, isOverdue: false });
-        triggerHaptic();
-        setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
-        setInstallmentPromptConfig({ isOpen: true, billId: bill.id, nextDate: "" });
       }
     } else {
-      await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: true, paidAmount: 0, paidFromAccountId: targetAcc.id, linkedTxId: txRef.id });
-      triggerVictory();
-      setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
+      const txRef = await addDoc(collection(db, "users", user.uid, "transactions"), { name: bill.name, icon: bill.icon, amount: bill.amount, date: autoTimeStamp, type: "Expense", category: bill.category || "Bill Payment", accountId: targetAcc.id, createdAt: serverTimestamp() });
+      await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance - bill.amount });
+
+      if (bill.isInstallment) {
+        const newPaidAmt = (bill.paidAmount || 0) + bill.amount;
+        const isFullyPaid = newPaidAmt >= bill.totalAmount;
+
+        if (isFullyPaid) {
+          await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: true, paidAmount: newPaidAmt, paidFromAccountId: targetAcc.id, linkedTxId: txRef.id });
+          triggerVictory();
+          setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
+        } else {
+          await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { paidAmount: newPaidAmt, isOverdue: false });
+          triggerHaptic();
+          setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
+          setInstallmentPromptConfig({ isOpen: true, billId: bill.id, nextDate: "" });
+        }
+      } else {
+        await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: true, paidAmount: 0, paidFromAccountId: targetAcc.id, linkedTxId: txRef.id });
+        triggerVictory();
+        setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
+      }
     }
   };
 
@@ -479,13 +569,17 @@ export default function App() {
     const displayDate = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
     const newPayday = calculatePaydayGroup(installmentPromptConfig.nextDate);
 
-    await updateDoc(doc(db, "users", user.uid, "bills", bill.id), {
-        rawDate: installmentPromptConfig.nextDate,
-        date: sortableDay,
-        fullDate: displayDate,
-        payday: newPayday,
-        isOverdue: false
-    });
+    if (isDemoMode) {
+      setBills(bills.map(b => b.id === bill.id ? { ...b, rawDate: installmentPromptConfig.nextDate, date: sortableDay, fullDate: displayDate, payday: newPayday, isOverdue: false } : b));
+    } else {
+      await updateDoc(doc(db, "users", user.uid, "bills", bill.id), {
+          rawDate: installmentPromptConfig.nextDate,
+          date: sortableDay,
+          fullDate: displayDate,
+          payday: newPayday,
+          isOverdue: false
+      });
+    }
 
     triggerVictory();
     setInstallmentPromptConfig({ isOpen: false, billId: null, nextDate: "" });
@@ -511,19 +605,34 @@ export default function App() {
         const dateObj = new Date(entryDate); sortableDay = dateObj.getUTCDate();
         displayDate = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
       }
-      await addDoc(collection(db, "users", user.uid, "bills"), {
-        name: entryName || "New Bill", icon: entryIcon || "🧾", category: finalCategory, amount: amountToProcess,
-        date: sortableDay, fullDate: displayDate, rawDate: entryDate, payday: calculatePaydayGroup(entryDate), isPaid: false, isOverdue: false,
-        isRecurring: entryIsRecurring, isInstallment: entryIsInstallment, totalAmount: entryIsInstallment ? parseFloat(entryTotalAmount) || 0 : 0,
-        paidAmount: entryIsInstallment ? parseFloat(entryPaidAmount) || 0 : 0, linkedTxId: null
-      });
+      
+      if (isDemoMode) {
+        setBills([...bills, {
+          id: `b_demo_${Date.now()}`, name: entryName || "New Bill", icon: entryIcon || "🧾", category: finalCategory, amount: amountToProcess,
+          date: sortableDay, fullDate: displayDate, rawDate: entryDate, payday: calculatePaydayGroup(entryDate), isPaid: false, isOverdue: false,
+          isRecurring: entryIsRecurring, isInstallment: entryIsInstallment, totalAmount: entryIsInstallment ? parseFloat(entryTotalAmount) || 0 : 0,
+          paidAmount: entryIsInstallment ? parseFloat(entryPaidAmount) || 0 : 0, linkedTxId: null
+        }]);
+      } else {
+        await addDoc(collection(db, "users", user.uid, "bills"), {
+          name: entryName || "New Bill", icon: entryIcon || "🧾", category: finalCategory, amount: amountToProcess,
+          date: sortableDay, fullDate: displayDate, rawDate: entryDate, payday: calculatePaydayGroup(entryDate), isPaid: false, isOverdue: false,
+          isRecurring: entryIsRecurring, isInstallment: entryIsInstallment, totalAmount: entryIsInstallment ? parseFloat(entryTotalAmount) || 0 : 0,
+          paidAmount: entryIsInstallment ? parseFloat(entryPaidAmount) || 0 : 0, linkedTxId: null
+        });
+      }
       triggerHaptic(); closeQab();
     } else if (drawerTab === "income" || drawerTab === "transactions") {
       const targetAcc = accounts.find(a => a.id === entryAccount) || accounts[0];
       if (targetAcc) {
         const isIncome = drawerTab === "income";
-        await addDoc(collection(db, "users", user.uid, "transactions"), { name: entryName || (isIncome ? "Income" : "Expense"), icon: isIncome ? "💵" : entryIcon, category: finalCategory, amount: amountToProcess, date: autoTimeStamp, type: isIncome ? "Income" : "Expense", accountId: targetAcc.id, createdAt: serverTimestamp() });
-        await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance + (isIncome ? amountToProcess : -amountToProcess) });
+        if (isDemoMode) {
+          setTransactions([{ id: `tx_demo_${Date.now()}`, name: entryName || (isIncome ? "Income" : "Expense"), icon: isIncome ? "💵" : entryIcon, category: finalCategory, amount: amountToProcess, date: autoTimeStamp, type: isIncome ? "Income" : "Expense", accountId: targetAcc.id }, ...transactions]);
+          setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: a.balance + (isIncome ? amountToProcess : -amountToProcess) } : a));
+        } else {
+          await addDoc(collection(db, "users", user.uid, "transactions"), { name: entryName || (isIncome ? "Income" : "Expense"), icon: isIncome ? "💵" : entryIcon, category: finalCategory, amount: amountToProcess, date: autoTimeStamp, type: isIncome ? "Income" : "Expense", accountId: targetAcc.id, createdAt: serverTimestamp() });
+          await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance + (isIncome ? amountToProcess : -amountToProcess) });
+        }
       }
       triggerVictory(); closeQab();
     }
@@ -542,7 +651,7 @@ export default function App() {
     );
   }
 
-  if (!user) {
+  if (!user && !isDemoMode) {
     return <Login isAuthLoading={isAuthLoading} isLoginMode={isLoginMode} setIsLoginMode={setIsLoginMode} handleAuthSubmit={handleAuthSubmit} handleGoogleLogin={handleGoogleLogin} authError={authError} setAuthError={setAuthError} email={email} setEmail={setEmail} password={password} setPassword={setPassword} firstName={firstName} setFirstName={setFirstName} />;
   }
 
@@ -558,7 +667,7 @@ export default function App() {
             <img src="/login-logo.png" alt="Ledger Planner" className={`w-12 h-12 rounded-full shadow-[0_4px_15px_rgba(24,119,242,0.2)] object-cover border-[2px] transition-colors ${isDarkMode ? "border-slate-700" : "border-slate-100"}`} />
             <div>
               <h1 className={`font-black tracking-tighter text-lg leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>Ledger Planner</h1>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Master Engine</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{isDemoMode ? "Demo Mode" : "Master Engine"}</p>
             </div>
           </div>
           <div className="space-y-2 flex-1">
@@ -572,7 +681,7 @@ export default function App() {
           </div>
           <div className="mt-auto space-y-4">
             <button onClick={() => setIsQabOpen(true)} className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-white bg-[#1877F2] shadow-[0_8px_20px_rgba(24,119,242,0.3)] font-black uppercase tracking-widest text-xs transition-transform active:scale-95 hover:-translate-y-1`}><Plus size={18} /> Quick Add</button>
-            <button onClick={handleLogout} className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800/50 border-slate-700 text-red-400 hover:bg-red-900/30" : "bg-white border-slate-100 text-red-500 hover:bg-red-50"}`}><LogOut size={16} strokeWidth={2.5} /><span className="text-[10px] font-black uppercase tracking-widest">Logout</span></button>
+            <button onClick={handleLogout} className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800/50 border-slate-700 text-red-400 hover:bg-red-900/30" : "bg-white border-slate-100 text-red-500 hover:bg-red-50"}`}><LogOut size={16} strokeWidth={2.5} /><span className="text-[10px] font-black uppercase tracking-widest">{isDemoMode ? "Exit Demo" : "Logout"}</span></button>
           </div>
         </div>
 
@@ -583,7 +692,7 @@ export default function App() {
             {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} />}
             {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} handleRolloverMonth={handleRolloverMonth} />}
             {activeTab === "activity" && <Activity userName={userName} transactions={transactions} activitySearch={activitySearch} setActivitySearch={setActivitySearch} activityFilter={activityFilter} setActivityFilter={setActivityFilter} isDarkMode={isDarkMode} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} />}
-            {activeTab === "todo" && <Todo userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} newTodoType={newTodoType} setNewTodoType={setNewTodoType} isDarkMode={isDarkMode} handleAddTodo={async (e) => { e.preventDefault(); if(!newTodoText.trim()) return; await addDoc(collection(db, "users", user.uid, "todos"), { text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() }); triggerVictory(); setNewTodoText(""); setNewTodoPriority(3); }} toggleTodoStatus={async (id) => { triggerHaptic(); const todo = todos.find(t => t.id === id); await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); }} setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} />}
+            {activeTab === "todo" && <Todo userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} newTodoType={newTodoType} setNewTodoType={setNewTodoType} isDarkMode={isDarkMode} handleAddTodo={async (e) => { e.preventDefault(); if(!newTodoText.trim()) return; if (isDemoMode) { setTodos([{ id: `todo_demo_${Date.now()}`, text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false }, ...todos]); } else { await addDoc(collection(db, "users", user.uid, "todos"), { text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() }); } triggerVictory(); setNewTodoText(""); setNewTodoPriority(3); }} toggleTodoStatus={async (id) => { triggerHaptic(); const todo = todos.find(t => t.id === id); if (isDemoMode) { setTodos(todos.map(t => t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)); } else { await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); } }} setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} />}
           </div>
 
           <div className="absolute bottom-24 right-6 z-40 lg:hidden"><button onClick={() => setIsQabOpen(true)} className={`w-14 h-14 rounded-full flex items-center justify-center text-white bg-[#1877F2] shadow-[0_12px_24px_rgba(24,119,242,0.4)] border-4 ${isDarkMode ? "border-[#0F172A]" : "border-white"}`}><Plus size={28} /></button></div>
@@ -835,7 +944,7 @@ export default function App() {
                       </button>
                     )}
 
-                    <button onClick={async () => { if(window.confirm("Are you sure you want to delete this entry?")) { const colName = selectedEntry.fullDate ? "bills" : "transactions"; await deleteDoc(doc(db, "users", user.uid, colName, selectedEntry.id)); if(!selectedEntry.fullDate && selectedEntry.accountId) { const acc = accounts.find(a => a.id === selectedEntry.accountId); if(acc) { const revAmount = selectedEntry.type === "Income" ? -selectedEntry.amount : selectedEntry.amount; await updateDoc(doc(db, "users", user.uid, "accounts", acc.id), { balance: acc.balance + revAmount }); } } setSelectedEntry(null); triggerHaptic(); } }} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-red-500 border transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${isDarkMode ? "bg-red-900/10 border-red-900/30 hover:bg-red-900/20" : "bg-red-50/50 border-red-100 hover:bg-red-50"}`}>
+                    <button onClick={async () => { if(window.confirm("Are you sure you want to delete this entry?")) { const colName = selectedEntry.fullDate ? "bills" : "transactions"; if (isDemoMode) { if (colName === "bills") { setBills(bills.filter(b => b.id !== selectedEntry.id)); } else { setTransactions(transactions.filter(t => t.id !== selectedEntry.id)); } } else { await deleteDoc(doc(db, "users", user.uid, colName, selectedEntry.id)); if(!selectedEntry.fullDate && selectedEntry.accountId) { const acc = accounts.find(a => a.id === selectedEntry.accountId); if(acc) { const revAmount = selectedEntry.type === "Income" ? -selectedEntry.amount : selectedEntry.amount; await updateDoc(doc(db, "users", user.uid, "accounts", acc.id), { balance: acc.balance + revAmount }); } } } setSelectedEntry(null); triggerHaptic(); } }} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-red-500 border transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${isDarkMode ? "bg-red-900/10 border-red-900/30 hover:bg-red-900/20" : "bg-red-50/50 border-red-100 hover:bg-red-50"}`}>
                       <Trash2 size={16} /> Delete Entry
                     </button>
                   </>
@@ -998,10 +1107,10 @@ export default function App() {
                       )}
                     </div>
                   )}
+                </div>
               </div>
             </div>
-          </div>
-        );
+          );
         })()}
 
         {/* 9. INSTALLMENT NEXT DATE MODAL */}
@@ -1046,6 +1155,26 @@ export default function App() {
         )}
 
       </div>
+
+      {/* 🔥 DEMO MODE FLOATING SIGN UP BANNER 🔥 */}
+      {isDemoMode && (
+        <div className="fixed bottom-0 left-0 w-full bg-[#1877F2] text-white p-4 pb-8 lg:pb-4 flex justify-between items-center z-[100] shadow-[0_-10px_40px_rgba(24,119,242,0.3)]">
+          <div className="flex flex-col">
+            <span className="font-black text-sm lg:text-base tracking-tight uppercase flex items-center gap-2">
+              <span className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span></span>
+              Demo Mode Active
+            </span>
+            <span className="text-[10px] lg:text-xs font-bold text-blue-200">Changes will not be saved.</span>
+          </div>
+          <button 
+            onClick={() => window.location.href = "https://ledgerplanner.com"} 
+            className="bg-white text-[#1877F2] px-6 py-2 rounded-xl font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg border-2 border-transparent hover:border-white hover:bg-transparent hover:text-white"
+          >
+            Sign Up to Save
+          </button>
+        </div>
+      )}
+
     </div>
   );
 }

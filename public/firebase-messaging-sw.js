@@ -1,7 +1,6 @@
 importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');
 
-// Using your exact config
 const firebaseConfig = {
   apiKey: "AIzaSyDRtXAjd-2KpZOlQL-bWrGoz6S3HuK4jDI",
   authDomain: "ledger-planner-38ab7.firebaseapp.com",
@@ -14,13 +13,13 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
-// Handles background notifications
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
+  
   const notificationTitle = payload.notification.title;
   const notificationOptions = {
     body: payload.notification.body,
-    icon: '/app-icon.png' // Matches your public folder icon
+    icon: '/app-icon.png'
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);

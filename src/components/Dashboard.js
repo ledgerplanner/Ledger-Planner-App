@@ -1,7 +1,8 @@
 import React from "react";
 import { Circle, CheckCircle2, ChevronUp, ChevronDown, Settings2, List, AlertCircle, RefreshCw } from "lucide-react";
 import { getToken } from "firebase/messaging";
-import { messaging } from "../firebase";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db, messaging } from "../firebase";
 
 export default function Dashboard({
   userName,
@@ -35,8 +36,16 @@ export default function Dashboard({
 
         if (currentToken) {
           console.log("Push Token Generated:", currentToken);
+          
+          // 🔥 SECURE TOKEN STORAGE TO FIRESTORE
+          const userId = auth.currentUser?.uid;
+          if (userId) {
+            await setDoc(doc(db, "users", userId), { 
+              fcmToken: currentToken 
+            }, { merge: true });
+          }
+
           alert("Push Notifications Enabled! Vault secured.");
-          // TODO: Save this 'currentToken' to the user's Firestore document in future build
         } else {
           console.log("No registration token available. Request permission to generate one.");
         }

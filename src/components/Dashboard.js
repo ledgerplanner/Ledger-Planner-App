@@ -161,7 +161,7 @@ export default function Dashboard({
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Pay Day Setup</h3>
           <div className="flex gap-2">
             <button onClick={enablePushNotifications} className={`text-[9px] font-black uppercase flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 text-emerald-400 hover:bg-slate-700" : "bg-emerald-50 border border-emerald-100 text-emerald-600 hover:bg-emerald-100"}`}>
-              <AlertCircle size={12} strokeWidth={3} /> Enable Push
+              <AlertCircle size={12} strokeWidth={3} /> Enable Notifications
             </button>
             <button onClick={() => { setEditPaydayConfig(paydayConfig); setIsPaydaySetupOpen(true); }} className={`text-[9px] font-black uppercase flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 text-[#1877F2] hover:bg-slate-700" : "bg-white border text-[#1877F2] hover:bg-blue-50"}`}>
               <Settings2 size={12} strokeWidth={3} /> Configure

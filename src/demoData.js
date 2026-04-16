@@ -27,12 +27,9 @@ export const demoTransactions = [
 ];
 
 export const demoTodos = [
-  // Task Actions (1 marked complete)
   { id: "td1", text: "Move $200 to High-Yield Savings", priority: 5, type: "task", isCompleted: true },
   { id: "td2", text: "Cancel unused Peacock subscription", priority: 3, type: "task", isCompleted: false },
   { id: "td3", text: "Compare AEP Ohio rates for next month", priority: 2, type: "task", isCompleted: false },
-  
-  // Shopping Actions (1 marked complete)
   { id: "td4", text: "Meijer: Groceries for weekly meal prep", priority: 5, type: "shopping", isCompleted: false },
   { id: "td5", text: "Home Depot: HVAC Air Filters", priority: 3, type: "shopping", isCompleted: false },
   { id: "td6", text: "Amazon: New workout shoes", priority: 2, type: "shopping", isCompleted: true }

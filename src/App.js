@@ -167,6 +167,13 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
+  // 🔥 NEW: Forces the Quick Update Balance to strictly format as 0.00 currency
+  useEffect(() => {
+    if (selectedAccount) {
+      setEditAccountBalance(Math.abs(selectedAccount.balance).toFixed(2));
+    }
+  }, [selectedAccount]);
+
   // Hydration Guard
   if (!isMounted) return <div className={`min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}></div>;
 
@@ -607,6 +614,13 @@ export default function App() {
 
   const categoriesToRender = drawerTab === 'income' ? modernCategories.filter(g => g.group === "Income & Wealth") : modernCategories;
 
+  // 🔥 THE ENTRY COLOR ENGINE 🔥
+  const getEntryAmountColor = (entry) => {
+    if (entry.type === 'Income') return "text-[#10B981]"; // Green
+    if (entry.type === 'Expense') return "text-[#F97316]"; // Orange
+    return "text-[#1877F2]"; // Bill Default (Blue)
+  };
+
   return (
     <div className={`h-screen w-full font-sans relative flex transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
       <div className={`w-full h-full relative flex flex-col lg:flex-row transition-colors duration-500 overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
@@ -744,7 +758,7 @@ export default function App() {
           </div>
         )}
 
-        {/* REBUILT: QUICK UPDATE BALANCE INPUT */}
+        {/* QUICK UPDATE BALANCE MODAL */}
         {selectedAccount && !isAddAccountOpen && !isTransferOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedAccount(null)}></div>
@@ -764,9 +778,10 @@ export default function App() {
                     <span className={`absolute left-5 top-[22px] font-bold text-lg ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
                     <input 
                       type="number" 
+                      step="0.01"
                       value={editAccountBalance} 
                       onChange={(e) => setEditAccountBalance(e.target.value)} 
-                      onFocus={() => setEditAccountBalance(Math.abs(selectedAccount.balance).toString())} 
+                      onFocus={() => setEditAccountBalance(Math.abs(selectedAccount.balance).toFixed(2))} 
                       className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl font-bold text-lg border focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`} 
                     />
                   </div>
@@ -800,6 +815,7 @@ export default function App() {
           </div>
         )}
 
+        {/* 🔥 ENTRY DETAILS MODAL WITH COLOR ENGINE 🔥 */}
         {selectedEntry && !selectedAccount && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={closeEntryDrawer}></div>
@@ -820,30 +836,33 @@ export default function App() {
                   <>
                     <div className="text-center">
                       <h2 className={`text-xl font-black mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{selectedEntry.name}</h2>
-                      <p className={`text-5xl font-black tracking-tighter ${selectedEntry.type === 'Income' ? 'text-[#10B981]' : selectedEntry.isPaid ? 'text-slate-400' : isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                      
+                      {/* DYNAMIC COLOR ENGINE FOR AMOUNT */}
+                      <p className={`text-5xl font-black tracking-tighter ${getEntryAmountColor(selectedEntry)}`}>
                         {selectedEntry.type === 'Income' ? '+' : selectedEntry.type === 'Expense' ? '-' : ''}${selectedEntry.amount?.toFixed(2)}
                       </p>
-                      <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full border bg-slate-50">
+                      
+                      <div className={`mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full border ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
                         <CalendarIcon size={14} className="text-slate-500" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">{selectedEntry.fullDate || selectedEntry.date || "No Date"}</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{selectedEntry.fullDate || selectedEntry.date || "No Date"}</span>
                       </div>
                     </div>
                     
-                    <div className="rounded-2xl p-4 border bg-slate-50">
-                      <div className="flex justify-between py-2 border-b">
+                    <div className={`rounded-2xl p-4 border ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                      <div className={`flex justify-between py-2 border-b ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
                         <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Category</span>
-                        <span className="text-xs font-black text-slate-900">{selectedEntry.category || "Bill / Subscription"}</span>
+                        <span className={`text-xs font-black ${isDarkMode ? "text-white" : "text-slate-900"}`}>{selectedEntry.category || "Bill / Subscription"}</span>
                       </div>
                       {selectedEntry.type && (
-                        <div className="flex justify-between py-2 border-b">
+                        <div className={`flex justify-between py-2 border-b ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
                           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Type</span>
                           <span className={`text-xs font-black ${selectedEntry.type === "Income" ? "text-[#10B981]" : "text-[#F97316]"}`}>{selectedEntry.type}</span>
                         </div>
                       )}
                       {selectedEntry.payday && (
-                        <div className="flex justify-between py-2 border-b">
+                        <div className={`flex justify-between py-2 border-b ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
                           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Assigned To</span>
-                          <span className="text-xs font-black text-slate-900">{selectedEntry.payday}</span>
+                          <span className={`text-xs font-black ${isDarkMode ? "text-white" : "text-slate-900"}`}>{selectedEntry.payday}</span>
                         </div>
                       )}
                       {selectedEntry.isOverdue !== undefined && (

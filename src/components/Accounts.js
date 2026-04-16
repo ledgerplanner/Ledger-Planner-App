@@ -13,6 +13,9 @@ export default function Accounts({
   renderHeroShell
 }) {
   const [activeChartNode, setActiveChartNode] = useState(5);
+  
+  // Tripwire to determine if we should fake the history math
+  const isDemoMode = typeof window !== "undefined" && window.location.hostname.startsWith("demo");
 
   // === DYNAMIC TIME-MACHINE CHART ENGINE ===
   const netWorth = accounts.reduce((sum, a) => sum + a.balance, 0);
@@ -21,7 +24,6 @@ export default function Accounts({
   let currentCalcNW = netWorth;
   const today = new Date();
 
-  // We trace backward 6 months to perfectly reconstruct your historical net worth
   for(let i=0; i<6; i++) {
     const targetDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
     const monthName = targetDate.toLocaleString('default', { month: 'short' });
@@ -29,23 +31,27 @@ export default function Accounts({
     if (i === 0) {
         historyData.unshift({ label: monthName, val: Math.max(0, currentCalcNW), month: targetDate.getMonth(), year: targetDate.getFullYear() });
     } else {
-        const monthAhead = historyData[0]; // Grab the month we just processed
-        
-        // Find all transactions that happened in that month
-        const txsInMonthAhead = transactions.filter(tx => {
-            if (!tx.createdAt) return false;
-            const d = typeof tx.createdAt.toDate === 'function' ? tx.createdAt.toDate() : new Date(tx.createdAt);
-            return d.getMonth() === monthAhead.month && d.getFullYear() === monthAhead.year;
-        });
-        
-        // Calculate the net cash flow of that month
-        const netCashFlowMonthAhead = txsInMonthAhead.reduce((sum, tx) => {
-            return sum + (tx.type === "Income" ? tx.amount : -tx.amount);
-        }, 0);
-        
-        // Subtract the cash flow to find out what you had BEFORE that month started
-        currentCalcNW -= netCashFlowMonthAhead;
-        historyData.unshift({ label: monthName, val: Math.max(0, currentCalcNW), month: targetDate.getMonth(), year: targetDate.getFullYear() });
+        if (isDemoMode) {
+          // FLUX ENGINE: Randomly reduce previous months by 2% to 6% to simulate historical growth
+          const variance = 1 - (Math.random() * (0.06 - 0.02) + 0.02);
+          currentCalcNW = currentCalcNW * variance;
+          historyData.unshift({ label: monthName, val: Math.max(0, currentCalcNW), month: targetDate.getMonth(), year: targetDate.getFullYear() });
+        } else {
+          // NORMAL APP LOGIC: Reverse-engineer from actual transactions
+          const monthAhead = historyData[0];
+          const txsInMonthAhead = transactions.filter(tx => {
+              if (!tx.createdAt) return false;
+              const d = typeof tx.createdAt.toDate === 'function' ? tx.createdAt.toDate() : new Date(tx.createdAt);
+              return d.getMonth() === monthAhead.month && d.getFullYear() === monthAhead.year;
+          });
+          
+          const netCashFlowMonthAhead = txsInMonthAhead.reduce((sum, tx) => {
+              return sum + (tx.type === "Income" ? tx.amount : -tx.amount);
+          }, 0);
+          
+          currentCalcNW -= netCashFlowMonthAhead;
+          historyData.unshift({ label: monthName, val: Math.max(0, currentCalcNW), month: targetDate.getMonth(), year: targetDate.getFullYear() });
+        }
     }
   }
   
@@ -59,7 +65,7 @@ export default function Accounts({
         <div>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Net Worth • <span className="text-[#1877F2]">{activeDataPoint.label} {activeDataPoint.year}</span></p>
           <p className={`text-5xl font-black tracking-tighter transition-all duration-300 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-            ${activeDataPoint.val.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+            ${activeDataPoint.val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
         </div>
       </div>
@@ -83,15 +89,17 @@ export default function Accounts({
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
       {renderHeroShell(`${userName}'s Accounts`, graphicContent)}
-      <main className="px-6 space-y-6">
+      <main className="px-6 space-y-6 mt-4">
         
         {/* ACTION BUTTONS */}
-        <button onClick={() => setIsTransferOpen(true)} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#1877F2] text-white shadow-blue-900/20" : "bg-[#1877F2] text-white shadow-blue-500/30"}`}>
-          <ArrowRightLeft size={16} /> Transfer Funds
-        </button>
-        <button onClick={() => setIsAddAccountOpen(true)} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-500"}`}>
-          <PlusCircle size={16} /> Add New Account
-        </button>
+        <div className="grid grid-cols-2 gap-3">
+          <button onClick={() => setIsTransferOpen(true)} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#1877F2] text-white shadow-blue-900/20" : "bg-[#1877F2] text-white shadow-blue-500/30"}`}>
+            <ArrowRightLeft size={20} /> Transfer
+          </button>
+          <button onClick={() => setIsAddAccountOpen(true)} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex flex-col items-center justify-center gap-2 border transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-500"}`}>
+            <PlusCircle size={20} /> Add Account
+          </button>
+        </div>
 
         {/* ACCOUNTS LIST */}
         <div className="space-y-4">

@@ -25,32 +25,15 @@ export default function Dashboard({
   // === 🔔 PUSH NOTIFICATION ENGINE ===
   const enablePushNotifications = async () => {
     try {
-      console.log("Requesting notification permission...");
       const permission = await Notification.requestPermission();
-      
       if (permission === "granted") {
-        console.log("Permission granted! Fetching token...");
-        const currentToken = await getToken(messaging, { 
-          vapidKey: "BDubfUXfP5DhFRpZ5ZwQp0o88f2avvtfu0rfFr9ySjHgTZmQ4gsr0GWzE-cJQxgbwq93GlgcCc5ip6KksvngmXY" 
-        });
-
+        const currentToken = await getToken(messaging, { vapidKey: "BDubfUXfP5DhFRpZ5ZwQp0o88f2avvtfu0rfFr9ySjHgTZmQ4gsr0GWzE-cJQxgbwq93GlgcCc5ip6KksvngmXY" });
         if (currentToken) {
-          console.log("Push Token Generated:", currentToken);
-          
-          // 🔥 SECURE TOKEN STORAGE TO FIRESTORE
           const userId = auth.currentUser?.uid;
-          if (userId) {
-            await setDoc(doc(db, "users", userId), { 
-              fcmToken: currentToken 
-            }, { merge: true });
-          }
-
+          if (userId) await setDoc(doc(db, "users", userId), { fcmToken: currentToken }, { merge: true });
           alert("Push Notifications Enabled! Vault secured.");
-        } else {
-          console.log("No registration token available. Request permission to generate one.");
         }
       } else {
-        console.log("User denied push notifications.");
         alert("You denied notifications. You will only see alerts inside the app.");
       }
     } catch (error) {
@@ -61,17 +44,11 @@ export default function Dashboard({
   // === 🔥 SURGICAL OCTAGON SORTING ENGINE ===
   const sortBillsSurgically = (billList) => {
     return [...billList].sort((a, b) => {
-      // 1. Overdue pinned to the absolute top (Red Alert)
       if (a.isOverdue && !b.isOverdue) return -1;
       if (!a.isOverdue && b.isOverdue) return 1;
-      
-      // 2. Due Now is right below Overdue (Yellow Alert)
       if (a.payday === "Due Now" && b.payday !== "Due Now") return -1;
       if (a.payday !== "Due Now" && b.payday === "Due Now") return 1;
-      
-      // 3. Chronological sorting for the remaining runway
-      if (!a.rawDate) return 1;
-      if (!b.rawDate) return -1;
+      if (!a.rawDate) return 1; if (!b.rawDate) return -1;
       return new Date(a.rawDate) - new Date(b.rawDate);
     });
   };
@@ -83,25 +60,23 @@ export default function Dashboard({
   else if (currentHour >= 12 && currentHour < 17) { greetingStr = `Afternoon, ${userName}`; }
   else if (currentHour >= 22 || currentHour < 5) { greetingStr = `Up late, ${userName}?`; }
 
-  // === GAS GAUGE & SHIELD MATH ENGINE ===
+  // === MACRO: GAS GAUGE & SHIELD MATH ENGINE (GLOBAL) ===
   const totalIncomeBalance = accounts.reduce((sum, a) => sum + a.balance, 0);
   const unpaidBillsAmount = bills.filter((b) => !b.isPaid).reduce((sum, b) => sum + b.amount, 0);
   const safeToSpend = totalIncomeBalance - unpaidBillsAmount;
 
   const debtRatio = totalIncomeBalance > 0 ? Math.max(0, Math.min((unpaidBillsAmount / totalIncomeBalance) * 100, 100)) : (unpaidBillsAmount > 0 ? 100 : 0);
-  
   const isCritical = debtRatio >= 85 || safeToSpend < 0;
   const isWarning = debtRatio >= 60 && debtRatio < 85;
 
   const strokeDasharray = 251.2;
   const strokeDashoffset = strokeDasharray - (strokeDasharray * debtRatio) / 100;
 
-  // === PAYDAY ROUTING & LIVE INCOME ENGINE ===
+  // === MICRO: PAYDAY ROUTING & LIVE INCOME/EXPENSE ENGINE ===
   const billsByPayday = {};
   ["Due Now", "Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].forEach((pd) => { billsByPayday[pd] = []; });
   bills.forEach((bill) => { if (billsByPayday[bill.payday]) billsByPayday[bill.payday].push(bill); });
 
-  // 1. Map Active Paydays
   const activePaydays = [];
   for (let i = 1; i <= 5; i++) {
     const pdId = `Payday ${i}`;
@@ -112,7 +87,6 @@ export default function Dashboard({
   }
   activePaydays.sort((a, b) => a.date - b.date);
 
-  // 2. Parse Transaction Dates
   const getTxDate = (tx) => {
     if (tx.rawDate) return new Date(tx.rawDate);
     if (tx.createdAt && typeof tx.createdAt.toDate === 'function') return tx.createdAt.toDate();
@@ -126,7 +100,6 @@ export default function Dashboard({
     return d;
   };
 
-  // 3. Assign Transaction to Payday Window
   const calculateTxPayday = (txDate) => {
     if (activePaydays.length === 0) return "Payday 1";
     if (txDate < activePaydays[0].date) return activePaydays[0].id;
@@ -138,19 +111,21 @@ export default function Dashboard({
     return assignedPd;
   };
 
-  // 4. Aggregate Actual Income
+  // 🔥 NEW: Aggregate BOTH Income and Everyday Expenses per Payday
   const actualIncomeByPayday = { "Payday 1": 0, "Payday 2": 0, "Payday 3": 0, "Payday 4": 0, "Payday 5": 0 };
+  const actualExpensesByPayday = { "Payday 1": 0, "Payday 2": 0, "Payday 3": 0, "Payday 4": 0, "Payday 5": 0 };
+  
   transactions.forEach(tx => {
-    if (tx.type === "Income") {
-      const txDate = getTxDate(tx);
-      const pd = calculateTxPayday(txDate);
-      if (actualIncomeByPayday[pd] !== undefined) {
-        actualIncomeByPayday[pd] += tx.amount;
-      }
+    const txDate = getTxDate(tx);
+    const pd = calculateTxPayday(txDate);
+    if (tx.type === "Income" && actualIncomeByPayday[pd] !== undefined) {
+      actualIncomeByPayday[pd] += tx.amount;
+    } else if (tx.type === "Expense" && actualExpensesByPayday[pd] !== undefined) {
+      actualExpensesByPayday[pd] += tx.amount;
     }
   });
 
-  // === GRAPHIC HEADER ===
+  // === GRAPHIC HEADER (UNCHANGED MACRO VIEW) ===
   const graphicContent = (
     <div className="flex items-center justify-between relative z-10 mb-6 w-full">
       <div className="relative w-40 h-40 flex-shrink-0">
@@ -227,7 +202,7 @@ export default function Dashboard({
           </div>
         </div>
 
-        {/* 🔥 LIVE HORIZONTAL PAYDAY CARDS 🔥 */}
+        {/* 🔥 THE NEW LIVE WEEKLY WALLETS (HORIZONTAL CARDS) 🔥 */}
         <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-4 pt-2 -mx-2 px-3 snap-x">
           {["Due Now", "Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].map((pd) => {
             const pdSettings = paydayConfig[pd];
@@ -236,49 +211,55 @@ export default function Dashboard({
             if (isDueNow && billsByPayday["Due Now"].length === 0) return null;
             
             const isSet = isDueNow || (pdSettings && (pdSettings.date || pdSettings.income));
-            const expectedIncome = parseFloat(pdSettings?.income) || 0;
+            
+            // THE LIVE MATH ENGINE
             const actualIncome = actualIncomeByPayday[pd] || 0;
-            
-            // MATH ENGINE FIX: Separate Unpaid Bills from ALL Bills
+            const actualExpenses = actualExpensesByPayday[pd] || 0; // Includes Paid Bills + Coffee/Gas
             const unpaidBillsTotal = billsByPayday[pd]?.filter(b => !b.isPaid).reduce((sum, b) => sum + b.amount, 0) || 0;
-            const allBillsTotal = billsByPayday[pd]?.reduce((sum, b) => sum + b.amount, 0) || 0;
             
-            // Post-Bills Balance calculated using actual secured income vs ALL bills assigned to this period
-            const balanceAfterBills = actualIncome - allBillsTotal;
+            // Weekly Active Buffer: Income minus ALL drain (paid expenses + unpaid spoken-for bills)
+            const activeWeeklyBuffer = actualIncome - actualExpenses - unpaidBillsTotal;
+            const totalWeeklyDrain = actualExpenses + unpaidBillsTotal;
+            
+            // Progress Bar Math (Fuel Gauge)
+            const fuelPct = actualIncome > 0 ? Math.max(0, Math.min((activeWeeklyBuffer / actualIncome) * 100, 100)) : 0;
 
             return (
-              <div key={pd} className={`min-w-[140px] p-4 rounded-3xl snap-center shrink-0 border transition-all ${isSet ? isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100 shadow-sm" : isDarkMode ? "bg-slate-800/30 border-dashed border-slate-700" : "bg-slate-50 border-dashed border-slate-200"}`}>
-                <p className={`text-[9px] font-black uppercase tracking-widest mb-1 ${isDueNow ? "text-red-500" : isSet ? "text-[#1877F2]" : "text-slate-400"}`}>{pd}</p>
+              <div key={pd} className={`min-w-[160px] p-5 rounded-[2rem] snap-center shrink-0 border transition-all ${isSet ? isDarkMode ? "bg-[#1E293B] border-slate-700 shadow-md" : "bg-white border-slate-100 shadow-[0_8px_20px_rgba(0,0,0,0.04)]" : isDarkMode ? "bg-slate-800/30 border-dashed border-slate-700" : "bg-slate-50 border-dashed border-slate-200"}`}>
+                <div className="flex justify-between items-center mb-1">
+                  <p className={`text-[10px] font-black uppercase tracking-widest ${isDueNow ? "text-red-500" : isSet ? "text-[#1877F2]" : "text-slate-400"}`}>{pd}</p>
+                </div>
                 
                 {isDueNow ? (
                   <>
-                    <p className={`text-lg font-black tracking-tight mb-0.5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                    <p className={`text-2xl font-black tracking-tight mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                       ${unpaidBillsTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                     </p>
                     <p className={`text-[9px] font-bold uppercase tracking-wider ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Currently Due</p>
                   </>
                 ) : isSet ? (
-                  <div className="flex flex-col gap-1">
-                    <div className="flex justify-between items-end mt-1">
-                      <span className={`text-xl font-black tracking-tighter ${isDarkMode ? "text-white" : "text-slate-900"}`}>${actualIncome.toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
-                      <span className="text-[10px] font-bold text-slate-400 mb-1">/ ${expectedIncome.toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
-                    </div>
-                    <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-700" : "bg-slate-200"}`}>
-                      <div className={`h-full transition-all duration-1000 ${actualIncome >= expectedIncome && expectedIncome > 0 ? "bg-[#10B981]" : "bg-[#1877F2]"}`} style={{ width: `${Math.min((actualIncome / (expectedIncome || 1)) * 100, 100)}%` }}></div>
-                    </div>
-                    <p className={`text-[9px] font-bold uppercase tracking-wider mt-1.5 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
-                      {pdSettings?.date ? formatPaydayDateStr(pdSettings.date) : "Unscheduled"}
+                  <div className="flex flex-col">
+                    <p className={`text-3xl font-black tracking-tighter ${activeWeeklyBuffer < 0 ? "text-red-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>
+                      ${activeWeeklyBuffer.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                     </p>
-                    <div className={`mt-2.5 pt-2.5 border-t flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-100"}`}>
-                       <span className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Post-Bills</span>
-                       <span className={`text-[10px] font-black ${balanceAfterBills >= 0 ? "text-[#10B981]" : "text-red-500"}`}>
-                         {balanceAfterBills >= 0 ? "+" : "-"}${Math.abs(balanceAfterBills).toLocaleString("en-US", { minimumFractionDigits: 0 })}
-                       </span>
+                    <p className={`text-[9px] font-bold uppercase tracking-wider mb-4 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
+                      Weekly Buffer
+                    </p>
+                    
+                    <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-800" : "bg-slate-100"}`}>
+                      <div 
+                        className={`h-full transition-all duration-1000 ${activeWeeklyBuffer < 0 ? "bg-red-500" : activeWeeklyBuffer < actualIncome * 0.2 ? "bg-orange-500" : "bg-[#10B981]"}`} 
+                        style={{ width: `${actualIncome > 0 ? fuelPct : 0}%` }}
+                      ></div>
+                    </div>
+                    <div className="flex justify-between items-center mt-2">
+                      <span className="text-[8px] font-black uppercase tracking-widest text-[#10B981]">IN: ${actualIncome.toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
+                      <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">OUT: ${totalWeeklyDrain.toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
                     </div>
                   </div>
                 ) : (
                   <>
-                    <p className={`text-lg font-black tracking-tight mb-0.5 ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>$0</p>
+                    <p className={`text-2xl font-black tracking-tight mb-1 ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>$0.00</p>
                     <p className={`text-[9px] font-bold uppercase tracking-wider ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>Unscheduled</p>
                   </>
                 )}
@@ -287,7 +268,7 @@ export default function Dashboard({
           })}
         </div>
 
-        {/* 🔥 LIVE VERTICAL COLLAPSIBLE LISTS 🔥 */}
+        {/* 🔥 VERTICAL COLLAPSIBLE LISTS (UNCHANGED EXECUTION VIEW) 🔥 */}
         <div className="space-y-4">
           {Object.entries(billsByPayday).map(([payday, groupBills]) => {
             if (payday === "Due Now" && groupBills.length === 0) return null;
@@ -297,13 +278,7 @@ export default function Dashboard({
             const isDueNow = payday === "Due Now";
             const isCollapsed = collapsedPaydays[payday];
             const checkTotal = groupBills.filter((b) => !b.isPaid).reduce((sum, b) => sum + b.amount, 0);
-            
             const expectedDateStr = isDueNow ? "Currently Due" : pdSettings?.date ? formatPaydayDateStr(pdSettings.date) : "Unscheduled";
-            
-            // Progress Math
-            const actualInc = actualIncomeByPayday[payday] || 0;
-            const expectedInc = parseFloat(pdSettings?.income) || 0;
-            const progressPct = expectedInc > 0 ? Math.min((actualInc / expectedInc) * 100, 100) : (actualInc > 0 ? 100 : 0);
             
             const sortedBills = sortBillsSurgically(groupBills);
 
@@ -319,23 +294,9 @@ export default function Dashboard({
                        ${checkTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                      </span>
                   </div>
-                  
-                  {/* Live Income Progress Injector */}
                   <div className="flex items-center justify-between mt-1">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
-                      {expectedDateStr}
-                    </span>
-                    {!isDueNow && (expectedInc > 0 || actualInc > 0) && (
-                      <span className={`text-[9px] font-black uppercase tracking-widest ${actualInc >= expectedInc && expectedInc > 0 ? "text-[#10B981]" : "text-[#1877F2]"}`}>
-                         ${actualInc.toLocaleString("en-US", {maximumFractionDigits:0})} / ${expectedInc.toLocaleString("en-US", {maximumFractionDigits:0})} Secured
-                      </span>
-                    )}
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{expectedDateStr}</span>
                   </div>
-                  {!isDueNow && (expectedInc > 0 || actualInc > 0) && (
-                     <div className={`w-full h-1 mt-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-800" : "bg-slate-100"}`}>
-                       <div className={`h-full transition-all duration-1000 ${actualInc >= expectedInc && expectedInc > 0 ? "bg-[#10B981]" : "bg-[#1877F2]"}`} style={{ width: `${progressPct}%` }}></div>
-                     </div>
-                  )}
                 </div>
 
                 {!isCollapsed && (
@@ -365,21 +326,6 @@ export default function Dashboard({
                               ${bill.amount.toFixed(2)}
                             </div>
                           </div>
-                          
-                          {bill.isInstallment && !bill.isPaid && (
-                            <div className="mt-3 ml-[4.5rem] w-full max-w-[85%] animate-fade-in pr-2">
-                              <div className="flex justify-between items-end mb-1.5">
-                                <span className="text-[8px] font-black uppercase tracking-widest text-[#1877F2]">${(bill.paidAmount || 0).toLocaleString()} PAID</span>
-                                <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">${(bill.totalAmount || 0).toLocaleString()} TOTAL</span>
-                              </div>
-                              <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-700" : "bg-slate-200"}`}>
-                                <div 
-                                  className="h-full bg-[#1877F2]" 
-                                  style={{ width: `${Math.min(((bill.paidAmount || 0) / (bill.totalAmount || 1)) * 100, 100)}%` }}
-                                ></div>
-                              </div>
-                            </div>
-                          )}
                         </div>
                       ))
                     )}
@@ -411,7 +357,6 @@ export default function Dashboard({
                     </div>
                   </div>
                 ))}
-                {/* PREMIUM BUTTON */}
                 <button onClick={() => changeTab("activity")} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)]">
                   <List size={16} /> See All Activity
                 </button>

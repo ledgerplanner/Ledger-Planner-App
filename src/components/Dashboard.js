@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Circle, CheckCircle2, ChevronUp, ChevronDown, Settings2, List, AlertCircle, RefreshCw } from "lucide-react";
 import { getToken } from "firebase/messaging";
 import { doc, setDoc } from "firebase/firestore";
@@ -22,11 +22,20 @@ export default function Dashboard({
   renderHeroShell,
   changeTab
 }) {
-  // === 🔔 PUSH NOTIFICATION ENGINE ===
+  // === 🔔 NOTIFICATION STATE ENGINE ===
+  const [isPushEnabled, setIsPushEnabled] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setIsPushEnabled(Notification.permission === "granted");
+    }
+  }, []);
+
   const enablePushNotifications = async () => {
     try {
       const permission = await Notification.requestPermission();
       if (permission === "granted") {
+        setIsPushEnabled(true);
         const currentToken = await getToken(messaging, { vapidKey: "BDubfUXfP5DhFRpZ5ZwQp0o88f2avvtfu0rfFr9ySjHgTZmQ4gsr0GWzE-cJQxgbwq93GlgcCc5ip6KksvngmXY" });
         if (currentToken) {
           const userId = auth.currentUser?.uid;
@@ -111,7 +120,6 @@ export default function Dashboard({
     return assignedPd;
   };
 
-  // 🔥 NEW: Aggregate BOTH Income and Everyday Expenses per Payday
   const actualIncomeByPayday = { "Payday 1": 0, "Payday 2": 0, "Payday 3": 0, "Payday 4": 0, "Payday 5": 0 };
   const actualExpensesByPayday = { "Payday 1": 0, "Payday 2": 0, "Payday 3": 0, "Payday 4": 0, "Payday 5": 0 };
   
@@ -193,9 +201,11 @@ export default function Dashboard({
         <div className="flex justify-between items-center px-1 mt-2">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Pay Day Setup</h3>
           <div className="flex gap-2">
-            <button onClick={enablePushNotifications} className={`text-[9px] font-black uppercase flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all active:scale-95 shadow-md ${isDarkMode ? "bg-[#10B981] text-white shadow-emerald-900/20" : "bg-[#10B981] text-white shadow-[0_4px_10px_rgba(16,185,129,0.3)]"}`}>
-              <AlertCircle size={12} strokeWidth={3} /> Enable Notifications
-            </button>
+            {!isPushEnabled && (
+              <button onClick={enablePushNotifications} className={`text-[9px] font-black uppercase flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all active:scale-95 shadow-md ${isDarkMode ? "bg-[#10B981] text-white shadow-emerald-900/20" : "bg-[#10B981] text-white shadow-[0_4px_10px_rgba(16,185,129,0.3)]"}`}>
+                <AlertCircle size={12} strokeWidth={3} /> Enable Notifications
+              </button>
+            )}
             <button onClick={() => { setEditPaydayConfig(paydayConfig); setIsPaydaySetupOpen(true); }} className={`text-[9px] font-black uppercase flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all active:scale-95 shadow-sm border ${isDarkMode ? "bg-slate-800 border-slate-700 text-[#1877F2] hover:bg-slate-700" : "bg-white border-slate-200 text-[#1877F2] shadow-[0_4px_10px_rgba(0,0,0,0.05)] hover:bg-slate-50"}`}>
               <Settings2 size={12} strokeWidth={3} /> Configure
             </button>

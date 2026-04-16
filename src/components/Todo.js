@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { CheckCircle2, Circle, Trash2, X, Plus, Zap, ShoppingBag, Flame, Star, CheckSquare } from "lucide-react";
-import { doc, deleteDoc } from "firebase/firestore";
+import { CheckCircle2, Circle, Trash2, X, Plus, Zap, ShoppingBag, Flame, Star, CheckSquare, Edit2, Save } from "lucide-react";
+import { doc, deleteDoc, updateDoc } from "firebase/firestore";
 import { db, auth } from "../firebase"; 
 
 export default function Todo({
@@ -9,9 +9,12 @@ export default function Todo({
   isDarkMode, handleAddTodo, toggleTodoStatus, renderHeroShell
 }) {
   const [activeModalTodo, setActiveModalTodo] = useState(null);
+  
+  // === NEW: EDIT STATE ===
+  const [isEditingTask, setIsEditingTask] = useState(false);
+  const [editTaskData, setEditTaskData] = useState({ text: "", priority: 3, type: "task" });
 
   // === DATA SORTING & PRIORITY LOGIC ===
-  // Sorts dynamically: 5 Stars at the top, 1 Star at the bottom
   const sortTasks = (tasks) => tasks.sort((a, b) => parseInt(b.priority || 1) - parseInt(a.priority || 1));
 
   const pendingActions = sortTasks(todos.filter(t => !t.isCompleted && t.type === "task"));
@@ -23,12 +26,10 @@ export default function Todo({
   const completedCount = completedTasks.length;
   const momentumPct = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
 
-  // SVG Math matching the Dashboard & Activity Ring
   const radius = 42;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (momentumPct / 100) * circumference;
 
-  // Trigger haptics locally for the modal
   const triggerHaptic = () => { if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) window.navigator.vibrate(50); };
 
   // Surgical Delete Function
@@ -38,10 +39,26 @@ export default function Todo({
       await deleteDoc(doc(db, "users", auth.currentUser.uid, "todos", activeModalTodo.id));
       triggerHaptic();
       setActiveModalTodo(null);
+      setIsEditingTask(false);
     }
   };
 
-  // Helper to render premium GOLD stars
+  // 🔥 NEW: Surgical Edit Function
+  const handleSaveEdit = async () => {
+    if (!auth.currentUser || !activeModalTodo || !editTaskData.text.trim()) return;
+    
+    await updateDoc(doc(db, "users", auth.currentUser.uid, "todos", activeModalTodo.id), {
+        text: editTaskData.text,
+        priority: editTaskData.priority,
+        type: editTaskData.type
+    });
+    
+    triggerHaptic();
+    setIsEditingTask(false);
+    // Locally update the active modal so it reflects the new data immediately
+    setActiveModalTodo({ ...activeModalTodo, ...editTaskData });
+  };
+
   const renderStars = (priorityNum) => {
     const p = parseInt(priorityNum) || 1;
     return (
@@ -53,10 +70,9 @@ export default function Todo({
     );
   };
 
-  // === PREMIUM HERO CONTENT (FLAT LAYOUT - NO SPILLAGE) ===
+  // === PREMIUM HERO CONTENT ===
   const graphicContent = (
     <div className="relative z-10 w-full flex items-center justify-between px-2 pt-2 pb-4">
-      {/* 📊 THE MASSIVE SPEEOMETER RING (LEFT ALIGNED) */}
       <div className="relative w-40 h-40 shrink-0 drop-shadow-xl">
         <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
           <circle cx="50" cy="50" r={radius} fill="transparent" stroke={isDarkMode ? "#334155" : "#F1F5F9"} strokeWidth="12" />
@@ -74,7 +90,6 @@ export default function Todo({
         </div>
       </div>
       
-      {/* 📊 DAILY OPERATIONS STATS (RIGHT ALIGNED) */}
       <div className="flex-1 flex flex-col items-end text-right space-y-1">
         <p className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>DAILY OPERATIONS</p>
         <div className="flex items-baseline gap-1.5 pt-1">
@@ -86,12 +101,14 @@ export default function Todo({
     </div>
   );
 
-  // === PREMIUM TASK RENDERER ===
   const renderTaskCard = (task) => {
     return (
       <div 
         key={task.id} 
-        onClick={() => setActiveModalTodo(task)}
+        onClick={() => {
+            setActiveModalTodo(task);
+            setIsEditingTask(false);
+        }}
         className={`relative flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all active:scale-[0.98] shadow-sm border
           ${task.isCompleted 
             ? isDarkMode ? "bg-slate-800 border-transparent" : "bg-white border-transparent" 
@@ -129,12 +146,10 @@ export default function Todo({
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
       
-      {/* 🚀 FIXED: Render Hero Shell cleanly without extra padding/wrappers */}
       {renderHeroShell(`${userName}'s Tasks`, graphicContent)}
 
       <main className="px-6 space-y-6 mt-4">
         
-        {/* PREMIUM ADD TASK INPUT (CAPSULE DESIGN) */}
         <div className={`p-4 rounded-[2rem] border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
           <div className="flex gap-2 mb-3">
              <button onClick={() => setNewTodoType("task")} className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors ${newTodoType === "task" ? "bg-[#1877F2] text-white shadow-md shadow-blue-500/20" : isDarkMode ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-400"}`}>Action</button>
@@ -151,13 +166,12 @@ export default function Todo({
             <button 
               type="submit" 
               disabled={!newTodoText.trim()}
-              className={`w-12 h-12 shrink-0 rounded-xl flex items-center justify-center transition-all ${!newTodoText.trim() ? "bg-slate-200 text-slate-400" : "bg-[#1877F2] text-white shadow-lg shadow-blue-500/30 active:scale-95"}`}
+              className={`w-12 h-12 shrink-0 rounded-xl flex items-center justify-center transition-all ${!newTodoText.trim() ? "bg-slate-200 text-slate-400" : "bg-[#1877F2] text-white shadow-[0_8px_16px_rgba(24,119,242,0.3)] active:scale-95"}`}
             >
               <Plus size={20} strokeWidth={3} />
             </button>
           </form>
           
-          {/* 5-STAR GOLD PRIORITY SELECTOR */}
           <div className="flex items-center justify-between mt-4 px-2">
              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Priority Level</span>
              <div className="flex gap-1.5">
@@ -173,7 +187,6 @@ export default function Todo({
           </div>
         </div>
 
-        {/* BLANK SLATE MESSAGE */}
         {todos.length === 0 && (
            <div className="text-center py-12 px-4">
               <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4 ${isDarkMode ? "bg-slate-800" : "bg-slate-100"}`}>
@@ -184,7 +197,6 @@ export default function Todo({
            </div>
         )}
 
-        {/* PENDING ACTIONS (BLUE CARD CONTAINER) */}
         {pendingActions.length > 0 && (
           <section className={`p-4 rounded-[2rem] border shadow-sm animate-fade-in transition-colors ${isDarkMode ? "bg-blue-900/10 border-blue-900/30" : "bg-blue-50/60 border-blue-100"}`}>
             <div className="flex items-center gap-2 mb-4 px-2">
@@ -197,7 +209,6 @@ export default function Todo({
           </section>
         )}
 
-        {/* PENDING SHOPPING (GREEN CARD CONTAINER) */}
         {pendingShopping.length > 0 && (
           <section className={`p-4 rounded-[2rem] border shadow-sm animate-fade-in transition-colors ${isDarkMode ? "bg-emerald-900/10 border-emerald-900/30" : "bg-emerald-50/60 border-emerald-100"}`}>
             <div className="flex items-center gap-2 mb-4 px-2">
@@ -210,7 +221,6 @@ export default function Todo({
           </section>
         )}
 
-        {/* COMPLETED TASKS (ORANGE CARD CONTAINER) */}
         {completedTasks.length > 0 && (
           <section className={`p-4 rounded-[2rem] border shadow-sm animate-fade-in transition-colors ${isDarkMode ? "bg-orange-900/10 border-orange-900/30" : "bg-orange-50/60 border-orange-100"}`}>
             <div className="flex items-center gap-2 mb-4 px-2">
@@ -225,50 +235,107 @@ export default function Todo({
       </main>
 
       {/* ========================================================= */}
-      {/* THE ACTION DRAWER (MODAL) */}
+      {/* 🔥 REBUILT: PREMIUM ACTION DRAWER (WITH EDIT MODE) 🔥 */}
       {/* ========================================================= */}
       {activeModalTodo && (
-        <div className="absolute inset-0 z-[60] flex items-end">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setActiveModalTodo(null)}></div>
-          <div className={`w-full rounded-t-[2.5rem] shadow-2xl animate-slide-up relative z-10 flex flex-col transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+        <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => { setActiveModalTodo(null); setIsEditingTask(false); }}></div>
+          <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
             <div className={`p-6 border-b flex justify-between items-center ${isDarkMode ? "border-slate-800" : "border-slate-100"}`}>
               <div className="flex items-center gap-2">
                 <CheckSquare size={20} className={activeModalTodo.isCompleted ? parseInt(activeModalTodo.priority) === 5 ? "text-[#FBBF24]" : "text-[#F97316]" : "text-[#1877F2]"} />
-                <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Task Details</h3>
+                <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{isEditingTask ? "Edit Task" : "Task Details"}</h3>
               </div>
-              <button onClick={() => setActiveModalTodo(null)} className="p-2 rounded-full"><X size={18} className={isDarkMode ? "text-slate-400" : "text-slate-500"} /></button>
+              <div className="flex items-center gap-2">
+                {!isEditingTask && (
+                  <button 
+                    onClick={() => { 
+                      setIsEditingTask(true); 
+                      setEditTaskData({ text: activeModalTodo.text, priority: activeModalTodo.priority, type: activeModalTodo.type }); 
+                    }} 
+                    className="p-2 rounded-full"
+                  >
+                    <Edit2 size={16} className={isDarkMode ? "text-slate-400" : "text-slate-500"} />
+                  </button>
+                )}
+                <button onClick={() => { setActiveModalTodo(null); setIsEditingTask(false); }} className="p-2 rounded-full">
+                  <X size={18} className={isDarkMode ? "text-slate-400" : "text-slate-500"} />
+                </button>
+              </div>
             </div>
             
-            <div className="p-6 space-y-6">
-              <div className="text-center px-4">
-                <h2 className={`text-xl font-black leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>{activeModalTodo.text}</h2>
-                <div className={`mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full border ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
-                  {activeModalTodo.type === "shopping" ? <ShoppingBag size={12} className="text-[#10B981]" /> : <Zap size={12} className="text-[#1877F2]" />}
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                    {activeModalTodo.type === "shopping" ? "Shopping List" : "Action Item"}
-                  </span>
+            <div className="p-6 space-y-6 pb-[120px] lg:pb-6">
+              {!isEditingTask ? (
+                <>
+                  <div className="text-center px-4">
+                    <h2 className={`text-xl font-black leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>{activeModalTodo.text}</h2>
+                    <div className={`mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full border ${isDarkMode ? "border-slate-700 bg-slate-800/50" : "border-slate-200 bg-slate-50"}`}>
+                      {activeModalTodo.type === "shopping" ? <ShoppingBag size={12} className="text-[#10B981]" /> : <Zap size={12} className="text-[#1877F2]" />}
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                        {activeModalTodo.type === "shopping" ? "Shopping List" : "Action Item"}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className={`rounded-2xl p-4 border ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                    <div className={`flex justify-between py-2 border-b ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Status</span>
+                      <span className={`text-xs font-black ${activeModalTodo.isCompleted ? "text-[#10B981]" : "text-[#F59E0B]"}`}>
+                        {activeModalTodo.isCompleted ? "Completed" : "Pending"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Priority Level</span>
+                      <div>{renderStars(activeModalTodo.priority)}</div>
+                    </div>
+                  </div>
+                  
+                  <button 
+                    onClick={handleDeleteTask} 
+                    className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-red-500 shadow-[0_8px_16px_rgba(239,68,68,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    <Trash2 size={16} /> Delete Task
+                  </button>
+                </>
+              ) : (
+                <div className="space-y-4 animate-fade-in">
+                  <div className="relative">
+                    <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Task Name</label>
+                    <input 
+                      type="text" 
+                      value={editTaskData.text} 
+                      onChange={(e) => setEditTaskData({...editTaskData, text: e.target.value})} 
+                      className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-sm border focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`} 
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button onClick={() => setEditTaskData({...editTaskData, type: "task"})} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors ${editTaskData.type === "task" ? "bg-[#1877F2] text-white shadow-md shadow-blue-500/20" : isDarkMode ? "bg-[#0F172A] text-slate-400 border border-slate-700" : "bg-white text-slate-400 border border-slate-200"}`}>Action</button>
+                    <button onClick={() => setEditTaskData({...editTaskData, type: "shopping"})} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors ${editTaskData.type === "shopping" ? "bg-[#10B981] text-white shadow-md shadow-emerald-500/20" : isDarkMode ? "bg-[#0F172A] text-slate-400 border border-slate-700" : "bg-white text-slate-400 border border-slate-200"}`}>Shopping</button>
+                  </div>
+
+                  <div className={`p-4 rounded-2xl border flex items-center justify-between ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
+                     <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Priority Level</span>
+                     <div className="flex gap-1.5">
+                       {[1, 2, 3, 4, 5].map(star => (
+                         <Star 
+                           key={star} 
+                           size={24} 
+                           onClick={() => setEditTaskData({...editTaskData, priority: star})}
+                           className={`cursor-pointer transition-colors active:scale-90 ${star <= editTaskData.priority ? "text-[#FBBF24] fill-[#FBBF24]" : (isDarkMode ? "text-slate-700 hover:text-[#FDE68A]" : "text-slate-200 hover:text-[#FDE68A]")}`} 
+                         />
+                       ))}
+                     </div>
+                  </div>
+
+                  <button 
+                    onClick={handleSaveEdit} 
+                    className="w-full mt-2 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    <Save size={16} /> Save Changes
+                  </button>
                 </div>
-              </div>
-              
-              <div className={`rounded-2xl p-4 border ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
-                <div className={`flex justify-between py-2 border-b ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Status</span>
-                  <span className={`text-xs font-black ${activeModalTodo.isCompleted ? "text-[#10B981]" : "text-[#F59E0B]"}`}>
-                    {activeModalTodo.isCompleted ? "Completed" : "Pending"}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-2">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Priority Level</span>
-                  <div>{renderStars(activeModalTodo.priority)}</div>
-                </div>
-              </div>
-              
-              <button 
-                onClick={handleDeleteTask} 
-                className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-red-500 border transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${isDarkMode ? "bg-red-900/10 border-red-900/30 hover:bg-red-900/20" : "bg-red-50/50 border-red-100 hover:bg-red-50"}`}
-              >
-                <Trash2 size={16} /> Delete Task
-              </button>
+              )}
             </div>
           </div>
         </div>

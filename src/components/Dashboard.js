@@ -238,10 +238,13 @@ export default function Dashboard({
             const isSet = isDueNow || (pdSettings && (pdSettings.date || pdSettings.income));
             const expectedIncome = parseFloat(pdSettings?.income) || 0;
             const actualIncome = actualIncomeByPayday[pd] || 0;
-            const billsTotal = billsByPayday[pd]?.filter(b => !b.isPaid).reduce((sum, b) => sum + b.amount, 0) || 0;
             
-            // Post-Bills Balance calculated using actual secured income vs current bills
-            const balanceAfterBills = actualIncome - billsTotal;
+            // MATH ENGINE FIX: Separate Unpaid Bills from ALL Bills
+            const unpaidBillsTotal = billsByPayday[pd]?.filter(b => !b.isPaid).reduce((sum, b) => sum + b.amount, 0) || 0;
+            const allBillsTotal = billsByPayday[pd]?.reduce((sum, b) => sum + b.amount, 0) || 0;
+            
+            // Post-Bills Balance calculated using actual secured income vs ALL bills assigned to this period
+            const balanceAfterBills = actualIncome - allBillsTotal;
 
             return (
               <div key={pd} className={`min-w-[140px] p-4 rounded-3xl snap-center shrink-0 border transition-all ${isSet ? isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100 shadow-sm" : isDarkMode ? "bg-slate-800/30 border-dashed border-slate-700" : "bg-slate-50 border-dashed border-slate-200"}`}>
@@ -250,7 +253,7 @@ export default function Dashboard({
                 {isDueNow ? (
                   <>
                     <p className={`text-lg font-black tracking-tight mb-0.5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                      ${billsTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                      ${unpaidBillsTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                     </p>
                     <p className={`text-[9px] font-bold uppercase tracking-wider ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Currently Due</p>
                   </>

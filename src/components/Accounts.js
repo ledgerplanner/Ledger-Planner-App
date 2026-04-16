@@ -14,8 +14,8 @@ export default function Accounts({
 }) {
   const [activeChartNode, setActiveChartNode] = useState(5);
   
-  // Tripwire to determine if we should fake the history math
-  const isDemoMode = typeof window !== "undefined" && window.location.hostname.startsWith("demo");
+  // Reverted to crash-free tripwire
+  const isDemoMode = window.location.hostname.startsWith("demo");
 
   // === DYNAMIC TIME-MACHINE CHART ENGINE ===
   const netWorth = accounts.reduce((sum, a) => sum + a.balance, 0);
@@ -32,12 +32,12 @@ export default function Accounts({
         historyData.unshift({ label: monthName, val: Math.max(0, currentCalcNW), month: targetDate.getMonth(), year: targetDate.getFullYear() });
     } else {
         if (isDemoMode) {
-          // FLUX ENGINE: Randomly reduce previous months by 2% to 6% to simulate historical growth
+          // FLUX ENGINE: Randomly reduce previous months by 2% to 6%
           const variance = 1 - (Math.random() * (0.06 - 0.02) + 0.02);
           currentCalcNW = currentCalcNW * variance;
           historyData.unshift({ label: monthName, val: Math.max(0, currentCalcNW), month: targetDate.getMonth(), year: targetDate.getFullYear() });
         } else {
-          // NORMAL APP LOGIC: Reverse-engineer from actual transactions
+          // NORMAL APP LOGIC
           const monthAhead = historyData[0];
           const txsInMonthAhead = transactions.filter(tx => {
               if (!tx.createdAt) return false;
@@ -58,7 +58,6 @@ export default function Accounts({
   const maxChartVal = Math.max(...historyData.map((d) => d.val), 1);
   const activeDataPoint = historyData[activeChartNode];
 
-  // === GRAPHIC HEADER ===
   const graphicContent = (
     <div className="relative z-10 mb-2">
       <div className="flex justify-between items-end mb-6">
@@ -90,8 +89,6 @@ export default function Accounts({
     <div className={`animate-fade-in pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
       {renderHeroShell(`${userName}'s Accounts`, graphicContent)}
       <main className="px-6 space-y-6 mt-4">
-        
-        {/* ACTION BUTTONS */}
         <div className="grid grid-cols-2 gap-3">
           <button onClick={() => setIsTransferOpen(true)} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#1877F2] text-white shadow-blue-900/20" : "bg-[#1877F2] text-white shadow-blue-500/30"}`}>
             <ArrowRightLeft size={20} /> Transfer
@@ -101,7 +98,6 @@ export default function Accounts({
           </button>
         </div>
 
-        {/* ACCOUNTS LIST */}
         <div className="space-y-4">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">All Accounts</h3>
           <div className={`rounded-[2rem] p-3 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
@@ -126,7 +122,6 @@ export default function Accounts({
             })}
           </div>
         </div>
-
       </main>
     </div>
   );

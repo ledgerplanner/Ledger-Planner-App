@@ -29,12 +29,13 @@ import Activity from "./components/Activity";
 import Todo from "./components/Todo";
 
 export default function App() {
-  // === DEMO TRIPWIRE (REVERTED TO SAFE VERSION) ===
-  const isDemoMode = window.location.hostname.startsWith("demo");
+  // === HYDRATION-SAFE MOUNT STATE ===
+  const [isMounted, setIsMounted] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   // === APP & AUTH STATE ===
-  const [user, setUser] = useState(isDemoMode ? { uid: "demo123", displayName: "Demo User", email: "demo@ledgerplanner.com" } : null);
-  const [isAuthLoading, setIsAuthLoading] = useState(!isDemoMode);
+  const [user, setUser] = useState(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [activeTab, setActiveTab] = useState("home");
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -49,10 +50,10 @@ export default function App() {
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState("");
 
-  const [bills, setBills] = useState(isDemoMode ? demoBills : []);
-  const [transactions, setTransactions] = useState(isDemoMode ? demoTransactions : []);
-  const [accounts, setAccounts] = useState(isDemoMode ? demoAccounts : []);
-  const [todos, setTodos] = useState(isDemoMode ? demoTodos : []);
+  const [bills, setBills] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [accounts, setAccounts] = useState([]);
+  const [todos, setTodos] = useState([]);
 
   // === UI & MODAL STATE ===
   const [selectedEntry, setSelectedEntry] = useState(null);
@@ -61,13 +62,11 @@ export default function App() {
   const [collapsedPaydays, setCollapsedPaydays] = useState({ "Payday 2": true, "Payday 3": true, "Payday 4": true, "Payday 5": true });
   
   const [isPaydaySetupOpen, setIsPaydaySetupOpen] = useState(false);
-  const [paydayConfig, setPaydayConfig] = useState(isDemoMode ? demoPaydayConfig : { "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } });
+  const [paydayConfig, setPaydayConfig] = useState({ "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } });
   const [editPaydayConfig, setEditPaydayConfig] = useState(paydayConfig);
   
   const [paymentModalConfig, setPaymentModalConfig] = useState({ isOpen: false, billId: null, accountId: "" });
-  
   const [installmentPromptConfig, setInstallmentPromptConfig] = useState({ isOpen: false, billId: null, nextDate: "" });
-
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   
   const [isTransferOpen, setIsTransferOpen] = useState(false);
@@ -109,33 +108,51 @@ export default function App() {
   const [isCategorySelectorOpen, setIsCategorySelectorOpen] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
-  // === TAXONOMY & EMOJIS ===
+  // === 🔥 THE MASTER CATEGORY ENGINE 🔥 ===
   const categoryEmojis = ["💵", "💲", "🧾", "📋", "🏠", "💧", "⚡", "📺", "🚗", "⛽", "🚕", "🚇", "✈️", "🌴", "🏋️", "💳", "🎓", "🛒", "🛍️", "👗", "👟", "💅", "💈", "🍔", "🌮", "🍣", "☕", "🍻", "🍹", "🏥", "💊", "🐶", "🐾", "🎉", "🎟️", "🎬", "🎮", "🕹️", "📱", "💻", "💼", "💰", "₿", "💎", "⌚", "🎧", "🏪", "📶", "☁️", "🤖", "🚀"];
+  
   const modernCategories = [
     { group: "Income & Wealth", items: ["Primary Salary", "Side Hustle / Gig", "Tips / Cash", "Investments / Crypto", "Transfers (Venmo/Zelle)", "Refunds & Adjustments", "Cash App"] },
     { group: "Housing & Utilities", items: ["Rent / Mortgage", "Electric / Gas", "Water / Trash", "Internet / Wi-Fi", "Home Goods / Maintenance", "Cell Phone"] },
-    { group: "Modern Transit", items: ["Gas / Fuel", "Rideshare (Uber/Lyft)", "Scooters (Lime/Bird)", "Public Transit", "Auto Loan / Maintenance", "Parking / Tolls"] },
+    { group: "Transit & Travel", items: ["Gas / Fuel", "Rideshare (Uber/Lyft)", "Public Transit", "Auto Loan / Maintenance", "Parking / Tolls", "Airplane / Flights", "Hotel / Lodging", "Taxi / Car Rental"] },
     { group: "Food & Drink", items: ["Groceries", "Dining Out", "Delivery (DoorDash/Eats)", "Coffee / Tea", "Bars / Nightlife", "Convenient Store"] },
     { group: "Digital Life", items: ["Streaming (Netflix/Hulu)", "Music (Spotify/Apple)", "Software / Cloud", "Gaming", "Creators (Patreon/Twitch)"] },
     { group: "Shopping & Lifestyle", items: ["Amazon / E-commerce", "Clothing / Fashion", "Personal Care / Grooming", "Fitness / Gym", "Events / Concerts", "Pet Care"] },
-    { group: "Financial & Health", items: ["Savings Transfer", "Credit Card Payment", "Debt Payoff", "Bank Fees / Interest", "Medical / Pharmacy", "PayDay Loans"] },
-    { group: "Entrepreneur (CEO)", items: ["Domain", "Hosting", "Software", "AI", "Marketing & Ads", "Contractors & Freelancers", "Business Fees / LLC"] },
-    { group: "Other", items: ["Miscellaneous Expense", "Charity / Gifts"] }
+    { group: "Financial", items: ["Savings Transfer", "Credit Card Payment", "Debt Payoff", "Bank Fees / Interest", "PayDay Loans"] },
+    { group: "Health", items: ["Medical / Doctor", "Pharmacy / Rx", "Dental / Vision", "Therapy / Mental Health", "Health Insurance", "Fitness / Wellness"] },
+    { group: "Entrepreneur", items: ["Domain / Hosting", "Software / SaaS", "AI Subscriptions", "Marketing & Ads", "Contractors & Freelancers", "Business Fees / LLC", "Office Supplies"] },
+    { group: "Other", items: ["Miscellaneous Expense", "Charity / Gifts", "Education / Courses"] }
   ];
+
+  // === HYDRATION SAFE BOOT ENGINE ===
+  useEffect(() => {
+    setIsMounted(true);
+    const isDemo = window.location.hostname.includes("demo");
+    setIsDemoMode(isDemo);
+
+    if (isDemo) {
+      setUser({ uid: "demo123", displayName: "Demo User", email: "demo@ledgerplanner.com" });
+      setAccounts(demoAccounts);
+      setBills(demoBills);
+      setTransactions(demoTransactions);
+      setTodos(demoTodos);
+      setPaydayConfig(demoPaydayConfig);
+      setIsAuthLoading(false);
+    }
+  }, []);
 
   // === CLOUD SYNC ENGINE ===
   useEffect(() => {
-    if (isDemoMode) return;
+    if (!isMounted || isDemoMode) return;
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setTimeout(() => setIsAuthLoading(false), 1200);
     });
     return () => unsubscribeAuth();
-  }, [isDemoMode]);
+  }, [isMounted, isDemoMode]);
 
   useEffect(() => {
-    if (isDemoMode) return;
-    if (!user) { setAccounts([]); setBills([]); setTransactions([]); setTodos([]); return; }
+    if (!isMounted || isDemoMode || !user) return;
     const userRef = doc(db, "users", user.uid);
     const unsubAcc = onSnapshot(collection(userRef, "accounts"), (snap) => setAccounts(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(a => !a.isArchived)));
     const unsubBills = onSnapshot(collection(userRef, "bills"), (snap) => setBills(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
@@ -143,12 +160,15 @@ export default function App() {
     const unsubTodos = onSnapshot(query(collection(userRef, "todos"), orderBy("createdAt", "desc")), (snap) => setTodos(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     const unsubConfig = onSnapshot(doc(userRef, "settings", "paydayConfig"), (docSnap) => { if (docSnap.exists()) setPaydayConfig(docSnap.data()); });
     return () => { unsubAcc(); unsubBills(); unsubTxs(); unsubTodos(); unsubConfig(); };
-  }, [user, isDemoMode]);
+  }, [isMounted, isDemoMode, user]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Hydration Guard
+  if (!isMounted) return <div className={`min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}></div>;
 
   // === AUTH ACTIONS ===
   const handleAuthSubmit = async (e) => {
@@ -205,7 +225,6 @@ export default function App() {
   const openEntryDrawer = (entry) => { setSelectedEntry(entry); setIsEditingEntry(false); };
   const closeEntryDrawer = () => { setSelectedEntry(null); setIsEditingEntry(false); };
 
-  // 🔥 RESTORED FUNCTION 🔥
   const handleBillClick = async (id) => {
     const bill = bills.find(b => b.id === id); 
     if (!bill.isPaid) { 
@@ -674,8 +693,8 @@ export default function App() {
                 ))}
               </div>
               <div className="p-6 border-t flex gap-3">
-                <button onClick={clearPaydayConfig} className="flex-1 py-4 rounded-2xl font-black text-xs uppercase tracking-widest border">Clear All</button>
-                <button onClick={savePaydayConfig} className="flex-1 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2]">Save Engine</button>
+                <button onClick={clearPaydayConfig} className="flex-1 py-4 rounded-2xl font-black text-xs uppercase tracking-widest border transition-all active:scale-95">Clear All</button>
+                <button onClick={savePaydayConfig} className="flex-1 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2">Save Engine</button>
               </div>
             </div>
           </div>
@@ -693,7 +712,7 @@ export default function App() {
                 <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Account Name</label><input type="text" value={newAccName} onChange={(e) => setNewAccName(e.target.value)} className="w-full pt-6 pb-2 px-5 rounded-2xl border" /></div>
                 <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Current Balance</label><input type="number" value={newAccBalance} onChange={(e) => setNewAccBalance(e.target.value)} className="w-full pt-6 pb-2 px-5 rounded-2xl border" /></div>
                 <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Account Type</label><select value={newAccType} onChange={(e) => setNewAccType(e.target.value)} className="w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none"><option>Checking</option><option>Savings</option><option>Credit Card</option><option>Cash</option><option>401k / Retirement</option></select></div>
-                <button onClick={handleAddAccount} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2]">Save Account</button>
+                <button onClick={handleAddAccount} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2">Save Account <CheckCircle2 size={16} /></button>
               </div>
             </div>
           </div>
@@ -716,10 +735,10 @@ export default function App() {
                 <div className="text-center mb-6"><span className="text-6xl font-extrabold tracking-tighter">${transferAmount}</span></div>
                 <div className="grid grid-cols-4 gap-3 mt-auto">
                   {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", ".", "0", "=", "+"].map((btn) => {
-                    return ( <button key={btn} onClick={() => handleTransferNumpad(btn)} className="h-14 rounded-2xl text-2xl font-bold flex items-center justify-center transition-all bg-slate-100 border border-slate-200"> {btn} </button> );
+                    return ( <button key={btn} onClick={() => handleTransferNumpad(btn)} className="h-14 rounded-2xl text-2xl font-bold flex items-center justify-center transition-all bg-slate-100 border border-slate-200 active:scale-95"> {btn} </button> );
                   })}
                 </div>
-                <button onClick={executeTransfer} disabled={parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo} className={`w-full mt-6 h-16 rounded-2xl font-black uppercase text-sm text-white ${parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo ? "bg-slate-300" : "bg-[#1877F2]"}`}>Execute Transfer</button>
+                <button onClick={executeTransfer} disabled={parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo} className={`w-full mt-6 h-16 rounded-2xl font-black uppercase tracking-widest text-sm text-white shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2 ${parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo ? "bg-slate-300 opacity-50 shadow-none cursor-not-allowed" : "bg-[#1877F2]"}`}>Execute Transfer <ArrowRight size={18} /></button>
               </div>
             </div>
           </div>
@@ -738,8 +757,8 @@ export default function App() {
               </div>
               <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
                 <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Quick Update Balance</label><input type="number" value={editAccountBalance} onChange={(e) => setEditAccountBalance(e.target.value)} onFocus={() => setEditAccountBalance(Math.abs(selectedAccount.balance).toString())} className="w-full pt-6 pb-2 px-5 rounded-2xl border" /></div>
-                <button onClick={updateAccountBalance} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2]">Save Balance</button>
-                <button onClick={deleteAccount} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-red-500 border bg-red-50"><Trash2 size={16}/> Delete Account</button>
+                <button onClick={updateAccountBalance} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><Save size={16} /> Save Balance</button>
+                <button onClick={deleteAccount} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-red-500 shadow-[0_8px_16px_rgba(239,68,68,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><Trash2 size={16}/> Delete Account</button>
               </div>
             </div>
           </div>
@@ -760,7 +779,7 @@ export default function App() {
                     {accounts.map((a) => (<option key={a.id} value={a.id}>{a.name} (${a.balance.toFixed(2)})</option>))}
                   </select>
                 </div>
-                <button onClick={confirmPaymentRoute} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#10B981]"><CheckCircle2 size={16}/> Complete Payment</button>
+                <button onClick={confirmPaymentRoute} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#10B981] shadow-[0_8px_16px_rgba(16,185,129,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><CheckCircle2 size={16}/> Complete Payment</button>
               </div>
             </div>
           </div>
@@ -821,11 +840,11 @@ export default function App() {
                     </div>
                     
                     {selectedEntry.isOverdue !== undefined && !selectedEntry.isPaid && (
-                      <button onClick={() => { setSelectedEntry(null); setPaymentModalConfig({ isOpen: true, billId: selectedEntry.id, accountId: accounts.find(a => a.type === "Checking" || a.type === "Cash")?.id || (accounts[0]?.id || "") }); }} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2]">
+                      <button onClick={() => { setSelectedEntry(null); setPaymentModalConfig({ isOpen: true, billId: selectedEntry.id, accountId: accounts.find(a => a.type === "Checking" || a.type === "Cash")?.id || (accounts[0]?.id || "") }); }} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#10B981] shadow-[0_8px_16px_rgba(16,185,129,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2">
                         <CheckCircle2 size={16} /> Mark as Paid
                       </button>
                     )}
-                    <button onClick={async () => { if(window.confirm("Are you sure you want to delete this entry?")) { const colName = selectedEntry.fullDate ? "bills" : "transactions"; if (isDemoMode) { if (colName === "bills") { setBills(bills.filter(b => b.id !== selectedEntry.id)); } else { setTransactions(transactions.filter(t => t.id !== selectedEntry.id)); } } else { await deleteDoc(doc(db, "users", user.uid, colName, selectedEntry.id)); if(!selectedEntry.fullDate && selectedEntry.accountId) { const acc = accounts.find(a => a.id === selectedEntry.accountId); if(acc) { const revAmount = selectedEntry.type === "Income" ? -selectedEntry.amount : selectedEntry.amount; await updateDoc(doc(db, "users", user.uid, "accounts", acc.id), { balance: acc.balance + revAmount }); } } } setSelectedEntry(null); triggerHaptic(); } }} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-red-500 border bg-red-50"><Trash2 size={16} /> Delete Entry</button>
+                    <button onClick={async () => { if(window.confirm("Are you sure you want to delete this entry?")) { const colName = selectedEntry.fullDate ? "bills" : "transactions"; if (isDemoMode) { if (colName === "bills") { setBills(bills.filter(b => b.id !== selectedEntry.id)); } else { setTransactions(transactions.filter(t => t.id !== selectedEntry.id)); } } else { await deleteDoc(doc(db, "users", user.uid, colName, selectedEntry.id)); if(!selectedEntry.fullDate && selectedEntry.accountId) { const acc = accounts.find(a => a.id === selectedEntry.accountId); if(acc) { const revAmount = selectedEntry.type === "Income" ? -selectedEntry.amount : selectedEntry.amount; await updateDoc(doc(db, "users", user.uid, "accounts", acc.id), { balance: acc.balance + revAmount }); } } } setSelectedEntry(null); triggerHaptic(); } }} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-red-500 shadow-[0_8px_16px_rgba(239,68,68,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><Trash2 size={16} /> Delete Entry</button>
                   </>
                 ) : (
                   <div className="space-y-4">
@@ -834,7 +853,7 @@ export default function App() {
                     <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Icon</label><select value={editEntryData.icon || ""} onChange={(e) => setEditEntryData({...editEntryData, icon: e.target.value})} className="w-full pt-6 pb-2 px-5 rounded-2xl border">{categoryEmojis.map((emoji) => (<option key={emoji} value={emoji}>{emoji}</option>))}</select></div>
                     <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Category</label><select value={editEntryData.category || ""} onChange={(e) => setEditEntryData({...editEntryData, category: e.target.value})} className="w-full pt-6 pb-2 px-5 rounded-2xl border">{modernCategories.map(group => ( <optgroup key={group.group} label={group.group}> {group.items.map(item => <option key={item} value={item}>{item}</option>)} </optgroup> ))}</select></div>
                     {selectedEntry.fullDate !== undefined && (<div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Due Date</label><input type="date" value={editEntryData.rawDate || ""} onChange={(e) => setEditEntryData({...editEntryData, rawDate: e.target.value})} className="w-full pt-6 pb-2 px-5 rounded-2xl border" /></div>)}
-                    <button onClick={handleSaveEntryEdit} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2]">Save Changes</button>
+                    <button onClick={handleSaveEntryEdit} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><Save size={16} /> Save Changes</button>
                   </div>
                 )}
               </div>
@@ -846,6 +865,7 @@ export default function App() {
         {isQabOpen && (() => {
           const activeText = drawerTab === "bills" ? "text-[#1877F2]" : drawerTab === "income" ? "text-[#10B981]" : "text-[#F97316]";
           const activeBg = drawerTab === "bills" ? "bg-[#1877F2]" : drawerTab === "income" ? "bg-[#10B981]" : "bg-[#F97316]";
+          const activeShadow = drawerTab === "bills" ? "shadow-[0_8px_16px_rgba(24,119,242,0.3)]" : drawerTab === "income" ? "shadow-[0_8px_16px_rgba(16,185,129,0.3)]" : "shadow-[0_8px_16px_rgba(249,115,22,0.3)]";
           const activeSoftBg = drawerTab === "bills" ? "bg-blue-50" : drawerTab === "income" ? "bg-emerald-50" : "bg-orange-50";
           const activeLabel = drawerTab === "bills" ? "New Bill" : drawerTab === "income" ? "New Income" : "New Expense";
           
@@ -875,16 +895,16 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className={`p-6 mt-auto lg:rounded-b-[2.5rem] flex-1 flex flex-col overflow-y-auto ${isDarkMode ? "bg-[#0F172A]" : "bg-white"} ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+                <div className={`p-6 mt-auto lg:rounded-b-[2.5rem] flex-1 flex flex-col overflow-y-auto ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
                   {qabStep === 1 ? (
                     <>
                       <div className="grid grid-cols-4 gap-3 mt-2">
                         {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", ".", "0", "=", "+"].map((btn) => {
                           const isOp = ["÷", "×", "-", "+", "="].includes(btn);
-                          return ( <button key={btn} onClick={() => handleNumpad(btn)} className={`h-14 rounded-2xl text-2xl font-bold flex items-center justify-center bg-slate-100`}> {btn} </button> );
+                          return ( <button key={btn} onClick={() => handleNumpad(btn)} className={`h-14 rounded-2xl text-2xl font-bold flex items-center justify-center bg-slate-100 transition-transform active:scale-95`}> {btn} </button> );
                         })}
                       </div>
-                      <button onClick={() => { if (parseFloat(inputValue) > 0) setQabStep(2); }} disabled={parseFloat(inputValue) <= 0 || isNaN(parseFloat(inputValue))} className={`w-full mt-6 h-16 rounded-2xl font-black uppercase text-sm text-white ${parseFloat(inputValue) <= 0 || isNaN(parseFloat(inputValue)) ? "bg-slate-300" : activeBg}`}>Continue <ArrowRight size={18} /></button>
+                      <button onClick={() => { if (parseFloat(inputValue) > 0) setQabStep(2); }} disabled={parseFloat(inputValue) <= 0 || isNaN(parseFloat(inputValue))} className={`w-full mt-6 h-16 rounded-2xl font-black uppercase tracking-widest text-sm text-white transition-all active:scale-95 flex items-center justify-center gap-2 ${parseFloat(inputValue) <= 0 || isNaN(parseFloat(inputValue)) ? "bg-slate-300 opacity-50 cursor-not-allowed" : `${activeBg} ${activeShadow} hover:-translate-y-1`}`}>Continue <ArrowRight size={18} /></button>
                     </>
                   ) : (
                     <div className="flex flex-col h-full animate-fade-in relative">
@@ -895,14 +915,14 @@ export default function App() {
                         {(drawerTab === "income" || drawerTab === "transactions") && (<div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Account</label><select value={entryAccount} onChange={(e) => setEntryAccount(e.target.value)} className="w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none"><option value="" disabled>Select...</option>{accounts.map((a) => (<option key={a.id} value={a.id}>{a.name}</option>))}</select></div>)}
                         <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Icon</label><select value={entryIcon} onChange={(e) => setEntryIcon(e.target.value)} className="w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none">{categoryEmojis.map((emoji) => (<option key={emoji} value={emoji}>{emoji}</option>))}</select></div>
                       </div>
-                      <button onClick={handleConfirmAction} className={`w-full mt-4 h-16 shrink-0 rounded-2xl font-black text-sm uppercase text-white flex items-center justify-center gap-2 ${activeBg}`}>Confirm & Save <CheckCircle2 size={18} /></button>
+                      <button onClick={handleConfirmAction} className={`w-full mt-4 h-16 shrink-0 rounded-2xl font-black text-sm uppercase tracking-widest text-white transition-transform active:scale-95 flex items-center justify-center gap-2 ${activeBg} ${activeShadow}`}>Confirm & Save <CheckCircle2 size={18} /></button>
                       
                       {isCategorySelectorOpen && (
                          <div className="absolute inset-0 z-[140] flex flex-col bg-white">
                             <div className="p-4 border-b flex justify-between items-center"><h3 className="font-black uppercase text-sm">Select Category</h3><button onClick={() => setIsCategorySelectorOpen(false)} className="p-2"><X size={18}/></button></div>
                             <div className={`flex-1 overflow-y-auto p-4 space-y-6 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : "pb-20"}`}>
                                {categoriesToRender.map(group => (
-                                   <div key={group.group}><p className="text-[10px] font-black uppercase text-slate-400 mb-3">{group.group}</p><div className="grid grid-cols-1 gap-2">{group.items.map(item => (<button key={item} onClick={() => { setEntryCategory(item); setIsCategorySelectorOpen(false); }} className={`w-full p-4 text-left rounded-xl text-xs font-bold border ${entryCategory === item ? `${activeBg} text-white` : "bg-slate-50 border-slate-200"}`}>{item}</button>))}</div></div>
+                                   <div key={group.group}><p className="text-[10px] font-black uppercase text-slate-400 mb-3">{group.group}</p><div className="grid grid-cols-1 gap-2">{group.items.map(item => (<button key={item} onClick={() => { setEntryCategory(item); setIsCategorySelectorOpen(false); }} className={`w-full p-4 text-left rounded-xl text-xs font-bold border transition-colors ${entryCategory === item ? `${activeBg} text-white shadow-md` : "bg-slate-50 border-slate-200"}`}>{item}</button>))}</div></div>
                                ))}
                             </div>
                          </div>
@@ -933,7 +953,7 @@ export default function App() {
                    <label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Next Due Date</label>
                    <input type="date" value={installmentPromptConfig.nextDate} onChange={(e) => setInstallmentPromptConfig({...installmentPromptConfig, nextDate: e.target.value})} className="w-full pt-6 pb-2 px-5 rounded-2xl border" />
                 </div>
-                <button onClick={handleSaveNextInstallmentDate} disabled={!installmentPromptConfig.nextDate} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white ${!installmentPromptConfig.nextDate ? "bg-slate-300" : "bg-[#1877F2]"}`}><CalendarIcon size={16}/> Route to Payday</button>
+                <button onClick={handleSaveNextInstallmentDate} disabled={!installmentPromptConfig.nextDate} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2 ${!installmentPromptConfig.nextDate ? "bg-slate-300 opacity-50 shadow-none cursor-not-allowed" : "bg-[#1877F2]"}`}><CalendarIcon size={16}/> Route to Payday</button>
               </div>
             </div>
           </div>

@@ -125,7 +125,7 @@ export default function App() {
 
   // === CLOUD SYNC ENGINE ===
   useEffect(() => {
-    if (isDemoMode) return; // Do not run Firebase auth listener in Demo Mode
+    if (isDemoMode) return;
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setTimeout(() => setIsAuthLoading(false), 1200);
@@ -134,7 +134,7 @@ export default function App() {
   }, [isDemoMode]);
 
   useEffect(() => {
-    if (isDemoMode) return; // Do not fetch from Firebase in Demo Mode
+    if (isDemoMode) return;
     if (!user) { setAccounts([]); setBills([]); setTransactions([]); setTodos([]); return; }
     const userRef = doc(db, "users", user.uid);
     const unsubAcc = onSnapshot(collection(userRef, "accounts"), (snap) => setAccounts(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(a => !a.isArchived)));
@@ -687,7 +687,7 @@ export default function App() {
 
         {/* MAIN ROUTER CONTENT */}
         <div className="flex-1 flex flex-col relative h-full overflow-hidden">
-          <div className="flex-1 overflow-y-auto hide-scrollbar lg:pb-0 pb-24" ref={scrollRef} onScroll={handleScroll}>
+          <div className={`flex-1 overflow-y-auto hide-scrollbar lg:pb-0 ${isDemoMode ? "pb-56" : "pb-24"}`} ref={scrollRef} onScroll={handleScroll}>
             {activeTab === "home" && <Dashboard userName={userName} accounts={accounts} bills={dynamicBills} transactions={transactions} paydayConfig={paydayConfig} setEditPaydayConfig={setEditPaydayConfig} setIsPaydaySetupOpen={setIsPaydaySetupOpen} setIsNotificationsOpen={setIsNotificationsOpen} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} isDarkMode={isDarkMode} formatPaydayDateStr={formatPaydayDateStr} renderHeroShell={renderHeroShell} changeTab={changeTab} />}
             {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} />}
             {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} handleRolloverMonth={handleRolloverMonth} />}
@@ -695,8 +695,8 @@ export default function App() {
             {activeTab === "todo" && <Todo userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} newTodoType={newTodoType} setNewTodoType={setNewTodoType} isDarkMode={isDarkMode} handleAddTodo={async (e) => { e.preventDefault(); if(!newTodoText.trim()) return; if (isDemoMode) { setTodos([{ id: `todo_demo_${Date.now()}`, text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false }, ...todos]); } else { await addDoc(collection(db, "users", user.uid, "todos"), { text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() }); } triggerVictory(); setNewTodoText(""); setNewTodoPriority(3); }} toggleTodoStatus={async (id) => { triggerHaptic(); const todo = todos.find(t => t.id === id); if (isDemoMode) { setTodos(todos.map(t => t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)); } else { await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); } }} setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} />}
           </div>
 
-          <div className="absolute bottom-24 right-6 z-40 lg:hidden"><button onClick={() => setIsQabOpen(true)} className={`w-14 h-14 rounded-full flex items-center justify-center text-white bg-[#1877F2] shadow-[0_12px_24px_rgba(24,119,242,0.4)] border-4 ${isDarkMode ? "border-[#0F172A]" : "border-white"}`}><Plus size={28} /></button></div>
-          <div className={`lg:hidden absolute bottom-0 left-0 w-full backdrop-blur-md border-t px-2 pt-3 pb-6 flex justify-between items-center z-40 ${isDarkMode ? "bg-[#1E293B]/95 border-slate-800" : "bg-white/95 border-slate-100"}`}>
+          <div className={`absolute ${isDemoMode ? "bottom-[190px]" : "bottom-24"} right-6 z-40 lg:hidden`}><button onClick={() => setIsQabOpen(true)} className={`w-14 h-14 rounded-full flex items-center justify-center text-white bg-[#1877F2] shadow-[0_12px_24px_rgba(24,119,242,0.4)] border-4 ${isDarkMode ? "border-[#0F172A]" : "border-white"}`}><Plus size={28} /></button></div>
+          <div className={`lg:hidden absolute ${isDemoMode ? "bottom-[90px]" : "bottom-0"} left-0 w-full backdrop-blur-md border-t px-2 pt-3 pb-6 flex justify-between items-center z-40 ${isDarkMode ? "bg-[#1E293B]/95 border-slate-800" : "bg-white/95 border-slate-100"}`}>
             {[{ id: "home", icon: Home, label: "Home" }, { id: "accounts", icon: Wallet, label: "Accounts" }, { id: "bills", icon: CalendarIcon, label: "Bills" }, { id: "activity", icon: CreditCard, label: "Activity" }, { id: "todo", icon: CheckSquare, label: "To-Do" }].map((tab) => (
               <button key={tab.id} onClick={() => changeTab(tab.id)} className="flex-1 flex flex-col items-center gap-1 group">
                 <tab.icon size={24} strokeWidth={activeTab === tab.id ? 2.5 : 2} className={`transition-all duration-300 ${activeTab === tab.id ? "text-[#1877F2] transform -translate-y-1" : isDarkMode ? "text-slate-500" : "text-slate-400"}`} />
@@ -1158,7 +1158,7 @@ export default function App() {
 
       {/* 🔥 DEMO MODE FLOATING SIGN UP BANNER 🔥 */}
       {isDemoMode && (
-        <div className="fixed bottom-0 left-0 w-full bg-[#1877F2] text-white p-4 pb-8 lg:pb-4 flex justify-between items-center z-[100] shadow-[0_-10px_40px_rgba(24,119,242,0.3)]">
+        <div className="fixed bottom-0 left-0 w-full min-h-[90px] bg-[#1877F2] text-white p-4 pb-8 lg:pb-4 flex justify-between items-center z-[100] shadow-[0_-10px_40px_rgba(24,119,242,0.3)]">
           <div className="flex flex-col">
             <span className="font-black text-sm lg:text-base tracking-tight uppercase flex items-center gap-2">
               <span className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span></span>

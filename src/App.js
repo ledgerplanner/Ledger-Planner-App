@@ -29,13 +29,12 @@ import Activity from "./components/Activity";
 import Todo from "./components/Todo";
 
 export default function App() {
-  // === HYDRATION-SAFE MOUNT STATE ===
-  const [isMounted, setIsMounted] = useState(false);
-  const [isDemoMode, setIsDemoMode] = useState(false);
+  // === DEMO TRIPWIRE (REVERTED TO SAFE VERSION) ===
+  const isDemoMode = window.location.hostname.startsWith("demo");
 
-  // === APP & AUTH STATE (Initialized Empty) ===
-  const [user, setUser] = useState(null);
-  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  // === APP & AUTH STATE ===
+  const [user, setUser] = useState(isDemoMode ? { uid: "demo123", displayName: "Demo User", email: "demo@ledgerplanner.com" } : null);
+  const [isAuthLoading, setIsAuthLoading] = useState(!isDemoMode);
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [activeTab, setActiveTab] = useState("home");
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -50,10 +49,10 @@ export default function App() {
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState("");
 
-  const [bills, setBills] = useState([]);
-  const [transactions, setTransactions] = useState([]);
-  const [accounts, setAccounts] = useState([]);
-  const [todos, setTodos] = useState([]);
+  const [bills, setBills] = useState(isDemoMode ? demoBills : []);
+  const [transactions, setTransactions] = useState(isDemoMode ? demoTransactions : []);
+  const [accounts, setAccounts] = useState(isDemoMode ? demoAccounts : []);
+  const [todos, setTodos] = useState(isDemoMode ? demoTodos : []);
 
   // === UI & MODAL STATE ===
   const [selectedEntry, setSelectedEntry] = useState(null);
@@ -62,11 +61,13 @@ export default function App() {
   const [collapsedPaydays, setCollapsedPaydays] = useState({ "Payday 2": true, "Payday 3": true, "Payday 4": true, "Payday 5": true });
   
   const [isPaydaySetupOpen, setIsPaydaySetupOpen] = useState(false);
-  const [paydayConfig, setPaydayConfig] = useState({ "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } });
+  const [paydayConfig, setPaydayConfig] = useState(isDemoMode ? demoPaydayConfig : { "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } });
   const [editPaydayConfig, setEditPaydayConfig] = useState(paydayConfig);
   
   const [paymentModalConfig, setPaymentModalConfig] = useState({ isOpen: false, billId: null, accountId: "" });
+  
   const [installmentPromptConfig, setInstallmentPromptConfig] = useState({ isOpen: false, billId: null, nextDate: "" });
+
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   
   const [isTransferOpen, setIsTransferOpen] = useState(false);
@@ -122,35 +123,19 @@ export default function App() {
     { group: "Other", items: ["Miscellaneous Expense", "Charity / Gifts"] }
   ];
 
-  // === HYDRATION SAFE BOOT ENGINE ===
-  useEffect(() => {
-    setIsMounted(true);
-    const isDemo = window.location.hostname.includes("demo");
-    setIsDemoMode(isDemo);
-
-    if (isDemo) {
-      setUser({ uid: "demo123", displayName: "Demo User", email: "demo@ledgerplanner.com" });
-      setAccounts(demoAccounts);
-      setBills(demoBills);
-      setTransactions(demoTransactions);
-      setTodos(demoTodos);
-      setPaydayConfig(demoPaydayConfig);
-      setIsAuthLoading(false);
-    }
-  }, []);
-
   // === CLOUD SYNC ENGINE ===
   useEffect(() => {
-    if (!isMounted || isDemoMode) return;
+    if (isDemoMode) return;
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setTimeout(() => setIsAuthLoading(false), 1200);
     });
     return () => unsubscribeAuth();
-  }, [isMounted, isDemoMode]);
+  }, [isDemoMode]);
 
   useEffect(() => {
-    if (!isMounted || isDemoMode || !user) return;
+    if (isDemoMode) return;
+    if (!user) { setAccounts([]); setBills([]); setTransactions([]); setTodos([]); return; }
     const userRef = doc(db, "users", user.uid);
     const unsubAcc = onSnapshot(collection(userRef, "accounts"), (snap) => setAccounts(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(a => !a.isArchived)));
     const unsubBills = onSnapshot(collection(userRef, "bills"), (snap) => setBills(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
@@ -158,15 +143,12 @@ export default function App() {
     const unsubTodos = onSnapshot(query(collection(userRef, "todos"), orderBy("createdAt", "desc")), (snap) => setTodos(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     const unsubConfig = onSnapshot(doc(userRef, "settings", "paydayConfig"), (docSnap) => { if (docSnap.exists()) setPaydayConfig(docSnap.data()); });
     return () => { unsubAcc(); unsubBills(); unsubTxs(); unsubTodos(); unsubConfig(); };
-  }, [isMounted, isDemoMode, user]);
+  }, [user, isDemoMode]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
-
-  // Hydration Guard
-  if (!isMounted) return <div className={`min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}></div>;
 
   // === AUTH ACTIONS ===
   const handleAuthSubmit = async (e) => {
@@ -222,6 +204,31 @@ export default function App() {
 
   const openEntryDrawer = (entry) => { setSelectedEntry(entry); setIsEditingEntry(false); };
   const closeEntryDrawer = () => { setSelectedEntry(null); setIsEditingEntry(false); };
+
+  // 🔥 RESTORED FUNCTION 🔥
+  const handleBillClick = async (id) => {
+    const bill = bills.find(b => b.id === id); 
+    if (!bill.isPaid) { 
+      setPaymentModalConfig({ isOpen: true, billId: id, accountId: accounts.find(a => a.type === "Checking" || a.type === "Cash")?.id || (accounts[0]?.id || "") }); 
+    } 
+    else {
+      const refundAccountId = bill.paidFromAccountId;
+      const targetAcc = accounts.find(a => a.id === refundAccountId);
+      let newPaidAmount = bill.paidAmount; 
+      if (bill.isInstallment) newPaidAmount = bill.paidAmount - bill.amount;
+      
+      if (isDemoMode) {
+        setBills(bills.map(b => b.id === id ? { ...b, isPaid: false, paidAmount: newPaidAmount, paidFromAccountId: null, linkedTxId: null } : b));
+        if (targetAcc) setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: a.balance + bill.amount } : a));
+        if (bill.linkedTxId) setTransactions(transactions.filter(t => t.id !== bill.linkedTxId));
+      } else {
+        await updateDoc(doc(db, "users", user.uid, "bills", id), { isPaid: false, paidAmount: newPaidAmount, paidFromAccountId: null, linkedTxId: null });
+        if (targetAcc) await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance + bill.amount });
+        if (bill.linkedTxId) await deleteDoc(doc(db, "users", user.uid, "transactions", bill.linkedTxId));
+      }
+      triggerHaptic();
+    }
+  };
 
   const handleSaveEntryEdit = async () => {
     if (!selectedEntry) return;
@@ -629,7 +636,8 @@ export default function App() {
           </div>
         </div>
 
-        {/* NOTIFICATIONS MODAL */}
+        {/* MODALS WITH SAFE DEMO BUFFERS */}
+        
         {isNotificationsOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsNotificationsOpen(false)}></div>
@@ -646,7 +654,6 @@ export default function App() {
           </div>
         )}
 
-        {/* PAYDAY SETUP MODAL */}
         {isPaydaySetupOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsPaydaySetupOpen(false)}></div>
@@ -674,7 +681,6 @@ export default function App() {
           </div>
         )}
 
-        {/* ADD ACCOUNT MODAL */}
         {isAddAccountOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsAddAccountOpen(false)}></div>
@@ -693,7 +699,6 @@ export default function App() {
           </div>
         )}
 
-        {/* TRANSFER MODAL */}
         {isTransferOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsTransferOpen(false)}></div>
@@ -720,7 +725,6 @@ export default function App() {
           </div>
         )}
 
-        {/* EDIT ACCOUNT MODAL */}
         {selectedAccount && !isAddAccountOpen && !isTransferOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedAccount(null)}></div>
@@ -741,7 +745,6 @@ export default function App() {
           </div>
         )}
 
-        {/* PAYMENT CONFIRMATION MODAL */}
         {paymentModalConfig.isOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" })}></div>
@@ -763,7 +766,6 @@ export default function App() {
           </div>
         )}
 
-        {/* ENTRY DETAILS & EDIT MODAL */}
         {selectedEntry && !selectedAccount && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={closeEntryDrawer}></div>

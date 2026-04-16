@@ -10,10 +10,7 @@ export const demoAccounts = [
 export const demoBills = [
   { id: "b1", name: "Rent/Mortgage", amount: 1250.00, isPaid: false, isOverdue: true, payday: "Due Now", fullDate: "Apr 1", icon: "🏠", category: "Rent / Mortgage" },
   { id: "b2", name: "AEP Ohio - Electric", amount: 115.00, isPaid: false, isOverdue: false, payday: "Payday 1", fullDate: "Apr 5", icon: "⚡", category: "Electric / Gas" },
-  
-  // FIX: This bill is now completed
   { id: "b3", name: "Spectrum Internet", amount: 75.00, isPaid: true, isOverdue: false, payday: "Payday 1", fullDate: "Apr 10", icon: "📺", category: "Internet / Wi-Fi", paidAmount: 75, linkedTxId: "tx_demo_spectrum", paidFromAccountId: "acc1" },
-  
   { id: "b4", name: "FastCash Payday Loan", amount: 185.00, isPaid: false, isOverdue: false, payday: "Payday 1", fullDate: "Apr 12", icon: "💸", isInstallment: true, paidAmount: 185, totalAmount: 750, category: "PayDay Loans" },
   { id: "b5", name: "Progressive Auto Ins", amount: 110.00, isPaid: false, isOverdue: false, payday: "Payday 1", fullDate: "Apr 15", icon: "🚗", category: "Auto Loan / Maintenance" },
   { id: "b6", name: "Auto Loan", amount: 350.00, isPaid: false, isOverdue: false, payday: "Payday 2", fullDate: "Apr 20", icon: "🚘", isInstallment: true, paidAmount: 6500, totalAmount: 18000, category: "Auto Loan / Maintenance" },
@@ -30,15 +27,15 @@ export const demoTransactions = [
 ];
 
 export const demoTodos = [
-  // Task Actions
-  { id: "td1", text: "Move $200 to High-Yield Savings", priority: 5, type: "task", isCompleted: false },
+  // Task Actions (1 marked complete)
+  { id: "td1", text: "Move $200 to High-Yield Savings", priority: 5, type: "task", isCompleted: true },
   { id: "td2", text: "Cancel unused Peacock subscription", priority: 3, type: "task", isCompleted: false },
   { id: "td3", text: "Compare AEP Ohio rates for next month", priority: 2, type: "task", isCompleted: false },
   
-  // FIX: Shopping Actions mapped to "shopping" instead of "buy"
+  // Shopping Actions (1 marked complete)
   { id: "td4", text: "Meijer: Groceries for weekly meal prep", priority: 5, type: "shopping", isCompleted: false },
   { id: "td5", text: "Home Depot: HVAC Air Filters", priority: 3, type: "shopping", isCompleted: false },
-  { id: "td6", text: "Amazon: New workout shoes", priority: 2, type: "shopping", isCompleted: false }
+  { id: "td6", text: "Amazon: New workout shoes", priority: 2, type: "shopping", isCompleted: true }
 ];
 
 export const demoPaydayConfig = {

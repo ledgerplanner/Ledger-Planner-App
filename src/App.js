@@ -112,13 +112,13 @@ export default function App() {
   const categoryEmojis = ["💵", "💲", "🧾", "📋", "🏠", "💧", "⚡", "📺", "🚗", "⛽", "🚕", "🚇", "✈️", "🌴", "🏋️", "💳", "🎓", "🛒", "🛍️", "👗", "👟", "💅", "💈", "🍔", "🌮", "🍣", "☕", "🍻", "🍹", "🏥", "💊", "🐶", "🐾", "🎉", "🎟️", "🎬", "🎮", "🕹️", "📱", "💻", "💼", "💰", "₿", "💎", "⌚", "🎧", "🏪", "📶", "☁️", "🤖", "🚀"];
   
   const modernCategories = [
-    { group: "Income & Wealth", items: ["Primary Salary", "Side Hustle / Gig", "Tips / Cash", "Investments / Crypto", "Transfers (Venmo/Zelle)", "Refunds & Adjustments", "Cash App"] },
+    { group: "Income & Wealth", items: ["Primary Salary", "Side Hustle / Gig", "Tips / Cash", "Investments / Crypto", "Transfers (Venmo/Zelle)", "Refunds & Adjustments", "Cash App", "PayDay Loans"] },
     { group: "Housing & Utilities", items: ["Rent / Mortgage", "Electric / Gas", "Water / Trash", "Internet / Wi-Fi", "Home Goods / Maintenance", "Cell Phone"] },
     { group: "Transit & Travel", items: ["Gas / Fuel", "Rideshare (Uber/Lyft)", "Public Transit", "Auto Loan / Maintenance", "Parking / Tolls", "Airplane / Flights", "Hotel / Lodging", "Taxi / Car Rental"] },
     { group: "Food & Drink", items: ["Groceries", "Dining Out", "Delivery (DoorDash/Eats)", "Coffee / Tea", "Bars / Nightlife", "Convenient Store"] },
     { group: "Digital Life", items: ["Streaming (Netflix/Hulu)", "Music (Spotify/Apple)", "Software / Cloud", "Gaming", "Creators (Patreon/Twitch)"] },
     { group: "Shopping & Lifestyle", items: ["Amazon / E-commerce", "Clothing / Fashion", "Personal Care / Grooming", "Fitness / Gym", "Events / Concerts", "Pet Care"] },
-    { group: "Financial", items: ["Savings Transfer", "Credit Card Payment", "Debt Payoff", "Bank Fees / Interest", "PayDay Loans"] },
+    { group: "Financial", items: ["Savings Transfer", "Credit Card Payment", "Debt Payoff", "Bank Fees / Interest"] },
     { group: "Health", items: ["Medical / Doctor", "Pharmacy / Rx", "Dental / Vision", "Therapy / Mental Health", "Health Insurance", "Fitness / Wellness"] },
     { group: "Entrepreneur", items: ["Domain / Hosting", "Software / SaaS", "AI Subscriptions", "Marketing & Ads", "Contractors & Freelancers", "Business Fees / LLC", "Office Supplies"] },
     { group: "Other", items: ["Miscellaneous Expense", "Charity / Gifts", "Education / Courses"] }
@@ -744,6 +744,7 @@ export default function App() {
           </div>
         )}
 
+        {/* REBUILT: QUICK UPDATE BALANCE INPUT */}
         {selectedAccount && !isAddAccountOpen && !isTransferOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedAccount(null)}></div>
@@ -756,7 +757,21 @@ export default function App() {
                 <button onClick={() => setSelectedAccount(null)} className="p-2 rounded-full"><X size={18} /></button>
               </div>
               <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
-                <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Quick Update Balance</label><input type="number" value={editAccountBalance} onChange={(e) => setEditAccountBalance(e.target.value)} onFocus={() => setEditAccountBalance(Math.abs(selectedAccount.balance).toString())} className="w-full pt-6 pb-2 px-5 rounded-2xl border" /></div>
+                
+                <div className="relative">
+                  <label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest text-slate-400 z-10">Quick Update Balance</label>
+                  <div className="relative w-full flex items-center">
+                    <span className={`absolute left-5 top-[22px] font-bold text-lg ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
+                    <input 
+                      type="number" 
+                      value={editAccountBalance} 
+                      onChange={(e) => setEditAccountBalance(e.target.value)} 
+                      onFocus={() => setEditAccountBalance(Math.abs(selectedAccount.balance).toString())} 
+                      className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl font-bold text-lg border focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`} 
+                    />
+                  </div>
+                </div>
+
                 <button onClick={updateAccountBalance} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><Save size={16} /> Save Balance</button>
                 <button onClick={deleteAccount} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-red-500 shadow-[0_8px_16px_rgba(239,68,68,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><Trash2 size={16}/> Delete Account</button>
               </div>
@@ -804,8 +819,8 @@ export default function App() {
                 {!isEditingEntry ? (
                   <>
                     <div className="text-center">
-                      <h2 className="text-xl font-black mb-1">{selectedEntry.name}</h2>
-                      <p className={`text-5xl font-black tracking-tighter ${selectedEntry.type === 'Income' ? 'text-[#10B981]' : selectedEntry.isPaid ? 'text-slate-400' : 'text-slate-900'}`}>
+                      <h2 className={`text-xl font-black mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{selectedEntry.name}</h2>
+                      <p className={`text-5xl font-black tracking-tighter ${selectedEntry.type === 'Income' ? 'text-[#10B981]' : selectedEntry.isPaid ? 'text-slate-400' : isDarkMode ? 'text-white' : 'text-slate-900'}`}>
                         {selectedEntry.type === 'Income' ? '+' : selectedEntry.type === 'Expense' ? '-' : ''}${selectedEntry.amount?.toFixed(2)}
                       </p>
                       <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full border bg-slate-50">
@@ -817,7 +832,7 @@ export default function App() {
                     <div className="rounded-2xl p-4 border bg-slate-50">
                       <div className="flex justify-between py-2 border-b">
                         <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Category</span>
-                        <span className="text-xs font-black">{selectedEntry.category || "Bill / Subscription"}</span>
+                        <span className="text-xs font-black text-slate-900">{selectedEntry.category || "Bill / Subscription"}</span>
                       </div>
                       {selectedEntry.type && (
                         <div className="flex justify-between py-2 border-b">
@@ -828,7 +843,7 @@ export default function App() {
                       {selectedEntry.payday && (
                         <div className="flex justify-between py-2 border-b">
                           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Assigned To</span>
-                          <span className="text-xs font-black">{selectedEntry.payday}</span>
+                          <span className="text-xs font-black text-slate-900">{selectedEntry.payday}</span>
                         </div>
                       )}
                       {selectedEntry.isOverdue !== undefined && (

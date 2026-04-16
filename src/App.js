@@ -468,7 +468,7 @@ export default function App() {
         </div>
         <button onClick={handleLogout} className={`h-10 px-3.5 rounded-full flex items-center justify-center gap-2 border transition-colors shadow-sm lg:hidden ${isDarkMode ? "bg-slate-800 border-slate-700 text-red-400 hover:bg-red-900/30" : "bg-white border-slate-100 text-red-500 hover:bg-red-50"}`}>
           <LogOut size={14} strokeWidth={2.5} />
-          <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Logout</span>
+          <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">{isDemoMode ? "Exit" : "Logout"}</span>
         </button>
       </div>
       <div className="relative z-10 flex justify-center px-1 mb-6">
@@ -687,7 +687,7 @@ export default function App() {
 
         {/* MAIN ROUTER CONTENT */}
         <div className="flex-1 flex flex-col relative h-full overflow-hidden">
-          <div className={`flex-1 overflow-y-auto hide-scrollbar lg:pb-0 ${isDemoMode ? "pb-56" : "pb-24"}`} ref={scrollRef} onScroll={handleScroll}>
+          <div className={`flex-1 overflow-y-auto hide-scrollbar lg:pb-0 ${isDemoMode ? "pb-[280px] lg:pb-[100px]" : "pb-24"}`} ref={scrollRef} onScroll={handleScroll}>
             {activeTab === "home" && <Dashboard userName={userName} accounts={accounts} bills={dynamicBills} transactions={transactions} paydayConfig={paydayConfig} setEditPaydayConfig={setEditPaydayConfig} setIsPaydaySetupOpen={setIsPaydaySetupOpen} setIsNotificationsOpen={setIsNotificationsOpen} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} isDarkMode={isDarkMode} formatPaydayDateStr={formatPaydayDateStr} renderHeroShell={renderHeroShell} changeTab={changeTab} />}
             {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} />}
             {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} handleRolloverMonth={handleRolloverMonth} />}
@@ -695,8 +695,13 @@ export default function App() {
             {activeTab === "todo" && <Todo userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} newTodoType={newTodoType} setNewTodoType={setNewTodoType} isDarkMode={isDarkMode} handleAddTodo={async (e) => { e.preventDefault(); if(!newTodoText.trim()) return; if (isDemoMode) { setTodos([{ id: `todo_demo_${Date.now()}`, text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false }, ...todos]); } else { await addDoc(collection(db, "users", user.uid, "todos"), { text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() }); } triggerVictory(); setNewTodoText(""); setNewTodoPriority(3); }} toggleTodoStatus={async (id) => { triggerHaptic(); const todo = todos.find(t => t.id === id); if (isDemoMode) { setTodos(todos.map(t => t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)); } else { await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); } }} setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} />}
           </div>
 
-          <div className={`absolute ${isDemoMode ? "bottom-[190px]" : "bottom-24"} right-6 z-40 lg:hidden`}><button onClick={() => setIsQabOpen(true)} className={`w-14 h-14 rounded-full flex items-center justify-center text-white bg-[#1877F2] shadow-[0_12px_24px_rgba(24,119,242,0.4)] border-4 ${isDarkMode ? "border-[#0F172A]" : "border-white"}`}><Plus size={28} /></button></div>
-          <div className={`lg:hidden absolute ${isDemoMode ? "bottom-[90px]" : "bottom-0"} left-0 w-full backdrop-blur-md border-t px-2 pt-3 pb-6 flex justify-between items-center z-40 ${isDarkMode ? "bg-[#1E293B]/95 border-slate-800" : "bg-white/95 border-slate-100"}`}>
+          {/* MOBILE QUICK ADD - SAFE BUFFER ZONE */}
+          <div className={`absolute lg:hidden ${isDemoMode ? "bottom-[210px]" : "bottom-24"} right-6 z-40`}>
+             <button onClick={() => setIsQabOpen(true)} className={`w-14 h-14 rounded-full flex items-center justify-center text-white bg-[#1877F2] shadow-[0_12px_24px_rgba(24,119,242,0.4)] border-4 ${isDarkMode ? "border-[#0F172A]" : "border-white"}`}><Plus size={28} /></button>
+          </div>
+          
+          {/* MOBILE NAV BAR - SAFE BUFFER ZONE */}
+          <div className={`lg:hidden absolute ${isDemoMode ? "bottom-[120px]" : "bottom-0"} left-0 w-full backdrop-blur-md border-t px-2 pt-3 pb-6 flex justify-between items-center z-40 ${isDarkMode ? "bg-[#1E293B]/95 border-slate-800" : "bg-white/95 border-slate-100"}`}>
             {[{ id: "home", icon: Home, label: "Home" }, { id: "accounts", icon: Wallet, label: "Accounts" }, { id: "bills", icon: CalendarIcon, label: "Bills" }, { id: "activity", icon: CreditCard, label: "Activity" }, { id: "todo", icon: CheckSquare, label: "To-Do" }].map((tab) => (
               <button key={tab.id} onClick={() => changeTab(tab.id)} className="flex-1 flex flex-col items-center gap-1 group">
                 <tab.icon size={24} strokeWidth={activeTab === tab.id ? 2.5 : 2} className={`transition-all duration-300 ${activeTab === tab.id ? "text-[#1877F2] transform -translate-y-1" : isDarkMode ? "text-slate-500" : "text-slate-400"}`} />
@@ -1158,19 +1163,19 @@ export default function App() {
 
       {/* 🔥 DEMO MODE FLOATING SIGN UP BANNER 🔥 */}
       {isDemoMode && (
-        <div className="fixed bottom-0 left-0 w-full min-h-[90px] bg-[#1877F2] text-white p-4 pb-8 lg:pb-4 flex justify-between items-center z-[100] shadow-[0_-10px_40px_rgba(24,119,242,0.3)]">
-          <div className="flex flex-col">
-            <span className="font-black text-sm lg:text-base tracking-tight uppercase flex items-center gap-2">
+        <div className="fixed bottom-0 left-0 w-full h-[120px] lg:h-[80px] bg-[#1877F2] text-white p-4 flex flex-col lg:flex-row justify-center lg:justify-between items-center z-[150] shadow-[0_-10px_40px_rgba(24,119,242,0.3)] gap-3 lg:gap-0">
+          <div className="flex flex-col text-center lg:text-left w-full lg:w-auto">
+            <span className="font-black text-sm lg:text-lg tracking-tight uppercase flex items-center justify-center lg:justify-start gap-2">
               <span className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span></span>
-              Demo Mode Active
+              STOP GUESSING. START PLANNING.
             </span>
-            <span className="text-[10px] lg:text-xs font-bold text-blue-200">Changes will not be saved.</span>
+            <span className="text-[10px] lg:text-xs font-bold text-blue-200 mt-0.5">Demo Mode Active. Changes will not be saved.</span>
           </div>
           <button 
             onClick={() => window.location.href = "https://ledgerplanner.com"} 
-            className="bg-white text-[#1877F2] px-6 py-2 rounded-xl font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg border-2 border-transparent hover:border-white hover:bg-transparent hover:text-white"
+            className="bg-white text-[#1877F2] px-6 py-2.5 rounded-xl font-black text-xs lg:text-sm uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg border-2 border-transparent hover:border-white hover:bg-transparent hover:text-white w-full lg:w-auto"
           >
-            Sign Up to Save
+            Start your FREE 14 day trial today!
           </button>
         </div>
       )}

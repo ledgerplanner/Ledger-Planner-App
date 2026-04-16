@@ -10,12 +10,10 @@ export default function Accounts({
   setIsAddAccountOpen,
   setSelectedAccount,
   setEditAccountBalance,
-  renderHeroShell
+  renderHeroShell,
+  isDemoMode // Safely passed from App.js
 }) {
   const [activeChartNode, setActiveChartNode] = useState(5);
-  
-  // Reverted to crash-free tripwire
-  const isDemoMode = window.location.hostname.startsWith("demo");
 
   // === DYNAMIC TIME-MACHINE CHART ENGINE ===
   const netWorth = accounts.reduce((sum, a) => sum + a.balance, 0);

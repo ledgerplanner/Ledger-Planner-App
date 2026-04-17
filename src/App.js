@@ -572,7 +572,9 @@ export default function App() {
 
   const handleConfirmAction = async () => {
     const amountToProcess = parseFloat(inputValue);
-    if (isNaN(amountToProcess) || amountToProcess <= 0) return;
+    // 🔥 THE $0.00 BILL TRIPWIRE LOGIC 🔥
+    if (isNaN(amountToProcess) || (drawerTab === "bills" ? amountToProcess < 0 : amountToProcess <= 0)) return;
+    
     const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
     if (drawerTab === "bills") {
       let displayDate = "TBD", sortableDay = 31;
@@ -905,6 +907,10 @@ export default function App() {
           const activeSoftBg = drawerTab === "bills" ? "bg-blue-50" : drawerTab === "income" ? "bg-emerald-50" : "bg-orange-50";
           const activeLabel = drawerTab === "bills" ? "New Bill" : drawerTab === "income" ? "New Income" : "New Expense";
           
+          const parsedInput = parseFloat(inputValue);
+          // 🔥 THE TRIPWIRE GATE: Bills can be >= 0. Everything else must be > 0. 🔥
+          const isQabAmountValid = !isNaN(parsedInput) && (drawerTab === "bills" ? parsedInput >= 0 : parsedInput > 0);
+
           return (
             <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
               <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={closeQab}></div>
@@ -940,7 +946,7 @@ export default function App() {
                           return ( <button key={btn} onClick={() => handleNumpad(btn)} className={`h-14 rounded-2xl text-2xl font-bold flex items-center justify-center bg-slate-100 transition-transform active:scale-95`}> {btn} </button> );
                         })}
                       </div>
-                      <button onClick={() => { if (parseFloat(inputValue) > 0) setQabStep(2); }} disabled={parseFloat(inputValue) <= 0 || isNaN(parseFloat(inputValue))} className={`w-full mt-6 h-16 rounded-2xl font-black uppercase tracking-widest text-sm text-white transition-all active:scale-95 flex items-center justify-center gap-2 ${parseFloat(inputValue) <= 0 || isNaN(parseFloat(inputValue)) ? "bg-slate-300 opacity-50 cursor-not-allowed" : `${activeBg} ${activeShadow} hover:-translate-y-1`}`}>Continue <ArrowRight size={18} /></button>
+                      <button onClick={() => { if (isQabAmountValid) setQabStep(2); }} disabled={!isQabAmountValid} className={`w-full mt-6 h-16 rounded-2xl font-black uppercase tracking-widest text-sm text-white transition-all active:scale-95 flex items-center justify-center gap-2 ${!isQabAmountValid ? "bg-slate-300 opacity-50 cursor-not-allowed" : `${activeBg} ${activeShadow} hover:-translate-y-1`}`}>Continue <ArrowRight size={18} /></button>
                     </>
                   ) : (
                     <div className="flex flex-col h-full animate-fade-in relative">

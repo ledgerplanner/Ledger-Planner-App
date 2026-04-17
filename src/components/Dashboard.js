@@ -222,17 +222,22 @@ export default function Dashboard({
             
             const isSet = isDueNow || (pdSettings && (pdSettings.date || pdSettings.income));
             
-            // THE LIVE MATH ENGINE
+            // 🔥 PROJECTED MATH ENGINE 🔥
             const actualIncome = actualIncomeByPayday[pd] || 0;
+            const expectedIncome = parseFloat(pdSettings?.income) || 0;
+            
+            // Logic: If you haven't been paid yet, use expected. If you have been paid, use actual.
+            const effectiveIncome = actualIncome > 0 ? actualIncome : expectedIncome;
+            
             const actualExpenses = actualExpensesByPayday[pd] || 0; // Includes Paid Bills + Coffee/Gas
             const unpaidBillsTotal = billsByPayday[pd]?.filter(b => !b.isPaid).reduce((sum, b) => sum + b.amount, 0) || 0;
             
-            // Weekly Active Buffer: Income minus ALL drain (paid expenses + unpaid spoken-for bills)
-            const activeWeeklyBuffer = actualIncome - actualExpenses - unpaidBillsTotal;
+            // Weekly Active Buffer: Effective Income minus ALL drain (paid expenses + unpaid spoken-for bills)
+            const activeWeeklyBuffer = effectiveIncome - actualExpenses - unpaidBillsTotal;
             const totalWeeklyDrain = actualExpenses + unpaidBillsTotal;
             
             // Progress Bar Math (Fuel Gauge)
-            const fuelPct = actualIncome > 0 ? Math.max(0, Math.min((activeWeeklyBuffer / actualIncome) * 100, 100)) : 0;
+            const fuelPct = effectiveIncome > 0 ? Math.max(0, Math.min((activeWeeklyBuffer / effectiveIncome) * 100, 100)) : 0;
 
             return (
               <div key={pd} className={`min-w-[160px] p-5 rounded-[2rem] snap-center shrink-0 border transition-all ${isSet ? isDarkMode ? "bg-[#1E293B] border-slate-700 shadow-md" : "bg-white border-slate-100 shadow-[0_8px_20px_rgba(0,0,0,0.04)]" : isDarkMode ? "bg-slate-800/30 border-dashed border-slate-700" : "bg-slate-50 border-dashed border-slate-200"}`}>
@@ -258,12 +263,12 @@ export default function Dashboard({
                     
                     <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-800" : "bg-slate-100"}`}>
                       <div 
-                        className={`h-full transition-all duration-1000 ${activeWeeklyBuffer < 0 ? "bg-red-500" : activeWeeklyBuffer < actualIncome * 0.2 ? "bg-orange-500" : "bg-[#10B981]"}`} 
-                        style={{ width: `${actualIncome > 0 ? fuelPct : 0}%` }}
+                        className={`h-full transition-all duration-1000 ${activeWeeklyBuffer < 0 ? "bg-red-500" : activeWeeklyBuffer < effectiveIncome * 0.2 ? "bg-orange-500" : "bg-[#10B981]"}`} 
+                        style={{ width: `${effectiveIncome > 0 ? fuelPct : 0}%` }}
                       ></div>
                     </div>
                     <div className="flex justify-between items-center mt-2">
-                      <span className="text-[8px] font-black uppercase tracking-widest text-[#10B981]">IN: ${actualIncome.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      <span className="text-[8px] font-black uppercase tracking-widest text-[#10B981]">IN: ${effectiveIncome.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">OUT: ${totalWeeklyDrain.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                   </div>

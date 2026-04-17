@@ -651,7 +651,7 @@ export default function App() {
 
         {/* MAIN ROUTER CONTENT */}
         <div className="flex-1 flex flex-col relative h-full overflow-hidden">
-          <div className={`flex-1 overflow-y-auto hide-scrollbar lg:pb-0 ${isDemoMode ? "pb-[160px]" : "pb-24"}`} ref={scrollRef} onScroll={handleScroll}>
+          <div className={`flex-1 overflow-y-auto hide-scrollbar lg:pb-0 ${isDemoMode ? "pb-[220px]" : "pb-24"}`} ref={scrollRef} onScroll={handleScroll}>
             {activeTab === "home" && <Dashboard userName={userName} accounts={accounts} bills={dynamicBills} transactions={transactions} paydayConfig={paydayConfig} setEditPaydayConfig={setEditPaydayConfig} setIsPaydaySetupOpen={setIsPaydaySetupOpen} setIsNotificationsOpen={setIsNotificationsOpen} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} isDarkMode={isDarkMode} formatPaydayDateStr={formatPaydayDateStr} renderHeroShell={renderHeroShell} changeTab={changeTab} />}
             {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} isDemoMode={isDemoMode} />}
             {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} handleRolloverMonth={handleRolloverMonth} />}
@@ -659,11 +659,11 @@ export default function App() {
             {activeTab === "todo" && <Todo userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} newTodoType={newTodoType} setNewTodoType={setNewTodoType} isDarkMode={isDarkMode} handleAddTodo={async (e) => { e.preventDefault(); if(!newTodoText.trim()) return; if (isDemoMode) { setTodos([{ id: `todo_demo_${Date.now()}`, text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false }, ...todos]); } else { await addDoc(collection(db, "users", user.uid, "todos"), { text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() }); } triggerVictory(); setNewTodoText(""); setNewTodoPriority(3); }} toggleTodoStatus={async (id) => { triggerHaptic(); const todo = todos.find(t => t.id === id); if (isDemoMode) { setTodos(todos.map(t => t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)); } else { await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); } }} setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} />}
           </div>
 
-          <div className={`fixed lg:hidden ${isDemoMode ? "bottom-[160px]" : "bottom-24"} right-6 z-50`}>
+          <div className={`fixed lg:hidden ${isDemoMode ? "bottom-[200px]" : "bottom-24"} right-6 z-50`}>
             <button onClick={() => setIsQabOpen(true)} className={`w-14 h-14 rounded-full flex items-center justify-center text-white bg-[#1877F2] shadow-[0_12px_24px_rgba(24,119,242,0.4)] border-4 ${isDarkMode ? "border-[#0F172A]" : "border-white"}`}><Plus size={28} /></button>
           </div>
 
-          <div className={`lg:hidden fixed ${isDemoMode ? "bottom-[80px]" : "bottom-0"} left-0 w-full backdrop-blur-md border-t px-2 pt-3 pb-6 flex justify-between items-center z-[100] ${isDarkMode ? "bg-[#1E293B]/95 border-slate-800" : "bg-white/95 border-slate-100"}`}>
+          <div className={`lg:hidden fixed ${isDemoMode ? "bottom-[120px]" : "bottom-0"} left-0 w-full backdrop-blur-md border-t px-2 pt-3 pb-6 flex justify-between items-center z-[100] ${isDarkMode ? "bg-[#1E293B]/95 border-slate-800" : "bg-white/95 border-slate-100"}`}>
             {[{ id: "home", icon: Home, label: "Home" }, { id: "accounts", icon: Wallet, label: "Accounts" }, { id: "bills", icon: CalendarIcon, label: "Bills" }, { id: "activity", icon: CreditCard, label: "Activity" }, { id: "todo", icon: CheckSquare, label: "To-Do" }].map((tab) => (
               <button key={tab.id} onClick={() => changeTab(tab.id)} className="flex-1 flex flex-col items-center gap-1 group">
                 <tab.icon size={24} strokeWidth={activeTab === tab.id ? 2.5 : 2} className={`transition-all duration-300 ${activeTab === tab.id ? "text-[#1877F2] transform -translate-y-1" : isDarkMode ? "text-slate-500" : "text-slate-400"}`} />
@@ -750,10 +750,16 @@ export default function App() {
                   <ArrowRight size={16} />
                   <select value={transferTo} onChange={(e) => setTransferTo(e.target.value)} className="flex-1 py-3 px-4 rounded-xl font-bold text-xs border text-center"><option value="" disabled>To</option>{accounts.map(a => (<option key={a.id} value={a.id}>{a.name}</option>))}</select>
                 </div>
-                <div className="text-center mb-6"><span className="text-6xl font-extrabold tracking-tighter">${transferAmount}</span></div>
+                
+                {/* 🔥 THE NEW BACKSPACE UI 🔥 */}
+                <div className="text-center relative flex justify-center items-center mb-6">
+                  <span className="text-6xl font-extrabold tracking-tighter">${transferAmount}</span>
+                  <button onClick={() => setTransferAmount(transferAmount.slice(0, -1) || "0")} className={`absolute right-4 p-3 rounded-full text-2xl lg:text-4xl active:scale-90 transition-transform touch-manipulation ${isDarkMode ? "text-slate-500 hover:text-slate-300" : "text-slate-400 hover:text-slate-600"}`}>⌫</button>
+                </div>
+
                 <div className="grid grid-cols-4 gap-3 mt-auto">
                   {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", ".", "0", "=", "+"].map((btn) => {
-                    return ( <button key={btn} onClick={() => handleTransferNumpad(btn)} className="h-14 rounded-2xl text-2xl font-bold flex items-center justify-center transition-all bg-slate-100 border border-slate-200 active:scale-95"> {btn} </button> );
+                    return ( <button key={btn} onClick={() => handleTransferNumpad(btn)} className="w-full h-14 rounded-2xl text-2xl font-bold flex items-center justify-center transition-all bg-slate-100 border border-slate-200 active:scale-95 active:bg-slate-200 touch-manipulation"> {btn} </button> );
                   })}
                 </div>
                 <button onClick={executeTransfer} disabled={parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo} className={`w-full mt-6 h-16 rounded-2xl font-black uppercase tracking-widest text-sm text-white shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2 ${parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo ? "bg-slate-300 opacity-50 shadow-none cursor-not-allowed" : "bg-[#1877F2]"}`}>Execute Transfer <ArrowRight size={18} /></button>
@@ -933,7 +939,7 @@ export default function App() {
                   )}
                   <div className="text-center relative flex justify-center items-center">
                     <span className={`text-6xl font-extrabold tracking-tighter ${activeText}`}>${inputValue}</span>
-                    {qabStep === 1 && <button onClick={() => setInputValue(inputValue.slice(0, -1) || "0")} className={`absolute right-4 p-3 rounded-full ${activeText}`}>⌫</button>}
+                    {qabStep === 1 && <button onClick={() => setInputValue(inputValue.slice(0, -1) || "0")} className={`absolute right-4 p-3 rounded-full ${activeText} text-2xl lg:text-4xl active:scale-90 transition-transform touch-manipulation`}>⌫</button>}
                   </div>
                 </div>
 
@@ -943,7 +949,7 @@ export default function App() {
                       <div className="grid grid-cols-4 gap-3 mt-2">
                         {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", ".", "0", "=", "+"].map((btn) => {
                           const isOp = ["÷", "×", "-", "+", "="].includes(btn);
-                          return ( <button key={btn} onClick={() => handleNumpad(btn)} className={`h-14 rounded-2xl text-2xl font-bold flex items-center justify-center bg-slate-100 transition-transform active:scale-95`}> {btn} </button> );
+                          return ( <button key={btn} onClick={() => handleNumpad(btn)} className={`w-full h-14 rounded-2xl text-2xl font-bold flex items-center justify-center bg-slate-100 transition-all active:scale-95 active:bg-slate-200 touch-manipulation`}> {btn} </button> );
                         })}
                       </div>
                       <button onClick={() => { if (isQabAmountValid) setQabStep(2); }} disabled={!isQabAmountValid} className={`w-full mt-6 h-16 rounded-2xl font-black uppercase tracking-widest text-sm text-white transition-all active:scale-95 flex items-center justify-center gap-2 ${!isQabAmountValid ? "bg-slate-300 opacity-50 cursor-not-allowed" : `${activeBg} ${activeShadow} hover:-translate-y-1`}`}>Continue <ArrowRight size={18} /></button>

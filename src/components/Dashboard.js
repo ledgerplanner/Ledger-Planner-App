@@ -263,8 +263,8 @@ export default function Dashboard({
                       ></div>
                     </div>
                     <div className="flex justify-between items-center mt-2">
-                      <span className="text-[8px] font-black uppercase tracking-widest text-[#10B981]">IN: ${actualIncome.toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
-                      <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">OUT: ${totalWeeklyDrain.toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
+                      <span className="text-[8px] font-black uppercase tracking-widest text-[#10B981]">IN: ${actualIncome.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">OUT: ${totalWeeklyDrain.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                   </div>
                 ) : (

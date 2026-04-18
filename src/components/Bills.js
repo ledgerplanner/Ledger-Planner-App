@@ -105,14 +105,14 @@ export default function Bills({
                       </div>
                     </div>
 
-                    {/* 🔥 THE NEW GROUNDED PROGRESS FOOTER 🔥 */}
+                    {/* 🔥 THE GROUNDED PROGRESS FOOTER (DARK MODE FIXED) 🔥 */}
                     {bill.isInstallment && !bill.isPaid && (
                       <div className={`mt-4 pt-3 border-t w-full animate-fade-in ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
                         <div className="flex justify-between items-end mb-2 px-1">
                           <span className="text-[8px] font-black uppercase tracking-widest text-[#1877F2]">${(bill.paidAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} PAID</span>
                           <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">${(bill.totalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} TOTAL</span>
                         </div>
-                        <div className={`w-full h-2 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-800" : "bg-slate-200"}`}>
+                        <div className={`w-full h-2 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-900 shadow-inner" : "bg-slate-200"}`}>
                           <div 
                             className="h-full bg-[#1877F2] transition-all duration-500 ease-out" 
                             style={{ width: `${Math.min(((bill.paidAmount || 0) / (bill.totalAmount || 1)) * 100, 100)}%` }}

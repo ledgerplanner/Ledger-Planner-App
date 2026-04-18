@@ -237,8 +237,15 @@ export default function App() {
   const triggerVictory = () => { triggerHaptic(); setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2000); };
 
   const userName = isDemoMode ? "Aaron" : user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || "Founder";
-  const formattedDate = currentTime.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
-  const formattedTime = currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+
+  // === 🔥 FIX #3: DATE/TIME MARRIAGE ENGINE 🔥 ===
+  const getOrdinalNum = (n) => n + (n > 0 ? ['th', 'st', 'nd', 'rd'][(n > 3 && n < 21) || n % 10 > 3 ? 0 : n % 10] : '');
+  const dayStr = currentTime.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
+  const monthStr = currentTime.toLocaleDateString("en-US", { month: "long" }).toUpperCase();
+  const dateNum = currentTime.getDate();
+  const yearNum = currentTime.getFullYear();
+  const timeStr = currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toUpperCase();
+  const heroDateTimeStr = `${dayStr}, ${monthStr} ${getOrdinalNum(dateNum).toUpperCase()}, ${yearNum} — ${timeStr}`;
 
   const formatPaydayDateStr = (dateString) => {
     if (!dateString) return "TBD";
@@ -526,9 +533,9 @@ export default function App() {
         <h2 title={title} className={`text-3xl font-black tracking-tight leading-tight truncate max-w-full ${isDarkMode ? "text-white" : "text-slate-900"}`}>{title}</h2>
       </div>
       <div className="relative z-10 w-full h-auto opacity-100">{graphicContent}</div>
-      <div className={`relative z-10 pt-4 border-t flex justify-between items-center ${isDarkMode ? "border-slate-800" : "border-slate-50"}`}>
-        <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">{formattedDate}</span>
-        <span className="text-[9px] font-black uppercase tracking-wider text-[#1877F2]">{formattedTime}</span>
+      {/* 🔥 FIX #3: THE MARRIED HERO DATE-TIME STRING 🔥 */}
+      <div className={`relative z-10 pt-4 border-t flex justify-center items-center ${isDarkMode ? "border-slate-800" : "border-slate-50"}`}>
+        <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{heroDateTimeStr}</span>
       </div>
     </header>
   );
@@ -712,7 +719,7 @@ export default function App() {
               </div>
               <div className={`p-6 overflow-y-auto space-y-4 flex-1 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
                 
-                {/* 🔥 FIX 5: ENABLE NOTIFICATIONS MOVED TO ALERT CENTER 🔥 */}
+                {/* 🔥 NOTIFICATIONS ENGINE ALERTS 🔥 */}
                 {!isPushEnabled && !isDemoMode && (
                   <div className={`p-4 rounded-2xl border flex items-center justify-between shadow-sm ${isDarkMode ? "bg-[#10B981]/10 border-[#10B981]/20" : "bg-emerald-50 border-emerald-100"}`}>
                     <div className="flex items-center gap-3">
@@ -753,18 +760,25 @@ export default function App() {
                 <button onClick={() => setIsPaydaySetupOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
               <div className={`p-6 overflow-y-auto space-y-6 flex-1 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+                {/* 🔥 FIX #4: DARK MODE DRAWER VISIBILITY 🔥 */}
                 {["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].map((pd) => (
                   <div key={pd} className={`p-4 rounded-2xl border ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-slate-50 border-slate-100"}`}>
                     <h4 className={`text-xs font-black uppercase tracking-widest mb-4 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>{pd}</h4>
                     <div className="grid grid-cols-2 gap-4">
-                      <div><label className="block text-[9px] font-bold uppercase mb-1">Expected Date</label><input type="date" value={editPaydayConfig[pd]?.date || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...editPaydayConfig[pd], date: e.target.value}})} className="w-full p-3 rounded-xl border" /></div>
-                      <div><label className="block text-[9px] font-bold uppercase mb-1">Expected Income</label><input type="number" placeholder="$0.00" value={editPaydayConfig[pd]?.income || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...editPaydayConfig[pd], income: e.target.value}})} className="w-full p-3 rounded-xl border" /></div>
+                      <div>
+                        <label className={`block text-[9px] font-bold uppercase mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Date</label>
+                        <input type="date" value={editPaydayConfig[pd]?.date || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...editPaydayConfig[pd], date: e.target.value}})} className={`w-full p-3 rounded-xl border ${isDarkMode ? "bg-slate-800 border-slate-700 text-white dark:[color-scheme:dark]" : "bg-white border-slate-200 text-slate-900"}`} />
+                      </div>
+                      <div>
+                        <label className={`block text-[9px] font-bold uppercase mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Income</label>
+                        <input type="number" placeholder="$0.00" value={editPaydayConfig[pd]?.income || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...editPaydayConfig[pd], income: e.target.value}})} className={`w-full p-3 rounded-xl border ${isDarkMode ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500" : "bg-white border-slate-200 text-slate-900 placeholder-slate-400"}`} />
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
               <div className="p-6 border-t flex gap-3">
-                <button onClick={clearPaydayConfig} className="flex-1 py-4 rounded-2xl font-black text-xs uppercase tracking-widest border transition-all active:scale-95">Clear All</button>
+                <button onClick={clearPaydayConfig} className={`flex-1 py-4 rounded-2xl font-black text-xs uppercase tracking-widest border transition-all active:scale-95 ${isDarkMode ? "bg-slate-800 border-slate-700 text-white hover:bg-slate-700" : "bg-white border-slate-200 text-slate-900 hover:bg-slate-50"}`}>Clear All</button>
                 <button onClick={savePaydayConfig} className="flex-1 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2">Save Engine</button>
               </div>
             </div>
@@ -804,7 +818,6 @@ export default function App() {
                   <select value={transferTo} onChange={(e) => setTransferTo(e.target.value)} className="flex-1 py-3 px-4 rounded-xl font-bold text-xs border text-center"><option value="" disabled>To</option>{accounts.map(a => (<option key={a.id} value={a.id}>{a.name}</option>))}</select>
                 </div>
                 
-                {/* 🔥 FIX 3: EMERALD TRANSFER PULSE 🔥 */}
                 <div className="text-center relative flex justify-center items-center mb-6">
                   <span className="text-6xl font-extrabold tracking-tighter text-[#10B981]">${transferAmount}</span>
                   <button onClick={() => setTransferAmount(transferAmount.slice(0, -1) || "0")} className={`absolute right-4 p-3 rounded-full text-2xl lg:text-4xl active:scale-90 transition-transform touch-manipulation text-[#10B981] opacity-70 hover:opacity-100`}>⌫</button>

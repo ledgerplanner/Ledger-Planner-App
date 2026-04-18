@@ -10,18 +10,12 @@ export default function Bills({
   renderHeroShell,
   handleRolloverMonth
 }) {
-  // === 🔥 SURGICAL OCTAGON SORTING ENGINE ===
   const sortBillsSurgically = (billList) => {
     return [...billList].sort((a, b) => {
-      // 1. Overdue pinned to the absolute top (Red Alert)
       if (a.isOverdue && !b.isOverdue) return -1;
       if (!a.isOverdue && b.isOverdue) return 1;
-      
-      // 2. Due Now is right below Overdue (Yellow Alert)
       if (a.payday === "Due Now" && b.payday !== "Due Now") return -1;
       if (a.payday !== "Due Now" && b.payday === "Due Now") return 1;
-      
-      // 3. Chronological sorting for the remaining runway
       if (!a.rawDate) return 1;
       if (!b.rawDate) return -1;
       return new Date(a.rawDate) - new Date(b.rawDate);
@@ -29,13 +23,12 @@ export default function Bills({
   };
 
   const unpaidBills = sortBillsSurgically(bills.filter((b) => !b.isPaid));
-  const paidBills = bills.filter((b) => b.isPaid).sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate)); // Show most recently paid first
+  const paidBills = bills.filter((b) => b.isPaid).sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate));
 
   const totalBillsAmount = bills.reduce((sum, b) => sum + b.amount, 0);
   const paidBillsAmount = paidBills.reduce((sum, b) => sum + b.amount, 0);
   const progressPercentage = totalBillsAmount === 0 ? 0 : Math.max(0, Math.min((paidBillsAmount / totalBillsAmount) * 100, 100));
 
-  // === GRAPHIC HEADER ===
   const graphicContent = (
     <div className="flex items-center justify-between relative z-10 mb-6 w-full">
       <div className="relative w-40 h-40 flex-shrink-0">
@@ -59,7 +52,6 @@ export default function Bills({
         <p className={`text-4xl font-black tracking-tighter mb-4 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
           ${paidBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 0 })} <span className="text-xl text-slate-400">/ {totalBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
         </p>
-        
         <button onClick={handleRolloverMonth} className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-sm ${isDarkMode ? "bg-slate-800 text-[#10B981] hover:bg-slate-700" : "bg-white border-slate-200 border text-[#10B981] hover:bg-emerald-50"}`}>
           <RefreshCw size={14} strokeWidth={3} /> Start New Month
         </button>
@@ -72,8 +64,6 @@ export default function Bills({
       {renderHeroShell(`${userName}'s Bills`, graphicContent)}
 
       <main className="px-6 space-y-8">
-        
-        {/* UNPAID BILLS LIST */}
         <div className="space-y-4">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Unpaid Bills</h3>
           {unpaidBills.length === 0 ? (
@@ -105,7 +95,8 @@ export default function Bills({
                         </div>
                       </div>
                     </div>
-                    <div className={`font-black text-sm tracking-tight cursor-pointer ${bill.isOverdue || bill.payday === "Due Now" ? "text-red-500" : isDarkMode ? "text-white" : "text-slate-900"}`} onClick={() => setSelectedEntry(bill)}>
+                    {/* 🔥 FIX 3: THE SHADED VAULT 🔥 */}
+                    <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight cursor-pointer transition-colors ${bill.isOverdue || bill.payday === "Due Now" ? isDarkMode ? "bg-red-900/30 text-red-400" : "bg-red-50 text-red-600" : isDarkMode ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-900"}`} onClick={() => setSelectedEntry(bill)}>
                       ${bill.amount.toFixed(2)}
                     </div>
                   </div>
@@ -131,7 +122,6 @@ export default function Bills({
           )}
         </div>
 
-        {/* PAID BILLS LIST */}
         {paidBills.length > 0 && (
           <div className="space-y-4 mt-8">
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Paid & Settled</h3>
@@ -153,7 +143,8 @@ export default function Bills({
                         </div>
                       </div>
                     </div>
-                    <div className={`font-black text-sm tracking-tight cursor-pointer ${isDarkMode ? "text-slate-400" : "text-slate-500"}`} onClick={() => setSelectedEntry(bill)}>
+                    {/* 🔥 FIX 3: THE SHADED VAULT (PAID STATE) 🔥 */}
+                    <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight cursor-pointer ${isDarkMode ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-500"}`} onClick={() => setSelectedEntry(bill)}>
                       ${bill.amount.toFixed(2)}
                     </div>
                   </div>

@@ -89,7 +89,6 @@ export default function Accounts({
           <button onClick={() => setIsTransferOpen(true)} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#1877F2] text-white shadow-blue-900/20" : "bg-[#1877F2] text-white shadow-blue-500/30"}`}>
             <ArrowRightLeft size={20} /> Transfer
           </button>
-          {/* 🔥 FIX 5A: GREEN ADD ACCOUNT BUTTON 🔥 */}
           <button onClick={() => setIsAddAccountOpen(true)} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#10B981] text-white shadow-emerald-900/20" : "bg-[#10B981] text-white shadow-emerald-500/30"}`}>
             <PlusCircle size={20} /> Add Account
           </button>
@@ -97,26 +96,38 @@ export default function Accounts({
 
         <div className="space-y-4">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">All Accounts</h3>
-          <div className={`rounded-[2rem] p-3 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
-            {accounts.map((acc, idx) => {
-              const isNegative = acc.balance < 0;
-              return (
-                <div key={acc.id} onClick={() => { setSelectedAccount(acc); setEditAccountBalance(Math.abs(acc.balance).toString()); }} className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition-colors ${isDarkMode ? "hover:bg-slate-800/50" : "hover:bg-slate-50/50"} ${idx !== accounts.length - 1 ? "mb-1" : ""}`}>
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center text-xl bg-opacity-10 ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-100"}`}>
-                      {acc.icon}
+          {/* 🔥 THE BENTO BOX MAIN CARD 🔥 */}
+          <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
+            <div className="space-y-3">
+              {accounts.map((acc) => {
+                const isNegative = acc.balance < 0;
+                const isPositive = acc.balance > 0;
+                return (
+                  /* 🔥 THE INDIVIDUAL INNER CARD 🔥 */
+                  <div key={acc.id} onClick={() => { setSelectedAccount(acc); setEditAccountBalance(Math.abs(acc.balance).toString()); }} className={`flex items-center justify-between p-3.5 rounded-2xl border shadow-sm cursor-pointer transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
+                    <div className="flex items-center gap-4">
+                      <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                        {acc.icon}
+                      </div>
+                      <div>
+                        <p className={`font-bold text-sm ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{acc.name}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{acc.description || acc.type}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className={`font-bold text-sm ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{acc.name}</p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{acc.description || acc.type}</p>
+                    {/* 🔥 THE DYNAMIC HEALTH VAULT 🔥 */}
+                    <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight transition-colors ${
+                      isNegative 
+                        ? isDarkMode ? "bg-red-900/30 text-red-400" : "bg-red-50 text-red-600"
+                        : isPositive 
+                          ? isDarkMode ? "bg-emerald-900/30 text-emerald-400" : "bg-emerald-50 text-emerald-600"
+                          : isDarkMode ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-500"
+                    }`}>
+                      {isNegative ? "-" : ""}${Math.abs(acc.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                     </div>
                   </div>
-                  <div className={`font-black text-sm tracking-tight ${isNegative ? "text-red-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>
-                    {isNegative ? "-" : ""}${Math.abs(acc.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       </main>

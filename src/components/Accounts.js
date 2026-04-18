@@ -11,7 +11,7 @@ export default function Accounts({
   setSelectedAccount,
   setEditAccountBalance,
   renderHeroShell,
-  isDemoMode // Safely passed from App.js
+  isDemoMode
 }) {
   const [activeChartNode, setActiveChartNode] = useState(5);
 
@@ -30,12 +30,10 @@ export default function Accounts({
         historyData.unshift({ label: monthName, val: Math.max(0, currentCalcNW), month: targetDate.getMonth(), year: targetDate.getFullYear() });
     } else {
         if (isDemoMode) {
-          // FLUX ENGINE: Randomly reduce previous months by 2% to 6%
           const variance = 1 - (Math.random() * (0.06 - 0.02) + 0.02);
           currentCalcNW = currentCalcNW * variance;
           historyData.unshift({ label: monthName, val: Math.max(0, currentCalcNW), month: targetDate.getMonth(), year: targetDate.getFullYear() });
         } else {
-          // NORMAL APP LOGIC
           const monthAhead = historyData[0];
           const txsInMonthAhead = transactions.filter(tx => {
               if (!tx.createdAt) return false;
@@ -91,7 +89,8 @@ export default function Accounts({
           <button onClick={() => setIsTransferOpen(true)} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#1877F2] text-white shadow-blue-900/20" : "bg-[#1877F2] text-white shadow-blue-500/30"}`}>
             <ArrowRightLeft size={20} /> Transfer
           </button>
-          <button onClick={() => setIsAddAccountOpen(true)} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex flex-col items-center justify-center gap-2 border transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-500"}`}>
+          {/* 🔥 FIX 5A: GREEN ADD ACCOUNT BUTTON 🔥 */}
+          <button onClick={() => setIsAddAccountOpen(true)} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#10B981] text-white shadow-emerald-900/20" : "bg-[#10B981] text-white shadow-emerald-500/30"}`}>
             <PlusCircle size={20} /> Add Account
           </button>
         </div>

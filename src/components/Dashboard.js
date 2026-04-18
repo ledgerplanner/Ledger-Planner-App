@@ -177,8 +177,8 @@ export default function Dashboard({
         <div className="flex flex-col gap-2">
           <div className="flex justify-end gap-2 text-xs font-bold uppercase">
             <span className="text-slate-400 text-[10px]">Total Cash</span>
-            {/* 🔥 FIX 4: DYNAMIC TOTAL CASH BADGE 🔥 */}
-            <span className={`px-2 rounded ${
+            {/* 🔥 THE DYNAMIC CASH HEALTH VAULT 🔥 */}
+            <span className={`px-2 py-0.5 rounded ${
                totalIncomeBalance < 0 
                   ? isDarkMode ? "bg-red-900/30 text-red-400" : "bg-red-50 text-red-600"
                   : totalIncomeBalance > 0 
@@ -205,21 +205,14 @@ export default function Dashboard({
 
       <main className="px-6 space-y-4">
         
-        <div className="flex justify-between items-center px-1 mt-2">
-          <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Pay Day Setup</h3>
-          <div className="flex gap-2">
-            {!isPushEnabled && (
-              <button onClick={enablePushNotifications} className={`text-[9px] font-black uppercase flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all active:scale-95 shadow-md ${isDarkMode ? "bg-[#10B981] text-white shadow-emerald-900/20" : "bg-[#10B981] text-white shadow-[0_4px_10px_rgba(16,185,129,0.3)]"}`}>
-                <AlertCircle size={12} strokeWidth={3} /> Enable Notifications
-              </button>
-            )}
-            <button onClick={() => { setEditPaydayConfig(paydayConfig); setIsPaydaySetupOpen(true); }} className={`text-[9px] font-black uppercase flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all active:scale-95 shadow-sm border ${isDarkMode ? "bg-slate-800 border-slate-700 text-[#1877F2] hover:bg-slate-700" : "bg-white border-slate-200 text-[#1877F2] shadow-[0_4px_10px_rgba(0,0,0,0.05)] hover:bg-slate-50"}`}>
-              <Settings2 size={12} strokeWidth={3} /> Configure
-            </button>
-          </div>
+        {/* 🔥 FIX 5: ROUTING REFRESH - CENTERED COMMAND BUTTON 🔥 */}
+        <div className="flex justify-center px-1 mt-2 mb-4">
+           <button onClick={() => { setEditPaydayConfig(paydayConfig); setIsPaydaySetupOpen(true); }} className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm border ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#1877F2] hover:bg-slate-800" : "bg-white border-slate-200 text-[#1877F2] hover:bg-slate-50"}`}>
+              <Settings2 size={18} strokeWidth={2.5} /> Set Your Pay Dates & Amounts
+           </button>
         </div>
 
-        {/* 🔥 THE NEW LIVE WEEKLY WALLETS (HORIZONTAL CARDS) 🔥 */}
+        {/* 🔥 THE LIVE WEEKLY WALLETS (HORIZONTAL CARDS) 🔥 */}
         <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-4 pt-2 -mx-2 px-3 snap-x">
           {["Due Now", "Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].map((pd) => {
             const pdSettings = paydayConfig[pd];
@@ -246,13 +239,13 @@ export default function Dashboard({
             return (
               <div key={pd} className={`min-w-[160px] p-5 rounded-[2rem] snap-center shrink-0 border transition-all ${isSet ? isDarkMode ? "bg-[#1E293B] border-slate-700 shadow-md" : "bg-white border-slate-100 shadow-[0_8px_20px_rgba(0,0,0,0.04)]" : isDarkMode ? "bg-slate-800/30 border-dashed border-slate-700" : "bg-slate-50 border-dashed border-slate-200"}`}>
                 
-                {/* 🔥 FIX 2: CALENDAR ANCHOR ADDED 🔥 */}
+                {/* 🔥 FIX 4: SYNCHRONIZED TIMESTAMPS 🔥 */}
                 <div className="flex justify-between items-end mb-4">
                   <h3 className={`text-[10px] font-black uppercase tracking-widest ${isDueNow ? "text-red-500" : isSet ? "text-[#1877F2]" : "text-slate-400"}`}>
                     {pd}
                   </h3>
                   {!isDueNow && isSet && (
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-[#1877F2]" : "text-[#1877F2]"}`}>
                       {formatPaydayDateStr(pdSettings?.date)}
                     </span>
                   )}
@@ -296,7 +289,7 @@ export default function Dashboard({
           })}
         </div>
 
-        {/* 🔥 VERTICAL COLLAPSIBLE LISTS (UNCHANGED EXECUTION VIEW) 🔥 */}
+        {/* 🔥 VERTICAL COLLAPSIBLE LISTS (THE BENTO BREAKOUT) 🔥 */}
         <div className="space-y-4">
           {Object.entries(billsByPayday).map(([payday, groupBills]) => {
             if (payday === "Due Now" && groupBills.length === 0) return null;
@@ -312,7 +305,6 @@ export default function Dashboard({
 
             return (
               <div key={payday} className="space-y-2">
-                {/* 🔥 FIX 1: THE GHOST BOX REMOVED (Dark Mode Safe Hover) 🔥 */}
                 <div className={`flex flex-col px-3 py-2 cursor-pointer transition-colors rounded-xl ${isDarkMode ? "hover:bg-slate-800/50" : "hover:bg-slate-50"}`} onClick={() => toggleCollapse(payday)}>
                   <div className="flex items-center justify-between w-full">
                      <div className="flex items-center gap-2">
@@ -329,34 +321,38 @@ export default function Dashboard({
                 </div>
 
                 {!isCollapsed && (
-                  <div className={`rounded-[2rem] p-3 border ${isDueNow ? isDarkMode ? "bg-red-900/10 border-red-900/30" : "bg-red-50/30 border-red-100" : isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
+                  /* 🔥 THE BENTO BOX MAIN CARD 🔥 */
+                  <div className={`rounded-[2rem] p-4 border shadow-sm ${isDueNow ? isDarkMode ? "bg-red-900/10 border-red-900/30" : "bg-red-50/30 border-red-100" : isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
                     {sortedBills.length === 0 ? (
                       <p className="text-center text-xs font-bold text-slate-400 py-4">No bills assigned to this payday.</p>
                     ) : (
-                      sortedBills.map((bill, idx) => (
-                        <div key={bill.id} className={`flex flex-col p-3 rounded-2xl transition-all duration-300 ${isDarkMode ? "hover:bg-slate-800/50" : "hover:bg-slate-50/50"} ${idx !== sortedBills.length - 1 ? "mb-1" : ""}`}>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4 flex-1">
-                              <div className="relative p-1 z-10 cursor-pointer" onClick={() => handleBillClick(bill.id)}>
-                                {bill.isPaid ? <CheckCircle2 className="text-[#1877F2] hover:scale-110 transition-transform" size={28} /> : <Circle className={`${isDarkMode ? "text-slate-600 hover:text-slate-500" : "text-slate-200 hover:text-slate-300"} hover:scale-110 transition-transform`} size={28} />}
-                              </div>
-                              <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => setSelectedEntry(bill)}>
-                                <div className={`w-11 h-11 rounded-2xl border flex items-center justify-center text-xl shrink-0 ${bill.isOverdue ? isDarkMode ? "bg-red-900/20 border-red-900/50" : "bg-red-50 border-red-100" : isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-100"}`}>{bill.icon}</div>
-                                <div>
-                                  <div className="flex items-center gap-1.5">
-                                    <p className={`font-bold text-sm ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{bill.name}</p>
-                                    {bill.isRecurring && !bill.isPaid && <RefreshCw size={12} className="text-[#10B981] shrink-0" />}
+                      <div className="space-y-3">
+                        {sortedBills.map((bill) => (
+                          /* 🔥 THE INDIVIDUAL INNER CARD 🔥 */
+                          <div key={bill.id} className={`flex flex-col p-3.5 rounded-2xl border shadow-sm transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4 flex-1">
+                                <div className="relative p-1 z-10 cursor-pointer" onClick={() => handleBillClick(bill.id)}>
+                                  {bill.isPaid ? <CheckCircle2 className="text-[#1877F2] hover:scale-110 transition-transform" size={28} /> : <Circle className={`${isDarkMode ? "text-slate-600 hover:text-slate-500" : "text-slate-200 hover:text-slate-300"} hover:scale-110 transition-transform`} size={28} />}
+                                </div>
+                                <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => setSelectedEntry(bill)}>
+                                  <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${bill.isOverdue ? isDarkMode ? "bg-red-900/20 border-red-900/50" : "bg-red-50 border-red-100" : isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>{bill.icon}</div>
+                                  <div>
+                                    <div className="flex items-center gap-1.5">
+                                      <p className={`font-bold text-sm ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{bill.name}</p>
+                                      {bill.isRecurring && !bill.isPaid && <RefreshCw size={12} className="text-[#10B981] shrink-0" />}
+                                    </div>
+                                    <p className={`text-[10px] font-bold uppercase tracking-wider mt-0.5 ${bill.isOverdue ? "text-red-500" : isDarkMode ? "text-slate-500" : "text-slate-400"}`}>{bill.isOverdue ? "Overdue • " : "Due "} {bill.fullDate}</p>
                                   </div>
-                                  <p className={`text-[10px] font-bold uppercase tracking-wider mt-0.5 ${bill.isOverdue ? "text-red-500" : isDarkMode ? "text-slate-500" : "text-slate-400"}`}>{bill.isOverdue ? "Overdue • " : "Due "} {bill.fullDate}</p>
                                 </div>
                               </div>
-                            </div>
-                            <div className={`font-black text-sm tracking-tight cursor-pointer ${bill.isOverdue ? "text-red-500" : isDarkMode ? "text-white" : "text-slate-900"}`} onClick={() => setSelectedEntry(bill)}>
-                              ${bill.amount.toFixed(2)}
+                              <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight cursor-pointer transition-colors ${bill.isOverdue ? isDarkMode ? "bg-red-900/30 text-red-400" : "bg-red-50 text-red-600" : isDarkMode ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-900"}`} onClick={() => setSelectedEntry(bill)}>
+                                ${bill.amount.toFixed(2)}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))
+                        ))}
+                      </div>
                     )}
                   </div>
                 )}
@@ -367,21 +363,23 @@ export default function Dashboard({
 
         <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800 mt-8">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Recent Activity</h3>
-          <div className={`rounded-[2rem] p-3 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
+          {/* 🔥 THE BENTO BOX MAIN CARD 🔥 */}
+          <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
             {transactions.length === 0 ? (
               <div className="py-8 text-center"><p className="font-bold text-sm text-slate-400">No recent activity.</p></div>
             ) : (
-              <>
-                {transactions.slice(0, 5).map((tx, idx) => (
-                  <div key={tx.id} onClick={() => setSelectedEntry(tx)} className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition-colors ${isDarkMode ? "hover:bg-slate-800/50" : "hover:bg-slate-50/50"} ${idx !== Math.min(transactions.length, 5) - 1 ? "mb-1" : ""}`}>
+              <div className="space-y-3">
+                {transactions.slice(0, 5).map((tx) => (
+                  /* 🔥 THE INDIVIDUAL INNER CARD 🔥 */
+                  <div key={tx.id} onClick={() => setSelectedEntry(tx)} className={`flex items-center justify-between p-3.5 rounded-2xl border shadow-sm cursor-pointer transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
                     <div className="flex items-center gap-4">
-                      <div className={`w-11 h-11 rounded-2xl border flex items-center justify-center text-xl ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-100"}`}>{tx.icon}</div>
+                      <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>{tx.icon}</div>
                       <div>
                         <p className={`font-bold text-sm ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{tx.name}</p>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{tx.date}</p>
                       </div>
                     </div>
-                    {/* 🔥 FIX 3: THE SHADED VAULT APPLIED TO DASHBOARD 🔥 */}
+                    {/* 🔥 THE SHADED VAULT 🔥 */}
                     <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight shrink-0 ml-2 transition-colors ${tx.type === "Income" ? isDarkMode ? "bg-emerald-900/30 text-emerald-400" : "bg-emerald-50 text-emerald-600" : isDarkMode ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-900"}`}>
                       {tx.type === "Income" ? "+" : "-"}${tx.amount.toFixed(2)}
                     </div>
@@ -390,7 +388,7 @@ export default function Dashboard({
                 <button onClick={() => changeTab("activity")} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)]">
                   <List size={16} /> See All Activity
                 </button>
-              </>
+              </div>
             )}
           </div>
         </div>

@@ -736,22 +736,22 @@ export default function App() {
           </div>
         )}
 
+        {/* 🔥 FIX 5B: MOBILE NUMPAD WHITESPACE KILLED 🔥 */}
         {isTransferOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsTransferOpen(false)}></div>
-            <div className={`w-full lg:max-w-md h-[85vh] lg:h-auto rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
-              <div className="p-6 border-b flex justify-between items-center">
+            <div className={`w-full lg:max-w-md h-auto max-h-[95vh] rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+              <div className="p-6 border-b flex justify-between items-center shrink-0">
                 <h3 className={`font-black uppercase tracking-widest flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}><ArrowRightLeft size={16}/> Internal Transfer</h3>
                 <button onClick={() => setIsTransferOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
-              <div className={`p-6 flex-1 flex flex-col overflow-y-auto ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+              <div className={`p-6 flex flex-col overflow-y-auto ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
                 <div className="flex items-center gap-2 mb-6">
                   <select value={transferFrom} onChange={(e) => setTransferFrom(e.target.value)} className="flex-1 py-3 px-4 rounded-xl font-bold text-xs border text-center"><option value="" disabled>From</option>{accounts.map(a => (<option key={a.id} value={a.id}>{a.name}</option>))}</select>
                   <ArrowRight size={16} />
                   <select value={transferTo} onChange={(e) => setTransferTo(e.target.value)} className="flex-1 py-3 px-4 rounded-xl font-bold text-xs border text-center"><option value="" disabled>To</option>{accounts.map(a => (<option key={a.id} value={a.id}>{a.name}</option>))}</select>
                 </div>
                 
-                {/* 🔥 THE NEW BACKSPACE UI 🔥 */}
                 <div className="text-center relative flex justify-center items-center mb-6">
                   <span className="text-6xl font-extrabold tracking-tighter">${transferAmount}</span>
                   <button onClick={() => setTransferAmount(transferAmount.slice(0, -1) || "0")} className={`absolute right-4 p-3 rounded-full text-2xl lg:text-4xl active:scale-90 transition-transform touch-manipulation ${isDarkMode ? "text-slate-500 hover:text-slate-300" : "text-slate-400 hover:text-slate-600"}`}>⌫</button>
@@ -762,7 +762,7 @@ export default function App() {
                     return ( <button key={btn} onClick={() => handleTransferNumpad(btn)} className="w-full h-14 rounded-2xl text-2xl font-bold flex items-center justify-center transition-all bg-slate-100 border border-slate-200 active:scale-95 active:bg-slate-200 touch-manipulation"> {btn} </button> );
                   })}
                 </div>
-                <button onClick={executeTransfer} disabled={parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo} className={`w-full mt-6 h-16 rounded-2xl font-black uppercase tracking-widest text-sm text-white shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2 ${parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo ? "bg-slate-300 opacity-50 shadow-none cursor-not-allowed" : "bg-[#1877F2]"}`}>Execute Transfer <ArrowRight size={18} /></button>
+                <button onClick={executeTransfer} disabled={parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo} className={`w-full mt-6 h-16 shrink-0 rounded-2xl font-black uppercase tracking-widest text-sm text-white shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2 ${parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo ? "bg-slate-300 opacity-50 shadow-none cursor-not-allowed" : "bg-[#1877F2]"}`}>Execute Transfer <ArrowRight size={18} /></button>
               </div>
             </div>
           </div>

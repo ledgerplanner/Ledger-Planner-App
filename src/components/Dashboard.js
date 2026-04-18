@@ -177,7 +177,14 @@ export default function Dashboard({
         <div className="flex flex-col gap-2">
           <div className="flex justify-end gap-2 text-xs font-bold uppercase">
             <span className="text-slate-400 text-[10px]">Total Cash</span>
-            <span className={isDarkMode ? "text-slate-300 bg-slate-800 px-2 rounded" : "text-slate-700 bg-slate-100 px-2 rounded"}>
+            {/* 🔥 FIX 4: DYNAMIC TOTAL CASH BADGE 🔥 */}
+            <span className={`px-2 rounded ${
+               totalIncomeBalance < 0 
+                  ? isDarkMode ? "bg-red-900/30 text-red-400" : "bg-red-50 text-red-600"
+                  : totalIncomeBalance > 0 
+                     ? isDarkMode ? "bg-emerald-900/30 text-emerald-400" : "bg-emerald-50 text-emerald-600"
+                     : isDarkMode ? "bg-slate-800 text-slate-300" : "bg-slate-100 text-slate-700"
+            }`}>
               ${totalIncomeBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
             </span>
           </div>
@@ -226,23 +233,29 @@ export default function Dashboard({
             const actualIncome = actualIncomeByPayday[pd] || 0;
             const expectedIncome = parseFloat(pdSettings?.income) || 0;
             
-            // Logic: If you haven't been paid yet, use expected. If you have been paid, use actual.
             const effectiveIncome = actualIncome > 0 ? actualIncome : expectedIncome;
             
-            const actualExpenses = actualExpensesByPayday[pd] || 0; // Includes Paid Bills + Coffee/Gas
+            const actualExpenses = actualExpensesByPayday[pd] || 0; 
             const unpaidBillsTotal = billsByPayday[pd]?.filter(b => !b.isPaid).reduce((sum, b) => sum + b.amount, 0) || 0;
             
-            // Weekly Active Buffer: Effective Income minus ALL drain (paid expenses + unpaid spoken-for bills)
             const activeWeeklyBuffer = effectiveIncome - actualExpenses - unpaidBillsTotal;
             const totalWeeklyDrain = actualExpenses + unpaidBillsTotal;
             
-            // Progress Bar Math (Fuel Gauge)
             const fuelPct = effectiveIncome > 0 ? Math.max(0, Math.min((activeWeeklyBuffer / effectiveIncome) * 100, 100)) : 0;
 
             return (
               <div key={pd} className={`min-w-[160px] p-5 rounded-[2rem] snap-center shrink-0 border transition-all ${isSet ? isDarkMode ? "bg-[#1E293B] border-slate-700 shadow-md" : "bg-white border-slate-100 shadow-[0_8px_20px_rgba(0,0,0,0.04)]" : isDarkMode ? "bg-slate-800/30 border-dashed border-slate-700" : "bg-slate-50 border-dashed border-slate-200"}`}>
-                <div className="flex justify-between items-center mb-1">
-                  <p className={`text-[10px] font-black uppercase tracking-widest ${isDueNow ? "text-red-500" : isSet ? "text-[#1877F2]" : "text-slate-400"}`}>{pd}</p>
+                
+                {/* 🔥 FIX 2: CALENDAR ANCHOR ADDED 🔥 */}
+                <div className="flex justify-between items-end mb-4">
+                  <h3 className={`text-[10px] font-black uppercase tracking-widest ${isDueNow ? "text-red-500" : isSet ? "text-[#1877F2]" : "text-slate-400"}`}>
+                    {pd}
+                  </h3>
+                  {!isDueNow && isSet && (
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      {formatPaydayDateStr(pdSettings?.date)}
+                    </span>
+                  )}
                 </div>
                 
                 {isDueNow ? (
@@ -299,7 +312,8 @@ export default function Dashboard({
 
             return (
               <div key={payday} className="space-y-2">
-                <div className="flex flex-col px-3 py-2 cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl" onClick={() => toggleCollapse(payday)}>
+                {/* 🔥 FIX 1: THE GHOST BOX REMOVED (Dark Mode Safe Hover) 🔥 */}
+                <div className={`flex flex-col px-3 py-2 cursor-pointer transition-colors rounded-xl ${isDarkMode ? "hover:bg-slate-800/50" : "hover:bg-slate-50"}`} onClick={() => toggleCollapse(payday)}>
                   <div className="flex items-center justify-between w-full">
                      <div className="flex items-center gap-2">
                        <h3 className={`text-[11px] font-black uppercase tracking-widest ${isDueNow ? "text-red-500" : isDarkMode ? "text-slate-300" : "text-slate-700"}`}>{payday}</h3>
@@ -367,7 +381,8 @@ export default function Dashboard({
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{tx.date}</p>
                       </div>
                     </div>
-                    <div className={`font-black text-sm tracking-tight ${tx.type === "Income" ? "text-emerald-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>
+                    {/* 🔥 FIX 3: THE SHADED VAULT APPLIED TO DASHBOARD 🔥 */}
+                    <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight shrink-0 ml-2 transition-colors ${tx.type === "Income" ? isDarkMode ? "bg-emerald-900/30 text-emerald-400" : "bg-emerald-50 text-emerald-600" : isDarkMode ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-900"}`}>
                       {tx.type === "Income" ? "+" : "-"}${tx.amount.toFixed(2)}
                     </div>
                   </div>

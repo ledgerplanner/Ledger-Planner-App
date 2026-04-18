@@ -105,15 +105,16 @@ export default function Bills({
                       </div>
                     </div>
 
+                    {/* 🔥 THE NEW GROUNDED PROGRESS FOOTER 🔥 */}
                     {bill.isInstallment && !bill.isPaid && (
-                      <div className="mt-3 ml-[4.5rem] w-full max-w-[85%] animate-fade-in pr-2">
-                        <div className="flex justify-between items-end mb-1.5">
-                          <span className="text-[8px] font-black uppercase tracking-widest text-[#1877F2]">${(bill.paidAmount || 0).toLocaleString()} PAID</span>
-                          <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">${(bill.totalAmount || 0).toLocaleString()} TOTAL</span>
+                      <div className={`mt-4 pt-3 border-t w-full animate-fade-in ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
+                        <div className="flex justify-between items-end mb-2 px-1">
+                          <span className="text-[8px] font-black uppercase tracking-widest text-[#1877F2]">${(bill.paidAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} PAID</span>
+                          <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">${(bill.totalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} TOTAL</span>
                         </div>
-                        <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-700" : "bg-slate-200"}`}>
+                        <div className={`w-full h-2 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-800" : "bg-slate-200"}`}>
                           <div 
-                            className="h-full bg-[#1877F2]" 
+                            className="h-full bg-[#1877F2] transition-all duration-500 ease-out" 
                             style={{ width: `${Math.min(((bill.paidAmount || 0) / (bill.totalAmount || 1)) * 100, 100)}%` }}
                           ></div>
                         </div>

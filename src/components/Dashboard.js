@@ -177,7 +177,6 @@ export default function Dashboard({
         <div className="flex flex-col gap-2">
           <div className="flex justify-end gap-2 text-xs font-bold uppercase">
             <span className="text-slate-400 text-[10px]">Total Cash</span>
-            {/* 🔥 THE DYNAMIC CASH HEALTH VAULT 🔥 */}
             <span className={`px-2 py-0.5 rounded ${
                totalIncomeBalance < 0 
                   ? isDarkMode ? "bg-red-900/30 text-red-400" : "bg-red-50 text-red-600"
@@ -205,14 +204,14 @@ export default function Dashboard({
 
       <main className="px-6 space-y-4">
         
-        {/* 🔥 FIX 5: ROUTING REFRESH - CENTERED COMMAND BUTTON 🔥 */}
+        {/* CENTERED COMMAND BUTTON */}
         <div className="flex justify-center px-1 mt-2 mb-4">
            <button onClick={() => { setEditPaydayConfig(paydayConfig); setIsPaydaySetupOpen(true); }} className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm border ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#1877F2] hover:bg-slate-800" : "bg-white border-slate-200 text-[#1877F2] hover:bg-slate-50"}`}>
               <Settings2 size={18} strokeWidth={2.5} /> Set Your Pay Dates & Amounts
            </button>
         </div>
 
-        {/* 🔥 THE LIVE WEEKLY WALLETS (HORIZONTAL CARDS) 🔥 */}
+        {/* 🔥 HORIZONTAL PAYDAY CARDS 🔥 */}
         <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-4 pt-2 -mx-2 px-3 snap-x">
           {["Due Now", "Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].map((pd) => {
             const pdSettings = paydayConfig[pd];
@@ -222,25 +221,20 @@ export default function Dashboard({
             
             const isSet = isDueNow || (pdSettings && (pdSettings.date || pdSettings.income));
             
-            // 🔥 PROJECTED MATH ENGINE 🔥
             const actualIncome = actualIncomeByPayday[pd] || 0;
             const expectedIncome = parseFloat(pdSettings?.income) || 0;
-            
             const effectiveIncome = actualIncome > 0 ? actualIncome : expectedIncome;
-            
             const actualExpenses = actualExpensesByPayday[pd] || 0; 
             const unpaidBillsTotal = billsByPayday[pd]?.filter(b => !b.isPaid).reduce((sum, b) => sum + b.amount, 0) || 0;
             
             const activeWeeklyBuffer = effectiveIncome - actualExpenses - unpaidBillsTotal;
             const totalWeeklyDrain = actualExpenses + unpaidBillsTotal;
-            
             const fuelPct = effectiveIncome > 0 ? Math.max(0, Math.min((activeWeeklyBuffer / effectiveIncome) * 100, 100)) : 0;
 
             return (
-              <div key={pd} className={`min-w-[160px] p-5 rounded-[2rem] snap-center shrink-0 border transition-all ${isSet ? isDarkMode ? "bg-[#1E293B] border-slate-700 shadow-md" : "bg-white border-slate-100 shadow-[0_8px_20px_rgba(0,0,0,0.04)]" : isDarkMode ? "bg-slate-800/30 border-dashed border-slate-700" : "bg-slate-50 border-dashed border-slate-200"}`}>
+              <div key={pd} className={`min-w-[160px] p-5 rounded-[2rem] snap-center shrink-0 border transition-all flex flex-col ${isSet ? isDarkMode ? "bg-[#1E293B] border-slate-700 shadow-md" : "bg-white border-slate-100 shadow-[0_8px_20px_rgba(0,0,0,0.04)]" : isDarkMode ? "bg-slate-800/30 border-dashed border-slate-700" : "bg-slate-50 border-dashed border-slate-200"}`}>
                 
-                {/* 🔥 FIX 4: SYNCHRONIZED TIMESTAMPS 🔥 */}
-                <div className="flex justify-between items-end mb-4">
+                <div className="flex justify-between items-end mb-4 w-full">
                   <h3 className={`text-[10px] font-black uppercase tracking-widest ${isDueNow ? "text-red-500" : isSet ? "text-[#1877F2]" : "text-slate-400"}`}>
                     {pd}
                   </h3>
@@ -252,15 +246,16 @@ export default function Dashboard({
                 </div>
                 
                 {isDueNow ? (
-                  <>
-                    <p className={`text-2xl font-black tracking-tight mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                  <div className="flex flex-col items-center text-center mt-2 w-full">
+                    <p className={`text-3xl font-black tracking-tight mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                       ${unpaidBillsTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                     </p>
                     <p className={`text-[9px] font-bold uppercase tracking-wider ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Currently Due</p>
-                  </>
+                  </div>
                 ) : isSet ? (
-                  <div className="flex flex-col">
-                    <p className={`text-3xl font-black tracking-tighter ${activeWeeklyBuffer < 0 ? "text-red-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>
+                  /* 🔥 FIX #1 & #2: CENTERED STACK & COLOR LOGIC 🔥 */
+                  <div className="flex flex-col items-center text-center w-full">
+                    <p className={`text-3xl font-black tracking-tighter ${activeWeeklyBuffer < 0 ? "text-red-500" : activeWeeklyBuffer > 0 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
                       ${activeWeeklyBuffer.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                     </p>
                     <p className={`text-[9px] font-bold uppercase tracking-wider mb-4 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
@@ -273,23 +268,23 @@ export default function Dashboard({
                         style={{ width: `${effectiveIncome > 0 ? fuelPct : 0}%` }}
                       ></div>
                     </div>
-                    <div className="flex justify-between items-center mt-2">
-                      <span className="text-[8px] font-black uppercase tracking-widest text-[#10B981]">IN: ${effectiveIncome.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                      <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">OUT: ${totalWeeklyDrain.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <div className="flex flex-col items-center justify-center mt-3 gap-1 w-full">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-[#10B981]">IN: ${effectiveIncome.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">OUT: ${totalWeeklyDrain.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                   </div>
                 ) : (
-                  <>
-                    <p className={`text-2xl font-black tracking-tight mb-1 ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>$0.00</p>
+                  <div className="flex flex-col items-center text-center mt-2 w-full">
+                    <p className={`text-3xl font-black tracking-tight mb-1 ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>$0.00</p>
                     <p className={`text-[9px] font-bold uppercase tracking-wider ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>Unscheduled</p>
-                  </>
+                  </div>
                 )}
               </div>
             );
           })}
         </div>
 
-        {/* 🔥 VERTICAL COLLAPSIBLE LISTS (THE BENTO BREAKOUT) 🔥 */}
+        {/* 🔥 VERTICAL COLLAPSIBLE LISTS 🔥 */}
         <div className="space-y-4">
           {Object.entries(billsByPayday).map(([payday, groupBills]) => {
             if (payday === "Due Now" && groupBills.length === 0) return null;
@@ -321,14 +316,12 @@ export default function Dashboard({
                 </div>
 
                 {!isCollapsed && (
-                  /* 🔥 THE BENTO BOX MAIN CARD 🔥 */
                   <div className={`rounded-[2rem] p-4 border shadow-sm ${isDueNow ? isDarkMode ? "bg-red-900/10 border-red-900/30" : "bg-red-50/30 border-red-100" : isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
                     {sortedBills.length === 0 ? (
                       <p className="text-center text-xs font-bold text-slate-400 py-4">No bills assigned to this payday.</p>
                     ) : (
                       <div className="space-y-3">
                         {sortedBills.map((bill) => (
-                          /* 🔥 THE INDIVIDUAL INNER CARD 🔥 */
                           <div key={bill.id} className={`flex flex-col p-3.5 rounded-2xl border shadow-sm transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-4 flex-1">
@@ -363,14 +356,12 @@ export default function Dashboard({
 
         <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800 mt-8">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Recent Activity</h3>
-          {/* 🔥 THE BENTO BOX MAIN CARD 🔥 */}
           <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
             {transactions.length === 0 ? (
               <div className="py-8 text-center"><p className="font-bold text-sm text-slate-400">No recent activity.</p></div>
             ) : (
               <div className="space-y-3">
                 {transactions.slice(0, 5).map((tx) => (
-                  /* 🔥 THE INDIVIDUAL INNER CARD 🔥 */
                   <div key={tx.id} onClick={() => setSelectedEntry(tx)} className={`flex items-center justify-between p-3.5 rounded-2xl border shadow-sm cursor-pointer transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
                     <div className="flex items-center gap-4">
                       <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>{tx.icon}</div>
@@ -379,8 +370,8 @@ export default function Dashboard({
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{tx.date}</p>
                       </div>
                     </div>
-                    {/* 🔥 THE SHADED VAULT 🔥 */}
-                    <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight shrink-0 ml-2 transition-colors ${tx.type === "Income" ? isDarkMode ? "bg-emerald-900/30 text-emerald-400" : "bg-emerald-50 text-emerald-600" : isDarkMode ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-900"}`}>
+                    {/* 🔥 THE SHADED VAULT (ORANGE VS GREEN) 🔥 */}
+                    <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight shrink-0 ml-2 transition-colors ${tx.type === "Income" ? isDarkMode ? "bg-emerald-900/30 text-emerald-400" : "bg-emerald-50 text-emerald-600" : isDarkMode ? "bg-orange-900/30 text-orange-400" : "bg-orange-50 text-orange-600"}`}>
                       {tx.type === "Income" ? "+" : "-"}${tx.amount.toFixed(2)}
                     </div>
                   </div>

@@ -5,7 +5,8 @@ import {
 } from "lucide-react";
 
 // === FIREBASE INITIALIZATION ===
-import { auth, db } from "./firebase";
+import { auth, db, messaging } from "./firebase";
+import { getToken } from "firebase/messaging";
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
@@ -90,6 +91,8 @@ export default function App() {
   const [newTodoType, setNewTodoType] = useState("task");
   const [selectedTodo, setSelectedTodo] = useState(null);
 
+  const [isPushEnabled, setIsPushEnabled] = useState(false);
+
   // === QUICK ADD BUTTON STATE ===
   const [isQabOpen, setIsQabOpen] = useState(false);
   const [qabStep, setQabStep] = useState(1);
@@ -139,6 +142,10 @@ export default function App() {
       setPaydayConfig(demoPaydayConfig);
       setIsAuthLoading(false);
     }
+    
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setIsPushEnabled(Notification.permission === "granted");
+    }
   }, []);
 
   // === CLOUD SYNC ENGINE ===
@@ -175,6 +182,26 @@ export default function App() {
 
   // Hydration Guard
   if (!isMounted) return <div className={`min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}></div>;
+
+  // === PUSH NOTIFICATION ENGINE ===
+  const enablePushNotifications = async () => {
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        setIsPushEnabled(true);
+        const currentToken = await getToken(messaging, { vapidKey: "BDubfUXfP5DhFRpZ5ZwQp0o88f2avvtfu0rfFr9ySjHgTZmQ4gsr0GWzE-cJQxgbwq93GlgcCc5ip6KksvngmXY" });
+        if (currentToken) {
+          const userId = auth.currentUser?.uid;
+          if (userId) await setDoc(doc(db, "users", userId), { fcmToken: currentToken }, { merge: true });
+          alert("Push Notifications Enabled! Vault secured.");
+        }
+      } else {
+        alert("You denied notifications. You will only see alerts inside the app.");
+      }
+    } catch (error) {
+      console.error("An error occurred while retrieving token. ", error);
+    }
+  };
 
   // === AUTH ACTIONS ===
   const handleAuthSubmit = async (e) => {
@@ -484,7 +511,7 @@ export default function App() {
           </button>
           <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
             <Bell size={18} />
-            {activeAlerts.length > 0 && <span className={`absolute top-2 right-2.5 w-2 h-2 rounded-full border-2 ${isDarkMode ? "border-[#1E293B]" : "border-white"} ${activeAlerts.some(a => a.type === 'danger' || a.type === 'warning') ? "bg-red-500" : "bg-[#1877F2]"}`}></span>}
+            {(!isPushEnabled || activeAlerts.length > 0) && <span className={`absolute top-2 right-2.5 w-2 h-2 rounded-full border-2 ${isDarkMode ? "border-[#1E293B]" : "border-white"} ${activeAlerts.some(a => a.type === 'danger' || a.type === 'warning') ? "bg-red-500" : "bg-[#1877F2]"}`}></span>}
           </button>
         </div>
         <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center z-20 origin-top -top-5 lg:hidden">
@@ -679,13 +706,39 @@ export default function App() {
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsNotificationsOpen(false)}></div>
             <div className={`w-full lg:max-w-md h-[80vh] rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
-              <div className="p-6 border-b flex justify-between items-center">
+              <div className="p-6 border-b flex justify-between items-center shrink-0">
                 <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Command Center</h3>
                 <button onClick={() => setIsNotificationsOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
-              <div className={`p-6 overflow-y-auto space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+              <div className={`p-6 overflow-y-auto space-y-4 flex-1 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+                
+                {/* 🔥 FIX 5: ENABLE NOTIFICATIONS MOVED TO ALERT CENTER 🔥 */}
+                {!isPushEnabled && !isDemoMode && (
+                  <div className={`p-4 rounded-2xl border flex items-center justify-between shadow-sm ${isDarkMode ? "bg-[#10B981]/10 border-[#10B981]/20" : "bg-emerald-50 border-emerald-100"}`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-full text-white bg-[#10B981] shadow-[0_4px_10px_rgba(16,185,129,0.3)]`}><Bell size={16} /></div>
+                      <div>
+                        <p className={`text-sm font-black ${isDarkMode ? "text-[#10B981]" : "text-emerald-700"}`}>Enable Notifications</p>
+                        <p className={`text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-emerald-500/70" : "text-emerald-600/70"}`}>Never miss a payday</p>
+                      </div>
+                    </div>
+                    <button onClick={enablePushNotifications} className="px-4 py-2 bg-[#10B981] text-white text-[10px] font-black uppercase tracking-widest rounded-xl active:scale-95 transition-transform shadow-md">Enable</button>
+                  </div>
+                )}
+
                 {activeAlerts.length === 0 ? (<div className="text-center py-10 opacity-50"><CheckCircle2 size={40} className="mx-auto mb-4 text-[#10B981]" /><p className="font-bold text-sm">All Systems Go</p></div>) : (
-                  activeAlerts.map(alert => (<div key={alert.id} onClick={alert.action} className={`flex items-start gap-4 p-4 rounded-2xl cursor-pointer border ${alert.type === 'danger' ? "bg-red-50 border-red-100" : "bg-slate-50 border-slate-100"}`}><div className="mt-1 p-2 rounded-full bg-white">{alert.icon}</div><div className="flex-1"><div className="flex justify-between items-start"><p className="font-black text-sm text-slate-800">{alert.title}</p><span className="text-[9px] font-black uppercase text-slate-400">{alert.time}</span></div><p className="text-xs font-bold text-slate-500">{alert.message}</p></div></div>)))}
+                  activeAlerts.map(alert => (
+                    <div key={alert.id} onClick={alert.action} className={`flex items-start gap-4 p-4 rounded-2xl cursor-pointer border transition-colors ${alert.type === 'danger' ? (isDarkMode ? "bg-red-900/20 border-red-900/50 hover:bg-red-900/30" : "bg-red-50 border-red-100 hover:bg-red-100") : (isDarkMode ? "bg-[#1E293B] border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50 shadow-sm")}`}>
+                      <div className={`mt-1 p-2 rounded-full ${isDarkMode ? "bg-[#0F172A]" : "bg-slate-50"}`}>{alert.icon}</div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                          <p className={`font-black text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>{alert.title}</p>
+                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{alert.time}</span>
+                        </div>
+                        <p className={`text-xs font-bold mt-0.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{alert.message}</p>
+                      </div>
+                    </div>
+                  )))}
               </div>
             </div>
           </div>
@@ -736,7 +789,6 @@ export default function App() {
           </div>
         )}
 
-        {/* 🔥 FIX 5B: MOBILE NUMPAD WHITESPACE KILLED 🔥 */}
         {isTransferOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsTransferOpen(false)}></div>
@@ -752,9 +804,10 @@ export default function App() {
                   <select value={transferTo} onChange={(e) => setTransferTo(e.target.value)} className="flex-1 py-3 px-4 rounded-xl font-bold text-xs border text-center"><option value="" disabled>To</option>{accounts.map(a => (<option key={a.id} value={a.id}>{a.name}</option>))}</select>
                 </div>
                 
+                {/* 🔥 FIX 3: EMERALD TRANSFER PULSE 🔥 */}
                 <div className="text-center relative flex justify-center items-center mb-6">
-                  <span className="text-6xl font-extrabold tracking-tighter">${transferAmount}</span>
-                  <button onClick={() => setTransferAmount(transferAmount.slice(0, -1) || "0")} className={`absolute right-4 p-3 rounded-full text-2xl lg:text-4xl active:scale-90 transition-transform touch-manipulation ${isDarkMode ? "text-slate-500 hover:text-slate-300" : "text-slate-400 hover:text-slate-600"}`}>⌫</button>
+                  <span className="text-6xl font-extrabold tracking-tighter text-[#10B981]">${transferAmount}</span>
+                  <button onClick={() => setTransferAmount(transferAmount.slice(0, -1) || "0")} className={`absolute right-4 p-3 rounded-full text-2xl lg:text-4xl active:scale-90 transition-transform touch-manipulation text-[#10B981] opacity-70 hover:opacity-100`}>⌫</button>
                 </div>
 
                 <div className="grid grid-cols-4 gap-3 mt-auto">

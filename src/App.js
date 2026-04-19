@@ -291,7 +291,6 @@ export default function App() {
     }
   };
 
-  // 🔥 FIX #1: THE FULL SCALE EDIT DRAWER (SAVE LOGIC) 🔥
   const handleSaveEntryEdit = async () => {
     if (!selectedEntry) return;
     const colName = selectedEntry.fullDate !== undefined ? "bills" : "transactions";
@@ -391,7 +390,6 @@ export default function App() {
     triggerVictory(); setIsTransferOpen(false); setTransferAmount("0"); setTransferFrom(""); setTransferTo("");
   };
 
-  // 🔥 UPDATE ACCOUNT DATA SAVING LOGIC 🔥
   const updateAccountBalance = async () => { 
     const newBal = parseFloat(editAccountBalance);
     if (isNaN(newBal) || !selectedAccount) return;
@@ -434,13 +432,16 @@ export default function App() {
     setIsPaydaySetupOpen(false); triggerVictory(); 
   };
 
+  // 🔥 THE AUTO-SENSE HORIZON WALL ENGINE 🔥
   const todayForDynamic = new Date(); todayForDynamic.setHours(0, 0, 0, 0);
   const calculatePaydayGroup = (dateString) => {
-    if (!dateString) return "Payday 1";
+    if (!dateString) return "Unscheduled";
     const billDate = new Date(dateString);
     const todayLocal = new Date(); todayLocal.setHours(0, 0, 0, 0);
     const localBillDate = new Date(billDate.getUTCFullYear(), billDate.getUTCMonth(), billDate.getUTCDate());
+
     if (localBillDate < todayLocal || localBillDate.getTime() === todayLocal.getTime()) return "Due Now";
+
     const activePaydays = [];
     for (let i = 1; i <= 5; i++) {
       const pdId = `Payday ${i}`;
@@ -449,22 +450,53 @@ export default function App() {
         if (!isNaN(d.getTime())) activePaydays.push({ id: pdId, date: d });
       }
     }
-    if (activePaydays.length === 0) return "Payday 1";
+
+    if (activePaydays.length === 0) return "Unscheduled";
     activePaydays.sort((a, b) => a.date - b.date);
+
+    // Drop the Wall
+    const lastPayday = activePaydays[activePaydays.length - 1].date;
+    let daysToAdd = 7; // Weekly default
+    if (activePaydays.length === 1) daysToAdd = 30; // Monthly
+    else if (activePaydays.length === 2) daysToAdd = 14; // Bi-Weekly
+
+    const horizonDate = new Date(lastPayday);
+    horizonDate.setDate(horizonDate.getDate() + daysToAdd);
+
+    // Ghost the bill if it falls beyond the wall
+    if (localBillDate > horizonDate) return "Unscheduled";
+
     if (billDate < activePaydays[0].date) return activePaydays[0].id;
     let assignedPd = activePaydays[0].id;
-    for (let i = 0; i < activePaydays.length; i++) { if (billDate >= activePaydays[i].date) assignedPd = activePaydays[i].id; else break; }
+    for (let i = 0; i < activePaydays.length; i++) { 
+        if (billDate >= activePaydays[i].date) assignedPd = activePaydays[i].id; 
+        else break; 
+    }
     return assignedPd;
   };
 
+  // 🔥 DYNAMIC SHIFT: CONSTANT RECALCULATION 🔥
   const dynamicBills = bills.map(bill => {
+    let currentPayday = bill.payday;
+    let isOverdue = bill.isOverdue || false;
+
     if (bill.rawDate && !bill.isPaid) {
       const bDate = new Date(bill.rawDate);
       const localBDate = new Date(bDate.getUTCFullYear(), bDate.getUTCMonth(), bDate.getUTCDate());
-      if (localBDate < todayForDynamic) return { ...bill, payday: "Due Now", isOverdue: true };
-      if (localBDate.getTime() === todayForDynamic.getTime()) return { ...bill, payday: "Due Now", isOverdue: false };
+      
+      if (localBDate < todayForDynamic) {
+          currentPayday = "Due Now";
+          isOverdue = true;
+      } else if (localBDate.getTime() === todayForDynamic.getTime()) {
+          currentPayday = "Due Now";
+          isOverdue = false;
+      } else {
+          // Send it through the wall to ensure it hasn't popped in or out
+          currentPayday = calculatePaydayGroup(bill.rawDate);
+          isOverdue = false;
+      }
     }
-    return bill;
+    return { ...bill, payday: currentPayday, isOverdue: isOverdue };
   }).sort((a, b) => {
     if (a.isOverdue && !b.isOverdue) return -1;
     if (!a.isOverdue && b.isOverdue) return 1;
@@ -501,7 +533,7 @@ export default function App() {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const actionBills = dynamicBills.filter(b => b.isOverdue || (!b.isPaid && b.payday === "Due Now"));
     actionBills.forEach(b => { currentAlerts.push({ id: `action-${b.id}`, type: 'danger', icon: <AlertCircle size={20} className="text-red-500" />, title: 'Action Required', message: `Your ${b.name} bill is ${b.isOverdue ? 'past due' : 'due now'}.`, amount: b.amount, time: b.isOverdue ? 'URGENT' : 'TODAY', action: () => { setIsNotificationsOpen(false); changeTab("bills"); } }); });
-    const upcomingRecurring = dynamicBills.filter(b => !b.isPaid && b.isRecurring && !b.isOverdue && b.payday !== "Due Now");
+    const upcomingRecurring = dynamicBills.filter(b => !b.isPaid && b.isRecurring && !b.isOverdue && b.payday !== "Due Now" && b.payday !== "Unscheduled");
     upcomingRecurring.forEach(b => { if (b.rawDate) { const bDate = new Date(b.rawDate); const diffDays = Math.ceil((bDate - today) / (1000 * 60 * 60 * 24)); if (diffDays >= 0 && diffDays <= 2) { currentAlerts.push({ id: `sub-${b.id}`, type: 'info', icon: <RefreshCw size={20} className="text-[#10B981]" />, title: 'Subscription Nudge', message: `${b.name} is recurring in ${diffDays} day(s).`, amount: b.amount, time: `${diffDays}D`, action: () => { setIsNotificationsOpen(false); changeTab("bills"); } }); } } });
     ["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].forEach(pdId => {
       const config = paydayConfig[pdId];

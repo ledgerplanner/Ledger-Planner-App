@@ -111,6 +111,7 @@ export default function Accounts({
                       </div>
                       <div>
                         <p className={`font-bold text-sm ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{acc.name}</p>
+                        {/* 🔥 FIX 1: DYNAMIC ACCOUNT DETAILS RENDER 🔥 */}
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{acc.description || acc.type}</p>
                       </div>
                     </div>

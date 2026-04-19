@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Home, Wallet, Calendar as CalendarIcon, CreditCard, CheckSquare,
-  Bell, Moon, Sun, X, Plus, ArrowRight, CheckCircle2, Trash2, ArrowDown, AlertCircle, Edit2, LogOut, RefreshCw, Save, ArrowRightLeft, Settings, Zap, UserCircle
+  Bell, Moon, Sun, X, Plus, ArrowRight, CheckCircle2, Trash2, ArrowDown, AlertCircle, Edit2, LogOut, RefreshCw, Save, ArrowRightLeft, Settings, Zap, User
 } from "lucide-react";
 
 // === FIREBASE INITIALIZATION ===
@@ -266,7 +266,7 @@ export default function App() {
   };
 
   const changeTab = (tabId) => { 
-    triggerHaptic(); // 🔥 HAPTICS INJECTED HERE
+    triggerHaptic(); 
     setActiveTab(tabId); 
     if (tabId === "activity") { setActivityFilter("All"); setActivitySearch(""); }
     if (scrollRef.current) scrollRef.current.scrollTo({ top: 0, behavior: "smooth" }); 
@@ -728,7 +728,7 @@ export default function App() {
                 
                 {/* BENTO CARD 1: IDENTITY ENGINE */}
                 <div className={`p-5 rounded-3xl border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2"><UserCircle size={14}/> Identity Engine</h4>
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2"><User size={14}/> Identity Engine</h4>
                   <div className="relative mb-4">
                     <label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest text-slate-500">Preferred Name</label>
                     <input 
@@ -1181,7 +1181,7 @@ export default function App() {
                               </div>
                               <div className="flex items-center justify-between">
                                 <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Installment Plan</span>
-                                <button onClick={() => setEntryIsInstallment(!entryIsInstallment)} className={`w-12 h-6 rounded-full transition-colors relative ${entryIsInstallment ? "bg-[#1877F2]" : "bg-slate-300 dark:bg-slate-700"}`}>
+                                <button onClick={() => setEntryIsInstallment(!entryIsInstallment)} className={`w-12 h-6 rounded-full transition-colors relative ${editEntryData.isInstallment ? "bg-[#1877F2]" : "bg-slate-300 dark:bg-slate-700"}`}>
                                   <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${entryIsInstallment ? "translate-x-7" : "translate-x-1"}`}></div>
                                 </button>
                               </div>

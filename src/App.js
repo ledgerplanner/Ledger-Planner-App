@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Home, Wallet, Calendar as CalendarIcon, CreditCard, CheckSquare,
-  Bell, Moon, Sun, X, Plus, ArrowRight, CheckCircle2, Trash2, ArrowDown, AlertCircle, Edit2, LogOut, RefreshCw, Save, ArrowRightLeft, Settings, Zap
+  Bell, Moon, Sun, X, Plus, ArrowRight, CheckCircle2, Trash2, ArrowDown, AlertCircle, Edit2, LogOut, RefreshCw, Save, ArrowRightLeft, Settings, Zap, UserCircle
 } from "lucide-react";
 
 // === FIREBASE INITIALIZATION ===
@@ -673,6 +673,7 @@ export default function App() {
           <div className="mt-auto space-y-4">
             <button onClick={() => setIsQabOpen(true)} className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-white bg-[#1877F2] font-black uppercase tracking-widest text-xs transition-transform active:scale-95 hover:-translate-y-1`}><Plus size={18} /> Quick Add</button>
             
+            {/* 🔥 DESKTOP SETTINGS BUTTON 🔥 */}
             <button onClick={() => { setEditName(userName || ""); setIsSettingsOpen(true); }} className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800/50 border-slate-700 text-slate-300 hover:text-white" : "bg-white border-slate-100 text-slate-500 hover:text-slate-900"}`}>
               <Settings size={16} strokeWidth={2.5} />
               <span className="text-[10px] font-black uppercase tracking-widest">Settings</span>

@@ -79,7 +79,6 @@ export default function Bills({
             <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
               <div className="space-y-3">
                 {unpaidBills.map((bill) => {
-                  // 🔥 FIX 2: INSTALLMENT PROGRESS MATH 🔥
                   const leftToPay = Math.max(0, (bill.totalAmount || 0) - (bill.paidAmount || 0));
                   const remainingPct = bill.totalAmount > 0 ? (leftToPay / bill.totalAmount) * 100 : 0;
                   
@@ -105,12 +104,12 @@ export default function Bills({
                             </div>
                           </div>
                         </div>
-                        <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight cursor-pointer transition-colors ${bill.isOverdue || bill.payday === "Due Now" ? isDarkMode ? "bg-red-900/30 text-red-400" : "bg-red-50 text-red-600" : isDarkMode ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-900"}`} onClick={() => setSelectedEntry(bill)}>
+                        {/* 🔥 FIX 1: BLUE GLOWING SHADOWS ADDED 🔥 */}
+                        <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight cursor-pointer transition-colors ${bill.isOverdue || bill.payday === "Due Now" ? isDarkMode ? "bg-red-900/30 text-red-400 shadow-[0_8px_16px_rgba(239,68,68,0.2)]" : "bg-red-50 text-red-600 shadow-[0_8px_16px_rgba(239,68,68,0.2)]" : isDarkMode ? "bg-[#1877F2]/10 text-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.2)]" : "bg-blue-50 text-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.2)]"}`} onClick={() => setSelectedEntry(bill)}>
                           ${bill.amount.toFixed(2)}
                         </div>
                       </div>
 
-                      {/* 🔥 THE DEBT DEMOLITION BAR (LEFT TO PAY) 🔥 */}
                       {bill.isInstallment && !bill.isPaid && (
                         <div className={`mt-4 pt-3 border-t w-full animate-fade-in ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
                           <div className="flex justify-between items-end mb-2 px-1">

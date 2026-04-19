@@ -133,6 +133,10 @@ export default function Dashboard({
     }
   });
 
+  // === 🔥 MONTHLY FOOTPRINT ENGINE 🔥 ===
+  const totalActiveBillsAmount = bills.filter(b => !b.isPaid).reduce((sum, b) => sum + b.amount, 0);
+  const currentMonthName = new Date().toLocaleString('default', { month: 'long' });
+
   // === GRAPHIC HEADER (UNCHANGED MACRO VIEW) ===
   const graphicContent = (
     <div className="flex items-center justify-between relative z-10 mb-6 w-full">
@@ -306,7 +310,6 @@ export default function Dashboard({
                        <h3 className={`text-[11px] font-black uppercase tracking-widest ${isDueNow ? "text-red-500" : isDarkMode ? "text-slate-300" : "text-slate-700"}`}>{payday}</h3>
                        <div className="text-slate-400">{isCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}</div>
                      </div>
-                     {/* 🔥 HEADER BALANCES PIVOTED TO SIGNATURE BLUE 🔥 */}
                      <span className={`text-xs font-black ${isDueNow ? "text-red-500" : "text-[#1877F2]"}`}>
                        ${checkTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                      </span>
@@ -340,7 +343,6 @@ export default function Dashboard({
                                   </div>
                                 </div>
                               </div>
-                              {/* 🔥 INDIVIDUAL ENTRY BALANCES PIVOTED TO SIGNATURE BLUE 🔥 */}
                               <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight cursor-pointer transition-colors ${bill.isOverdue ? isDarkMode ? "bg-red-900/30 text-red-400" : "bg-red-50 text-red-600" : isDarkMode ? "bg-[#1877F2]/10 text-[#1877F2]" : "bg-blue-50 text-[#1877F2]"}`} onClick={() => setSelectedEntry(bill)}>
                                 ${bill.amount.toFixed(2)}
                               </div>
@@ -354,6 +356,17 @@ export default function Dashboard({
               </div>
             );
           })}
+        </div>
+
+        {/* 🔥 FIX #3: THE MONTHLY FOOTPRINT VAULT 🔥 */}
+        <div className={`rounded-3xl p-5 border shadow-sm flex items-center justify-between mt-6 ${isDarkMode ? "bg-slate-800/40 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Active Bills</p>
+            <p className={`text-xs font-bold mt-0.5 ${isDarkMode ? "text-slate-500" : "text-slate-500"}`}>For {currentMonthName}</p>
+          </div>
+          <span className={`text-xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+            ${totalActiveBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+          </span>
         </div>
 
         <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800 mt-8">

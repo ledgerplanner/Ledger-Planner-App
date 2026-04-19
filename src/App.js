@@ -274,7 +274,7 @@ export default function App() {
 
   // === 🔥 SETTINGS VAULT ACTIONS 🔥 ===
   const handleUpdateIdentity = async () => {
-    if (!editName.trim()) return;
+    if (!(editName || "").trim()) return;
     if (isDemoMode) {
       triggerVictory(); setIsSettingsOpen(false); return;
     }
@@ -606,6 +606,8 @@ export default function App() {
     <header className={`px-6 pt-12 pb-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden mb-8 z-30 rounded-b-[3rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
       <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#1877F2]/10 rounded-full blur-3xl"></div>
       <div className="flex justify-between items-center mb-6 relative z-30 h-10">
+        
+        {/* LEFT SIDE: Core Utilities */}
         <div className="flex items-center gap-2">
           <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
             {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
@@ -614,18 +616,24 @@ export default function App() {
             <Bell size={18} />
             {(!isPushEnabled || activeAlerts.length > 0) && <span className={`absolute top-2 right-2.5 w-2 h-2 rounded-full border-2 ${isDarkMode ? "border-[#1E293B]" : "border-white"} ${activeAlerts.some(a => a.type === 'danger' || a.type === 'warning') ? "bg-red-50" : "bg-[#1877F2]"}`}></span>}
           </button>
-          {/* 🔥 SETTINGS GEAR INJECTED HERE 🔥 */}
-          <button onClick={() => { setEditName(userName); setIsSettingsOpen(true); }} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
-            <Settings size={18} />
-          </button>
         </div>
+        
+        {/* CENTER: Mobile Logo */}
         <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center z-20 origin-top -top-5 lg:hidden">
           <img src="/login-logo.png" alt="Ledger Planner" className={`w-16 h-16 rounded-full shadow-[0_8px_20px_rgba(24,119,242,0.2)] object-cover border-[3px] transition-colors ${isDarkMode ? "border-slate-800" : "border-white"}`} />
         </div>
-        <button onClick={handleLogout} className={`h-10 px-3.5 rounded-full flex items-center justify-center gap-2 border transition-colors shadow-sm lg:hidden ${isDarkMode ? "bg-slate-800 border-slate-700 text-red-400 hover:bg-red-900/30" : "bg-white border-slate-100 text-red-500 hover:bg-red-50"}`}>
-          <LogOut size={14} strokeWidth={2.5} />
-          <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">{isDemoMode ? "Exit" : "Logout"}</span>
-        </button>
+        
+        {/* RIGHT SIDE: Settings & Logout (Grouped perfectly) */}
+        <div className="flex items-center gap-2">
+          <button onClick={() => { setEditName(userName || ""); setIsSettingsOpen(true); }} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm lg:hidden ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
+            <Settings size={18} />
+          </button>
+          <button onClick={handleLogout} className={`h-10 px-3.5 rounded-full flex items-center justify-center gap-2 border transition-colors shadow-sm lg:hidden ${isDarkMode ? "bg-slate-800 border-slate-700 text-red-400 hover:bg-red-900/30" : "bg-white border-slate-100 text-red-500 hover:bg-red-50"}`}>
+            <LogOut size={14} strokeWidth={2.5} />
+            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">{isDemoMode ? "Exit" : "Logout"}</span>
+          </button>
+        </div>
+
       </div>
       <div className="relative z-10 flex justify-center px-1 mb-6">
         <h2 title={title} className={`text-3xl font-black tracking-tight leading-tight truncate max-w-full ${isDarkMode ? "text-white" : "text-slate-900"}`}>{title}</h2>
@@ -779,7 +787,7 @@ export default function App() {
             <button onClick={() => setIsQabOpen(true)} className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-white bg-[#1877F2] font-black uppercase tracking-widest text-xs transition-transform active:scale-95 hover:-translate-y-1`}><Plus size={18} /> Quick Add</button>
             
             {/* 🔥 DESKTOP SETTINGS BUTTON 🔥 */}
-            <button onClick={() => { setEditName(userName); setIsSettingsOpen(true); }} className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800/50 border-slate-700 text-slate-300 hover:text-white" : "bg-white border-slate-100 text-slate-500 hover:text-slate-900"}`}>
+            <button onClick={() => { setEditName(userName || ""); setIsSettingsOpen(true); }} className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800/50 border-slate-700 text-slate-300 hover:text-white" : "bg-white border-slate-100 text-slate-500 hover:text-slate-900"}`}>
               <Settings size={16} strokeWidth={2.5} />
               <span className="text-[10px] font-black uppercase tracking-widest">Settings</span>
             </button>
@@ -836,15 +844,15 @@ export default function App() {
                       <label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest text-slate-500">Preferred Name</label>
                       <input 
                         type="text" 
-                        value={editName} 
+                        value={editName || ""} 
                         onChange={(e) => setEditName(e.target.value)} 
                         className={`w-full pt-6 pb-2 px-5 rounded-xl font-bold border focus:outline-none transition-colors ${isDarkMode ? "bg-[#1E293B] border-slate-600 text-white" : "bg-white border-slate-200 text-slate-900"}`} 
                       />
                     </div>
                     <button 
                       onClick={handleUpdateIdentity} 
-                      disabled={!editName.trim() || editName === userName}
-                      className={`w-full py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 ${(!editName.trim() || editName === userName) ? "bg-slate-300 text-slate-500 cursor-not-allowed" : "bg-[#1877F2] text-white shadow-[0_4px_12px_rgba(24,119,242,0.3)]"}`}
+                      disabled={!(editName || "").trim() || editName === userName}
+                      className={`w-full py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 ${(!(editName || "").trim() || editName === userName) ? "bg-slate-300 text-slate-500 cursor-not-allowed" : "bg-[#1877F2] text-white shadow-[0_4px_12px_rgba(24,119,242,0.3)]"}`}
                     >
                       Update Identity
                     </button>

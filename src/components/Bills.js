@@ -78,51 +78,61 @@ export default function Bills({
             /* 🔥 THE BENTO BOX MAIN CARD 🔥 */
             <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
               <div className="space-y-3">
-                {unpaidBills.map((bill) => (
-                  /* 🔥 THE INDIVIDUAL INNER CARD 🔥 */
-                  <div key={bill.id} className={`flex flex-col p-3.5 rounded-2xl border shadow-sm transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4 flex-1">
-                        <div className="relative p-1 z-10 cursor-pointer" onClick={() => handleBillClick(bill.id)}>
-                          <Circle className={`${isDarkMode ? "text-slate-600 hover:text-slate-500" : "text-slate-300 hover:text-slate-400"} hover:scale-110 transition-transform`} size={28} />
-                        </div>
-                        <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => setSelectedEntry(bill)}>
-                          <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${bill.isOverdue || bill.payday === "Due Now" ? isDarkMode ? "bg-red-900/20 border-red-900/50" : "bg-red-50 border-red-100" : isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>{bill.icon}</div>
-                          <div>
-                            <div className="flex items-center gap-1.5">
-                              <p className={`font-bold text-sm ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{bill.name}</p>
-                              {bill.isRecurring && !bill.isPaid && <RefreshCw size={12} className="text-[#10B981] shrink-0" />}
+                {unpaidBills.map((bill) => {
+                  // 🔥 FIX 2: INSTALLMENT PROGRESS MATH 🔥
+                  const leftToPay = Math.max(0, (bill.totalAmount || 0) - (bill.paidAmount || 0));
+                  const remainingPct = bill.totalAmount > 0 ? (leftToPay / bill.totalAmount) * 100 : 0;
+                  
+                  return (
+                    /* 🔥 THE INDIVIDUAL INNER CARD 🔥 */
+                    <div key={bill.id} className={`flex flex-col p-3.5 rounded-2xl border shadow-sm transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4 flex-1">
+                          <div className="relative p-1 z-10 cursor-pointer" onClick={() => handleBillClick(bill.id)}>
+                            <Circle className={`${isDarkMode ? "text-slate-600 hover:text-slate-500" : "text-slate-300 hover:text-slate-400"} hover:scale-110 transition-transform`} size={28} />
+                          </div>
+                          <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => setSelectedEntry(bill)}>
+                            <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${bill.isOverdue || bill.payday === "Due Now" ? isDarkMode ? "bg-red-900/20 border-red-900/50" : "bg-red-50 border-red-100" : isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>{bill.icon}</div>
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <p className={`font-bold text-sm ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{bill.name}</p>
+                                {bill.isRecurring && !bill.isPaid && <RefreshCw size={12} className="text-[#10B981] shrink-0" />}
+                              </div>
+                              <p className={`text-[10px] font-bold uppercase tracking-wider ${bill.isOverdue || bill.payday === "Due Now" ? "text-red-500" : isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
+                                {bill.isOverdue ? "Overdue • " : bill.payday === "Due Now" ? "Due Now • " : "Due "} 
+                                {bill.fullDate}
+                              </p>
                             </div>
-                            <p className={`text-[10px] font-bold uppercase tracking-wider ${bill.isOverdue || bill.payday === "Due Now" ? "text-red-500" : isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
-                              {bill.isOverdue ? "Overdue • " : bill.payday === "Due Now" ? "Due Now • " : "Due "} 
-                              {bill.fullDate}
-                            </p>
                           </div>
                         </div>
+                        <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight cursor-pointer transition-colors ${bill.isOverdue || bill.payday === "Due Now" ? isDarkMode ? "bg-red-900/30 text-red-400" : "bg-red-50 text-red-600" : isDarkMode ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-900"}`} onClick={() => setSelectedEntry(bill)}>
+                          ${bill.amount.toFixed(2)}
+                        </div>
                       </div>
-                      <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight cursor-pointer transition-colors ${bill.isOverdue || bill.payday === "Due Now" ? isDarkMode ? "bg-red-900/30 text-red-400" : "bg-red-50 text-red-600" : isDarkMode ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-900"}`} onClick={() => setSelectedEntry(bill)}>
-                        ${bill.amount.toFixed(2)}
-                      </div>
+
+                      {/* 🔥 THE DEBT DEMOLITION BAR (LEFT TO PAY) 🔥 */}
+                      {bill.isInstallment && !bill.isPaid && (
+                        <div className={`mt-4 pt-3 border-t w-full animate-fade-in ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
+                          <div className="flex justify-between items-end mb-2 px-1">
+                            <span className="text-[8px] font-black uppercase tracking-widest text-[#1877F2]">
+                              ${leftToPay.toLocaleString(undefined, { minimumFractionDigits: 2 })} REMAINING
+                            </span>
+                            <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">
+                              OF ${(bill.totalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                          <div className={`w-full h-2 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-900 shadow-inner" : "bg-slate-200"}`}>
+                            <div 
+                              className="h-full bg-[#1877F2] transition-all duration-500 ease-out" 
+                              style={{ width: `${Math.min(remainingPct, 100)}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      )}
+
                     </div>
-
-                    {/* 🔥 THE GROUNDED PROGRESS FOOTER (DARK MODE FIXED) 🔥 */}
-                    {bill.isInstallment && !bill.isPaid && (
-                      <div className={`mt-4 pt-3 border-t w-full animate-fade-in ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
-                        <div className="flex justify-between items-end mb-2 px-1">
-                          <span className="text-[8px] font-black uppercase tracking-widest text-[#1877F2]">${(bill.paidAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} PAID</span>
-                          <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">${(bill.totalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} TOTAL</span>
-                        </div>
-                        <div className={`w-full h-2 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-900 shadow-inner" : "bg-slate-200"}`}>
-                          <div 
-                            className="h-full bg-[#1877F2] transition-all duration-500 ease-out" 
-                            style={{ width: `${Math.min(((bill.paidAmount || 0) / (bill.totalAmount || 1)) * 100, 100)}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    )}
-
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

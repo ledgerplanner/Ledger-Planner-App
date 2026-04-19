@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Circle, CheckCircle2, ChevronUp, ChevronDown, Settings2, List, AlertCircle, RefreshCw, Zap } from "lucide-react";
+import { Circle, CheckCircle2, ChevronUp, ChevronDown, Settings2, List, AlertCircle, RefreshCw } from "lucide-react";
 import { getToken } from "firebase/messaging";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db, messaging } from "../firebase";
@@ -244,8 +244,7 @@ export default function Dashboard({
             {/* MODULE HEADER */}
             <div className={`px-4 py-3 flex items-center justify-between border-b ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
               <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-full bg-gradient-to-br from-[#1877F2] to-indigo-600 shadow-sm"><Zap size={12} className="text-white" /></div>
-                <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>Intelligence</span>
+                <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>🤖 L.P. AI Assistant</span>
               </div>
               <span className={`text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
                 {(hasConsumedAMBriefing && isMorningWindow) || (hasConsumedPMBriefing && isEveningWindow) ? "Consumed" : "Active"}
@@ -267,8 +266,8 @@ export default function Dashboard({
                 <div className="animate-fade-in space-y-4">
                   <p className={`text-xs font-bold leading-relaxed ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>"{activeBriefingText}"</p>
                   <div className="pt-3 border-t border-dashed border-slate-200 dark:border-slate-700 flex flex-col">
-                    <p className={`text-xs font-bold ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{isMorningWindow ? "Let's have a great day!" : "It's been a great day, enjoy your evening!"}</p>
-                    <p className={`text-[9px] font-black uppercase tracking-widest mt-1 ${isDarkMode ? "text-indigo-400" : "text-indigo-600"}`}>Your LP Financial Expert 💼</p>
+                    <p className={`text-xs font-bold text-[#1877F2]`}>{isMorningWindow ? "Let's have a great day!" : "It's been a great day, enjoy your evening!"}</p>
+                    <p className={`text-[9px] font-black uppercase tracking-widest mt-1 text-[#1877F2]`}>Your Ledger Planner Financial Expert 💼</p>
                   </div>
                 </div>
               ) : (
@@ -279,7 +278,7 @@ export default function Dashboard({
                        onClick={() => handleRunBriefing("AM")} 
                        className={`w-full py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md ${isDarkMode ? "bg-indigo-600/20 border border-indigo-500/30 text-indigo-400" : "bg-indigo-50 border border-indigo-100 text-indigo-600 hover:bg-indigo-100"}`}
                      >
-                       <RefreshCw size={16} className="text-indigo-500" /> Summarize Yesterday
+                       <RefreshCw size={16} className="text-indigo-500" /> Tell Me About Yesterday L.P.
                      </button>
                   )}
 
@@ -289,7 +288,7 @@ export default function Dashboard({
                        onClick={() => handleRunBriefing("PM")} 
                        className={`w-full py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md ${isDarkMode ? "bg-[#1877F2]/20 border border-[#1877F2]/30 text-[#1877F2]" : "bg-blue-50 border border-blue-100 text-[#1877F2] hover:bg-blue-100"}`}
                      >
-                       <CheckCircle2 size={16} className="text-[#1877F2]" /> Secure Today's Ledger
+                       <CheckCircle2 size={16} className="text-[#1877F2]" /> Let's Take A Look At Today L.P.
                      </button>
                   )}
 

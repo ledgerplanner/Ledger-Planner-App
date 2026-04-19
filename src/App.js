@@ -266,6 +266,7 @@ export default function App() {
   };
 
   const changeTab = (tabId) => { 
+    triggerHaptic(); // 🔥 HAPTICS INJECTED HERE
     setActiveTab(tabId); 
     if (tabId === "activity") { setActivityFilter("All"); setActivitySearch(""); }
     if (scrollRef.current) scrollRef.current.scrollTo({ top: 0, behavior: "smooth" }); 

@@ -251,7 +251,6 @@ export default function Dashboard({
                 
                 {isDueNow ? (
                   <div className="flex flex-col items-center text-center mt-2 w-full">
-                    {/* 🔥 FIXED TO ALWAYS BE RED 🔥 */}
                     <p className={`text-3xl font-black tracking-tight mb-1 text-red-500`}>
                       ${unpaidBillsTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                     </p>
@@ -385,8 +384,8 @@ export default function Dashboard({
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{tx.date}</p>
                       </div>
                     </div>
-                    {/* 🔥 THE SHADED VAULT (ORANGE VS GREEN) 🔥 */}
-                    <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight shrink-0 ml-2 transition-colors ${tx.type === "Income" ? isDarkMode ? "bg-emerald-900/30 text-emerald-400" : "bg-emerald-50 text-emerald-600" : isDarkMode ? "bg-orange-900/30 text-orange-400" : "bg-orange-50 text-orange-600"}`}>
+                    {/* 🔥 SHADED VAULT WITH GLOWING SHADOWS 🔥 */}
+                    <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight shrink-0 ml-2 transition-colors ${tx.type === "Income" ? isDarkMode ? "bg-emerald-900/30 text-emerald-400 shadow-[0_8px_16px_rgba(16,185,129,0.2)]" : "bg-emerald-50 text-emerald-600 shadow-[0_8px_16px_rgba(16,185,129,0.2)]" : isDarkMode ? "bg-orange-900/30 text-orange-400 shadow-[0_8px_16px_rgba(249,115,22,0.2)]" : "bg-orange-50 text-orange-600 shadow-[0_8px_16px_rgba(249,115,22,0.2)]"}`}>
                       {tx.type === "Income" ? "+" : "-"}${tx.amount.toFixed(2)}
                     </div>
                   </div>

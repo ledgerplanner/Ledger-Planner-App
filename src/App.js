@@ -704,7 +704,11 @@ export default function App() {
   };
 
   return (
-    <div className={`h-screen w-full font-sans relative flex transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
+    // 🔥 FIXED: Added global context menu block and non-selectable UI wrapper 🔥
+    <div 
+      onContextMenu={(e) => e.preventDefault()} 
+      className={`h-screen w-full font-sans relative flex transition-colors duration-500 select-none [-webkit-touch-callout:none] ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}
+    >
       <div className={`w-full h-full relative flex flex-col lg:flex-row transition-colors duration-500 overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
         
         {/* DESKTOP SIDEBAR */}
@@ -1092,7 +1096,6 @@ export default function App() {
                           return ( <button key={btn} onClick={() => handleNumpad(btn)} className={`w-full h-14 rounded-2xl text-2xl font-bold flex items-center justify-center bg-slate-100 transition-all active:scale-95 active:bg-slate-200 touch-manipulation`}> {btn} </button> );
                         })}
                       </div>
-                      {/* 🔥 FIX: ADDED SHRINK-0 AND PADDING TWEAK FOR DESKTOP 🔥 */}
                       <button 
                         onClick={() => { if (isQabAmountValid) setQabStep(2); }} 
                         disabled={!isQabAmountValid} 

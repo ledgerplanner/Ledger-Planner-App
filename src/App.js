@@ -291,12 +291,21 @@ export default function App() {
     }
   };
 
+  // 🔥 FIX #1: THE FULL SCALE EDIT DRAWER (SAVE LOGIC) 🔥
   const handleSaveEntryEdit = async () => {
     if (!selectedEntry) return;
     const colName = selectedEntry.fullDate !== undefined ? "bills" : "transactions";
-    const updatePayload = { name: editEntryData.name || selectedEntry.name, amount: parseFloat(editEntryData.amount) || 0, category: editEntryData.category || selectedEntry.category, icon: editEntryData.icon || selectedEntry.icon };
+    
+    // We expand the update payload to catch the new Installment / Recurring state
+    const updatePayload = { 
+      name: editEntryData.name || selectedEntry.name, 
+      amount: parseFloat(editEntryData.amount) || 0, 
+      category: editEntryData.category || selectedEntry.category, 
+      icon: editEntryData.icon || selectedEntry.icon 
+    };
     
     if (selectedEntry.fullDate !== undefined) {
+        // Handle Date Logic
         if (editEntryData.rawDate && editEntryData.rawDate !== selectedEntry.rawDate) {
             const dateObj = new Date(editEntryData.rawDate);
             updatePayload.rawDate = editEntryData.rawDate;
@@ -307,6 +316,17 @@ export default function App() {
             const localBillDate = new Date(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate());
             updatePayload.isOverdue = localBillDate < todayLocal;
             if (localBillDate.getTime() === todayLocal.getTime()) updatePayload.payday = "Due Now";
+        }
+        
+        // Handle Toggles and Math
+        updatePayload.isRecurring = editEntryData.isRecurring;
+        updatePayload.isInstallment = editEntryData.isInstallment;
+        if (editEntryData.isInstallment) {
+          updatePayload.totalAmount = parseFloat(editEntryData.totalAmount) || 0;
+          updatePayload.paidAmount = parseFloat(editEntryData.paidAmount) || 0;
+        } else {
+          updatePayload.totalAmount = 0;
+          updatePayload.paidAmount = 0;
         }
     }
     
@@ -782,7 +802,6 @@ export default function App() {
           </div>
         )}
 
-        {/* 🔥 FIX #1: ADD ACCOUNT DRAWER NOW HAS ACCOUNT DETAILS 🔥 */}
         {isAddAccountOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsAddAccountOpen(false)}></div>
@@ -833,7 +852,6 @@ export default function App() {
           </div>
         )}
 
-        {/* 🔥 FIX #2: QUICK UPDATE MODAL NOW "EDIT ACCOUNT" WITH DETAILS 🔥 */}
         {selectedAccount && !isAddAccountOpen && !isTransferOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedAccount(null)}></div>
@@ -901,23 +919,23 @@ export default function App() {
           </div>
         )}
 
-        {/* 🔥 ENTRY DETAILS MODAL WITH COLOR ENGINE 🔥 */}
+        {/* 🔥 FIX #1: THE FULL SCALE EDIT DRAWER 🔥 */}
         {selectedEntry && !selectedAccount && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={closeEntryDrawer}></div>
-            <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
-              <div className="p-6 border-b flex justify-between items-center">
+            <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col max-h-[95vh] transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+              <div className="p-6 border-b flex justify-between items-center shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg bg-slate-100">{isEditingEntry ? (editEntryData.icon || selectedEntry.icon) : selectedEntry.icon}</div>
                   <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{isEditingEntry ? "Edit Entry" : "Entry Details"}</h3>
                 </div>
                 <div className="flex items-center gap-2">
-                  {!isEditingEntry && (<button onClick={() => { setIsEditingEntry(true); setEditEntryData({ name: selectedEntry.name, amount: selectedEntry.amount, category: selectedEntry.category, icon: selectedEntry.icon, rawDate: selectedEntry.rawDate || "" }); }} className={closeButtonClass}><Edit2 size={16} /></button>)}
+                  {!isEditingEntry && (<button onClick={() => { setIsEditingEntry(true); setEditEntryData({ name: selectedEntry.name, amount: selectedEntry.amount, category: selectedEntry.category, icon: selectedEntry.icon, rawDate: selectedEntry.rawDate || "", isRecurring: selectedEntry.isRecurring || false, isInstallment: selectedEntry.isInstallment || false, totalAmount: selectedEntry.totalAmount || "", paidAmount: selectedEntry.paidAmount || "" }); }} className={closeButtonClass}><Edit2 size={16} /></button>)}
                   <button onClick={closeEntryDrawer} className={closeButtonClass}><X size={18} /></button>
                 </div>
               </div>
               
-              <div className={`p-6 space-y-6 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+              <div className={`p-6 space-y-6 overflow-y-auto ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
                 {!isEditingEntry ? (
                   <>
                     <div className="text-center">
@@ -971,7 +989,34 @@ export default function App() {
                     <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Amount</label><input type="number" value={editEntryData.amount || ""} onChange={(e) => setEditEntryData({...editEntryData, amount: e.target.value})} className="w-full pt-6 pb-2 px-5 rounded-2xl border" /></div>
                     <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Icon</label><select value={editEntryData.icon || ""} onChange={(e) => setEditEntryData({...editEntryData, icon: e.target.value})} className="w-full pt-6 pb-2 px-5 rounded-2xl border">{categoryEmojis.map((emoji) => (<option key={emoji} value={emoji}>{emoji}</option>))}</select></div>
                     <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Category</label><select value={editEntryData.category || ""} onChange={(e) => setEditEntryData({...editEntryData, category: e.target.value})} className="w-full pt-6 pb-2 px-5 rounded-2xl border">{modernCategories.map(group => ( <optgroup key={group.group} label={group.group}> {group.items.map(item => <option key={item} value={item}>{item}</option>)} </optgroup> ))}</select></div>
-                    {selectedEntry.fullDate !== undefined && (<div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Due Date</label><input type="date" value={editEntryData.rawDate || ""} onChange={(e) => setEditEntryData({...editEntryData, rawDate: e.target.value})} className="w-full pt-6 pb-2 px-5 rounded-2xl border" /></div>)}
+                    
+                    {/* EDIT BILLS: INSTALLMENTS, RECURRING & DATES */}
+                    {selectedEntry.fullDate !== undefined && (
+                      <>
+                        <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Due Date</label><input type="date" value={editEntryData.rawDate || ""} onChange={(e) => setEditEntryData({...editEntryData, rawDate: e.target.value})} className="w-full pt-6 pb-2 px-5 rounded-2xl border" /></div>
+                        
+                        <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Recurring Bill</span>
+                            <button onClick={() => setEditEntryData({...editEntryData, isRecurring: !editEntryData.isRecurring})} className={`w-12 h-6 rounded-full transition-colors relative ${editEntryData.isRecurring ? "bg-[#1877F2]" : "bg-slate-300 dark:bg-slate-700"}`}>
+                              <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${editEntryData.isRecurring ? "translate-x-7" : "translate-x-1"}`}></div>
+                            </button>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Installment Plan</span>
+                            <button onClick={() => setEditEntryData({...editEntryData, isInstallment: !editEntryData.isInstallment})} className={`w-12 h-6 rounded-full transition-colors relative ${editEntryData.isInstallment ? "bg-[#1877F2]" : "bg-slate-300 dark:bg-slate-700"}`}>
+                              <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${editEntryData.isInstallment ? "translate-x-7" : "translate-x-1"}`}></div>
+                            </button>
+                          </div>
+                          {editEntryData.isInstallment && (
+                            <div className="grid grid-cols-2 gap-3 animate-fade-in mt-2">
+                              <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Total Amount</label><input type="number" value={editEntryData.totalAmount || ""} onChange={(e) => setEditEntryData({...editEntryData, totalAmount: e.target.value})} className="w-full pt-6 pb-2 px-5 rounded-2xl border" /></div>
+                              <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Already Paid</label><input type="number" value={editEntryData.paidAmount || ""} onChange={(e) => setEditEntryData({...editEntryData, paidAmount: e.target.value})} className="w-full pt-6 pb-2 px-5 rounded-2xl border" /></div>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
                     <button onClick={handleSaveEntryEdit} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><Save size={16} /> Save Changes</button>
                   </div>
                 )}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Circle, CheckCircle2, ChevronUp, ChevronDown, Settings2, List, AlertCircle, RefreshCw } from "lucide-react";
+import { Circle, CheckCircle2, ChevronUp, ChevronDown, Settings2, List, AlertCircle, RefreshCw, Zap } from "lucide-react";
 import { getToken } from "firebase/messaging";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db, messaging } from "../firebase";
@@ -20,7 +20,11 @@ export default function Dashboard({
   isDarkMode,
   formatPaydayDateStr,
   renderHeroShell,
-  changeTab
+  changeTab,
+  hasConsumedAMBriefing,
+  setHasConsumedAMBriefing,
+  hasConsumedPMBriefing,
+  setHasConsumedPMBriefing
 }) {
   // === 🔔 NOTIFICATION STATE ENGINE ===
   const [isPushEnabled, setIsPushEnabled] = useState(false);
@@ -137,6 +141,29 @@ export default function Dashboard({
   const totalActiveBillsAmount = bills.filter(b => !b.isPaid).reduce((sum, b) => sum + b.amount, 0);
   const currentMonthName = new Date().toLocaleString('default', { month: 'long' });
 
+  // === 🧠 LP ASSISTANT TIME-GATE ENGINE 🧠 ===
+  const [isBriefingLoading, setIsBriefingLoading] = useState(false);
+  const [activeBriefingText, setActiveBriefingText] = useState("");
+  
+  const isMorningWindow = currentHour >= 5 && currentHour < 16; 
+  const isEveningWindow = currentHour >= 16; 
+  const isPhantomZone = currentHour >= 0 && currentHour < 5; 
+
+  const handleRunBriefing = (type) => {
+    setIsBriefingLoading(true);
+    // Simulate AI thinking time
+    setTimeout(() => {
+      setIsBriefingLoading(false);
+      if (type === "AM") {
+        setHasConsumedAMBriefing(true);
+        setActiveBriefingText("Solid discipline yesterday. You kept discretionary spending to an absolute minimum and didn't touch your weekend buffer. Your debt load is holding steady. Keep this momentum rolling today.");
+      } else {
+        setHasConsumedPMBriefing(true);
+        setActiveBriefingText("Ledger secured. You cleared your major bills today without breaking a sweat. Tomorrow is quiet with zero scheduled payments. Rest easy, you are mathematically in the green.");
+      }
+    }, 1500);
+  };
+
   // === GRAPHIC HEADER (UNCHANGED MACRO VIEW) ===
   const graphicContent = (
     <div className="flex items-center justify-between relative z-10 mb-6 w-full">
@@ -208,6 +235,77 @@ export default function Dashboard({
 
       <main className="px-6 space-y-4">
         
+        {/* ====================================================================== */}
+        {/* 🔥 NEW DASHBOARD INTELLIGENCE MODULE 🔥 */}
+        {/* ====================================================================== */}
+        {!isPhantomZone && (
+          <div className={`rounded-3xl border shadow-sm transition-all duration-500 overflow-hidden ${isDarkMode ? "bg-slate-800/40 border-slate-700" : "bg-white border-slate-200"} ${(hasConsumedAMBriefing && isMorningWindow) || (hasConsumedPMBriefing && isEveningWindow) ? "mb-2" : "mb-4"}`}>
+            
+            {/* MODULE HEADER */}
+            <div className={`px-4 py-3 flex items-center justify-between border-b ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-full bg-gradient-to-br from-[#1877F2] to-indigo-600 shadow-sm"><Zap size={12} className="text-white" /></div>
+                <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>Intelligence</span>
+              </div>
+              <span className={`text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
+                {(hasConsumedAMBriefing && isMorningWindow) || (hasConsumedPMBriefing && isEveningWindow) ? "Consumed" : "Active"}
+              </span>
+            </div>
+
+            {/* MODULE BODY */}
+            <div className="p-4">
+              {isBriefingLoading ? (
+                <div className="flex flex-col items-center justify-center py-4 space-y-3">
+                  <div className="flex gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-[#1877F2] animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-2 h-2 rounded-full bg-[#1877F2] animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-2 h-2 rounded-full bg-[#1877F2] animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  </div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Analyzing Ledger...</p>
+                </div>
+              ) : activeBriefingText ? (
+                <div className="animate-fade-in space-y-4">
+                  <p className={`text-xs font-bold leading-relaxed ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>"{activeBriefingText}"</p>
+                  <div className="pt-3 border-t border-dashed border-slate-200 dark:border-slate-700 flex flex-col">
+                    <p className={`text-xs font-bold ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{isMorningWindow ? "Let's have a great day!" : "It's been a great day, enjoy your evening!"}</p>
+                    <p className={`text-[9px] font-black uppercase tracking-widest mt-1 ${isDarkMode ? "text-indigo-400" : "text-indigo-600"}`}>Your LP Financial Expert 💼</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* MORNING WINDOW: Summarize Yesterday */}
+                  {isMorningWindow && !hasConsumedAMBriefing && (
+                     <button 
+                       onClick={() => handleRunBriefing("AM")} 
+                       className={`w-full py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md ${isDarkMode ? "bg-indigo-600/20 border border-indigo-500/30 text-indigo-400" : "bg-indigo-50 border border-indigo-100 text-indigo-600 hover:bg-indigo-100"}`}
+                     >
+                       <RefreshCw size={16} className="text-indigo-500" /> Summarize Yesterday
+                     </button>
+                  )}
+
+                  {/* EVENING WINDOW: Summarize Today */}
+                  {isEveningWindow && !hasConsumedPMBriefing && (
+                     <button 
+                       onClick={() => handleRunBriefing("PM")} 
+                       className={`w-full py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md ${isDarkMode ? "bg-[#1877F2]/20 border border-[#1877F2]/30 text-[#1877F2]" : "bg-blue-50 border border-blue-100 text-[#1877F2] hover:bg-blue-100"}`}
+                     >
+                       <CheckCircle2 size={16} className="text-[#1877F2]" /> Secure Today's Ledger
+                     </button>
+                  )}
+
+                  {/* EMPTY STATES */}
+                  {((isMorningWindow && hasConsumedAMBriefing) || (isEveningWindow && hasConsumedPMBriefing)) && !activeBriefingText && (
+                    <div className="flex flex-col items-center justify-center py-2">
+                      <CheckCircle2 size={24} className="text-[#10B981] mb-2 opacity-50" />
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Briefing consumed.<br/>Radar resets {isMorningWindow ? "at 4:00 PM" : "at Midnight"}.</p>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* CENTERED COMMAND BUTTON */}
         <div className="flex justify-center px-1 mt-2 mb-4">
            <button onClick={() => { setEditPaydayConfig(paydayConfig); setIsPaydaySetupOpen(true); }} className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm border ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#1877F2] hover:bg-slate-800" : "bg-white border-slate-200 text-[#1877F2] hover:bg-slate-50"}`}>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Home, Wallet, Calendar as CalendarIcon, CreditCard, CheckSquare,
-  Bell, Moon, Sun, X, Plus, ArrowRight, CheckCircle2, Trash2, ArrowDown, AlertCircle, Edit2, LogOut, RefreshCw, Save, ArrowRightLeft, PlusCircle
+  Bell, Moon, Sun, X, Plus, ArrowRight, CheckCircle2, Trash2, ArrowDown, AlertCircle, Edit2, LogOut, RefreshCw, Save, ArrowRightLeft, PlusCircle, Settings
 } from "lucide-react";
 
 // === FIREBASE INITIALIZATION ===
@@ -16,7 +16,7 @@ import {
   signInWithPopup,
   updateProfile
 } from "firebase/auth";
-import { collection, doc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp } from "firebase/firestore";
+import { collection, doc, setDoc, addDoc, updateDoc, deleteDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp } from "firebase/firestore";
 
 // === DEMO DATA IMPORT ===
 import { demoAccounts, demoBills, demoTransactions, demoTodos, demoPaydayConfig } from "./demoData";
@@ -93,6 +93,11 @@ export default function App() {
   const [selectedTodo, setSelectedTodo] = useState(null);
 
   const [isPushEnabled, setIsPushEnabled] = useState(false);
+
+  // === SETTINGS VAULT STATE ===
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [resetConfirm, setResetConfirm] = useState("");
 
   // === QUICK ADD BUTTON STATE ===
   const [isQabOpen, setIsQabOpen] = useState(false);
@@ -266,6 +271,48 @@ export default function App() {
 
   const openEntryDrawer = (entry) => { setSelectedEntry(entry); setIsEditingEntry(false); };
   const closeEntryDrawer = () => { setSelectedEntry(null); setIsEditingEntry(false); };
+
+  // === 🔥 SETTINGS VAULT ACTIONS 🔥 ===
+  const handleUpdateIdentity = async () => {
+    if (!editName.trim()) return;
+    if (isDemoMode) {
+      triggerVictory(); setIsSettingsOpen(false); return;
+    }
+    try {
+      await updateProfile(auth.currentUser, { displayName: editName });
+      await setDoc(doc(db, "users", user.uid), { firstName: editName }, { merge: true });
+      setUser({ ...user, displayName: editName });
+      triggerVictory(); setIsSettingsOpen(false);
+    } catch (e) {
+      console.error("Failed to update name", e);
+    }
+  };
+
+  const handleFactoryReset = async () => {
+    if (resetConfirm !== "RESET") return;
+    if (isDemoMode) {
+      alert("Factory reset is disabled in Demo Mode.");
+      setResetConfirm(""); setIsSettingsOpen(false); return;
+    }
+    
+    if (window.confirm("FINAL WARNING: This will permanently delete all your data. Proceed?")) {
+      try {
+        const collectionsToClear = ["accounts", "bills", "transactions", "todos"];
+        for (const colName of collectionsToClear) {
+          const q = query(collection(db, "users", user.uid, colName));
+          const snap = await getDocs(q);
+          const promises = snap.docs.map(d => deleteDoc(doc(db, "users", user.uid, colName, d.id)));
+          await Promise.all(promises);
+        }
+        setResetConfirm("");
+        setIsSettingsOpen(false);
+        triggerHaptic();
+        alert("Vault wiped. Welcome to a clean slate.");
+      } catch (e) {
+        console.error("Factory reset failed", e);
+      }
+    }
+  };
 
   const handleBillClick = async (id) => {
     const bill = bills.find(b => b.id === id); 
@@ -567,6 +614,10 @@ export default function App() {
             <Bell size={18} />
             {(!isPushEnabled || activeAlerts.length > 0) && <span className={`absolute top-2 right-2.5 w-2 h-2 rounded-full border-2 ${isDarkMode ? "border-[#1E293B]" : "border-white"} ${activeAlerts.some(a => a.type === 'danger' || a.type === 'warning') ? "bg-red-50" : "bg-[#1877F2]"}`}></span>}
           </button>
+          {/* 🔥 SETTINGS GEAR INJECTED HERE 🔥 */}
+          <button onClick={() => { setEditName(userName); setIsSettingsOpen(true); }} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
+            <Settings size={18} />
+          </button>
         </div>
         <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center z-20 origin-top -top-5 lg:hidden">
           <img src="/login-logo.png" alt="Ledger Planner" className={`w-16 h-16 rounded-full shadow-[0_8px_20px_rgba(24,119,242,0.2)] object-cover border-[3px] transition-colors ${isDarkMode ? "border-slate-800" : "border-white"}`} />
@@ -704,7 +755,6 @@ export default function App() {
   };
 
   return (
-    // 🔥 FIXED: Added global context menu block and non-selectable UI wrapper 🔥
     <div 
       onContextMenu={(e) => e.preventDefault()} 
       className={`h-screen w-full font-sans relative flex transition-colors duration-500 select-none [-webkit-touch-callout:none] ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}
@@ -727,6 +777,13 @@ export default function App() {
           </div>
           <div className="mt-auto space-y-4">
             <button onClick={() => setIsQabOpen(true)} className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-white bg-[#1877F2] font-black uppercase tracking-widest text-xs transition-transform active:scale-95 hover:-translate-y-1`}><Plus size={18} /> Quick Add</button>
+            
+            {/* 🔥 DESKTOP SETTINGS BUTTON 🔥 */}
+            <button onClick={() => { setEditName(userName); setIsSettingsOpen(true); }} className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800/50 border-slate-700 text-slate-300 hover:text-white" : "bg-white border-slate-100 text-slate-500 hover:text-slate-900"}`}>
+              <Settings size={16} strokeWidth={2.5} />
+              <span className="text-[10px] font-black uppercase tracking-widest">Settings</span>
+            </button>
+            
             <button onClick={handleLogout} className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800/50 border-slate-700 text-red-400" : "bg-white border-slate-100 text-red-500"}`}><LogOut size={16} strokeWidth={2.5} /><span className="text-[10px] font-black uppercase tracking-widest">{isDemoMode ? "Exit Demo" : "Logout"}</span></button>
           </div>
         </div>
@@ -754,6 +811,113 @@ export default function App() {
             ))}
           </div>
         </div>
+
+        {/* ====================================================================== */}
+        {/* 🔥 NEW SETTINGS VAULT 🔥 */}
+        {/* ====================================================================== */}
+        {isSettingsOpen && (
+          <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsSettingsOpen(false)}></div>
+            <div className={`w-full lg:max-w-md h-[85vh] rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+              <div className="p-6 border-b flex justify-between items-center shrink-0">
+                <h3 className={`font-black uppercase tracking-widest flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                  <Settings size={18} className="text-slate-400" /> Settings Vault
+                </h3>
+                <button onClick={() => setIsSettingsOpen(false)} className={closeButtonClass}><X size={18} /></button>
+              </div>
+              
+              <div className={`p-6 overflow-y-auto space-y-8 flex-1 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+                
+                {/* IDENTITY ENGINE */}
+                <div className="space-y-3">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">Identity Engine</h4>
+                  <div className={`p-4 rounded-2xl border shadow-sm ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-slate-50 border-slate-100"}`}>
+                    <div className="relative mb-3">
+                      <label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest text-slate-500">Preferred Name</label>
+                      <input 
+                        type="text" 
+                        value={editName} 
+                        onChange={(e) => setEditName(e.target.value)} 
+                        className={`w-full pt-6 pb-2 px-5 rounded-xl font-bold border focus:outline-none transition-colors ${isDarkMode ? "bg-[#1E293B] border-slate-600 text-white" : "bg-white border-slate-200 text-slate-900"}`} 
+                      />
+                    </div>
+                    <button 
+                      onClick={handleUpdateIdentity} 
+                      disabled={!editName.trim() || editName === userName}
+                      className={`w-full py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 ${(!editName.trim() || editName === userName) ? "bg-slate-300 text-slate-500 cursor-not-allowed" : "bg-[#1877F2] text-white shadow-[0_4px_12px_rgba(24,119,242,0.3)]"}`}
+                    >
+                      Update Identity
+                    </button>
+                  </div>
+                </div>
+
+                {/* SUBSCRIPTION */}
+                <div className="space-y-3">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">Subscription</h4>
+                  <div className={`p-4 rounded-2xl border shadow-sm flex items-center justify-between ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-slate-50 border-slate-100"}`}>
+                    <div>
+                      <p className={`font-black text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Ledger Planner Pro</p>
+                      <p className="text-[10px] font-bold text-[#10B981] uppercase tracking-widest mt-0.5">Active</p>
+                    </div>
+                    <button 
+                      onClick={() => alert("Subscription portal connecting...")} 
+                      className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-colors ${isDarkMode ? "bg-slate-800 border-slate-600 text-white hover:bg-slate-700" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100"}`}
+                    >
+                      Manage
+                    </button>
+                  </div>
+                </div>
+
+                {/* AI ASSISTANT TEASER */}
+                <div className="space-y-3">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">Intelligence</h4>
+                  <div className="p-5 rounded-2xl border border-transparent shadow-lg bg-gradient-to-br from-[#1877F2] to-indigo-600 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-20"><Zap size={60} className="text-white" /></div>
+                    <div className="relative z-10">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-black text-white text-lg tracking-tight">LP Assistant</p>
+                        <span className="bg-white/20 text-white px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest">Coming Soon</span>
+                      </div>
+                      <p className="text-xs text-blue-100 font-bold mb-4 w-4/5 leading-relaxed">Your personal AI wealth architect. Ask questions, analyze spending, and build custom financial roadmaps instantly.</p>
+                      <button disabled className="bg-white/10 border border-white/20 text-white/50 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest cursor-not-allowed">
+                        Awaiting Activation
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* FACTORY RESET */}
+                <div className="space-y-3">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">Danger Zone</h4>
+                  <div className={`p-5 rounded-2xl border shadow-sm ${isDarkMode ? "bg-red-900/10 border-red-900/30" : "bg-red-50 border-red-100"}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertCircle size={16} className="text-red-500" />
+                      <p className={`font-black text-sm ${isDarkMode ? "text-red-400" : "text-red-600"}`}>Factory Reset</p>
+                    </div>
+                    <p className={`text-xs font-bold mb-4 leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
+                      This will permanently wipe all accounts, bills, transactions, and tasks. Type <strong className="text-red-500">RESET</strong> to unlock.
+                    </p>
+                    <input 
+                      type="text" 
+                      placeholder="Type RESET"
+                      value={resetConfirm} 
+                      onChange={(e) => setResetConfirm(e.target.value)} 
+                      className={`w-full py-3 px-4 rounded-xl font-bold text-sm text-center tracking-widest border mb-3 focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white focus:border-red-500" : "bg-white border-slate-200 text-slate-900 focus:border-red-500"}`} 
+                    />
+                    <button 
+                      onClick={handleFactoryReset} 
+                      disabled={resetConfirm !== "RESET"}
+                      className={`w-full py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${resetConfirm === "RESET" ? "bg-red-500 text-white shadow-[0_4px_12px_rgba(239,68,68,0.3)] active:scale-95" : "bg-slate-300 text-slate-500 cursor-not-allowed"}`}
+                    >
+                      Wipe Data Vault
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* MODALS WITH SAFE DEMO BUFFERS AND ENHANCED UI */}
         

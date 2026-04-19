@@ -187,8 +187,8 @@ export default function Activity({
                         </p>
                       </div>
                     </div>
-                    {/* 🔥 THE SHADED VAULT 🔥 */}
-                    <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight shrink-0 ml-2 transition-colors ${tx.type === "Income" ? isDarkMode ? "bg-emerald-900/30 text-emerald-400" : "bg-emerald-50 text-emerald-600" : isDarkMode ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-900"}`}>
+                    {/* 🔥 FIX 2: EMERALD / ORANGE GLOWING SHADOWS ADDED 🔥 */}
+                    <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight shrink-0 ml-2 transition-colors ${tx.type === "Income" ? isDarkMode ? "bg-emerald-900/30 text-emerald-400 shadow-[0_8px_16px_rgba(16,185,129,0.2)]" : "bg-emerald-50 text-emerald-600 shadow-[0_8px_16px_rgba(16,185,129,0.2)]" : isDarkMode ? "bg-orange-900/30 text-orange-400 shadow-[0_8px_16px_rgba(249,115,22,0.2)]" : "bg-orange-50 text-orange-600 shadow-[0_8px_16px_rgba(249,115,22,0.2)]"}`}>
                       {tx.type === "Income" ? "+" : "-"}${tx.amount.toFixed(2)}
                     </div>
                   </div>

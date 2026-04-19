@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Home, Wallet, Calendar as CalendarIcon, CreditCard, CheckSquare,
-  Bell, Moon, Sun, X, Plus, ArrowRight, CheckCircle2, Trash2, ArrowDown, AlertCircle, Edit2, LogOut, RefreshCw, Save, ArrowRightLeft, PlusCircle, Settings, Zap
+  Bell, Moon, Sun, X, Plus, ArrowRight, CheckCircle2, Trash2, ArrowDown, AlertCircle, Edit2, LogOut, RefreshCw, Save, ArrowRightLeft, Settings, Zap
 } from "lucide-react";
 
 // === FIREBASE INITIALIZATION ===
@@ -98,6 +98,10 @@ export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editName, setEditName] = useState("");
   const [resetConfirm, setResetConfirm] = useState("");
+
+  // === LP ASSISTANT STATE ===
+  const [hasConsumedAMBriefing, setHasConsumedAMBriefing] = useState(false);
+  const [hasConsumedPMBriefing, setHasConsumedPMBriefing] = useState(false);
 
   // === QUICK ADD BUTTON STATE ===
   const [isQabOpen, setIsQabOpen] = useState(false);
@@ -623,7 +627,7 @@ export default function App() {
           <img src="/login-logo.png" alt="Ledger Planner" className={`w-16 h-16 rounded-full shadow-[0_8px_20px_rgba(24,119,242,0.2)] object-cover border-[3px] transition-colors ${isDarkMode ? "border-slate-800" : "border-white"}`} />
         </div>
         
-        {/* RIGHT SIDE: Settings & Logout (Grouped perfectly) */}
+        {/* RIGHT SIDE: Settings & Logout */}
         <div className="flex items-center gap-2">
           <button onClick={() => { setEditName(userName || ""); setIsSettingsOpen(true); }} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm lg:hidden ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
             <Settings size={18} />
@@ -644,123 +648,6 @@ export default function App() {
       </div>
     </header>
   );
-
-  const confirmPaymentRoute = async () => {
-    const bill = bills.find(b => b.id === paymentModalConfig.billId);
-    const targetAcc = accounts.find(a => a.id === paymentModalConfig.accountId);
-    if (!bill || !targetAcc) return;
-    const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
-    if (isDemoMode) {
-      const txId = `tx_demo_${Date.now()}`;
-      setTransactions([{ id: txId, name: bill.name, icon: bill.icon, amount: bill.amount, date: autoTimeStamp, type: "Expense", category: bill.category || "Bill Payment", accountId: targetAcc.id }, ...transactions]);
-      setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: a.balance - bill.amount } : a));
-      if (bill.isInstallment) {
-        const newPaidAmt = (bill.paidAmount || 0) + bill.amount;
-        if (newPaidAmt >= bill.totalAmount) {
-          setBills(bills.map(b => b.id === bill.id ? { ...b, isPaid: true, paidAmount: newPaidAmt, paidFromAccountId: targetAcc.id, linkedTxId: txId } : b));
-          triggerVictory(); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
-        } else {
-          setBills(bills.map(b => b.id === bill.id ? { ...b, paidAmount: newPaidAmt, isOverdue: false } : b));
-          triggerHaptic(); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" }); setInstallmentPromptConfig({ isOpen: true, billId: bill.id, nextDate: "" });
-        }
-      } else {
-        setBills(bills.map(b => b.id === bill.id ? { ...b, isPaid: true, paidAmount: 0, paidFromAccountId: targetAcc.id, linkedTxId: txId } : b));
-        triggerVictory(); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
-      }
-    } else {
-      const txRef = await addDoc(collection(db, "users", user.uid, "transactions"), { name: bill.name, icon: bill.icon, amount: bill.amount, date: autoTimeStamp, type: "Expense", category: bill.category || "Bill Payment", accountId: targetAcc.id, createdAt: serverTimestamp() });
-      await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance - bill.amount });
-      if (bill.isInstallment) {
-        const newPaidAmt = (bill.paidAmount || 0) + bill.amount;
-        if (newPaidAmt >= bill.totalAmount) {
-          await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: true, paidAmount: newPaidAmt, paidFromAccountId: targetAcc.id, linkedTxId: txRef.id });
-          triggerVictory(); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
-        } else {
-          await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { paidAmount: newPaidAmt, isOverdue: false });
-          triggerHaptic(); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" }); setInstallmentPromptConfig({ isOpen: true, billId: bill.id, nextDate: "" });
-        }
-      } else {
-        await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: true, paidAmount: 0, paidFromAccountId: targetAcc.id, linkedTxId: txRef.id });
-        triggerVictory(); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
-      }
-    }
-  };
-
-  const handleSaveNextInstallmentDate = async () => {
-    if (!installmentPromptConfig.nextDate) return;
-    const bill = bills.find(b => b.id === installmentPromptConfig.billId);
-    if(!bill) return;
-    const dateObj = new Date(installmentPromptConfig.nextDate);
-    const sortableDay = dateObj.getUTCDate();
-    const displayDate = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
-    const newPayday = calculatePaydayGroup(installmentPromptConfig.nextDate);
-    if (isDemoMode) {
-      setBills(bills.map(b => b.id === bill.id ? { ...b, rawDate: installmentPromptConfig.nextDate, date: sortableDay, fullDate: displayDate, payday: newPayday, isOverdue: false } : b));
-    } else {
-      await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { rawDate: installmentPromptConfig.nextDate, date: sortableDay, fullDate: displayDate, payday: newPayday, isOverdue: false });
-    }
-    triggerVictory(); setInstallmentPromptConfig({ isOpen: false, billId: null, nextDate: "" });
-  };
-
-  const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0"); setEntryName(""); setEntryDate(""); setEntryIcon("🧾"); setEntryCategory(""); setEntryAccount(""); setEntryIsRecurring(false); setEntryIsInstallment(false); setEntryTotalAmount(""); setEntryPaidAmount(""); setIsCategorySelectorOpen(false); };
-  
-  const handleNumpad = (btn) => {
-    if (btn === "=") { try { const toEval = inputValue.replace(/×/g, "*").replace(/÷/g, "/"); if (/^[0-9+\-*/. ]+$/.test(toEval)) setInputValue(String(Function('"use strict";return (' + toEval + ")")())); } catch (e) { setInputValue("0"); } } 
-    else if (inputValue === "0" && btn !== ".") setInputValue(btn); else setInputValue(inputValue + btn);
-  };
-
-  const handleConfirmAction = async () => {
-    const amountToProcess = parseFloat(inputValue);
-    if (isNaN(amountToProcess) || (drawerTab === "bills" ? amountToProcess < 0 : amountToProcess <= 0)) return;
-    
-    const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
-    if (drawerTab === "bills") {
-      let displayDate = "TBD", sortableDay = 31;
-      if (entryDate) { const dateObj = new Date(entryDate); sortableDay = dateObj.getUTCDate(); displayDate = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }); }
-      if (isDemoMode) {
-        setBills([...bills, { id: `b_demo_${Date.now()}`, name: entryName || "New Bill", icon: entryIcon || "🧾", category: entryCategory || "Other", amount: amountToProcess, date: sortableDay, fullDate: displayDate, rawDate: entryDate, payday: calculatePaydayGroup(entryDate), isPaid: false, isOverdue: false, isRecurring: entryIsRecurring, isInstallment: entryIsInstallment, totalAmount: entryIsInstallment ? parseFloat(entryTotalAmount) || 0 : 0, paidAmount: entryIsInstallment ? parseFloat(entryPaidAmount) || 0 : 0, linkedTxId: null }]);
-      } else {
-        await addDoc(collection(db, "users", user.uid, "bills"), { name: entryName || "New Bill", icon: entryIcon || "🧾", category: entryCategory || "Other", amount: amountToProcess, date: sortableDay, fullDate: displayDate, rawDate: entryDate, payday: calculatePaydayGroup(entryDate), isPaid: false, isOverdue: false, isRecurring: entryIsRecurring, isInstallment: entryIsInstallment, totalAmount: entryIsInstallment ? parseFloat(entryTotalAmount) || 0 : 0, paidAmount: entryIsInstallment ? parseFloat(entryPaidAmount) || 0 : 0, linkedTxId: null });
-      }
-      triggerHaptic(); closeQab();
-    } else if (drawerTab === "income" || drawerTab === "transactions") {
-      const targetAcc = accounts.find(a => a.id === entryAccount) || accounts[0];
-      if (targetAcc) {
-        const isIncome = drawerTab === "income";
-        if (isDemoMode) {
-          setTransactions([{ id: `tx_demo_${Date.now()}`, name: entryName || (isIncome ? "Income" : "Expense"), icon: isIncome ? "💵" : entryIcon, category: entryCategory || "Other", amount: amountToProcess, date: autoTimeStamp, type: isIncome ? "Income" : "Expense", accountId: targetAcc.id }, ...transactions]);
-          setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: a.balance + (isIncome ? amountToProcess : -amountToProcess) } : a));
-        } else {
-          await addDoc(collection(db, "users", user.uid, "transactions"), { name: entryName || (isIncome ? "Income" : "Expense"), icon: isIncome ? "💵" : entryIcon, category: entryCategory || "Other", amount: amountToProcess, date: autoTimeStamp, type: isIncome ? "Income" : "Expense", accountId: targetAcc.id, createdAt: serverTimestamp() });
-          await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance + (isIncome ? amountToProcess : -amountToProcess) });
-        }
-      }
-      triggerVictory(); closeQab();
-    }
-  };
-
-  if (isAuthLoading) {
-    return (
-      <div className={`h-screen w-full flex flex-col items-center justify-center transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#1877F2]"}`}>
-         <img src="/login-logo.png" alt="Ledger Planner" className="w-36 h-36 rounded-full animate-pulse border-[6px] border-white/20 mb-8" />
-         <div className="flex gap-2">
-           <div className="w-2.5 h-2.5 rounded-full bg-white/80 animate-bounce" style={{ animationDelay: '0ms' }}></div>
-           <div className="w-2.5 h-2.5 rounded-full bg-white/80 animate-bounce" style={{ animationDelay: '150ms' }}></div>
-           <div className="w-2.5 h-2.5 rounded-full bg-white/80 animate-bounce" style={{ animationDelay: '300ms' }}></div>
-         </div>
-      </div>
-    );
-  }
-
-  if (!user && !isDemoMode) { return <Login isAuthLoading={isAuthLoading} isLoginMode={isLoginMode} setIsLoginMode={setIsLoginMode} handleAuthSubmit={handleAuthSubmit} handleGoogleLogin={handleGoogleLogin} authError={authError} setAuthError={setAuthError} email={email} setEmail={setEmail} password={password} setPassword={setPassword} firstName={firstName} setFirstName={setFirstName} />; }
-
-  const categoriesToRender = drawerTab === 'income' ? modernCategories.filter(g => g.group === "Income & Wealth") : modernCategories;
-
-  const getEntryAmountColor = (entry) => {
-    if (entry.type === 'Income') return "text-[#10B981]";
-    if (entry.type === 'Expense') return "text-[#F97316]";
-    return "text-[#1877F2]";
-  };
 
   return (
     <div 
@@ -786,7 +673,6 @@ export default function App() {
           <div className="mt-auto space-y-4">
             <button onClick={() => setIsQabOpen(true)} className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-white bg-[#1877F2] font-black uppercase tracking-widest text-xs transition-transform active:scale-95 hover:-translate-y-1`}><Plus size={18} /> Quick Add</button>
             
-            {/* 🔥 DESKTOP SETTINGS BUTTON 🔥 */}
             <button onClick={() => { setEditName(userName || ""); setIsSettingsOpen(true); }} className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800/50 border-slate-700 text-slate-300 hover:text-white" : "bg-white border-slate-100 text-slate-500 hover:text-slate-900"}`}>
               <Settings size={16} strokeWidth={2.5} />
               <span className="text-[10px] font-black uppercase tracking-widest">Settings</span>
@@ -799,7 +685,8 @@ export default function App() {
         {/* MAIN ROUTER CONTENT */}
         <div className="flex-1 flex flex-col relative h-full overflow-hidden">
           <div className={`flex-1 overflow-y-auto hide-scrollbar lg:pb-0 ${isDemoMode ? "pb-[220px]" : "pb-24"}`} ref={scrollRef} onScroll={handleScroll}>
-            {activeTab === "home" && <Dashboard userName={userName} accounts={accounts} bills={dynamicBills} transactions={transactions} paydayConfig={paydayConfig} setEditPaydayConfig={setEditPaydayConfig} setIsPaydaySetupOpen={setIsPaydaySetupOpen} setIsNotificationsOpen={setIsNotificationsOpen} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} isDarkMode={isDarkMode} formatPaydayDateStr={formatPaydayDateStr} renderHeroShell={renderHeroShell} changeTab={changeTab} />}
+            {/* 🔥 DASHBOARD GETS NEW AI PROPS 🔥 */}
+            {activeTab === "home" && <Dashboard userName={userName} accounts={accounts} bills={dynamicBills} transactions={transactions} paydayConfig={paydayConfig} setEditPaydayConfig={setEditPaydayConfig} setIsPaydaySetupOpen={setIsPaydaySetupOpen} setIsNotificationsOpen={setIsNotificationsOpen} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} isDarkMode={isDarkMode} formatPaydayDateStr={formatPaydayDateStr} renderHeroShell={renderHeroShell} changeTab={changeTab} hasConsumedAMBriefing={hasConsumedAMBriefing} setHasConsumedAMBriefing={setHasConsumedAMBriefing} hasConsumedPMBriefing={hasConsumedPMBriefing} setHasConsumedPMBriefing={setHasConsumedPMBriefing} />}
             {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} isDemoMode={isDemoMode} />}
             {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} handleRolloverMonth={handleRolloverMonth} />}
             {activeTab === "activity" && <Activity userName={userName} transactions={transactions} activitySearch={activitySearch} setActivitySearch={setActivitySearch} activityFilter={activityFilter} setActivityFilter={setActivityFilter} isDarkMode={isDarkMode} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} />}
@@ -821,105 +708,102 @@ export default function App() {
         </div>
 
         {/* ====================================================================== */}
-        {/* 🔥 NEW SETTINGS VAULT 🔥 */}
+        {/* 🔥 NEW BENTO BOX SETTINGS VAULT 🔥 */}
         {/* ====================================================================== */}
         {isSettingsOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsSettingsOpen(false)}></div>
-            <div className={`w-full lg:max-w-md h-[85vh] rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
-              <div className="p-6 border-b flex justify-between items-center shrink-0">
+            <div className={`w-full lg:max-w-md h-[85vh] rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col ${isDarkMode ? "bg-[#0F172A] border border-slate-800" : "bg-[#F8FAFC] border border-slate-100"}`}>
+              
+              <div className={`p-6 border-b flex justify-between items-center shrink-0 ${isDarkMode ? "bg-[#1E293B] rounded-t-[2.5rem] border-slate-800" : "bg-white rounded-t-[2.5rem] border-slate-100 shadow-sm"}`}>
                 <h3 className={`font-black uppercase tracking-widest flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                   <Settings size={18} className="text-slate-400" /> Settings Vault
                 </h3>
                 <button onClick={() => setIsSettingsOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
               
-              <div className={`p-6 overflow-y-auto space-y-8 flex-1 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+              <div className={`p-6 overflow-y-auto space-y-6 flex-1 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
                 
-                {/* IDENTITY ENGINE */}
-                <div className="space-y-3">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">Identity Engine</h4>
-                  <div className={`p-4 rounded-2xl border shadow-sm ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-slate-50 border-slate-100"}`}>
-                    <div className="relative mb-3">
-                      <label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest text-slate-500">Preferred Name</label>
-                      <input 
-                        type="text" 
-                        value={editName || ""} 
-                        onChange={(e) => setEditName(e.target.value)} 
-                        className={`w-full pt-6 pb-2 px-5 rounded-xl font-bold border focus:outline-none transition-colors ${isDarkMode ? "bg-[#1E293B] border-slate-600 text-white" : "bg-white border-slate-200 text-slate-900"}`} 
-                      />
-                    </div>
-                    <button 
-                      onClick={handleUpdateIdentity} 
-                      disabled={!(editName || "").trim() || editName === userName}
-                      className={`w-full py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 ${(!(editName || "").trim() || editName === userName) ? "bg-slate-300 text-slate-500 cursor-not-allowed" : "bg-[#1877F2] text-white shadow-[0_4px_12px_rgba(24,119,242,0.3)]"}`}
-                    >
-                      Update Identity
-                    </button>
+                {/* BENTO CARD 1: IDENTITY ENGINE */}
+                <div className={`p-5 rounded-3xl border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2"><UserCircle size={14}/> Identity Engine</h4>
+                  <div className="relative mb-4">
+                    <label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest text-slate-500">Preferred Name</label>
+                    <input 
+                      type="text" 
+                      value={editName || ""} 
+                      onChange={(e) => setEditName(e.target.value)} 
+                      className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold border focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-600 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`} 
+                    />
                   </div>
+                  <button 
+                    onClick={handleUpdateIdentity} 
+                    disabled={!(editName || "").trim() || editName === userName}
+                    className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 ${(!(editName || "").trim() || editName === userName) ? "bg-slate-300 text-slate-500 cursor-not-allowed" : "bg-[#1877F2] text-white shadow-[0_8px_16px_rgba(24,119,242,0.3)]"}`}
+                  >
+                    Update Identity
+                  </button>
                 </div>
 
-                {/* SUBSCRIPTION */}
-                <div className="space-y-3">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">Subscription</h4>
-                  <div className={`p-4 rounded-2xl border shadow-sm flex items-center justify-between ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-slate-50 border-slate-100"}`}>
+                {/* BENTO CARD 2: SUBSCRIPTION */}
+                <div className={`p-5 rounded-3xl border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+                   <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2"><CreditCard size={14}/> Subscription</h4>
+                   <div className={`p-4 rounded-2xl border flex items-center justify-between ${isDarkMode ? "bg-[#0F172A] border-slate-600" : "bg-slate-50 border-slate-200"}`}>
                     <div>
                       <p className={`font-black text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Ledger Planner Pro</p>
-                      <p className="text-[10px] font-bold text-[#10B981] uppercase tracking-widest mt-0.5">Active</p>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse"></div>
+                        <p className="text-[10px] font-bold text-[#10B981] uppercase tracking-widest">Active</p>
+                      </div>
                     </div>
                     <button 
                       onClick={() => alert("Subscription portal connecting...")} 
-                      className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-colors ${isDarkMode ? "bg-slate-800 border-slate-600 text-white hover:bg-slate-700" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100"}`}
+                      className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-colors ${isDarkMode ? "bg-slate-800 border-slate-600 text-white hover:bg-slate-700" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100 shadow-sm"}`}
                     >
                       Manage
                     </button>
                   </div>
                 </div>
 
-                {/* AI ASSISTANT TEASER */}
-                <div className="space-y-3">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">Intelligence</h4>
-                  <div className="p-5 rounded-2xl border border-transparent shadow-lg bg-gradient-to-br from-[#1877F2] to-indigo-600 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-4 opacity-20"><Zap size={60} className="text-white" /></div>
-                    <div className="relative z-10">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="font-black text-white text-lg tracking-tight">LP Assistant</p>
-                        <span className="bg-white/20 text-white px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest">Coming Soon</span>
-                      </div>
-                      <p className="text-xs text-blue-100 font-bold mb-4 w-4/5 leading-relaxed">Your personal AI wealth architect. Ask questions, analyze spending, and build custom financial roadmaps instantly.</p>
-                      <button disabled className="bg-white/10 border border-white/20 text-white/50 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest cursor-not-allowed">
-                        Awaiting Activation
-                      </button>
+                {/* BENTO CARD 3: AI ASSISTANT TEASER */}
+                <div className="p-5 rounded-3xl border border-transparent shadow-xl bg-gradient-to-br from-[#1877F2] to-indigo-600 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-4 opacity-20"><Zap size={80} className="text-white transform rotate-12" /></div>
+                  <div className="relative z-10">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-200 mb-3 flex items-center gap-2">Intelligence</h4>
+                    <div className="flex items-center gap-2 mb-2">
+                      <p className="font-black text-white text-xl tracking-tight">LP Assistant</p>
+                      <span className="bg-white/20 text-white px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border border-white/30 backdrop-blur-sm">Coming Soon</span>
                     </div>
+                    <p className="text-xs text-blue-100 font-bold mb-5 w-5/6 leading-relaxed">Your personal AI wealth architect. Ask questions, analyze spending, and build custom financial roadmaps instantly.</p>
+                    <button disabled className="bg-white/10 border border-white/20 text-white/50 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest cursor-not-allowed backdrop-blur-sm">
+                      Awaiting Core Activation
+                    </button>
                   </div>
                 </div>
 
-                {/* FACTORY RESET */}
-                <div className="space-y-3">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">Danger Zone</h4>
-                  <div className={`p-5 rounded-2xl border shadow-sm ${isDarkMode ? "bg-red-900/10 border-red-900/30" : "bg-red-50 border-red-100"}`}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <AlertCircle size={16} className="text-red-500" />
-                      <p className={`font-black text-sm ${isDarkMode ? "text-red-400" : "text-red-600"}`}>Factory Reset</p>
-                    </div>
-                    <p className={`text-xs font-bold mb-4 leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                      This will permanently wipe all accounts, bills, transactions, and tasks. Type <strong className="text-red-500">RESET</strong> to unlock.
+                {/* BENTO CARD 4: FACTORY RESET */}
+                <div className={`p-5 rounded-3xl border shadow-sm ${isDarkMode ? "bg-red-900/10 border-red-900/30" : "bg-red-50/50 border-red-100"}`}>
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-red-500/70 mb-4 flex items-center gap-2"><AlertCircle size={14}/> Danger Zone</h4>
+                  <div className="mb-4">
+                    <p className={`font-black text-base mb-1 ${isDarkMode ? "text-red-400" : "text-red-600"}`}>Factory Reset</p>
+                    <p className={`text-xs font-bold leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
+                      Permanently wipe all accounts, bills, transactions, and tasks. Type <strong className="text-red-500">RESET</strong> to unlock the nuke.
                     </p>
-                    <input 
-                      type="text" 
-                      placeholder="Type RESET"
-                      value={resetConfirm} 
-                      onChange={(e) => setResetConfirm(e.target.value)} 
-                      className={`w-full py-3 px-4 rounded-xl font-bold text-sm text-center tracking-widest border mb-3 focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white focus:border-red-500" : "bg-white border-slate-200 text-slate-900 focus:border-red-500"}`} 
-                    />
-                    <button 
-                      onClick={handleFactoryReset} 
-                      disabled={resetConfirm !== "RESET"}
-                      className={`w-full py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${resetConfirm === "RESET" ? "bg-red-500 text-white shadow-[0_4px_12px_rgba(239,68,68,0.3)] active:scale-95" : "bg-slate-300 text-slate-500 cursor-not-allowed"}`}
-                    >
-                      Wipe Data Vault
-                    </button>
                   </div>
+                  <input 
+                    type="text" 
+                    placeholder="Type RESET"
+                    value={resetConfirm} 
+                    onChange={(e) => setResetConfirm(e.target.value)} 
+                    className={`w-full py-4 px-5 rounded-2xl font-black text-sm text-center tracking-widest border mb-4 focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white focus:border-red-500" : "bg-white border-slate-200 text-slate-900 focus:border-red-500 shadow-inner"}`} 
+                  />
+                  <button 
+                    onClick={handleFactoryReset} 
+                    disabled={resetConfirm !== "RESET"}
+                    className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${resetConfirm === "RESET" ? "bg-red-600 text-white shadow-[0_8px_16px_rgba(220,38,38,0.4)] active:scale-95 hover:bg-red-700" : "bg-slate-300 text-slate-500 cursor-not-allowed opacity-60"}`}
+                  >
+                    Wipe Data Vault
+                  </button>
                 </div>
 
               </div>

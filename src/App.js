@@ -77,6 +77,7 @@ export default function App() {
   
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [editAccountBalance, setEditAccountBalance] = useState("0");
+  const [editAccountDesc, setEditAccountDesc] = useState("");
   
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
   const [newAccName, setNewAccName] = useState("");
@@ -174,9 +175,11 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
+  // 🔥 UPDATE ACCOUNT STATE INITIALIZATION 🔥
   useEffect(() => {
     if (selectedAccount) {
       setEditAccountBalance(Math.abs(selectedAccount.balance).toFixed(2));
+      setEditAccountDesc(selectedAccount.description || "");
     }
   }, [selectedAccount]);
 
@@ -238,7 +241,6 @@ export default function App() {
 
   const userName = isDemoMode ? "Aaron" : user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || "Founder";
 
-  // === 🔥 FIX #3: DATE/TIME MARRIAGE ENGINE 🔥 ===
   const getOrdinalNum = (n) => n + (n > 0 ? ['th', 'st', 'nd', 'rd'][(n > 3 && n < 21) || n % 10 > 3 ? 0 : n % 10] : '');
   const dayStr = currentTime.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
   const monthStr = currentTime.toLocaleDateString("en-US", { month: "long" }).toUpperCase();
@@ -369,6 +371,7 @@ export default function App() {
     triggerVictory(); setIsTransferOpen(false); setTransferAmount("0"); setTransferFrom(""); setTransferTo("");
   };
 
+  // 🔥 UPDATE ACCOUNT DATA SAVING LOGIC 🔥
   const updateAccountBalance = async () => { 
     const newBal = parseFloat(editAccountBalance);
     if (isNaN(newBal) || !selectedAccount) return;
@@ -377,13 +380,13 @@ export default function App() {
     const diff = finalBalance - selectedAccount.balance;
     
     if (isDemoMode) {
-      setAccounts(accounts.map(a => a.id === selectedAccount.id ? { ...a, balance: finalBalance } : a));
+      setAccounts(accounts.map(a => a.id === selectedAccount.id ? { ...a, balance: finalBalance, description: editAccountDesc } : a));
     } else {
       if (Math.abs(diff) > 0.01) {
         const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
         await addDoc(collection(db, "users", user.uid, "transactions"), { name: "Balance Adjustment", icon: "⚖️", amount: Math.abs(diff), date: autoTimeStamp, type: diff > 0 ? "Income" : "Expense", category: "Refunds & Adjustments", accountId: selectedAccount.id, createdAt: serverTimestamp() });
       }
-      await updateDoc(doc(db, "users", user.uid, "accounts", selectedAccount.id), { balance: finalBalance });
+      await updateDoc(doc(db, "users", user.uid, "accounts", selectedAccount.id), { balance: finalBalance, description: editAccountDesc });
     }
     triggerVictory(); setSelectedAccount(null);
   };
@@ -533,7 +536,6 @@ export default function App() {
         <h2 title={title} className={`text-3xl font-black tracking-tight leading-tight truncate max-w-full ${isDarkMode ? "text-white" : "text-slate-900"}`}>{title}</h2>
       </div>
       <div className="relative z-10 w-full h-auto opacity-100">{graphicContent}</div>
-      {/* 🔥 FIX #3: THE MARRIED HERO DATE-TIME STRING 🔥 */}
       <div className={`relative z-10 pt-4 border-t flex justify-center items-center ${isDarkMode ? "border-slate-800" : "border-slate-50"}`}>
         <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{heroDateTimeStr}</span>
       </div>
@@ -606,7 +608,6 @@ export default function App() {
 
   const handleConfirmAction = async () => {
     const amountToProcess = parseFloat(inputValue);
-    // 🔥 THE $0.00 BILL TRIPWIRE LOGIC 🔥
     if (isNaN(amountToProcess) || (drawerTab === "bills" ? amountToProcess < 0 : amountToProcess <= 0)) return;
     
     const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
@@ -652,11 +653,10 @@ export default function App() {
 
   const categoriesToRender = drawerTab === 'income' ? modernCategories.filter(g => g.group === "Income & Wealth") : modernCategories;
 
-  // 🔥 THE ENTRY COLOR ENGINE 🔥
   const getEntryAmountColor = (entry) => {
-    if (entry.type === 'Income') return "text-[#10B981]"; // Green
-    if (entry.type === 'Expense') return "text-[#F97316]"; // Orange
-    return "text-[#1877F2]"; // Bill Default (Blue)
+    if (entry.type === 'Income') return "text-[#10B981]";
+    if (entry.type === 'Expense') return "text-[#F97316]";
+    return "text-[#1877F2]";
   };
 
   return (
@@ -718,8 +718,6 @@ export default function App() {
                 <button onClick={() => setIsNotificationsOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
               <div className={`p-6 overflow-y-auto space-y-4 flex-1 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
-                
-                {/* 🔥 NOTIFICATIONS ENGINE ALERTS 🔥 */}
                 {!isPushEnabled && !isDemoMode && (
                   <div className={`p-4 rounded-2xl border flex items-center justify-between shadow-sm ${isDarkMode ? "bg-[#10B981]/10 border-[#10B981]/20" : "bg-emerald-50 border-emerald-100"}`}>
                     <div className="flex items-center gap-3">
@@ -760,7 +758,6 @@ export default function App() {
                 <button onClick={() => setIsPaydaySetupOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
               <div className={`p-6 overflow-y-auto space-y-6 flex-1 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
-                {/* 🔥 FIX #4: DARK MODE DRAWER VISIBILITY 🔥 */}
                 {["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].map((pd) => (
                   <div key={pd} className={`p-4 rounded-2xl border ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-slate-50 border-slate-100"}`}>
                     <h4 className={`text-xs font-black uppercase tracking-widest mb-4 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>{pd}</h4>
@@ -785,6 +782,7 @@ export default function App() {
           </div>
         )}
 
+        {/* 🔥 FIX #1: ADD ACCOUNT DRAWER NOW HAS ACCOUNT DETAILS 🔥 */}
         {isAddAccountOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsAddAccountOpen(false)}></div>
@@ -794,9 +792,10 @@ export default function App() {
                 <button onClick={() => setIsAddAccountOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
               <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
-                <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Account Name</label><input type="text" value={newAccName} onChange={(e) => setNewAccName(e.target.value)} className="w-full pt-6 pb-2 px-5 rounded-2xl border" /></div>
-                <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Current Balance</label><input type="number" value={newAccBalance} onChange={(e) => setNewAccBalance(e.target.value)} className="w-full pt-6 pb-2 px-5 rounded-2xl border" /></div>
-                <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Account Type</label><select value={newAccType} onChange={(e) => setNewAccType(e.target.value)} className="w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none"><option>Checking</option><option>Savings</option><option>Credit Card</option><option>Cash</option><option>401k / Retirement</option></select></div>
+                <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Account Name</label><input type="text" value={newAccName} onChange={(e) => setNewAccName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200"}`} /></div>
+                <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Current Balance</label><input type="number" value={newAccBalance} onChange={(e) => setNewAccBalance(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200"}`} /></div>
+                <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Account Type</label><select value={newAccType} onChange={(e) => setNewAccType(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200"}`}><option>Checking</option><option>Savings</option><option>Credit Card</option><option>Cash</option><option>401k / Retirement</option></select></div>
+                <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest text-slate-400">Account Details</label><input type="text" placeholder={newAccType} value={newAccDesc} onChange={(e) => setNewAccDesc(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white placeholder-slate-600" : "bg-white border-slate-200 placeholder-slate-300"}`} /></div>
                 <button onClick={handleAddAccount} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2">Save Account <CheckCircle2 size={16} /></button>
               </div>
             </div>
@@ -834,7 +833,7 @@ export default function App() {
           </div>
         )}
 
-        {/* QUICK UPDATE BALANCE MODAL */}
+        {/* 🔥 FIX #2: QUICK UPDATE MODAL NOW "EDIT ACCOUNT" WITH DETAILS 🔥 */}
         {selectedAccount && !isAddAccountOpen && !isTransferOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedAccount(null)}></div>
@@ -842,14 +841,14 @@ export default function App() {
               <div className="p-6 border-b flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg bg-slate-100">{selectedAccount.icon}</div>
-                  <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{selectedAccount.name}</h3>
+                  <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Edit Account</h3>
                 </div>
                 <button onClick={() => setSelectedAccount(null)} className={closeButtonClass}><X size={18} /></button>
               </div>
               <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
                 
                 <div className="relative">
-                  <label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest text-slate-400 z-10">Quick Update Balance</label>
+                  <label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest text-slate-400 z-10">Update Balance</label>
                   <div className="relative w-full flex items-center">
                     <span className={`absolute left-5 top-[22px] font-bold text-lg ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
                     <input 
@@ -863,7 +862,18 @@ export default function App() {
                   </div>
                 </div>
 
-                <button onClick={updateAccountBalance} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><Save size={16} /> Save Balance</button>
+                <div className="relative">
+                  <label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest text-slate-400 z-10">Account Details</label>
+                  <input 
+                    type="text" 
+                    placeholder={selectedAccount.type}
+                    value={editAccountDesc} 
+                    onChange={(e) => setEditAccountDesc(e.target.value)} 
+                    className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white placeholder-slate-600" : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400"}`} 
+                  />
+                </div>
+
+                <button onClick={updateAccountBalance} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><Save size={16} /> Save Changes</button>
                 <button onClick={deleteAccount} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-red-500 shadow-[0_8px_16px_rgba(239,68,68,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><Trash2 size={16}/> Delete Account</button>
               </div>
             </div>
@@ -913,7 +923,6 @@ export default function App() {
                     <div className="text-center">
                       <h2 className={`text-xl font-black mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{selectedEntry.name}</h2>
                       
-                      {/* DYNAMIC COLOR ENGINE FOR AMOUNT */}
                       <p className={`text-5xl font-black tracking-tighter ${getEntryAmountColor(selectedEntry)}`}>
                         {selectedEntry.type === 'Income' ? '+' : selectedEntry.type === 'Expense' ? '-' : ''}${selectedEntry.amount?.toFixed(2)}
                       </p>

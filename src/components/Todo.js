@@ -121,7 +121,7 @@ export default function Todo({
             onClick={(e) => { e.stopPropagation(); toggleTodoStatus(task.id); }}
             className={`shrink-0 transition-colors 
               ${task.isCompleted 
-                ? parseInt(task.priority) === 5 ? "text-[#FBBF24]" : "text-[#F97316]" 
+                ? "text-[#F97316]" // 🔥 FORCE ALL COMPLETED CHECKMARKS TO VIBRANT ORANGE
                 : "text-slate-300 hover:text-[#1877F2]"
               }
             `}
@@ -158,7 +158,7 @@ export default function Todo({
           <form onSubmit={handleAddTodo} className="flex items-center gap-2">
             <input 
               type="text" 
-              placeholder="What needs to get done?" 
+              placeholder="New task or future purchase?" 
               value={newTodoText} 
               onChange={(e) => setNewTodoText(e.target.value)}
               className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold bg-transparent border outline-none transition-colors focus:border-[#1877F2] ${isDarkMode ? "text-white border-slate-700" : "text-slate-900 border-slate-200"}`}

@@ -295,7 +295,6 @@ export default function App() {
     if (!selectedEntry) return;
     const colName = selectedEntry.fullDate !== undefined ? "bills" : "transactions";
     
-    // We expand the update payload to catch the new Installment / Recurring state
     const updatePayload = { 
       name: editEntryData.name || selectedEntry.name, 
       amount: parseFloat(editEntryData.amount) || 0, 
@@ -304,7 +303,6 @@ export default function App() {
     };
     
     if (selectedEntry.fullDate !== undefined) {
-        // Handle Date Logic
         if (editEntryData.rawDate && editEntryData.rawDate !== selectedEntry.rawDate) {
             const dateObj = new Date(editEntryData.rawDate);
             updatePayload.rawDate = editEntryData.rawDate;
@@ -317,7 +315,6 @@ export default function App() {
             if (localBillDate.getTime() === todayLocal.getTime()) updatePayload.payday = "Due Now";
         }
         
-        // Handle Toggles and Math
         updatePayload.isRecurring = editEntryData.isRecurring;
         updatePayload.isInstallment = editEntryData.isInstallment;
         if (editEntryData.isInstallment) {
@@ -432,7 +429,6 @@ export default function App() {
     setIsPaydaySetupOpen(false); triggerVictory(); 
   };
 
-  // 🔥 THE AUTO-SENSE HORIZON WALL ENGINE 🔥
   const todayForDynamic = new Date(); todayForDynamic.setHours(0, 0, 0, 0);
   const calculatePaydayGroup = (dateString) => {
     if (!dateString) return "Unscheduled";
@@ -454,16 +450,14 @@ export default function App() {
     if (activePaydays.length === 0) return "Unscheduled";
     activePaydays.sort((a, b) => a.date - b.date);
 
-    // Drop the Wall
     const lastPayday = activePaydays[activePaydays.length - 1].date;
-    let daysToAdd = 7; // Weekly default
-    if (activePaydays.length === 1) daysToAdd = 30; // Monthly
-    else if (activePaydays.length === 2) daysToAdd = 14; // Bi-Weekly
+    let daysToAdd = 7; 
+    if (activePaydays.length === 1) daysToAdd = 30; 
+    else if (activePaydays.length === 2) daysToAdd = 14; 
 
     const horizonDate = new Date(lastPayday);
     horizonDate.setDate(horizonDate.getDate() + daysToAdd);
 
-    // Ghost the bill if it falls beyond the wall
     if (localBillDate > horizonDate) return "Unscheduled";
 
     if (billDate < activePaydays[0].date) return activePaydays[0].id;
@@ -475,7 +469,6 @@ export default function App() {
     return assignedPd;
   };
 
-  // 🔥 DYNAMIC SHIFT: CONSTANT RECALCULATION 🔥
   const dynamicBills = bills.map(bill => {
     let currentPayday = bill.payday;
     let isOverdue = bill.isOverdue || false;
@@ -491,7 +484,6 @@ export default function App() {
           currentPayday = "Due Now";
           isOverdue = false;
       } else {
-          // Send it through the wall to ensure it hasn't popped in or out
           currentPayday = calculatePaydayGroup(bill.rawDate);
           isOverdue = false;
       }
@@ -573,7 +565,7 @@ export default function App() {
           </button>
           <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
             <Bell size={18} />
-            {(!isPushEnabled || activeAlerts.length > 0) && <span className={`absolute top-2 right-2.5 w-2 h-2 rounded-full border-2 ${isDarkMode ? "border-[#1E293B]" : "border-white"} ${activeAlerts.some(a => a.type === 'danger' || a.type === 'warning') ? "bg-red-500" : "bg-[#1877F2]"}`}></span>}
+            {(!isPushEnabled || activeAlerts.length > 0) && <span className={`absolute top-2 right-2.5 w-2 h-2 rounded-full border-2 ${isDarkMode ? "border-[#1E293B]" : "border-white"} ${activeAlerts.some(a => a.type === 'danger' || a.type === 'warning') ? "bg-red-50" : "bg-[#1877F2]"}`}></span>}
           </button>
         </div>
         <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center z-20 origin-top -top-5 lg:hidden">
@@ -951,7 +943,6 @@ export default function App() {
           </div>
         )}
 
-        {/* 🔥 FIX #1: THE FULL SCALE EDIT DRAWER 🔥 */}
         {selectedEntry && !selectedAccount && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={closeEntryDrawer}></div>
@@ -1022,7 +1013,6 @@ export default function App() {
                     <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Icon</label><select value={editEntryData.icon || ""} onChange={(e) => setEditEntryData({...editEntryData, icon: e.target.value})} className="w-full pt-6 pb-2 px-5 rounded-2xl border">{categoryEmojis.map((emoji) => (<option key={emoji} value={emoji}>{emoji}</option>))}</select></div>
                     <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Category</label><select value={editEntryData.category || ""} onChange={(e) => setEditEntryData({...editEntryData, category: e.target.value})} className="w-full pt-6 pb-2 px-5 rounded-2xl border">{modernCategories.map(group => ( <optgroup key={group.group} label={group.group}> {group.items.map(item => <option key={item} value={item}>{item}</option>)} </optgroup> ))}</select></div>
                     
-                    {/* EDIT BILLS: INSTALLMENTS, RECURRING & DATES */}
                     {selectedEntry.fullDate !== undefined && (
                       <>
                         <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Due Date</label><input type="date" value={editEntryData.rawDate || ""} onChange={(e) => setEditEntryData({...editEntryData, rawDate: e.target.value})} className="w-full pt-6 pb-2 px-5 rounded-2xl border" /></div>
@@ -1066,7 +1056,6 @@ export default function App() {
           const activeLabel = drawerTab === "bills" ? "New Bill" : drawerTab === "income" ? "New Income" : "New Expense";
           
           const parsedInput = parseFloat(inputValue);
-          // 🔥 THE TRIPWIRE GATE: Bills can be >= 0. Everything else must be > 0. 🔥
           const isQabAmountValid = !isNaN(parsedInput) && (drawerTab === "bills" ? parsedInput >= 0 : parsedInput > 0);
 
           return (
@@ -1100,11 +1089,17 @@ export default function App() {
                     <>
                       <div className="grid grid-cols-4 gap-3 mt-2">
                         {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", ".", "0", "=", "+"].map((btn) => {
-                          const isOp = ["÷", "×", "-", "+", "="].includes(btn);
                           return ( <button key={btn} onClick={() => handleNumpad(btn)} className={`w-full h-14 rounded-2xl text-2xl font-bold flex items-center justify-center bg-slate-100 transition-all active:scale-95 active:bg-slate-200 touch-manipulation`}> {btn} </button> );
                         })}
                       </div>
-                      <button onClick={() => { if (isQabAmountValid) setQabStep(2); }} disabled={!isQabAmountValid} className={`w-full mt-6 h-16 rounded-2xl font-black uppercase tracking-widest text-sm text-white transition-all active:scale-95 flex items-center justify-center gap-2 ${!isQabAmountValid ? "bg-slate-300 opacity-50 cursor-not-allowed" : `${activeBg} ${activeShadow} hover:-translate-y-1`}`}>Continue <ArrowRight size={18} /></button>
+                      {/* 🔥 FIX: ADDED SHRINK-0 AND PADDING TWEAK FOR DESKTOP 🔥 */}
+                      <button 
+                        onClick={() => { if (isQabAmountValid) setQabStep(2); }} 
+                        disabled={!isQabAmountValid} 
+                        className={`w-full mt-6 mb-2 h-16 shrink-0 rounded-2xl font-black uppercase tracking-widest text-xs text-white transition-all active:scale-95 flex items-center justify-center gap-2 ${!isQabAmountValid ? "bg-slate-300 opacity-50 cursor-not-allowed" : `${activeBg} ${activeShadow} hover:-translate-y-1`}`}
+                      >
+                        Continue <ArrowRight size={18} />
+                      </button>
                     </>
                   ) : (
                     <div className="flex flex-col h-full animate-fade-in relative">
@@ -1116,7 +1111,6 @@ export default function App() {
                           <>
                             <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Due Date</label><input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} className="w-full pt-6 pb-2 px-5 rounded-2xl border" /></div>
                             
-                            {/* 🔥 RESTORED RECURRING & INSTALLMENT TOGGLES 🔥 */}
                             <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
                               <div className="flex items-center justify-between">
                                 <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Recurring Bill</span>
@@ -1140,7 +1134,6 @@ export default function App() {
                           </>
                         )}
                         
-                        {/* 🔥 DYNAMIC CONVERSATIONAL ACCOUNT DROPDOWN 🔥 */}
                         {(drawerTab === "income" || drawerTab === "transactions") && (
                           <div className="relative">
                             <label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Account</label>
@@ -1153,7 +1146,7 @@ export default function App() {
                         
                         <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Icon</label><select value={entryIcon} onChange={(e) => setEntryIcon(e.target.value)} className="w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none">{categoryEmojis.map((emoji) => (<option key={emoji} value={emoji}>{emoji}</option>))}</select></div>
                       </div>
-                      <button onClick={handleConfirmAction} className={`w-full mt-4 h-16 shrink-0 rounded-2xl font-black text-sm uppercase tracking-widest text-white transition-transform active:scale-95 flex items-center justify-center gap-2 ${activeBg} ${activeShadow}`}>Confirm & Save <CheckCircle2 size={18} /></button>
+                      <button onClick={handleConfirmAction} className={`w-full mt-4 h-16 shrink-0 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-transform active:scale-95 flex items-center justify-center gap-2 ${activeBg} ${activeShadow}`}>Confirm & Save <CheckCircle2 size={18} /></button>
                       
                       {isCategorySelectorOpen && (
                          <div className="absolute inset-0 z-[140] flex flex-col bg-white dark:bg-[#1E293B]">
@@ -1183,7 +1176,6 @@ export default function App() {
           );
         })()}
 
-        {/* INSTALLMENT NEXT DATE MODAL */}
         {installmentPromptConfig.isOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setInstallmentPromptConfig({ isOpen: false, billId: null, nextDate: "" })}></div>

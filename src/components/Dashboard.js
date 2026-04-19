@@ -247,13 +247,13 @@ export default function Dashboard({
                 
                 {isDueNow ? (
                   <div className="flex flex-col items-center text-center mt-2 w-full">
-                    <p className={`text-3xl font-black tracking-tight mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                    {/* 🔥 FIXED TO ALWAYS BE RED 🔥 */}
+                    <p className={`text-3xl font-black tracking-tight mb-1 text-red-500`}>
                       ${unpaidBillsTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                     </p>
                     <p className={`text-[9px] font-bold uppercase tracking-wider ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Currently Due</p>
                   </div>
                 ) : isSet ? (
-                  /* 🔥 FIX #1 & #2: CENTERED STACK & COLOR LOGIC 🔥 */
                   <div className="flex flex-col items-center text-center w-full">
                     <p className={`text-3xl font-black tracking-tighter ${activeWeeklyBuffer < 0 ? "text-red-500" : activeWeeklyBuffer > 0 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
                       ${activeWeeklyBuffer.toLocaleString("en-US", { minimumFractionDigits: 2 })}
@@ -306,7 +306,8 @@ export default function Dashboard({
                        <h3 className={`text-[11px] font-black uppercase tracking-widest ${isDueNow ? "text-red-500" : isDarkMode ? "text-slate-300" : "text-slate-700"}`}>{payday}</h3>
                        <div className="text-slate-400">{isCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}</div>
                      </div>
-                     <span className={`text-xs font-black ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                     {/* 🔥 HEADER BALANCES PIVOTED TO SIGNATURE BLUE 🔥 */}
+                     <span className={`text-xs font-black ${isDueNow ? "text-red-500" : "text-[#1877F2]"}`}>
                        ${checkTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                      </span>
                   </div>
@@ -339,7 +340,8 @@ export default function Dashboard({
                                   </div>
                                 </div>
                               </div>
-                              <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight cursor-pointer transition-colors ${bill.isOverdue ? isDarkMode ? "bg-red-900/30 text-red-400" : "bg-red-50 text-red-600" : isDarkMode ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-900"}`} onClick={() => setSelectedEntry(bill)}>
+                              {/* 🔥 INDIVIDUAL ENTRY BALANCES PIVOTED TO SIGNATURE BLUE 🔥 */}
+                              <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight cursor-pointer transition-colors ${bill.isOverdue ? isDarkMode ? "bg-red-900/30 text-red-400" : "bg-red-50 text-red-600" : isDarkMode ? "bg-[#1877F2]/10 text-[#1877F2]" : "bg-blue-50 text-[#1877F2]"}`} onClick={() => setSelectedEntry(bill)}>
                                 ${bill.amount.toFixed(2)}
                               </div>
                             </div>

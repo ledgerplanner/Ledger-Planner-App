@@ -150,7 +150,7 @@ export default function Activity({
              onClick={() => setActivityFilter(activityFilter === "Expense" ? "All" : "Expense")} 
              className={`flex-1 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${activityFilter === "Expense" ? "bg-[#F97316] text-white shadow-[0_8px_20px_rgba(249,115,22,0.3)] transform -translate-y-0.5" : isDarkMode ? "bg-[#1E293B] text-slate-400 border border-slate-800" : "bg-white text-slate-400 border border-slate-100"}`}
            >
-             Expense
+             Expenses
            </button>
         </div>
 

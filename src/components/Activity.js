@@ -62,6 +62,29 @@ export default function Activity({
     return { name, amount, percentage, strokeDasharray, strokeDashoffset, color: colors[index] };
   });
 
+  // === DYNAMIC STYLING HELPERS ===
+  const getTxAmountClasses = (tx, isDark) => {
+    if (tx.isBillPayment || tx.category === "Bill Payment") {
+      return isDark 
+        ? "bg-[#1877F2]/20 text-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.25)]" 
+        : "bg-blue-50 text-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.2)]";
+    }
+    if (tx.type === "Income") {
+      return isDark 
+        ? "bg-emerald-900/30 text-emerald-400 shadow-[0_8px_16px_rgba(16,185,129,0.2)]" 
+        : "bg-emerald-50 text-emerald-600 shadow-[0_8px_16px_rgba(16,185,129,0.2)]";
+    }
+    return isDark 
+      ? "bg-orange-900/30 text-orange-400 shadow-[0_8px_16px_rgba(249,115,22,0.2)]" 
+      : "bg-orange-50 text-orange-600 shadow-[0_8px_16px_rgba(249,115,22,0.2)]";
+  };
+
+  const getTxCategoryColor = (tx) => {
+    if (tx.isBillPayment || tx.category === "Bill Payment") return "text-[#1877F2]";
+    if (tx.type === "Income") return "text-[#10B981]";
+    return "text-[#F97316]";
+  };
+
   // === GRAPHIC HEADER (NET CASH & VELOCITY BAR) ===
   const graphicContent = (
     <div className="relative z-10 mb-2 w-full text-center px-4">
@@ -182,9 +205,9 @@ export default function Activity({
                       </div>
                       <div className="flex flex-col truncate justify-center">
                         <p className={`font-bold text-sm truncate leading-tight ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{tx.name}</p>
-                        {/* 🔥 FIX: STACKED METADATA 🔥 */}
+                        {/* 🔥 NEW STACKED METADATA WITH 3-WAY COLOR LOGIC 🔥 */}
                         <div className="flex flex-col mt-0.5">
-                          <span className={`text-[10px] font-black uppercase tracking-widest truncate leading-tight ${tx.type === 'Income' ? "text-[#10B981]" : "text-[#F97316]"}`}>
+                          <span className={`text-[10px] font-black uppercase tracking-widest truncate leading-tight ${getTxCategoryColor(tx)}`}>
                             {tx.category || "Uncategorized"}
                           </span>
                           <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest truncate leading-tight mt-0.5">
@@ -193,8 +216,8 @@ export default function Activity({
                         </div>
                       </div>
                     </div>
-                    {/* 🔥 EMERALD / ORANGE GLOWING SHADOWS 🔥 */}
-                    <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight shrink-0 ml-2 transition-colors ${tx.type === "Income" ? isDarkMode ? "bg-emerald-900/30 text-emerald-400 shadow-[0_8px_16px_rgba(16,185,129,0.2)]" : "bg-emerald-50 text-emerald-600 shadow-[0_8px_16px_rgba(16,185,129,0.2)]" : isDarkMode ? "bg-orange-900/30 text-orange-400 shadow-[0_8px_16px_rgba(249,115,22,0.2)]" : "bg-orange-50 text-orange-600 shadow-[0_8px_16px_rgba(249,115,22,0.2)]"}`}>
+                    {/* 🔥 NEW EMERALD / ORANGE / BLUE GLOWING SHADOWS 🔥 */}
+                    <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight shrink-0 ml-2 transition-colors ${getTxAmountClasses(tx, isDarkMode)}`}>
                       {tx.type === "Income" ? "+" : "-"}${tx.amount.toFixed(2)}
                     </div>
                   </div>

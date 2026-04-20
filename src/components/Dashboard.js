@@ -144,10 +144,16 @@ export default function Dashboard({
 
   const totalActiveBillsAmount = bills.filter(b => {
     if (b.isPaid) return false;
+    
+    // The True Cash Flow Rule: If it's an unaddressed ghost from the past, it counts NOW.
+    if (b.isOverdue || b.payday === "Due Now") return true;
+
+    // The Calendar Rule: If it falls in the current calendar month, it counts.
     if (b.rawDate) {
       const bDate = new Date(b.rawDate);
       return bDate.getUTCMonth() === currentMonthIndex && bDate.getUTCFullYear() === currentYear;
     }
+    
     return true; // Keeps unscheduled unpaid bills in the total just in case
   }).reduce((sum, b) => sum + b.amount, 0);
 

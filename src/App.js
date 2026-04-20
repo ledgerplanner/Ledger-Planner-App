@@ -650,6 +650,100 @@ export default function App() {
     </header>
   );
 
+  const confirmPaymentRoute = async () => {
+    const bill = bills.find(b => b.id === paymentModalConfig.billId);
+    const targetAcc = accounts.find(a => a.id === paymentModalConfig.accountId);
+    if (!bill || !targetAcc) return;
+    const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+    if (isDemoMode) {
+      const txId = `tx_demo_${Date.now()}`;
+      setTransactions([{ id: txId, name: bill.name, icon: bill.icon, amount: bill.amount, date: autoTimeStamp, type: "Expense", category: bill.category || "Bill Payment", accountId: targetAcc.id }, ...transactions]);
+      setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: a.balance - bill.amount } : a));
+      if (bill.isInstallment) {
+        const newPaidAmt = (bill.paidAmount || 0) + bill.amount;
+        if (newPaidAmt >= bill.totalAmount) {
+          setBills(bills.map(b => b.id === bill.id ? { ...b, isPaid: true, paidAmount: newPaidAmt, paidFromAccountId: targetAcc.id, linkedTxId: txId } : b));
+          triggerVictory(); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
+        } else {
+          setBills(bills.map(b => b.id === bill.id ? { ...b, paidAmount: newPaidAmt, isOverdue: false } : b));
+          triggerHaptic(); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" }); setInstallmentPromptConfig({ isOpen: true, billId: bill.id, nextDate: "" });
+        }
+      } else {
+        setBills(bills.map(b => b.id === bill.id ? { ...b, isPaid: true, paidAmount: 0, paidFromAccountId: targetAcc.id, linkedTxId: txId } : b));
+        triggerVictory(); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
+      }
+    } else {
+      const txRef = await addDoc(collection(db, "users", user.uid, "transactions"), { name: bill.name, icon: bill.icon, amount: bill.amount, date: autoTimeStamp, type: "Expense", category: bill.category || "Bill Payment", accountId: targetAcc.id, createdAt: serverTimestamp() });
+      await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance - bill.amount });
+      if (bill.isInstallment) {
+        const newPaidAmt = (bill.paidAmount || 0) + bill.amount;
+        if (newPaidAmt >= bill.totalAmount) {
+          await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: true, paidAmount: newPaidAmt, paidFromAccountId: targetAcc.id, linkedTxId: txRef.id });
+          triggerVictory(); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
+        } else {
+          await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { paidAmount: newPaidAmt, isOverdue: false });
+          triggerHaptic(); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" }); setInstallmentPromptConfig({ isOpen: true, billId: bill.id, nextDate: "" });
+        }
+      } else {
+        await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: true, paidAmount: 0, paidFromAccountId: targetAcc.id, linkedTxId: txRef.id });
+        triggerVictory(); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
+      }
+    }
+  };
+
+  const handleSaveNextInstallmentDate = async () => {
+    if (!installmentPromptConfig.nextDate) return;
+    const bill = bills.find(b => b.id === installmentPromptConfig.billId);
+    if(!bill) return;
+    const dateObj = new Date(installmentPromptConfig.nextDate);
+    const sortableDay = dateObj.getUTCDate();
+    const displayDate = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+    const newPayday = calculatePaydayGroup(installmentPromptConfig.nextDate);
+    if (isDemoMode) {
+      setBills(bills.map(b => b.id === bill.id ? { ...b, rawDate: installmentPromptConfig.nextDate, date: sortableDay, fullDate: displayDate, payday: newPayday, isOverdue: false } : b));
+    } else {
+      await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { rawDate: installmentPromptConfig.nextDate, date: sortableDay, fullDate: displayDate, payday: newPayday, isOverdue: false });
+    }
+    triggerVictory(); setInstallmentPromptConfig({ isOpen: false, billId: null, nextDate: "" });
+  };
+
+  const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0"); setEntryName(""); setEntryDate(""); setEntryIcon("🧾"); setEntryCategory(""); setEntryAccount(""); setEntryIsRecurring(false); setEntryIsInstallment(false); setEntryTotalAmount(""); setEntryPaidAmount(""); setIsCategorySelectorOpen(false); };
+  
+  const handleNumpad = (btn) => {
+    if (btn === "=") { try { const toEval = inputValue.replace(/×/g, "*").replace(/÷/g, "/"); if (/^[0-9+\-*/. ]+$/.test(toEval)) setInputValue(String(Function('"use strict";return (' + toEval + ")")())); } catch (e) { setInputValue("0"); } } 
+    else if (inputValue === "0" && btn !== ".") setInputValue(btn); else setInputValue(inputValue + btn);
+  };
+
+  const handleConfirmAction = async () => {
+    const amountToProcess = parseFloat(inputValue);
+    if (isNaN(amountToProcess) || (drawerTab === "bills" ? amountToProcess < 0 : amountToProcess <= 0)) return;
+    
+    const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+    if (drawerTab === "bills") {
+      let displayDate = "TBD", sortableDay = 31;
+      if (entryDate) { const dateObj = new Date(entryDate); sortableDay = dateObj.getUTCDate(); displayDate = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }); }
+      if (isDemoMode) {
+        setBills([...bills, { id: `b_demo_${Date.now()}`, name: entryName || "New Bill", icon: entryIcon || "🧾", category: entryCategory || "Other", amount: amountToProcess, date: sortableDay, fullDate: displayDate, rawDate: entryDate, payday: calculatePaydayGroup(entryDate), isPaid: false, isOverdue: false, isRecurring: entryIsRecurring, isInstallment: entryIsInstallment, totalAmount: entryIsInstallment ? parseFloat(entryTotalAmount) || 0 : 0, paidAmount: entryIsInstallment ? parseFloat(entryPaidAmount) || 0 : 0, linkedTxId: null }]);
+      } else {
+        await addDoc(collection(db, "users", user.uid, "bills"), { name: entryName || "New Bill", icon: entryIcon || "🧾", category: entryCategory || "Other", amount: amountToProcess, date: sortableDay, fullDate: displayDate, rawDate: entryDate, payday: calculatePaydayGroup(entryDate), isPaid: false, isOverdue: false, isRecurring: entryIsRecurring, isInstallment: entryIsInstallment, totalAmount: entryIsInstallment ? parseFloat(entryTotalAmount) || 0 : 0, paidAmount: entryIsInstallment ? parseFloat(entryPaidAmount) || 0 : 0, linkedTxId: null });
+      }
+      triggerHaptic(); closeQab();
+    } else if (drawerTab === "income" || drawerTab === "transactions") {
+      const targetAcc = accounts.find(a => a.id === entryAccount) || accounts[0];
+      if (targetAcc) {
+        const isIncome = drawerTab === "income";
+        if (isDemoMode) {
+          setTransactions([{ id: `tx_demo_${Date.now()}`, name: entryName || (isIncome ? "Income" : "Expense"), icon: isIncome ? "💵" : entryIcon, category: entryCategory || "Other", amount: amountToProcess, date: autoTimeStamp, type: isIncome ? "Income" : "Expense", accountId: targetAcc.id }, ...transactions]);
+          setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: a.balance + (isIncome ? amountToProcess : -amountToProcess) } : a));
+        } else {
+          await addDoc(collection(db, "users", user.uid, "transactions"), { name: entryName || (isIncome ? "Income" : "Expense"), icon: isIncome ? "💵" : entryIcon, category: entryCategory || "Other", amount: amountToProcess, date: autoTimeStamp, type: isIncome ? "Income" : "Expense", accountId: targetAcc.id, createdAt: serverTimestamp() });
+          await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance + (isIncome ? amountToProcess : -amountToProcess) });
+        }
+      }
+      triggerVictory(); closeQab();
+    }
+  };
+
   // === QAB EXTRACTED VARIABLES ===
   const qabActiveText = drawerTab === "bills" ? "text-[#1877F2]" : drawerTab === "income" ? "text-[#10B981]" : "text-[#F97316]";
   const qabActiveBg = drawerTab === "bills" ? "bg-[#1877F2]" : drawerTab === "income" ? "bg-[#10B981]" : "bg-[#F97316]";

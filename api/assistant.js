@@ -13,8 +13,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 3. Ping the Gemini Model
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    // 3. Ping the upgraded Gemini 3 Flash Model
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
 
     const data = await response.json();
     
-    // 🔥 THE FIX: If Google rejects it, send the EXACT error message to the browser
+    // If Google rejects it, send the EXACT error message to the browser
     if (!response.ok) {
       console.error("Gemini API Error:", data.error);
       return res.status(500).json({ error: data.error?.message || 'Unknown Google API Error' });

@@ -342,7 +342,7 @@ export default function Dashboard({
                        onClick={() => handleRunBriefing("AM")} 
                        className={`w-full py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 shadow-[0_4px_12px_rgba(24,119,242,0.15)] ${isDarkMode ? "bg-[#1877F2]/20 border border-[#1877F2]/30 text-[#1877F2]" : "bg-blue-50 border border-blue-100 text-[#1877F2] hover:bg-blue-100"}`}
                      >
-                       <RefreshCw size={16} className="text-[#1877F2]" /> Tell Me About Yesterday L.P.
+                       <RefreshCw size={16} className="text-[#1877F2]" /> Summarize my activity from last night L.P.
                      </button>
                   )}
 
@@ -352,7 +352,7 @@ export default function Dashboard({
                        onClick={() => handleRunBriefing("PM")} 
                        className={`w-full py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 shadow-[0_4px_12px_rgba(24,119,242,0.15)] ${isDarkMode ? "bg-[#1877F2]/20 border border-[#1877F2]/30 text-[#1877F2]" : "bg-blue-50 border border-blue-100 text-[#1877F2] hover:bg-blue-100"}`}
                      >
-                       <CheckCircle2 size={16} className="text-[#1877F2]" /> Let's Take A Look At Today L.P.
+                       <CheckCircle2 size={16} className="text-[#1877F2]" /> Summarize my activity for today L.P.
                      </button>
                   )}
 

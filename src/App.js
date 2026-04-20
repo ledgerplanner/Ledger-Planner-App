@@ -187,7 +187,6 @@ export default function App() {
   // 🔥 UPDATE ACCOUNT STATE INITIALIZATION 🔥
   useEffect(() => {
     if (selectedAccount) {
-      // FIX #3: Removed Math.abs() to preserve negative value
       setEditAccountBalance(selectedAccount.balance.toFixed(2));
       setEditAccountDesc(selectedAccount.description || "");
     }
@@ -658,7 +657,7 @@ export default function App() {
     const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
     if (isDemoMode) {
       const txId = `tx_demo_${Date.now()}`;
-      setTransactions([{ id: txId, name: bill.name, icon: bill.icon, amount: bill.amount, date: autoTimeStamp, type: "Expense", category: bill.category || "Bill Payment", accountId: targetAcc.id }, ...transactions]);
+      setTransactions([{ id: txId, name: bill.name, icon: bill.icon, amount: bill.amount, date: autoTimeStamp, type: "Expense", category: bill.category || "Bill Payment", accountId: targetAcc.id, isBillPayment: true }, ...transactions]);
       setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: a.balance - bill.amount } : a));
       if (bill.isInstallment) {
         const newPaidAmt = (bill.paidAmount || 0) + bill.amount;
@@ -674,7 +673,7 @@ export default function App() {
         triggerVictory(); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
       }
     } else {
-      const txRef = await addDoc(collection(db, "users", user.uid, "transactions"), { name: bill.name, icon: bill.icon, amount: bill.amount, date: autoTimeStamp, type: "Expense", category: bill.category || "Bill Payment", accountId: targetAcc.id, createdAt: serverTimestamp() });
+      const txRef = await addDoc(collection(db, "users", user.uid, "transactions"), { name: bill.name, icon: bill.icon, amount: bill.amount, date: autoTimeStamp, type: "Expense", category: bill.category || "Bill Payment", accountId: targetAcc.id, isBillPayment: true, createdAt: serverTimestamp() });
       await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance - bill.amount });
       if (bill.isInstallment) {
         const newPaidAmt = (bill.paidAmount || 0) + bill.amount;
@@ -757,6 +756,7 @@ export default function App() {
   const categoriesToRender = drawerTab === 'income' ? modernCategories.filter(g => g.group === "Income & Wealth") : modernCategories;
 
   const getEntryAmountColor = (entry) => {
+    if (entry.isBillPayment || entry.fullDate !== undefined) return "text-[#1877F2]";
     if (entry.type === 'Income') return "text-[#10B981]";
     if (entry.type === 'Expense') return "text-[#F97316]";
     return "text-[#1877F2]";

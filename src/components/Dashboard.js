@@ -74,8 +74,8 @@ export default function Dashboard({
   else if (currentHour >= 22 || currentHour < 5) { greetingStr = `Up late, ${userName}?`; }
 
   // === MACRO: GAS GAUGE & SHIELD MATH ENGINE (GLOBAL) ===
-  const totalIncomeBalance = accounts.reduce((sum, a) => sum + a.balance, 0);
-  const unpaidBillsAmount = bills.filter((b) => !b.isPaid).reduce((sum, b) => sum + b.amount, 0);
+  const totalIncomeBalance = accounts.reduce((sum, a) => sum + (a.balance || 0), 0);
+  const unpaidBillsAmount = bills.filter((b) => !b.isPaid).reduce((sum, b) => sum + (b.amount || 0), 0);
   const safeToSpend = totalIncomeBalance - unpaidBillsAmount;
 
   const debtRatio = totalIncomeBalance > 0 ? Math.max(0, Math.min((unpaidBillsAmount / totalIncomeBalance) * 100, 100)) : (unpaidBillsAmount > 0 ? 100 : 0);
@@ -150,7 +150,7 @@ export default function Dashboard({
       return bDate.getUTCMonth() === currentMonthIndex && bDate.getUTCFullYear() === currentYear;
     }
     return true; 
-  }).reduce((sum, b) => sum + b.amount, 0);
+  }).reduce((sum, b) => sum + (b.amount || 0), 0);
 
   // === 🧠 LP ASSISTANT LIVE ORCHESTRATOR 🧠 ===
   const [isBriefingLoading, setIsBriefingLoading] = useState(false);
@@ -171,19 +171,20 @@ export default function Dashboard({
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
-    const liquidCash = accounts.filter(a => a.type === "Checking" || a.type === "Cash").reduce((sum, a) => sum + a.balance, 0);
-    const todaySpend = transactions.filter(t => t.type === "Expense" && t.date.includes(todayStr)).reduce((sum, t) => sum + t.amount, 0);
-    const yesterdaySpend = transactions.filter(t => t.type === "Expense" && t.date.includes(yesterdayStr)).reduce((sum, t) => sum + t.amount, 0);
+    // Mathematical safety nets applied to prevent payload crashes
+    const liquidCash = accounts.filter(a => a.type === "Checking" || a.type === "Cash").reduce((sum, a) => sum + (a.balance || 0), 0);
+    const todaySpend = transactions.filter(t => t.type === "Expense" && (t.date || "").includes(todayStr)).reduce((sum, t) => sum + (t.amount || 0), 0);
+    const yesterdaySpend = transactions.filter(t => t.type === "Expense" && (t.date || "").includes(yesterdayStr)).reduce((sum, t) => sum + (t.amount || 0), 0);
     
     const overdueBills = bills.filter(b => !b.isPaid && b.isOverdue);
-    const overdueTotal = overdueBills.reduce((sum, b) => sum + b.amount, 0);
+    const overdueTotal = overdueBills.reduce((sum, b) => sum + (b.amount || 0), 0);
 
     const next72Hours = new Date(now);
     next72Hours.setDate(now.getDate() + 3);
     const upcomingBills = bills.filter(b => !b.isPaid && !b.isOverdue && b.rawDate && new Date(b.rawDate) <= next72Hours);
-    const upcomingTotal = upcomingBills.reduce((sum, b) => sum + b.amount, 0);
+    const upcomingTotal = upcomingBills.reduce((sum, b) => sum + (b.amount || 0), 0);
 
-    // 💼 2. THE GENERATOR (API Hand-off)
+    // 💼 2. THE GENERATOR (API Hand-off) - Strict 3-Sentence Rule Enforced
     const promptPayload = `
       You are the Ledger Planner AI. Provide a highly precise, bluntly honest 3-sentence financial briefing based ONLY on the data below.
       Tone: The Realist. Direct, factual, no fluff, no emojis. Provide a tactical next step if cash is negative.

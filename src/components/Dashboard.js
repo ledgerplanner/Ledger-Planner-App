@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Circle, CheckCircle2, ChevronUp, ChevronDown, Settings2, List, AlertCircle, RefreshCw } from "lucide-react";
+import { Circle, CheckCircle2, ChevronUp, ChevronDown, Settings2, List, AlertCircle, RefreshCw, Zap } from "lucide-react";
 import { getToken } from "firebase/messaging";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db, messaging } from "../firebase";
@@ -138,8 +138,18 @@ export default function Dashboard({
   });
 
   // === 🔥 MONTHLY FOOTPRINT ENGINE 🔥 ===
-  const totalActiveBillsAmount = bills.filter(b => !b.isPaid).reduce((sum, b) => sum + b.amount, 0);
   const currentMonthName = new Date().toLocaleString('default', { month: 'long' });
+  const currentMonthIndex = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+
+  const totalActiveBillsAmount = bills.filter(b => {
+    if (b.isPaid) return false;
+    if (b.rawDate) {
+      const bDate = new Date(b.rawDate);
+      return bDate.getUTCMonth() === currentMonthIndex && bDate.getUTCFullYear() === currentYear;
+    }
+    return true; // Keeps unscheduled unpaid bills in the total just in case
+  }).reduce((sum, b) => sum + b.amount, 0);
 
   // === 🧠 LP ASSISTANT TIME-GATE ENGINE 🧠 ===
   const [isBriefingLoading, setIsBriefingLoading] = useState(false);

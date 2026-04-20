@@ -185,17 +185,17 @@ export default function Dashboard({
 
     // 💼 2. THE GENERATOR (API Hand-off)
     const promptPayload = `
-      You are the Ledger Planner (L.P.) AI Assistant. You are a bluntly honest, highly precise financial expert.
-      Analyze the following ledger facts and provide a 2 to 3 sentence financial briefing.
-      Tone: The Realist (Direct, focused on facts, provides a clear solution if there is a shortfall). Do NOT be overly cheerful or use emojis. State the facts.
+      You are the Ledger Planner AI. Provide a highly precise, bluntly honest 3-sentence financial briefing based ONLY on the data below.
+      Tone: The Realist. Direct, factual, no fluff, no emojis. Provide a tactical next step if cash is negative.
+      CRITICAL RULE: You must output exactly 3 complete sentences. Do not cut off your response.
 
-      LEDGER FACTS:
-      - Liquid Cash (Checking/Cash): $${liquidCash.toFixed(2)}
+      DATA:
+      - Liquid Cash: $${liquidCash.toFixed(2)}
       - Overdue Bills: $${overdueTotal.toFixed(2)}
-      - Upcoming Bills (Next 72h): $${upcomingTotal.toFixed(2)}
-      - Discretionary Spent Today: $${todaySpend.toFixed(2)}
-      - Discretionary Spent Yesterday: $${yesterdaySpend.toFixed(2)}
-      - Context: ${type === "AM" ? "Morning Review (Focus on yesterday's momentum and upcoming liabilities)" : "Evening Review (Focus on today's burn rate and tomorrow's safety)"}
+      - Upcoming Bills (72h): $${upcomingTotal.toFixed(2)}
+      - Spent Today: $${todaySpend.toFixed(2)}
+      - Spent Yesterday: $${yesterdaySpend.toFixed(2)}
+      - Context: ${type === "AM" ? "Morning Review" : "Evening Review"}
     `;
 
     try {

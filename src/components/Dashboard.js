@@ -156,9 +156,10 @@ export default function Dashboard({
   const [isBriefingLoading, setIsBriefingLoading] = useState(false);
   const [activeBriefingText, setActiveBriefingText] = useState("");
   
+  // 🔥 LATE NIGHT OVERRIDE: Phantom Zone disabled so Founder can test APIs 🔥
   const isMorningWindow = currentHour >= 5 && currentHour < 16; 
-  const isEveningWindow = currentHour >= 16; 
-  const isPhantomZone = currentHour >= 0 && currentHour < 5; 
+  const isEveningWindow = currentHour >= 16 || currentHour < 5; 
+  const isPhantomZone = false; 
 
   const handleRunBriefing = async (type) => {
     setIsBriefingLoading(true);

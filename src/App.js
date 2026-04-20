@@ -187,7 +187,8 @@ export default function App() {
   // 🔥 UPDATE ACCOUNT STATE INITIALIZATION 🔥
   useEffect(() => {
     if (selectedAccount) {
-      setEditAccountBalance(Math.abs(selectedAccount.balance).toFixed(2));
+      // FIX #3: Removed Math.abs() to preserve negative value
+      setEditAccountBalance(selectedAccount.balance.toFixed(2));
       setEditAccountDesc(selectedAccount.description || "");
     }
   }, [selectedAccount]);
@@ -1011,10 +1012,10 @@ export default function App() {
                 <button onClick={() => setIsAddAccountOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
               <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
-                <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Account Name</label><input type="text" value={newAccName} onChange={(e) => setNewAccName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200"}`} /></div>
-                <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Current Balance</label><input type="number" value={newAccBalance} onChange={(e) => setNewAccBalance(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200"}`} /></div>
-                <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Account Type</label><select value={newAccType} onChange={(e) => setNewAccType(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200"}`}><option>Checking</option><option>Savings</option><option>Credit Card</option><option>Cash</option><option>401k / Retirement</option></select></div>
-                <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest text-slate-400">Account Details</label><input type="text" placeholder={newAccType} value={newAccDesc} onChange={(e) => setNewAccDesc(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white placeholder-slate-600" : "bg-white border-slate-200 placeholder-slate-300"}`} /></div>
+                <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Name</label><input type="text" value={newAccName} onChange={(e) => setNewAccName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200"}`} /></div>
+                <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Current Balance</label><input type="number" value={newAccBalance} onChange={(e) => setNewAccBalance(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200"}`} /></div>
+                <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Type</label><select value={newAccType} onChange={(e) => setNewAccType(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200"}`}><option>Checking</option><option>Savings</option><option>Credit Card</option><option>Cash</option><option>401k / Retirement</option></select></div>
+                <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Details</label><input type="text" placeholder={newAccType} value={newAccDesc} onChange={(e) => setNewAccDesc(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white placeholder-slate-600" : "bg-white border-slate-200 placeholder-slate-300"}`} /></div>
                 <button onClick={handleAddAccount} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2">Save Account <CheckCircle2 size={16} /></button>
               </div>
             </div>
@@ -1031,10 +1032,10 @@ export default function App() {
               </div>
               <div className={`p-6 flex flex-col overflow-y-auto ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
                 <div className="flex items-center gap-2 mb-6">
-                  <select value={transferFrom} onChange={(e) => setTransferFrom(e.target.value)} className="flex-1 py-3 px-4 rounded-xl font-bold text-xs border text-center"><option value="" disabled>From</option>{accounts.map(a => (<option key={a.id} value={a.id}>{a.name}</option>))}
+                  <select value={transferFrom} onChange={(e) => setTransferFrom(e.target.value)} className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs border text-center ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}><option value="" disabled>From</option>{accounts.map(a => (<option key={a.id} value={a.id}>{a.name}</option>))}
                   </select>
-                  <ArrowRight size={16} />
-                  <select value={transferTo} onChange={(e) => setTransferTo(e.target.value)} className="flex-1 py-3 px-4 rounded-xl font-bold text-xs border text-center"><option value="" disabled>To</option>{accounts.map(a => (<option key={a.id} value={a.id}>{a.name}</option>))}
+                  <ArrowRight size={16} className={isDarkMode ? "text-slate-500" : "text-slate-400"} />
+                  <select value={transferTo} onChange={(e) => setTransferTo(e.target.value)} className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs border text-center ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}><option value="" disabled>To</option>{accounts.map(a => (<option key={a.id} value={a.id}>{a.name}</option>))}
                   </select>
                 </div>
                 
@@ -1045,7 +1046,7 @@ export default function App() {
 
                 <div className="grid grid-cols-4 gap-3 mt-auto">
                   {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", ".", "0", "=", "+"].map((btn) => {
-                    return ( <button key={btn} onClick={() => handleTransferNumpad(btn)} className="w-full h-14 rounded-2xl text-2xl font-bold flex items-center justify-center transition-all bg-slate-100 border border-slate-200 active:scale-95 active:bg-slate-200 touch-manipulation"> {btn} </button> );
+                    return ( <button key={btn} onClick={() => handleTransferNumpad(btn)} className={`w-full h-14 rounded-2xl text-2xl font-bold flex items-center justify-center transition-all border active:scale-95 touch-manipulation ${isDarkMode ? "bg-slate-800 border-slate-700 text-white active:bg-slate-700" : "bg-slate-100 border-slate-200 text-slate-900 active:bg-slate-200"}`}> {btn} </button> );
                   })}
                 </div>
                 <button onClick={executeTransfer} disabled={parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo} className={`w-full mt-6 h-16 shrink-0 rounded-2xl font-black uppercase tracking-widest text-sm text-white shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2 ${parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo ? "bg-slate-300 opacity-50 shadow-none cursor-not-allowed" : "bg-[#1877F2]"}`}>Execute Transfer <ArrowRight size={18} /></button>
@@ -1076,7 +1077,7 @@ export default function App() {
                       step="0.01"
                       value={editAccountBalance} 
                       onChange={(e) => setEditAccountBalance(e.target.value)} 
-                      onFocus={() => setEditAccountBalance(Math.abs(selectedAccount.balance).toFixed(2))} 
+                      onFocus={() => setEditAccountBalance(selectedAccount.balance.toFixed(2))} 
                       className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl font-bold text-lg border focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`} 
                     />
                   </div>

@@ -186,7 +186,7 @@ export default function Dashboard({
 
     // 💼 2. THE GENERATOR (API Hand-off) - Strict 3-Sentence Rule Enforced
     const promptPayload = `
-      You are the Ledger Planner AI. Provide a highly precise, bluntly honest 3-sentence financial briefing based ONLY on the data below.
+      You are the Ledger Planner AI. Provide a highly precise, fact-based 3-sentence financial briefing based ONLY on the data below.
       Tone: The Realist. Direct, factual, no fluff, no emojis. Provide a tactical next step if cash is negative.
       CRITICAL RULE: You must output exactly 3 complete sentences. Do not cut off your response.
 
@@ -222,6 +222,29 @@ export default function Dashboard({
       if (type === "AM") setHasConsumedAMBriefing(true);
       else setHasConsumedPMBriefing(true);
     }
+  };
+
+  // === DYNAMIC STYLING HELPERS ===
+  const getTxAmountClasses = (tx, isDark) => {
+    if (tx.isBillPayment || tx.category === "Bill Payment") {
+      return isDark 
+        ? "bg-[#1877F2]/20 text-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.25)]" 
+        : "bg-blue-50 text-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.2)]";
+    }
+    if (tx.type === "Income") {
+      return isDark 
+        ? "bg-emerald-900/30 text-emerald-400 shadow-[0_8px_16px_rgba(16,185,129,0.2)]" 
+        : "bg-emerald-50 text-emerald-600 shadow-[0_8px_16px_rgba(16,185,129,0.2)]";
+    }
+    return isDark 
+      ? "bg-orange-900/30 text-orange-400 shadow-[0_8px_16px_rgba(249,115,22,0.2)]" 
+      : "bg-orange-50 text-orange-600 shadow-[0_8px_16px_rgba(249,115,22,0.2)]";
+  };
+
+  const getTxCategoryColor = (tx) => {
+    if (tx.isBillPayment || tx.category === "Bill Payment") return "text-[#1877F2]";
+    if (tx.type === "Income") return "text-[#10B981]";
+    return "text-[#F97316]";
   };
 
   // === GRAPHIC HEADER (UNCHANGED MACRO VIEW) ===
@@ -543,7 +566,7 @@ export default function Dashboard({
                       <div className="flex flex-col truncate justify-center">
                         <p className={`font-bold text-sm truncate leading-tight ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{tx.name}</p>
                         <div className="flex flex-col mt-0.5">
-                          <span className={`text-[10px] font-black uppercase tracking-widest truncate leading-tight ${tx.type === 'Income' ? "text-[#10B981]" : "text-[#F97316]"}`}>
+                          <span className={`text-[10px] font-black uppercase tracking-widest truncate leading-tight ${getTxCategoryColor(tx)}`}>
                             {tx.category || "Uncategorized"}
                           </span>
                           <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest truncate leading-tight mt-0.5">
@@ -552,7 +575,7 @@ export default function Dashboard({
                         </div>
                       </div>
                     </div>
-                    <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight shrink-0 ml-2 transition-colors ${tx.type === "Income" ? isDarkMode ? "bg-emerald-900/30 text-emerald-400 shadow-[0_8px_16px_rgba(16,185,129,0.2)]" : "bg-emerald-50 text-emerald-600 shadow-[0_8px_16px_rgba(16,185,129,0.2)]" : isDarkMode ? "bg-orange-900/30 text-orange-400 shadow-[0_8px_16px_rgba(249,115,22,0.2)]" : "bg-orange-50 text-orange-600 shadow-[0_8px_16px_rgba(249,115,22,0.2)]"}`}>
+                    <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight shrink-0 ml-2 transition-colors ${getTxAmountClasses(tx, isDarkMode)}`}>
                       {tx.type === "Income" ? "+" : "-"}${tx.amount.toFixed(2)}
                     </div>
                   </div>

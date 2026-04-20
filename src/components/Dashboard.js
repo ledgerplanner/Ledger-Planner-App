@@ -156,10 +156,10 @@ export default function Dashboard({
   const [isBriefingLoading, setIsBriefingLoading] = useState(false);
   const [activeBriefingText, setActiveBriefingText] = useState("");
   
-  // 🔥 LATE NIGHT OVERRIDE: Phantom Zone disabled so Founder can test APIs 🔥
+  // 🔥 ORIGINAL LOGIC RESTORED: AI Assistant sleeps from Midnight - 5 AM 🔥
   const isMorningWindow = currentHour >= 5 && currentHour < 16; 
-  const isEveningWindow = currentHour >= 16 || currentHour < 5; 
-  const isPhantomZone = false; 
+  const isEveningWindow = currentHour >= 16; 
+  const isPhantomZone = currentHour >= 0 && currentHour < 5; 
 
   const handleRunBriefing = async (type) => {
     setIsBriefingLoading(true);
@@ -295,7 +295,7 @@ export default function Dashboard({
       <main className="px-6 space-y-4">
         
         {/* ====================================================================== */}
-        {/* 🔥 NEW DASHBOARD INTELLIGENCE MODULE WITH POWER AURA 🔥 */}
+        {/* 🔥 DASHBOARD INTELLIGENCE MODULE WITH PHANTOM ZONE PROTECTION 🔥 */}
         {/* ====================================================================== */}
         {!isPhantomZone && (
           <div className={`rounded-3xl border transition-all duration-500 overflow-hidden shadow-[0_0_40px_rgba(24,119,242,0.3)] ${isDarkMode ? "bg-slate-800/60 border-[#1877F2]/50" : "bg-white border-[#1877F2]/40"} ${(hasConsumedAMBriefing && isMorningWindow) || (hasConsumedPMBriefing && isEveningWindow) ? "mb-2" : "mb-5"}`}>
@@ -517,7 +517,7 @@ export default function Dashboard({
           })}
         </div>
 
-        {/* 🔥 FIX #3: THE MONTHLY FOOTPRINT VAULT 🔥 */}
+        {/* 🔥 MONTHLY FOOTPRINT VAULT 🔥 */}
         <div className={`rounded-3xl p-5 border shadow-sm flex items-center justify-between mt-6 ${isDarkMode ? "bg-slate-800/40 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
           <div>
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Active Bills</p>
@@ -541,7 +541,6 @@ export default function Dashboard({
                       <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>{tx.icon}</div>
                       <div className="flex flex-col truncate justify-center">
                         <p className={`font-bold text-sm truncate leading-tight ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{tx.name}</p>
-                        {/* 🔥 STACKED HIERARCHY MATCHED WITH ACTIVITY PAGE 🔥 */}
                         <div className="flex flex-col mt-0.5">
                           <span className={`text-[10px] font-black uppercase tracking-widest truncate leading-tight ${tx.type === 'Income' ? "text-[#10B981]" : "text-[#F97316]"}`}>
                             {tx.category || "Uncategorized"}
@@ -552,7 +551,6 @@ export default function Dashboard({
                         </div>
                       </div>
                     </div>
-                    {/* 🔥 SHADED VAULT WITH GLOWING SHADOWS 🔥 */}
                     <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight shrink-0 ml-2 transition-colors ${tx.type === "Income" ? isDarkMode ? "bg-emerald-900/30 text-emerald-400 shadow-[0_8px_16px_rgba(16,185,129,0.2)]" : "bg-emerald-50 text-emerald-600 shadow-[0_8px_16px_rgba(16,185,129,0.2)]" : isDarkMode ? "bg-orange-900/30 text-orange-400 shadow-[0_8px_16px_rgba(249,115,22,0.2)]" : "bg-orange-50 text-orange-600 shadow-[0_8px_16px_rgba(249,115,22,0.2)]"}`}>
                       {tx.type === "Income" ? "+" : "-"}${tx.amount.toFixed(2)}
                     </div>

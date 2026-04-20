@@ -144,17 +144,12 @@ export default function Dashboard({
 
   const totalActiveBillsAmount = bills.filter(b => {
     if (b.isPaid) return false;
-    
-    // The True Cash Flow Rule: If it's an unaddressed ghost from the past, it counts NOW.
     if (b.isOverdue || b.payday === "Due Now") return true;
-
-    // The Calendar Rule: If it falls in the current calendar month, it counts.
     if (b.rawDate) {
       const bDate = new Date(b.rawDate);
       return bDate.getUTCMonth() === currentMonthIndex && bDate.getUTCFullYear() === currentYear;
     }
-    
-    return true; // Keeps unscheduled unpaid bills in the total just in case
+    return true; 
   }).reduce((sum, b) => sum + b.amount, 0);
 
   // === 🧠 LP ASSISTANT LIVE ORCHESTRATOR 🧠 ===
@@ -165,7 +160,7 @@ export default function Dashboard({
   const isEveningWindow = currentHour >= 16; 
   const isPhantomZone = currentHour >= 0 && currentHour < 5; 
 
-  const handleRunBriefing = (type) => {
+  const handleRunBriefing = async (type) => {
     setIsBriefingLoading(true);
     
     // 📡 1. THE AUDITOR (Data Extraction Node)
@@ -187,34 +182,44 @@ export default function Dashboard({
     const upcomingBills = bills.filter(b => !b.isPaid && !b.isOverdue && b.rawDate && new Date(b.rawDate) <= next72Hours);
     const upcomingTotal = upcomingBills.reduce((sum, b) => sum + b.amount, 0);
 
-    // 💼 2. THE GENERATOR (Realist Persona Matrix)
-    setTimeout(() => {
-      setIsBriefingLoading(false);
-      let briefing = "";
+    // 💼 2. THE GENERATOR (API Hand-off)
+    const promptPayload = `
+      You are the Ledger Planner (L.P.) AI Assistant. You are a bluntly honest, highly precise financial expert.
+      Analyze the following ledger facts and provide a 2 to 3 sentence financial briefing.
+      Tone: The Realist (Direct, focused on facts, provides a clear solution if there is a shortfall). Do NOT be overly cheerful or use emojis. State the facts.
 
-      if (type === "AM") {
-        setHasConsumedAMBriefing(true);
-        if (overdueTotal > 0) {
-           briefing = `Ledger Alert: You have $${overdueTotal.toFixed(2)} in overdue liabilities. Liquidating this debt today using your $${liquidCash.toFixed(2)} available cash must be your primary focus.`;
-        } else if (yesterdaySpend > 100) {
-           briefing = `Reviewing yesterday: You burned $${yesterdaySpend.toFixed(2)}. Cutting all discretionary spending today ensures your upcoming $${upcomingTotal.toFixed(2)} in scheduled bills are comfortably cleared.`;
-        } else {
-           briefing = `Solid discipline yesterday with only $${yesterdaySpend.toFixed(2)} in outflow. Your debt load is holding steady and you have $${liquidCash.toFixed(2)} in liquid reserves. Keep this momentum rolling today.`;
-        }
+      LEDGER FACTS:
+      - Liquid Cash (Checking/Cash): $${liquidCash.toFixed(2)}
+      - Overdue Bills: $${overdueTotal.toFixed(2)}
+      - Upcoming Bills (Next 72h): $${upcomingTotal.toFixed(2)}
+      - Discretionary Spent Today: $${todaySpend.toFixed(2)}
+      - Discretionary Spent Yesterday: $${yesterdaySpend.toFixed(2)}
+      - Context: ${type === "AM" ? "Morning Review (Focus on yesterday's momentum and upcoming liabilities)" : "Evening Review (Focus on today's burn rate and tomorrow's safety)"}
+    `;
+
+    try {
+      const response = await fetch('/api/assistant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: promptPayload })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.reply) {
+        setActiveBriefingText(data.reply);
       } else {
-        setHasConsumedPMBriefing(true);
-        if (todaySpend > liquidCash * 0.2 && liquidCash > 0) {
-           briefing = `Ledger Alert: You burned $${todaySpend.toFixed(2)} today, bleeding over 20% of your liquid reserves. A strict spending freeze tomorrow resolves this drain.`;
-        } else if (upcomingTotal > liquidCash) {
-           briefing = `Warning: You have $${upcomingTotal.toFixed(2)} due in the next 72 hours, but only $${liquidCash.toFixed(2)} in cash. Reallocating funds immediately is required to prevent bounced payments.`;
-        } else if (todaySpend === 0) {
-           briefing = `Flawless execution. Zero discretionary spend detected today. Tomorrow is quiet. Rest easy, you are mathematically in the green.`;
-        } else {
-           briefing = `Ledger secured. You had $${todaySpend.toFixed(2)} in outflow today, well within safe parameters. Your $${liquidCash.toFixed(2)} reserve easily covers the immediate horizon.`;
-        }
+        console.error("API Response Error:", data.error);
+        setActiveBriefingText("Ledger Warning: Intelligence network reached, but analysis failed. Review your connections.");
       }
-      setActiveBriefingText(briefing);
-    }, 1500);
+    } catch (error) {
+      console.error("Network Error:", error);
+      setActiveBriefingText("Ledger Warning: Failed to establish neural link with the serverless backend. Please try again.");
+    } finally {
+      setIsBriefingLoading(false);
+      if (type === "AM") setHasConsumedAMBriefing(true);
+      else setHasConsumedPMBriefing(true);
+    }
   };
 
   // === GRAPHIC HEADER (UNCHANGED MACRO VIEW) ===
@@ -315,7 +320,7 @@ export default function Dashboard({
                     <div className="w-2.5 h-2.5 rounded-full bg-[#1877F2] animate-pulse" style={{ animationDelay: '150ms' }}></div>
                     <div className="w-2.5 h-2.5 rounded-full bg-[#1877F2] animate-pulse" style={{ animationDelay: '300ms' }}></div>
                   </div>
-                  <p className="text-[10px] font-bold text-[#1877F2] uppercase tracking-widest mt-1">Analyzing Ledger...</p>
+                  <p className="text-[10px] font-bold text-[#1877F2] uppercase tracking-widest mt-1">Establishing Neural Link...</p>
                 </div>
               ) : activeBriefingText ? (
                 <div className="animate-fade-in space-y-4">

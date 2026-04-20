@@ -13,25 +13,25 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 3. Ping the Gemini 1.5 Flash Model (Optimized for speed and accuracy)
+    // 3. Ping the Gemini Model
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: { 
-          temperature: 0.7, // Keeps the AI focused and factual
-          maxOutputTokens: 150 // Forces a concise, punchy briefing
+          temperature: 0.7,
+          maxOutputTokens: 150
         }
       })
     });
 
     const data = await response.json();
     
-    // Catch API-level errors (e.g., invalid key, quota limit)
-    if (data.error) {
+    // 🔥 THE FIX: If Google rejects it, send the EXACT error message to the browser
+    if (!response.ok) {
       console.error("Gemini API Error:", data.error);
-      return res.status(500).json({ error: 'AI processing failed.' });
+      return res.status(500).json({ error: data.error?.message || 'Unknown Google API Error' });
     }
 
     // Extract the exact text response
@@ -42,6 +42,6 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error("Serverless Function Error:", error);
-    return res.status(500).json({ error: 'Failed to establish neural link.' });
+    return res.status(500).json({ error: error.message || 'Failed to establish neural link.' });
   }
 }

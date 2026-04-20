@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Circle, CheckCircle2, ChevronUp, ChevronDown, Settings2, List, AlertCircle, RefreshCw, Zap } from "lucide-react";
+import { Circle, CheckCircle2, ChevronUp, ChevronDown, Settings2, List, AlertCircle, RefreshCw } from "lucide-react";
 import { getToken } from "firebase/messaging";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db, messaging } from "../firebase";
@@ -236,15 +236,15 @@ export default function Dashboard({
       <main className="px-6 space-y-4">
         
         {/* ====================================================================== */}
-        {/* 🔥 NEW DASHBOARD INTELLIGENCE MODULE WITH GLOW 🔥 */}
+        {/* 🔥 NEW DASHBOARD INTELLIGENCE MODULE WITH POWER AURA 🔥 */}
         {/* ====================================================================== */}
         {!isPhantomZone && (
-          <div className={`rounded-3xl border transition-all duration-500 overflow-hidden shadow-[0_0_24px_rgba(24,119,242,0.15)] ${isDarkMode ? "bg-slate-800/60 border-[#1877F2]/40" : "bg-white border-[#1877F2]/30"} ${(hasConsumedAMBriefing && isMorningWindow) || (hasConsumedPMBriefing && isEveningWindow) ? "mb-2" : "mb-5"}`}>
+          <div className={`rounded-3xl border transition-all duration-500 overflow-hidden shadow-[0_0_40px_rgba(24,119,242,0.3)] ${isDarkMode ? "bg-slate-800/60 border-[#1877F2]/50" : "bg-white border-[#1877F2]/40"} ${(hasConsumedAMBriefing && isMorningWindow) || (hasConsumedPMBriefing && isEveningWindow) ? "mb-2" : "mb-5"}`}>
             
             {/* MODULE HEADER */}
             <div className={`px-4 py-3 flex items-center justify-between border-b ${isDarkMode ? "border-[#1877F2]/20" : "border-[#1877F2]/10"}`}>
               <div className="flex items-center gap-2">
-                <span className="text-xl -mt-0.5">🤖</span>
+                <span className="text-2xl -mt-0.5 drop-shadow-md">🤖</span>
                 <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-blue-400" : "text-[#1877F2]"}`}>L.P. AI Assistant</span>
               </div>
               <span className={`text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-[#1877F2]" : "text-[#1877F2]/70"}`}>
@@ -256,7 +256,7 @@ export default function Dashboard({
             <div className="p-4">
               {isBriefingLoading ? (
                 <div className="flex flex-col items-center justify-center py-6 space-y-3">
-                  <div className="text-5xl animate-bounce mb-1">🤖</div>
+                  <div className="text-6xl animate-bounce mb-2 drop-shadow-xl">🤖</div>
                   <div className="flex gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full bg-[#1877F2] animate-pulse" style={{ animationDelay: '0ms' }}></div>
                     <div className="w-2.5 h-2.5 rounded-full bg-[#1877F2] animate-pulse" style={{ animationDelay: '150ms' }}></div>
@@ -269,7 +269,7 @@ export default function Dashboard({
                   <p className={`text-xs font-bold leading-relaxed ${isDarkMode ? "text-slate-200" : "text-slate-700"}`}>"{activeBriefingText}"</p>
                   <div className="pt-4 border-t border-dashed border-[#1877F2]/20 flex flex-col">
                     <p className={`text-xs font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>{isMorningWindow ? "Let's have a great day!" : "It's been a great day, enjoy your evening!"}</p>
-                    <p className={`text-[10.5px] sm:text-xs font-black uppercase tracking-[0.18em] sm:tracking-[0.22em] mt-1 text-[#1877F2] break-words leading-tight`}>
+                    <p className={`text-[11px] sm:text-xs font-black uppercase tracking-[0.2em] sm:tracking-[0.25em] mt-1.5 text-[#1877F2] break-words leading-tight`}>
                       YOUR LEDGER PLANNER AI ASSISTANT 💼
                     </p>
                   </div>

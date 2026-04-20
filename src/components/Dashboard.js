@@ -157,7 +157,7 @@ export default function Dashboard({
     return true; // Keeps unscheduled unpaid bills in the total just in case
   }).reduce((sum, b) => sum + b.amount, 0);
 
-  // === 🧠 LP ASSISTANT TIME-GATE ENGINE 🧠 ===
+  // === 🧠 LP ASSISTANT LIVE ORCHESTRATOR 🧠 ===
   const [isBriefingLoading, setIsBriefingLoading] = useState(false);
   const [activeBriefingText, setActiveBriefingText] = useState("");
   
@@ -167,16 +167,53 @@ export default function Dashboard({
 
   const handleRunBriefing = (type) => {
     setIsBriefingLoading(true);
-    // Simulate AI thinking time
+    
+    // 📡 1. THE AUDITOR (Data Extraction Node)
+    const now = new Date();
+    const todayStr = now.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
+    const liquidCash = accounts.filter(a => a.type === "Checking" || a.type === "Cash").reduce((sum, a) => sum + a.balance, 0);
+    const todaySpend = transactions.filter(t => t.type === "Expense" && t.date.includes(todayStr)).reduce((sum, t) => sum + t.amount, 0);
+    const yesterdaySpend = transactions.filter(t => t.type === "Expense" && t.date.includes(yesterdayStr)).reduce((sum, t) => sum + t.amount, 0);
+    
+    const overdueBills = bills.filter(b => !b.isPaid && b.isOverdue);
+    const overdueTotal = overdueBills.reduce((sum, b) => sum + b.amount, 0);
+
+    const next72Hours = new Date(now);
+    next72Hours.setDate(now.getDate() + 3);
+    const upcomingBills = bills.filter(b => !b.isPaid && !b.isOverdue && b.rawDate && new Date(b.rawDate) <= next72Hours);
+    const upcomingTotal = upcomingBills.reduce((sum, b) => sum + b.amount, 0);
+
+    // 💼 2. THE GENERATOR (Realist Persona Matrix)
     setTimeout(() => {
       setIsBriefingLoading(false);
+      let briefing = "";
+
       if (type === "AM") {
         setHasConsumedAMBriefing(true);
-        setActiveBriefingText("Solid discipline yesterday. You kept discretionary spending to an absolute minimum and didn't touch your weekend buffer. Your debt load is holding steady. Keep this momentum rolling today.");
+        if (overdueTotal > 0) {
+           briefing = `Ledger Alert: You have $${overdueTotal.toFixed(2)} in overdue liabilities. Liquidating this debt today using your $${liquidCash.toFixed(2)} available cash must be your primary focus.`;
+        } else if (yesterdaySpend > 100) {
+           briefing = `Reviewing yesterday: You burned $${yesterdaySpend.toFixed(2)}. Cutting all discretionary spending today ensures your upcoming $${upcomingTotal.toFixed(2)} in scheduled bills are comfortably cleared.`;
+        } else {
+           briefing = `Solid discipline yesterday with only $${yesterdaySpend.toFixed(2)} in outflow. Your debt load is holding steady and you have $${liquidCash.toFixed(2)} in liquid reserves. Keep this momentum rolling today.`;
+        }
       } else {
         setHasConsumedPMBriefing(true);
-        setActiveBriefingText("Ledger secured. You cleared your major bills today without breaking a sweat. Tomorrow is quiet with zero scheduled payments. Rest easy, you are mathematically in the green.");
+        if (todaySpend > liquidCash * 0.2 && liquidCash > 0) {
+           briefing = `Ledger Alert: You burned $${todaySpend.toFixed(2)} today, bleeding over 20% of your liquid reserves. A strict spending freeze tomorrow resolves this drain.`;
+        } else if (upcomingTotal > liquidCash) {
+           briefing = `Warning: You have $${upcomingTotal.toFixed(2)} due in the next 72 hours, but only $${liquidCash.toFixed(2)} in cash. Reallocating funds immediately is required to prevent bounced payments.`;
+        } else if (todaySpend === 0) {
+           briefing = `Flawless execution. Zero discretionary spend detected today. Tomorrow is quiet. Rest easy, you are mathematically in the green.`;
+        } else {
+           briefing = `Ledger secured. You had $${todaySpend.toFixed(2)} in outflow today, well within safe parameters. Your $${liquidCash.toFixed(2)} reserve easily covers the immediate horizon.`;
+        }
       }
+      setActiveBriefingText(briefing);
     }, 1500);
   };
 
@@ -494,11 +531,19 @@ export default function Dashboard({
               <div className="space-y-3">
                 {transactions.slice(0, 5).map((tx) => (
                   <div key={tx.id} onClick={() => setSelectedEntry(tx)} className={`flex items-center justify-between p-3.5 rounded-2xl border shadow-sm cursor-pointer transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 truncate">
                       <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>{tx.icon}</div>
-                      <div>
-                        <p className={`font-bold text-sm ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{tx.name}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{tx.date}</p>
+                      <div className="flex flex-col truncate justify-center">
+                        <p className={`font-bold text-sm truncate leading-tight ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{tx.name}</p>
+                        {/* 🔥 STACKED HIERARCHY MATCHED WITH ACTIVITY PAGE 🔥 */}
+                        <div className="flex flex-col mt-0.5">
+                          <span className={`text-[10px] font-black uppercase tracking-widest truncate leading-tight ${tx.type === 'Income' ? "text-[#10B981]" : "text-[#F97316]"}`}>
+                            {tx.category || "Uncategorized"}
+                          </span>
+                          <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest truncate leading-tight mt-0.5">
+                            {tx.date}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     {/* 🔥 SHADED VAULT WITH GLOWING SHADOWS 🔥 */}

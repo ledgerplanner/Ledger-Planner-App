@@ -180,14 +180,20 @@ export default function Activity({
                       <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
                         {tx.icon}
                       </div>
-                      <div className="truncate">
-                        <p className={`font-bold text-sm truncate ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{tx.name}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate mt-0.5">
-                          <span className={tx.type === 'Income' ? "text-[#10B981]" : "text-[#F97316]"}>{tx.category || "Uncategorized"}</span> • {tx.date}
-                        </p>
+                      <div className="flex flex-col truncate justify-center">
+                        <p className={`font-bold text-sm truncate leading-tight ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{tx.name}</p>
+                        {/* 🔥 FIX: STACKED METADATA 🔥 */}
+                        <div className="flex flex-col mt-0.5">
+                          <span className={`text-[10px] font-black uppercase tracking-widest truncate leading-tight ${tx.type === 'Income' ? "text-[#10B981]" : "text-[#F97316]"}`}>
+                            {tx.category || "Uncategorized"}
+                          </span>
+                          <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest truncate leading-tight mt-0.5">
+                            {tx.date}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    {/* 🔥 FIX 2: EMERALD / ORANGE GLOWING SHADOWS ADDED 🔥 */}
+                    {/* 🔥 EMERALD / ORANGE GLOWING SHADOWS 🔥 */}
                     <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight shrink-0 ml-2 transition-colors ${tx.type === "Income" ? isDarkMode ? "bg-emerald-900/30 text-emerald-400 shadow-[0_8px_16px_rgba(16,185,129,0.2)]" : "bg-emerald-50 text-emerald-600 shadow-[0_8px_16px_rgba(16,185,129,0.2)]" : isDarkMode ? "bg-orange-900/30 text-orange-400 shadow-[0_8px_16px_rgba(249,115,22,0.2)]" : "bg-orange-50 text-orange-600 shadow-[0_8px_16px_rgba(249,115,22,0.2)]"}`}>
                       {tx.type === "Income" ? "+" : "-"}${tx.amount.toFixed(2)}
                     </div>

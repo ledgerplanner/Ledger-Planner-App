@@ -885,11 +885,14 @@ export default function App() {
                     <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-200 mb-3 flex items-center gap-2">Intelligence</h4>
                     <div className="flex items-center gap-2 mb-2">
                       <p className="font-black text-white text-xl tracking-tight">LP Assistant</p>
-                      <span className="bg-white/20 text-white px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border border-white/30 backdrop-blur-sm">Coming Soon</span>
+                      <div className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded border border-white/30 backdrop-blur-sm">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse"></div>
+                        <span className="text-white text-[8px] font-black uppercase tracking-widest">Active</span>
+                      </div>
                     </div>
-                    <p className="text-xs text-blue-100 font-bold mb-5 w-5/6 leading-relaxed">Your personal AI wealth architect. Ask questions, analyze spending, and build custom financial roadmaps instantly.</p>
-                    <button disabled className="bg-white/10 border border-white/20 text-white/50 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest cursor-not-allowed backdrop-blur-sm">
-                      Awaiting Core Activation
+                    <p className="text-xs text-blue-100 font-bold mb-5 w-5/6 leading-relaxed">Your personal AI wealth architect is currently monitoring your ledger, analyzing cash flow, and securing your baseline.</p>
+                    <button onClick={() => { setIsSettingsOpen(false); changeTab("home"); }} className="bg-white text-[#1877F2] shadow-[0_8px_16px_rgba(0,0,0,0.15)] px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2">
+                      View Daily Briefing <ArrowRight size={14} />
                     </button>
                   </div>
                 </div>
@@ -1028,9 +1031,11 @@ export default function App() {
               </div>
               <div className={`p-6 flex flex-col overflow-y-auto ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
                 <div className="flex items-center gap-2 mb-6">
-                  <select value={transferFrom} onChange={(e) => setTransferFrom(e.target.value)} className="flex-1 py-3 px-4 rounded-xl font-bold text-xs border text-center"><option value="" disabled>From</option>{accounts.map(a => (<option key={a.id} value={a.id}>{a.name}</option>))}</select>
+                  <select value={transferFrom} onChange={(e) => setTransferFrom(e.target.value)} className="flex-1 py-3 px-4 rounded-xl font-bold text-xs border text-center"><option value="" disabled>From</option>{accounts.map(a => (<option key={a.id} value={a.id}>{a.name}</option>))}
+                  </select>
                   <ArrowRight size={16} />
-                  <select value={transferTo} onChange={(e) => setTransferTo(e.target.value)} className="flex-1 py-3 px-4 rounded-xl font-bold text-xs border text-center"><option value="" disabled>To</option>{accounts.map(a => (<option key={a.id} value={a.id}>{a.name}</option>))}</select>
+                  <select value={transferTo} onChange={(e) => setTransferTo(e.target.value)} className="flex-1 py-3 px-4 rounded-xl font-bold text-xs border text-center"><option value="" disabled>To</option>{accounts.map(a => (<option key={a.id} value={a.id}>{a.name}</option>))}
+                  </select>
                 </div>
                 
                 <div className="text-center relative flex justify-center items-center mb-6">

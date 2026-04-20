@@ -650,6 +650,23 @@ export default function App() {
     </header>
   );
 
+  // === QAB EXTRACTED VARIABLES ===
+  const qabActiveText = drawerTab === "bills" ? "text-[#1877F2]" : drawerTab === "income" ? "text-[#10B981]" : "text-[#F97316]";
+  const qabActiveBg = drawerTab === "bills" ? "bg-[#1877F2]" : drawerTab === "income" ? "bg-[#10B981]" : "bg-[#F97316]";
+  const qabActiveShadow = drawerTab === "bills" ? "shadow-[0_8px_16px_rgba(24,119,242,0.3)]" : drawerTab === "income" ? "shadow-[0_8px_16px_rgba(16,185,129,0.3)]" : "shadow-[0_8px_16px_rgba(249,115,22,0.3)]";
+  const qabActiveSoftBg = drawerTab === "bills" ? "bg-blue-50" : drawerTab === "income" ? "bg-emerald-50" : "bg-orange-50";
+  const qabActiveLabel = drawerTab === "bills" ? "New Bill" : drawerTab === "income" ? "New Income" : "New Expense";
+  const qabParsedInput = parseFloat(inputValue);
+  const isQabAmountValid = !isNaN(qabParsedInput) && (drawerTab === "bills" ? qabParsedInput >= 0 : qabParsedInput > 0);
+
+  const categoriesToRender = drawerTab === 'income' ? modernCategories.filter(g => g.group === "Income & Wealth") : modernCategories;
+
+  const getEntryAmountColor = (entry) => {
+    if (entry.type === 'Income') return "text-[#10B981]";
+    if (entry.type === 'Expense') return "text-[#F97316]";
+    return "text-[#1877F2]";
+  };
+
   return (
     <div 
       onContextMenu={(e) => e.preventDefault()} 
@@ -1110,132 +1127,121 @@ export default function App() {
         )}
 
         {/* QUICK ADD BUTTON MODAL */}
-        {isQabOpen && (() => {
-          const activeText = drawerTab === "bills" ? "text-[#1877F2]" : drawerTab === "income" ? "text-[#10B981]" : "text-[#F97316]";
-          const activeBg = drawerTab === "bills" ? "bg-[#1877F2]" : drawerTab === "income" ? "bg-[#10B981]" : "bg-[#F97316]";
-          const activeShadow = drawerTab === "bills" ? "shadow-[0_8px_16px_rgba(24,119,242,0.3)]" : drawerTab === "income" ? "shadow-[0_8px_16px_rgba(16,185,129,0.3)]" : "shadow-[0_8px_16px_rgba(249,115,22,0.3)]";
-          const activeSoftBg = drawerTab === "bills" ? "bg-blue-50" : drawerTab === "income" ? "bg-emerald-50" : "bg-orange-50";
-          const activeLabel = drawerTab === "bills" ? "New Bill" : drawerTab === "income" ? "New Income" : "New Expense";
-          
-          const parsedInput = parseFloat(inputValue);
-          const isQabAmountValid = !isNaN(parsedInput) && (drawerTab === "bills" ? parsedInput >= 0 : parsedInput > 0);
-
-          return (
-            <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
-              <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={closeQab}></div>
-              <div className={`w-full lg:max-w-md lg:h-[80vh] rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col max-h-[95vh] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
-                <button onClick={closeQab} className={`absolute top-5 right-5 z-20 ${closeButtonClass}`}><X size={18} /></button>
-                
-                <div className={`px-6 pt-6 pb-6 border-b shrink-0 ${activeSoftBg} rounded-t-[2.5rem]`}>
-                  <div className={`w-12 h-1.5 rounded-full mx-auto mb-6 opacity-30 lg:hidden ${activeBg}`}></div>
-                  {qabStep === 1 ? (
-                    <div className="flex rounded-xl p-1 mb-6 mx-auto max-w-[280px] border bg-white/80">
-                      <button onClick={() => { setDrawerTab("bills"); setEntryIcon("🧾"); setEntryCategory(""); }} className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg ${drawerTab === "bills" ? `${activeBg} text-white` : "text-slate-400"}`}>Bills</button>
-                      <button onClick={() => { setDrawerTab("income"); setEntryIcon("💵"); setEntryCategory(""); }} className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg ${drawerTab === "income" ? `${activeBg} text-white` : "text-slate-400"}`}>Income</button>
-                      <button onClick={() => { setDrawerTab("transactions"); setEntryIcon("💳"); setEntryCategory(""); }} className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg ${drawerTab === "transactions" ? `${activeBg} text-white` : "text-slate-400"}`}>Activity</button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-4 mb-6 -mt-2">
-                      <button onClick={() => setQabStep(1)} className={`p-2 rounded-full ${activeText}`}><ArrowRight className="rotate-180" size={20} /></button>
-                      <div className="flex flex-col"><h3 className={`font-black text-sm uppercase tracking-widest ${activeText}`}>{activeLabel} Details</h3><p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Step 2 of 2</p></div>
-                    </div>
-                  )}
-                  <div className="text-center relative flex justify-center items-center">
-                    <span className={`text-6xl font-extrabold tracking-tighter ${activeText}`}>${inputValue}</span>
-                    {qabStep === 1 && <button onClick={() => setInputValue(inputValue.slice(0, -1) || "0")} className={`absolute right-4 p-3 rounded-full ${activeText} text-2xl lg:text-4xl active:scale-90 transition-transform touch-manipulation`}>⌫</button>}
+        {isQabOpen && (
+          <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={closeQab}></div>
+            <div className={`w-full lg:max-w-md lg:h-[80vh] rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col max-h-[95vh] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
+              <button onClick={closeQab} className={`absolute top-5 right-5 z-20 ${closeButtonClass}`}><X size={18} /></button>
+              
+              <div className={`px-6 pt-6 pb-6 border-b shrink-0 ${qabActiveSoftBg} rounded-t-[2.5rem]`}>
+                <div className={`w-12 h-1.5 rounded-full mx-auto mb-6 opacity-30 lg:hidden ${qabActiveBg}`}></div>
+                {qabStep === 1 ? (
+                  <div className="flex rounded-xl p-1 mb-6 mx-auto max-w-[280px] border bg-white/80">
+                    <button onClick={() => { setDrawerTab("bills"); setEntryIcon("🧾"); setEntryCategory(""); }} className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg ${drawerTab === "bills" ? `${qabActiveBg} text-white` : "text-slate-400"}`}>Bills</button>
+                    <button onClick={() => { setDrawerTab("income"); setEntryIcon("💵"); setEntryCategory(""); }} className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg ${drawerTab === "income" ? `${qabActiveBg} text-white` : "text-slate-400"}`}>Income</button>
+                    <button onClick={() => { setDrawerTab("transactions"); setEntryIcon("💳"); setEntryCategory(""); }} className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg ${drawerTab === "transactions" ? `${qabActiveBg} text-white` : "text-slate-400"}`}>Activity</button>
                   </div>
-                </div>
-
-                <div className={`p-6 mt-auto lg:rounded-b-[2.5rem] flex-1 flex flex-col overflow-y-auto ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
-                  {qabStep === 1 ? (
-                    <>
-                      <div className="grid grid-cols-4 gap-3 mt-2">
-                        {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", ".", "0", "=", "+"].map((btn) => {
-                          return ( <button key={btn} onClick={() => handleNumpad(btn)} className={`w-full h-14 rounded-2xl text-2xl font-bold flex items-center justify-center bg-slate-100 transition-all active:scale-95 active:bg-slate-200 touch-manipulation`}> {btn} </button> );
-                        })}
-                      </div>
-                      <button 
-                        onClick={() => { if (isQabAmountValid) setQabStep(2); }} 
-                        disabled={!isQabAmountValid} 
-                        className={`w-full mt-6 mb-2 h-16 shrink-0 rounded-2xl font-black uppercase tracking-widest text-xs text-white transition-all active:scale-95 flex items-center justify-center gap-2 ${!isQabAmountValid ? "bg-slate-300 opacity-50 cursor-not-allowed" : `${activeBg} ${activeShadow} hover:-translate-y-1`}`}
-                      >
-                        Continue <ArrowRight size={18} />
-                      </button>
-                    </>
-                  ) : (
-                    <div className="flex flex-col h-full animate-fade-in relative">
-                      <div className="space-y-4 flex-1 pb-6">
-                        <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Name</label><input type="text" value={entryName} onChange={(e) => setEntryName(e.target.value)} className="w-full pt-6 pb-2 px-5 rounded-2xl border" /></div>
-                        <div className="relative cursor-pointer" onClick={() => setIsCategorySelectorOpen(true)}><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Category</label><div className="w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between"><span>{entryCategory || "Select..."}</span><ArrowDown size={14} /></div></div>
-                        
-                        {drawerTab === "bills" && (
-                          <>
-                            <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Due Date</label><input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} className="w-full pt-6 pb-2 px-5 rounded-2xl border" /></div>
-                            
-                            <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
-                              <div className="flex items-center justify-between">
-                                <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Recurring Bill</span>
-                                <button onClick={() => setEntryIsRecurring(!entryIsRecurring)} className={`w-12 h-6 rounded-full transition-colors relative ${entryIsRecurring ? "bg-[#1877F2]" : "bg-slate-300 dark:bg-slate-700"}`}>
-                                  <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${entryIsRecurring ? "translate-x-7" : "translate-x-1"}`}></div>
-                                </button>
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Installment Plan</span>
-                                <button onClick={() => setEntryIsInstallment(!entryIsInstallment)} className={`w-12 h-6 rounded-full transition-colors relative ${editEntryData.isInstallment ? "bg-[#1877F2]" : "bg-slate-300 dark:bg-slate-700"}`}>
-                                  <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${entryIsInstallment ? "translate-x-7" : "translate-x-1"}`}></div>
-                                </button>
-                              </div>
-                              {entryIsInstallment && (
-                                <div className="grid grid-cols-2 gap-3 animate-fade-in mt-2">
-                                  <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Total Amount</label><input type="number" value={entryTotalAmount} onChange={(e) => setEntryTotalAmount(e.target.value)} className="w-full pt-6 pb-2 px-5 rounded-2xl border" /></div>
-                                  <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Already Paid</label><input type="number" value={entryPaidAmount} onChange={(e) => setEntryPaidAmount(e.target.value)} className="w-full pt-6 pb-2 px-5 rounded-2xl border" /></div>
-                                </div>
-                              )}
-                            </div>
-                          </>
-                        )}
-                        
-                        {(drawerTab === "income" || drawerTab === "transactions") && (
-                          <div className="relative">
-                            <label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Account</label>
-                            <select value={entryAccount} onChange={(e) => setEntryAccount(e.target.value)} className="w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none">
-                              <option value="" disabled>{drawerTab === "income" ? "Which account does this deposit go into?" : "Which account paid for this activity?"}</option>
-                              {accounts.map((a) => (<option key={a.id} value={a.id}>{a.name}</option>))}
-                            </select>
-                          </div>
-                        )}
-                        
-                        <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Icon</label><select value={entryIcon} onChange={(e) => setEntryIcon(e.target.value)} className="w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none">{categoryEmojis.map((emoji) => (<option key={emoji} value={emoji}>{emoji}</option>))}</select></div>
-                      </div>
-                      <button onClick={handleConfirmAction} className={`w-full mt-4 h-16 shrink-0 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-transform active:scale-95 flex items-center justify-center gap-2 ${activeBg} ${activeShadow}`}>Confirm & Save <CheckCircle2 size={18} /></button>
-                      
-                      {isCategorySelectorOpen && (
-                         <div className="absolute inset-0 z-[140] flex flex-col bg-white dark:bg-[#1E293B]">
-                            <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
-                              <h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Category</h3>
-                              <button onClick={() => setIsCategorySelectorOpen(false)} className={closeButtonClass}><X size={18}/></button>
-                            </div>
-                            <div className={`flex-1 overflow-y-auto p-4 space-y-6 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : "pb-20"}`}>
-                               {categoriesToRender.map(group => (
-                                   <div key={group.group}>
-                                     <p className="text-[10px] font-black uppercase text-slate-400 mb-3">{group.group}</p>
-                                     <div className="grid grid-cols-1 gap-2">
-                                       {group.items.map(item => (
-                                         <button key={item} onClick={() => { setEntryCategory(item); setIsCategorySelectorOpen(false); }} className={`w-full p-4 text-left rounded-xl text-xs font-bold border transition-colors ${entryCategory === item ? `${activeBg} text-white shadow-md border-transparent` : isDarkMode ? "bg-slate-800 border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>{item}</button>
-                                       ))}
-                                     </div>
-                                   </div>
-                               ))}
-                            </div>
-                         </div>
-                      )}
-                    </div>
-                  )}
+                ) : (
+                  <div className="flex items-center gap-4 mb-6 -mt-2">
+                    <button onClick={() => setQabStep(1)} className={`p-2 rounded-full ${qabActiveText}`}><ArrowRight className="rotate-180" size={20} /></button>
+                    <div className="flex flex-col"><h3 className={`font-black text-sm uppercase tracking-widest ${qabActiveText}`}>{qabActiveLabel} Details</h3><p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Step 2 of 2</p></div>
+                  </div>
+                )}
+                <div className="text-center relative flex justify-center items-center">
+                  <span className={`text-6xl font-extrabold tracking-tighter ${qabActiveText}`}>${inputValue}</span>
+                  {qabStep === 1 && <button onClick={() => setInputValue(inputValue.slice(0, -1) || "0")} className={`absolute right-4 p-3 rounded-full ${qabActiveText} text-2xl lg:text-4xl active:scale-90 transition-transform touch-manipulation`}>⌫</button>}
                 </div>
               </div>
+
+              <div className={`p-6 mt-auto lg:rounded-b-[2.5rem] flex-1 flex flex-col overflow-y-auto ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+                {qabStep === 1 ? (
+                  <>
+                    <div className="grid grid-cols-4 gap-3 mt-2">
+                      {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", ".", "0", "=", "+"].map((btn) => {
+                        return ( <button key={btn} onClick={() => handleNumpad(btn)} className={`w-full h-14 rounded-2xl text-2xl font-bold flex items-center justify-center bg-slate-100 transition-all active:scale-95 active:bg-slate-200 touch-manipulation`}> {btn} </button> );
+                      })}
+                    </div>
+                    <button 
+                      onClick={() => { if (isQabAmountValid) setQabStep(2); }} 
+                      disabled={!isQabAmountValid} 
+                      className={`w-full mt-6 mb-2 h-16 shrink-0 rounded-2xl font-black uppercase tracking-widest text-xs text-white transition-all active:scale-95 flex items-center justify-center gap-2 ${!isQabAmountValid ? "bg-slate-300 opacity-50 cursor-not-allowed" : `${qabActiveBg} ${qabActiveShadow} hover:-translate-y-1`}`}
+                    >
+                      Continue <ArrowRight size={18} />
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex flex-col h-full animate-fade-in relative">
+                    <div className="space-y-4 flex-1 pb-6">
+                      <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Name</label><input type="text" value={entryName} onChange={(e) => setEntryName(e.target.value)} className="w-full pt-6 pb-2 px-5 rounded-2xl border" /></div>
+                      <div className="relative cursor-pointer" onClick={() => setIsCategorySelectorOpen(true)}><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Category</label><div className="w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between"><span>{entryCategory || "Select..."}</span><ArrowDown size={14} /></div></div>
+                      
+                      {drawerTab === "bills" && (
+                        <>
+                          <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Due Date</label><input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} className="w-full pt-6 pb-2 px-5 rounded-2xl border" /></div>
+                          
+                          <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Recurring Bill</span>
+                              <button onClick={() => setEntryIsRecurring(!entryIsRecurring)} className={`w-12 h-6 rounded-full transition-colors relative ${entryIsRecurring ? "bg-[#1877F2]" : "bg-slate-300 dark:bg-slate-700"}`}>
+                                <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${entryIsRecurring ? "translate-x-7" : "translate-x-1"}`}></div>
+                              </button>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Installment Plan</span>
+                              <button onClick={() => setEntryIsInstallment(!entryIsInstallment)} className={`w-12 h-6 rounded-full transition-colors relative ${entryIsInstallment ? "bg-[#1877F2]" : "bg-slate-300 dark:bg-slate-700"}`}>
+                                <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${entryIsInstallment ? "translate-x-7" : "translate-x-1"}`}></div>
+                              </button>
+                            </div>
+                            {entryIsInstallment && (
+                              <div className="grid grid-cols-2 gap-3 animate-fade-in mt-2">
+                                <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Total Amount</label><input type="number" value={entryTotalAmount} onChange={(e) => setEntryTotalAmount(e.target.value)} className="w-full pt-6 pb-2 px-5 rounded-2xl border" /></div>
+                                <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Already Paid</label><input type="number" value={entryPaidAmount} onChange={(e) => setEntryPaidAmount(e.target.value)} className="w-full pt-6 pb-2 px-5 rounded-2xl border" /></div>
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      )}
+                      
+                      {(drawerTab === "income" || drawerTab === "transactions") && (
+                        <div className="relative">
+                          <label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Account</label>
+                          <select value={entryAccount} onChange={(e) => setEntryAccount(e.target.value)} className="w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none">
+                            <option value="" disabled>{drawerTab === "income" ? "Which account does this deposit go into?" : "Which account paid for this activity?"}</option>
+                            {accounts.map((a) => (<option key={a.id} value={a.id}>{a.name}</option>))}
+                          </select>
+                        </div>
+                      )}
+                      
+                      <div className="relative"><label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Icon</label><select value={entryIcon} onChange={(e) => setEntryIcon(e.target.value)} className="w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none">{categoryEmojis.map((emoji) => (<option key={emoji} value={emoji}>{emoji}</option>))}</select></div>
+                    </div>
+                    <button onClick={handleConfirmAction} className={`w-full mt-4 h-16 shrink-0 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-transform active:scale-95 flex items-center justify-center gap-2 ${qabActiveBg} ${qabActiveShadow}`}>Confirm & Save <CheckCircle2 size={18} /></button>
+                    
+                    {isCategorySelectorOpen && (
+                       <div className="absolute inset-0 z-[140] flex flex-col bg-white dark:bg-[#1E293B]">
+                          <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
+                            <h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Category</h3>
+                            <button onClick={() => setIsCategorySelectorOpen(false)} className={closeButtonClass}><X size={18}/></button>
+                          </div>
+                          <div className={`flex-1 overflow-y-auto p-4 space-y-6 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : "pb-20"}`}>
+                             {categoriesToRender.map(group => (
+                                 <div key={group.group}>
+                                   <p className="text-[10px] font-black uppercase text-slate-400 mb-3">{group.group}</p>
+                                   <div className="grid grid-cols-1 gap-2">
+                                     {group.items.map(item => (
+                                       <button key={item} onClick={() => { setEntryCategory(item); setIsCategorySelectorOpen(false); }} className={`w-full p-4 text-left rounded-xl text-xs font-bold border transition-colors ${entryCategory === item ? `${qabActiveBg} text-white shadow-md border-transparent` : isDarkMode ? "bg-slate-800 border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>{item}</button>
+                                     ))}
+                                   </div>
+                                 </div>
+                             ))}
+                          </div>
+                       </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-          );
-        })()}
+          </div>
+        )}
 
         {installmentPromptConfig.isOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">

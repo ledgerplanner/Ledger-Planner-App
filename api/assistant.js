@@ -13,8 +13,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 3. Ping the stable Gemini 1.5 Flash Model
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    // 3. Ping the stable Gemini 2.5 Flash Model
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

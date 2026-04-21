@@ -121,11 +121,22 @@ export default function App() {
   const [isCategorySelectorOpen, setIsCategorySelectorOpen] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
+  // === INTELLIGENCE STATE: RECENT CATEGORIES ===
+  const [recentCategories, setRecentCategories] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem('lp_recent_categories');
+      if (saved) {
+        try { return JSON.parse(saved); } catch (e) { return []; }
+      }
+    }
+    return [];
+  });
+
   // === 🔥 THE MASTER CATEGORY ENGINE 🔥 ===
   const categoryEmojis = ["💵", "💲", "🧾", "📋", "🏠", "💧", "⚡", "📺", "🚗", "⛽", "🚕", "🚇", "✈️", "🌴", "🏋️", "💳", "🎓", "🛒", "🛍️", "👗", "👟", "💅", "💈", "🍔", "🌮", "🍣", "☕", "🍻", "🍹", "🏥", "💊", "🐶", "🐾", "🎉", "🎟️", "🎬", "🎮", "🕹️", "📱", "💻", "💼", "💰", "₿", "💎", "⌚", "🎧", "🏪", "📶", "☁️", "🤖", "🚀"];
   
   const modernCategories = [
-    { group: "Income & Wealth", items: ["Primary Salary", "Side Hustle / Gig", "Tips / Cash", "Investments / Crypto", "Transfers (Venmo/Zelle)", "Refunds & Adjustments", "Cash App", "PayDay Loans"] },
+    { group: "Income & Wealth", items: ["Primary Salary", "Side Hustle / Gig", "Tips / Cash", "Investments / Crypto", "Transfers (Venmo/Zelle)", "Refunds & Adjustments", "Cash App", "PayDay Loans", "Unemployment"] },
     { group: "Housing & Utilities", items: ["Rent / Mortgage", "Electric / Gas", "Water / Trash", "Internet / Wi-Fi", "Home Goods / Maintenance", "Cell Phone"] },
     { group: "Transit & Travel", items: ["Gas / Fuel", "Rideshare (Uber/Lyft)", "Public Transit", "Auto Loan / Maintenance", "Parking / Tolls", "Airplane / Flights", "Hotel / Lodging", "Taxi / Car Rental"] },
     { group: "Food & Drink", items: ["Groceries", "Dining Out", "Delivery (DoorDash/Eats)", "Coffee / Tea", "Bars / Nightlife", "Convenient Store"] },
@@ -134,7 +145,7 @@ export default function App() {
     { group: "Financial", items: ["Savings Transfer", "Credit Card Payment", "Debt Payoff", "Bank Fees / Interest"] },
     { group: "Health", items: ["Medical / Doctor", "Pharmacy / Rx", "Dental / Vision", "Therapy / Mental Health", "Health Insurance", "Fitness / Wellness"] },
     { group: "Entrepreneur", items: ["Domain / Hosting", "Software / SaaS", "AI Subscriptions", "Marketing & Ads", "Contractors & Freelancers", "Business Fees / LLC", "Office Supplies"] },
-    { group: "Other", items: ["Miscellaneous Expense", "Charity / Gifts", "Education / Courses"] }
+    { group: "Other", items: ["Miscellaneous Expense", "Charity / Gifts", "Other"] }
   ];
 
   // === HYDRATION SAFE BOOT ENGINE ===
@@ -730,6 +741,14 @@ export default function App() {
     if (isNaN(amountToProcess) || (drawerTab === "bills" ? amountToProcess < 0 : amountToProcess <= 0)) return;
     
     const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+    
+    // === RECENT CATEGORIES LOGIC ENGINE ===
+    if (entryCategory) {
+      const updatedRecents = [entryCategory, ...recentCategories.filter(c => c !== entryCategory)].slice(0, 10);
+      setRecentCategories(updatedRecents);
+      if (typeof window !== 'undefined') localStorage.setItem('lp_recent_categories', JSON.stringify(updatedRecents));
+    }
+
     if (drawerTab === "bills") {
       let displayDate = "TBD", sortableDay = 31;
       if (entryDate) { const dateObj = new Date(entryDate); sortableDay = dateObj.getUTCDate(); displayDate = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }); }
@@ -1340,6 +1359,24 @@ export default function App() {
                   <div className="flex flex-col h-full animate-fade-in relative">
                     <div className="space-y-4 flex-1 pb-6">
                       <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Name</label><input type="text" value={entryName} onChange={(e) => setEntryName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
+                      
+                      {recentCategories.length > 0 && (
+                        <div className="-mx-1">
+                          <label className={`block text-[9px] font-bold uppercase tracking-widest ml-5 mb-2 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Recent Categories</label>
+                          <div className="flex gap-2 overflow-x-auto hide-scrollbar px-1 pb-1">
+                            {recentCategories.map(cat => (
+                              <button
+                                key={cat}
+                                onClick={() => setEntryCategory(cat)}
+                                className={`shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold border transition-colors ${entryCategory === cat ? `${qabActiveBg} text-white shadow-md border-transparent` : isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-600"}`}
+                              >
+                                {cat}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       <div className="relative cursor-pointer" onClick={() => setIsCategorySelectorOpen(true)}><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Category</label><div className={`w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}><span>{entryCategory || "Select..."}</span><ArrowDown size={14} className={isDarkMode ? "text-slate-400" : "text-slate-500"} /></div></div>
                       
                       {drawerTab === "bills" && (

@@ -206,6 +206,28 @@ export default function App() {
   // Hydration Guard
   if (!isMounted) return <div className={`min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}></div>;
 
+  // === 🏥 CHECKPOINT: AUTHENTICATION LOCK ===
+  if (isAuthLoading && !isDemoMode) {
+    return (
+      <div className={`min-h-screen flex items-center justify-center ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
+         <div className="w-12 h-12 border-4 border-[#1877F2] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!user && !isDemoMode) {
+    return (
+      <Login 
+        email={email} setEmail={setEmail} 
+        password={password} setPassword={setPassword} 
+        firstName={firstName} setFirstName={setFirstName} 
+        isLoginMode={isLoginMode} setIsLoginMode={setIsLoginMode} 
+        handleAuthSubmit={handleAuthSubmit} handleGoogleLogin={handleGoogleLogin} 
+        authError={authError} isAuthLoading={isAuthLoading} 
+      />
+    );
+  }
+
   // === PUSH NOTIFICATION ENGINE ===
   const enablePushNotifications = async () => {
     try {
@@ -428,7 +450,6 @@ export default function App() {
     else setTransferAmount(transferAmount + btn);
   };
 
-  // 🔥 UPDATED TRANSFER LOGIC WITH EXPLICIT NAMING + DEMO MODE PATCH 🔥
   const executeTransfer = async () => { 
     const amt = parseFloat(transferAmount);
     if (isNaN(amt) || amt <= 0 || !transferFrom || !transferTo) return;

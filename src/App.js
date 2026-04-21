@@ -273,9 +273,17 @@ export default function App() {
     catch (error) { setAuthError("Google Sign-In failed."); setIsAuthLoading(false); }
   };
 
+  // ⚡ FORCED LOCAL LOGOUT ⚡
   const handleLogout = async () => { 
     if (isDemoMode) { window.location.href = "https://ledgerplanner.com"; return; }
-    await signOut(auth); setActiveTab("home"); 
+    try {
+      await signOut(auth); 
+    } catch (error) {
+      console.error("Logout forced locally:", error);
+    } finally {
+      setUser(null);
+      setActiveTab("home"); 
+    }
   };
   
   const triggerHaptic = () => { if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) window.navigator.vibrate(50); };

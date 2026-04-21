@@ -1,22 +1,17 @@
 {
-  "short_name": "Ledger Planner",
+  "short_name": "Ledger",
   "name": "Ledger Planner",
   "icons": [
     {
-      "src": "/app-icon.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/app-icon.png",
-      "sizes": "192x192",
+      "src": "app-icon.png",
+      "sizes": "192x192 512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
   ],
-  "start_url": "/",
+  "start_url": ".",
   "display": "standalone",
   "theme_color": "#1877F2",
-  "background_color": "#ffffff"
+  "background_color": "#F8FAFC",
+  "orientation": "portrait"
 }

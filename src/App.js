@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Home, Wallet, Calendar as CalendarIcon, CreditCard, CheckSquare,
-  Bell, Moon, Sun, X, Plus, ArrowRight, CheckCircle2, Trash2, ArrowDown, AlertCircle, Edit2, LogOut, RefreshCw, Save, ArrowRightLeft, Settings, Zap, User
+  Bell, Moon, Sun, X, Plus, ArrowRight, CheckCircle2, Trash2, ArrowDown, AlertCircle, Edit2, LogOut, RefreshCw, Save, ArrowRightLeft, Settings, Zap, User, HelpCircle
 } from "lucide-react";
 
 // === FIREBASE INITIALIZATION ===
@@ -898,8 +898,64 @@ export default function App() {
                   </div>
                 </div>
 
+                {/* ====================================================================== */}
+                {/* 🛡️ NEW KNOWLEDGE BASE & SUPPORT HUB 🛡️ */}
+                {/* ====================================================================== */}
+                <div className={`pt-6 border-t ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}>
+                  <h3 className={`font-black uppercase tracking-widest text-sm mb-4 px-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Knowledge Base</h3>
+                  <div className="space-y-6">
+                    
+                    {/* CARD A: QUICK STRIKE GUIDE */}
+                    <div className={`p-5 rounded-3xl border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">🚀 Quick Strike Guide</h4>
+                      <ol className={`space-y-3 text-xs font-bold leading-relaxed ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
+                        <li className="flex items-start gap-2">
+                          <span className="text-[#1877F2] font-black">1.</span> 
+                          <span>Add your Accounts (Checking, Credit, etc.) to establish your total cash baseline.</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-[#10B981] font-black">2.</span> 
+                          <span>Route your Paydays to lock in expected income dates and amounts.</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-[#F97316] font-black">3.</span> 
+                          <span>Log your Bills and assign them directly to an upcoming Payday.</span>
+                        </li>
+                      </ol>
+                    </div>
+
+                    {/* CARD B: THE ENGINE MANUAL (FAQ) */}
+                    <div className={`p-5 rounded-3xl border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">🧠 The Engine Manual</h4>
+                      <div className="space-y-4">
+                        <div>
+                          <p className={`text-xs font-black uppercase tracking-wider mb-1 ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>Safe to Spend</p>
+                          <p className={`text-[11px] font-bold leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Your total liquid cash minus all unpaid bills. This is your true available capital.</p>
+                        </div>
+                        <div>
+                          <p className={`text-xs font-black uppercase tracking-wider mb-1 ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>Debt Load</p>
+                          <p className={`text-[11px] font-bold leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>The percentage of your total income required to cover your remaining unpaid bills. Keep this under 60%.</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* CARD C: DISPATCH SUPPORT */}
+                    <div className={`p-5 rounded-3xl border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2"><HelpCircle size={14}/> Dispatch Command</h4>
+                      <p className={`text-xs font-bold mb-4 leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Found a glitch in the matrix or need a new feature? Ping the architect directly.</p>
+                      <a 
+                        href="mailto:support@ledgerplanner.com" 
+                        className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border transition-all active:scale-95 ${isDarkMode ? "bg-slate-800 border-slate-600 text-white hover:bg-slate-700" : "bg-slate-50 border-slate-200 text-slate-900 hover:bg-slate-100"}`}
+                      >
+                         Report Bug / Request Feature
+                      </a>
+                    </div>
+
+                  </div>
+                </div>
+
                 {/* BENTO CARD 4: FACTORY RESET */}
-                <div className={`p-5 rounded-3xl border shadow-sm ${isDarkMode ? "bg-red-900/10 border-red-900/30" : "bg-red-50/50 border-red-100"}`}>
+                <div className={`p-5 rounded-3xl border shadow-sm mt-6 ${isDarkMode ? "bg-red-900/10 border-red-900/30" : "bg-red-50/50 border-red-100"}`}>
                   <h4 className="text-[10px] font-black uppercase tracking-widest text-red-500/70 mb-4 flex items-center gap-2"><AlertCircle size={14}/> Danger Zone</h4>
                   <div className="mb-4">
                     <p className={`font-black text-base mb-1 ${isDarkMode ? "text-red-400" : "text-red-600"}`}>Factory Reset</p>

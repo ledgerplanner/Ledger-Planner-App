@@ -736,7 +736,7 @@ export default function App() {
     else if (inputValue === "0" && btn !== ".") setInputValue(btn); else setInputValue(inputValue + btn);
   };
 
-  const handleConfirmAction = async () => {
+  const handleConfirmAction = () => {
     const amountToProcess = parseFloat(inputValue);
     if (isNaN(amountToProcess) || (drawerTab === "bills" ? amountToProcess < 0 : amountToProcess <= 0)) return;
     
@@ -755,7 +755,7 @@ export default function App() {
       if (isDemoMode) {
         setBills([...bills, { id: `b_demo_${Date.now()}`, name: entryName || "New Bill", icon: entryIcon || "🧾", category: entryCategory || "Other", amount: amountToProcess, date: sortableDay, fullDate: displayDate, rawDate: entryDate, payday: calculatePaydayGroup(entryDate), isPaid: false, isOverdue: false, isRecurring: entryIsRecurring, isInstallment: entryIsInstallment, totalAmount: entryIsInstallment ? parseFloat(entryTotalAmount) || 0 : 0, paidAmount: entryIsInstallment ? parseFloat(entryPaidAmount) || 0 : 0, linkedTxId: null }]);
       } else {
-        await addDoc(collection(db, "users", user.uid, "bills"), { name: entryName || "New Bill", icon: entryIcon || "🧾", category: entryCategory || "Other", amount: amountToProcess, date: sortableDay, fullDate: displayDate, rawDate: entryDate, payday: calculatePaydayGroup(entryDate), isPaid: false, isOverdue: false, isRecurring: entryIsRecurring, isInstallment: entryIsInstallment, totalAmount: entryIsInstallment ? parseFloat(entryTotalAmount) || 0 : 0, paidAmount: entryIsInstallment ? parseFloat(entryPaidAmount) || 0 : 0, linkedTxId: null });
+        addDoc(collection(db, "users", user.uid, "bills"), { name: entryName || "New Bill", icon: entryIcon || "🧾", category: entryCategory || "Other", amount: amountToProcess, date: sortableDay, fullDate: displayDate, rawDate: entryDate, payday: calculatePaydayGroup(entryDate), isPaid: false, isOverdue: false, isRecurring: entryIsRecurring, isInstallment: entryIsInstallment, totalAmount: entryIsInstallment ? parseFloat(entryTotalAmount) || 0 : 0, paidAmount: entryIsInstallment ? parseFloat(entryPaidAmount) || 0 : 0, linkedTxId: null }).catch(e => console.log("Offline outbox queued"));
       }
       triggerHaptic(); closeQab();
     } else if (drawerTab === "income" || drawerTab === "transactions") {
@@ -766,8 +766,8 @@ export default function App() {
           setTransactions([{ id: `tx_demo_${Date.now()}`, name: entryName || (isIncome ? "Income" : "Expense"), icon: isIncome ? "💵" : entryIcon, category: entryCategory || "Other", amount: amountToProcess, date: autoTimeStamp, type: isIncome ? "Income" : "Expense", accountId: targetAcc.id }, ...transactions]);
           setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: a.balance + (isIncome ? amountToProcess : -amountToProcess) } : a));
         } else {
-          await addDoc(collection(db, "users", user.uid, "transactions"), { name: entryName || (isIncome ? "Income" : "Expense"), icon: isIncome ? "💵" : entryIcon, category: entryCategory || "Other", amount: amountToProcess, date: autoTimeStamp, type: isIncome ? "Income" : "Expense", accountId: targetAcc.id, createdAt: serverTimestamp() });
-          await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance + (isIncome ? amountToProcess : -amountToProcess) });
+          addDoc(collection(db, "users", user.uid, "transactions"), { name: entryName || (isIncome ? "Income" : "Expense"), icon: isIncome ? "💵" : entryIcon, category: entryCategory || "Other", amount: amountToProcess, date: autoTimeStamp, type: isIncome ? "Income" : "Expense", accountId: targetAcc.id, createdAt: serverTimestamp() }).catch(e => console.log("Offline outbox queued"));
+          updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance + (isIncome ? amountToProcess : -amountToProcess) }).catch(e => console.log("Offline outbox queued"));
         }
       }
       triggerVictory(); closeQab();

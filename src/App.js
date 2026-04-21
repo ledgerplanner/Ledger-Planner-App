@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Home, Wallet, Calendar as CalendarIcon, CreditCard, CheckSquare,
-  Bell, Moon, Sun, X, Plus, ArrowRight, CheckCircle2, Trash2, ArrowDown, AlertCircle, Edit2, LogOut, RefreshCw, Save, ArrowRightLeft, Settings, Zap, User, HelpCircle
+  Bell, Moon, Sun, X, Plus, ArrowRight, CheckCircle2, Trash2, ArrowDown, AlertCircle, Edit2, LogOut, RefreshCw, Save, ArrowRightLeft, Settings, Zap, User, HelpCircle, CloudOff
 } from "lucide-react";
 
 // === FIREBASE INITIALIZATION ===
@@ -103,6 +103,10 @@ export default function App() {
   const [hasConsumedAMBriefing, setHasConsumedAMBriefing] = useState(false);
   const [hasConsumedPMBriefing, setHasConsumedPMBriefing] = useState(false);
 
+  // === OFFLINE RESILIENCE STATE (GHOST IN THE MACHINE) ===
+  const [syncState, setSyncState] = useState("idle"); 
+  const [ghostVisible, setGhostVisible] = useState(false);
+
   // === QUICK ADD BUTTON STATE ===
   const [isQabOpen, setIsQabOpen] = useState(false);
   const [qabStep, setQabStep] = useState(1);
@@ -191,6 +195,47 @@ export default function App() {
       setEditAccountDesc(selectedAccount.description || "");
     }
   }, [selectedAccount]);
+
+  // === 👻 GHOST IN THE MACHINE (NETWORK WATCHER) 👻 ===
+  useEffect(() => {
+    let syncTimer, fadeTimer;
+
+    const handleOffline = () => {
+      setSyncState("offline");
+      setGhostVisible(true);
+    };
+
+    const handleOnline = () => {
+      setSyncState("syncing");
+      setGhostVisible(true);
+      
+      // Simulate the secure handshake duration
+      syncTimer = setTimeout(() => {
+        setSyncState("secured");
+        
+        // Show victory badge for 3 seconds, then fade out
+        fadeTimer = setTimeout(() => {
+          setGhostVisible(false);
+          setTimeout(() => setSyncState("idle"), 700); // Wait for CSS transition before unmounting
+        }, 3000);
+      }, 1800);
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    // Initial check on load
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      handleOffline();
+    }
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+      clearTimeout(syncTimer);
+      clearTimeout(fadeTimer);
+    };
+  }, []);
 
   // Hydration Guard
   if (!isMounted) return <div className={`min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}></div>;
@@ -1418,6 +1463,24 @@ export default function App() {
                 </div>
                 <button onClick={handleSaveNextInstallmentDate} disabled={!installmentPromptConfig.nextDate} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2 ${!installmentPromptConfig.nextDate ? "bg-slate-300 opacity-50 shadow-none cursor-not-allowed" : "bg-[#1877F2]"}`}><CalendarIcon size={16}/> Route to Payday</button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* THE GHOST IN THE MACHINE (OFFLINE RESILIENCE INDICATOR) */}
+        {syncState !== "idle" && (
+          <div className={`fixed z-[200] left-1/2 -translate-x-1/2 transition-all duration-700 ease-in-out flex items-center justify-center pointer-events-none
+            ${isDemoMode ? "bottom-[130px] lg:bottom-[90px]" : "bottom-[80px] lg:bottom-10"}
+            ${ghostVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}
+          `}>
+            <div className={`backdrop-blur-md px-4 py-2 rounded-full border shadow-2xl flex items-center gap-2 transition-colors duration-500
+              ${syncState === "offline" ? isDarkMode ? "bg-amber-900/80 border-amber-500/50 text-amber-400" : "bg-amber-50/90 border-amber-300 text-amber-700" : ""}
+              ${syncState === "syncing" ? isDarkMode ? "bg-blue-900/80 border-blue-500/50 text-blue-400" : "bg-blue-50/90 border-blue-300 text-blue-700" : ""}
+              ${syncState === "secured" ? isDarkMode ? "bg-emerald-900/80 border-emerald-500/50 text-emerald-400" : "bg-emerald-50/90 border-emerald-300 text-emerald-700" : ""}
+            `}>
+              {syncState === "offline" && <><CloudOff size={14} className="animate-pulse" /><span className="text-[10px] font-black uppercase tracking-widest drop-shadow-sm">Vault Offline • Local Save Active</span></>}
+              {syncState === "syncing" && <><RefreshCw size={14} className="animate-spin" /><span className="text-[10px] font-black uppercase tracking-widest drop-shadow-sm">Securing to Cloud...</span></>}
+              {syncState === "secured" && <><CheckCircle2 size={14} /><span className="text-[10px] font-black uppercase tracking-widest drop-shadow-sm">Cloud Secured</span></>}
             </div>
           </div>
         )}

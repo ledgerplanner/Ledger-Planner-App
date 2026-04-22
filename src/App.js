@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Home, Wallet, Calendar as CalendarIcon, CreditCard, CheckSquare,
-  Bell, Moon, Sun, X, Plus, ArrowRight, CheckCircle2, Trash2, ArrowDown, AlertCircle, Edit2, LogOut, RefreshCw, Save, ArrowRightLeft, Settings, Zap, User, HelpCircle
+  Bell, Moon, Sun, X, Plus, ArrowRight, CheckCircle2, Trash2, ArrowDown, AlertCircle, Edit2, LogOut, RefreshCw, Save, ArrowRightLeft, Settings, Zap, User, HelpCircle, CloudOff, Cloud
 } from "lucide-react";
 
 // === FIREBASE INITIALIZATION ===
@@ -41,6 +41,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("home");
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [syncStatus, setSyncStatus] = useState("synced"); // 'synced', 'offline', 'syncing'
   
   const [isScrolled, setIsScrolled] = useState(false);
   const scrollRef = useRef(null);
@@ -169,6 +170,28 @@ export default function App() {
     }
   }, []);
 
+  // === NETWORK SYNC LISTENER ENGINE ===
+  useEffect(() => {
+    const handleOnline = () => {
+      setSyncStatus("syncing");
+      setTimeout(() => setSyncStatus("synced"), 2500);
+    };
+    const handleOffline = () => setSyncStatus("offline");
+
+    if (typeof window !== "undefined") {
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+      if (!navigator.onLine) setSyncStatus("offline");
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+      }
+    };
+  }, []);
+
   // === CLOUD SYNC ENGINE ===
   useEffect(() => {
     if (!isMounted || isDemoMode) return;
@@ -202,7 +225,7 @@ export default function App() {
     }
   }, [selectedAccount]);
 
-  // === 🚨 BUG FIX: AUTH ACTIONS MOVED ABOVE RENDER GUARDS 🚨 ===
+  // === AUTH ACTIONS ===
   const handleAuthSubmit = async (e) => {
     e.preventDefault(); setIsAuthLoading(true); setAuthError("");
     try {
@@ -495,7 +518,7 @@ export default function App() {
     } else {
       if (Math.abs(diff) > 0.01) {
         const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
-        await addDoc(collection(db, "users", user.uid, "transactions"), { name: "Balance Adjustment", icon: "⚖️", amount: Math.abs(diff), date: autoTimeStamp, type: diff > 0 ? "Income" : "Refunds & Adjustments", category: "Refunds & Adjustments", accountId: selectedAccount.id, createdAt: serverTimestamp() });
+        await addDoc(collection(db, "users", user.uid, "transactions"), { name: "Balance Adjustment", icon: "⚖️", amount: Math.abs(diff), date: autoTimeStamp, type: diff > 0 ? "Income" : "Expense", category: "Refunds & Adjustments", accountId: selectedAccount.id, createdAt: serverTimestamp() });
       }
       await updateDoc(doc(db, "users", user.uid, "accounts", selectedAccount.id), { balance: finalBalance, description: editAccountDesc });
     }
@@ -656,7 +679,7 @@ export default function App() {
       <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#1877F2]/10 rounded-full blur-3xl"></div>
       <div className="flex justify-between items-center mb-6 relative z-30 h-10">
         
-        {/* LEFT SIDE: Core Utilities */}
+        {/* LEFT SIDE: Core Utilities & Cloud Sync Badge */}
         <div className="flex items-center gap-2">
           <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
             {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
@@ -665,11 +688,34 @@ export default function App() {
             <Bell size={18} />
             {(!isPushEnabled || activeAlerts.length > 0) && <span className={`absolute top-2 right-2.5 w-2 h-2 rounded-full border-2 ${isDarkMode ? "border-[#1E293B]" : "border-white"} ${activeAlerts.some(a => a.type === 'danger' || a.type === 'warning') ? "bg-red-50" : "bg-[#1877F2]"}`}></span>}
           </button>
+          
+          {/* SYNC BADGE COMPONENT */}
+          {syncStatus !== "synced" && (
+            <div className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest transition-all animate-fade-in ${
+              syncStatus === "offline" 
+                ? isDarkMode ? "bg-orange-900/30 border-orange-700 text-orange-400" : "bg-orange-50 border-orange-200 text-orange-600"
+                : isDarkMode ? "bg-[#1877F2]/20 border-[#1877F2]/50 text-[#1877F2]" : "bg-blue-50 border-blue-200 text-[#1877F2]"
+            }`}>
+              {syncStatus === "offline" ? <CloudOff size={12} strokeWidth={2.5} /> : <RefreshCw size={12} strokeWidth={2.5} className="animate-spin" />}
+              <span>{syncStatus === "offline" ? "Offline" : "Syncing"}</span>
+            </div>
+          )}
         </div>
         
         {/* CENTER: Mobile Logo */}
         <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center z-20 origin-top -top-5 lg:hidden">
           <img src="/login-logo.png" alt="Ledger Planner" className={`w-16 h-16 rounded-full shadow-[0_8px_20px_rgba(24,119,242,0.2)] object-cover border-[3px] transition-colors ${isDarkMode ? "border-slate-800" : "border-white"}`} />
+          {/* MOBILE SYNC BADGE OVERRIDE */}
+          {syncStatus !== "synced" && (
+            <div className={`absolute -bottom-2 flex items-center gap-1 px-2 py-0.5 rounded-full border text-[8px] font-black uppercase tracking-widest shadow-sm ${
+              syncStatus === "offline" 
+                ? isDarkMode ? "bg-orange-900 border-orange-700 text-white" : "bg-orange-100 border-orange-300 text-orange-700"
+                : isDarkMode ? "bg-[#1877F2] border-blue-400 text-white" : "bg-blue-100 border-blue-300 text-blue-700"
+            }`}>
+              {syncStatus === "offline" ? <CloudOff size={10} /> : <RefreshCw size={10} className="animate-spin" />}
+              <span>{syncStatus === "offline" ? "Offline" : "Syncing"}</span>
+            </div>
+          )}
         </div>
         
         {/* RIGHT SIDE: Settings & Logout */}
@@ -684,7 +730,7 @@ export default function App() {
         </div>
 
       </div>
-      <div className="relative z-10 flex justify-center px-1 mb-6">
+      <div className="relative z-10 flex justify-center px-1 mb-6 mt-4">
         <h2 title={title} className={`text-3xl font-black tracking-tight leading-tight truncate max-w-full ${isDarkMode ? "text-white" : "text-slate-900"}`}>{title}</h2>
       </div>
       <div className="relative z-10 w-full h-auto opacity-100">{graphicContent}</div>

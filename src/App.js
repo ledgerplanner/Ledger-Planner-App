@@ -681,17 +681,17 @@ export default function App() {
         
         {/* LEFT SIDE: Core Utilities & Cloud Sync Badge */}
         <div className="flex items-center gap-2">
-          <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
+          <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm shrink-0 ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
             {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
+          <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm shrink-0 ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
             <Bell size={18} />
             {(!isPushEnabled || activeAlerts.length > 0) && <span className={`absolute top-2 right-2.5 w-2 h-2 rounded-full border-2 ${isDarkMode ? "border-[#1E293B]" : "border-white"} ${activeAlerts.some(a => a.type === 'danger' || a.type === 'warning') ? "bg-red-50" : "bg-[#1877F2]"}`}></span>}
           </button>
           
-          {/* SYNC BADGE COMPONENT */}
+          {/* SYNC BADGE COMPONENT - NOW VISIBLE ON MOBILE */}
           {syncStatus !== "synced" && (
-            <div className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest transition-all animate-fade-in ${
+            <div className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full border text-[8px] sm:text-[9px] font-black uppercase tracking-widest transition-all animate-fade-in shrink-0 ${
               syncStatus === "offline" 
                 ? isDarkMode ? "bg-orange-900/30 border-orange-700 text-orange-400" : "bg-orange-50 border-orange-200 text-orange-600"
                 : isDarkMode ? "bg-[#1877F2]/20 border-[#1877F2]/50 text-[#1877F2]" : "bg-blue-50 border-blue-200 text-[#1877F2]"
@@ -705,21 +705,10 @@ export default function App() {
         {/* CENTER: Mobile Logo */}
         <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center z-20 origin-top -top-5 lg:hidden">
           <img src="/login-logo.png" alt="Ledger Planner" className={`w-16 h-16 rounded-full shadow-[0_8px_20px_rgba(24,119,242,0.2)] object-cover border-[3px] transition-colors ${isDarkMode ? "border-slate-800" : "border-white"}`} />
-          {/* MOBILE SYNC BADGE OVERRIDE */}
-          {syncStatus !== "synced" && (
-            <div className={`absolute -bottom-2 flex items-center gap-1 px-2 py-0.5 rounded-full border text-[8px] font-black uppercase tracking-widest shadow-sm ${
-              syncStatus === "offline" 
-                ? isDarkMode ? "bg-orange-900 border-orange-700 text-white" : "bg-orange-100 border-orange-300 text-orange-700"
-                : isDarkMode ? "bg-[#1877F2] border-blue-400 text-white" : "bg-blue-100 border-blue-300 text-blue-700"
-            }`}>
-              {syncStatus === "offline" ? <CloudOff size={10} /> : <RefreshCw size={10} className="animate-spin" />}
-              <span>{syncStatus === "offline" ? "Offline" : "Syncing"}</span>
-            </div>
-          )}
         </div>
         
         {/* RIGHT SIDE: Settings & Logout */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <button onClick={() => { setEditName(userName || ""); setIsSettingsOpen(true); }} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm lg:hidden ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
             <Settings size={18} />
           </button>

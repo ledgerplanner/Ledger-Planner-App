@@ -195,7 +195,6 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // 🔥 UPDATE ACCOUNT STATE INITIALIZATION 🔥
   useEffect(() => {
     if (selectedAccount) {
       setEditAccountBalance(selectedAccount.balance.toFixed(2));
@@ -203,10 +202,41 @@ export default function App() {
     }
   }, [selectedAccount]);
 
-  // Hydration Guard
+  // === 🚨 BUG FIX: AUTH ACTIONS MOVED ABOVE RENDER GUARDS 🚨 ===
+  const handleAuthSubmit = async (e) => {
+    e.preventDefault(); setIsAuthLoading(true); setAuthError("");
+    try {
+      if (isLoginMode) { await signInWithEmailAndPassword(auth, email, password); } 
+      else {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(userCredential.user, { displayName: firstName });
+        await setDoc(doc(db, "users", userCredential.user.uid), { firstName: firstName, email: email, createdAt: serverTimestamp() }, { merge: true });
+        setUser({ ...userCredential.user, displayName: firstName });
+      }
+    } catch (error) {
+      let errorMsg = "Authentication failed. Please try again.";
+      if (error.code === 'auth/invalid-credential') errorMsg = "Invalid email or password.";
+      if (error.code === 'auth/email-already-in-use') errorMsg = "An account with this email already exists.";
+      setAuthError(errorMsg); setIsAuthLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setIsAuthLoading(true); setAuthError("");
+    try { await signInWithPopup(auth, new GoogleAuthProvider()); } 
+    catch (error) { setAuthError("Google Sign-In failed."); setIsAuthLoading(false); }
+  };
+
+  const handleLogout = async () => { 
+    if (isDemoMode) { window.location.href = "https://ledgerplanner.com"; return; }
+    try { await signOut(auth); } 
+    catch (error) { console.error("Logout forced locally:", error); } 
+    finally { setUser(null); setActiveTab("home"); }
+  };
+
+  // === HYDRATION & AUTH GUARDS ===
   if (!isMounted) return <div className={`min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}></div>;
 
-  // === 🏥 CHECKPOINT: AUTHENTICATION LOCK ===
   if (isAuthLoading && !isDemoMode) {
     return (
       <div className={`min-h-screen flex items-center justify-center ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
@@ -215,6 +245,7 @@ export default function App() {
     );
   }
 
+  // 🚪 LOGIN GATE PROPERLY INITIALIZED
   if (!user && !isDemoMode) {
     return (
       <Login 
@@ -248,44 +279,6 @@ export default function App() {
     }
   };
 
-  // === AUTH ACTIONS ===
-  const handleAuthSubmit = async (e) => {
-    e.preventDefault(); setIsAuthLoading(true); setAuthError("");
-    try {
-      if (isLoginMode) { await signInWithEmailAndPassword(auth, email, password); } 
-      else {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        await updateProfile(userCredential.user, { displayName: firstName });
-        await setDoc(doc(db, "users", userCredential.user.uid), { firstName: firstName, email: email, createdAt: serverTimestamp() }, { merge: true });
-        setUser({ ...userCredential.user, displayName: firstName });
-      }
-    } catch (error) {
-      let errorMsg = "Authentication failed. Please try again.";
-      if (error.code === 'auth/invalid-credential') errorMsg = "Invalid email or password.";
-      if (error.code === 'auth/email-already-in-use') errorMsg = "An account with this email already exists.";
-      setAuthError(errorMsg); setIsAuthLoading(false);
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    setIsAuthLoading(true); setAuthError("");
-    try { await signInWithPopup(auth, new GoogleAuthProvider()); } 
-    catch (error) { setAuthError("Google Sign-In failed."); setIsAuthLoading(false); }
-  };
-
-  // ⚡ FORCED LOCAL LOGOUT ⚡
-  const handleLogout = async () => { 
-    if (isDemoMode) { window.location.href = "https://ledgerplanner.com"; return; }
-    try {
-      await signOut(auth); 
-    } catch (error) {
-      console.error("Logout forced locally:", error);
-    } finally {
-      setUser(null);
-      setActiveTab("home"); 
-    }
-  };
-  
   const triggerHaptic = () => { if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) window.navigator.vibrate(50); };
   const triggerVictory = () => { triggerHaptic(); setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2000); };
 
@@ -502,7 +495,7 @@ export default function App() {
     } else {
       if (Math.abs(diff) > 0.01) {
         const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
-        await addDoc(collection(db, "users", user.uid, "transactions"), { name: "Balance Adjustment", icon: "⚖️", amount: Math.abs(diff), date: autoTimeStamp, type: diff > 0 ? "Income" : "Expense", category: "Refunds & Adjustments", accountId: selectedAccount.id, createdAt: serverTimestamp() });
+        await addDoc(collection(db, "users", user.uid, "transactions"), { name: "Balance Adjustment", icon: "⚖️", amount: Math.abs(diff), date: autoTimeStamp, type: diff > 0 ? "Income" : "Refunds & Adjustments", category: "Refunds & Adjustments", accountId: selectedAccount.id, createdAt: serverTimestamp() });
       }
       await updateDoc(doc(db, "users", user.uid, "accounts", selectedAccount.id), { balance: finalBalance, description: editAccountDesc });
     }

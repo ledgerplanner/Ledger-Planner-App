@@ -86,6 +86,16 @@ export default function Dashboard({
   const strokeDashoffset = strokeDasharray - (strokeDasharray * debtRatio) / 100;
 
   // === MICRO: PAYDAY ROUTING & LIVE INCOME/EXPENSE ENGINE ===
+  const frequency = paydayConfig?.frequency || "Weekly";
+  const paydaySlots = {
+      "Weekly": ["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"],
+      "Bi-Weekly": ["Payday 1", "Payday 2", "Payday 3"],
+      "Semi-Monthly": ["Payday 1", "Payday 2"],
+      "Monthly": ["Payday 1"]
+  };
+  const activeSlots = paydaySlots[frequency] || paydaySlots["Weekly"];
+  const paydaysToRender = ["Due Now", ...activeSlots];
+
   const billsByPayday = {};
   ["Due Now", "Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].forEach((pd) => { billsByPayday[pd] = []; });
   bills.forEach((bill) => { if (billsByPayday[bill.payday]) billsByPayday[bill.payday].push(bill); });
@@ -293,10 +303,10 @@ export default function Dashboard({
             <span className="text-slate-400 text-[10px]">Total Cash</span>
             <span className={`px-2 py-0.5 rounded ${
                totalIncomeBalance < 0 
-                  ? isDarkMode ? "bg-red-900/30 text-red-400" : "bg-red-50 text-red-600"
-                  : totalIncomeBalance > 0 
-                     ? isDarkMode ? "bg-emerald-900/30 text-emerald-400" : "bg-emerald-50 text-emerald-600"
-                     : isDarkMode ? "bg-slate-800 text-slate-300" : "bg-slate-100 text-slate-700"
+                 ? isDarkMode ? "bg-red-900/30 text-red-400" : "bg-red-50 text-red-600"
+                 : totalIncomeBalance > 0 
+                    ? isDarkMode ? "bg-emerald-900/30 text-emerald-400" : "bg-emerald-50 text-emerald-600"
+                    : isDarkMode ? "bg-slate-800 text-slate-300" : "bg-slate-100 text-slate-700"
             }`}>
               ${totalIncomeBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
             </span>
@@ -401,11 +411,11 @@ export default function Dashboard({
 
         {/* 🔥 HORIZONTAL PAYDAY CARDS 🔥 */}
         <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-4 pt-2 -mx-2 px-3 snap-x">
-          {["Due Now", "Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].map((pd) => {
+          {paydaysToRender.map((pd) => {
             const pdSettings = paydayConfig[pd];
             const isDueNow = pd === "Due Now";
             
-            if (isDueNow && billsByPayday["Due Now"].length === 0) return null;
+            if (isDueNow && billsByPayday["Due Now"]?.length === 0) return null;
             
             const isSet = isDueNow || (pdSettings && (pdSettings.date || pdSettings.income));
             
@@ -446,7 +456,7 @@ export default function Dashboard({
                       ${activeWeeklyBuffer.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                     </p>
                     <p className={`text-[9px] font-bold uppercase tracking-wider mb-4 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
-                      Weekly Buffer
+                      Safe to Spend
                     </p>
                     
                     <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-800" : "bg-slate-100"}`}>
@@ -473,7 +483,8 @@ export default function Dashboard({
 
         {/* 🔥 VERTICAL COLLAPSIBLE LISTS 🔥 */}
         <div className="space-y-4">
-          {Object.entries(billsByPayday).map(([payday, groupBills]) => {
+          {paydaysToRender.map((payday) => {
+            const groupBills = billsByPayday[payday] || [];
             if (payday === "Due Now" && groupBills.length === 0) return null;
             const pdSettings = paydayConfig[payday];
             if (!pdSettings?.date && !pdSettings?.income && groupBills.length === 0) return null;
@@ -493,9 +504,14 @@ export default function Dashboard({
                        <h3 className={`text-[11px] font-black uppercase tracking-widest ${isDueNow ? "text-red-500" : isDarkMode ? "text-slate-300" : "text-slate-700"}`}>{payday}</h3>
                        <div className="text-slate-400">{isCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}</div>
                      </div>
-                     <span className={`text-xs font-black ${isDueNow ? "text-red-500" : "text-[#1877F2]"}`}>
-                       ${checkTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                     </span>
+                     <div className="flex flex-col items-end">
+                       <span className={`text-xs font-black ${isDueNow ? "text-red-500" : "text-[#1877F2]"}`}>
+                         ${checkTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                       </span>
+                       <span className={`text-[9px] font-bold uppercase tracking-widest mt-0.5 ${isDueNow ? "text-red-500" : isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
+                         {isDueNow ? "Total Due Now" : "Total Due"}
+                       </span>
+                     </div>
                   </div>
                   <div className="flex items-center justify-between mt-1">
                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{expectedDateStr}</span>

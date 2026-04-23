@@ -166,7 +166,6 @@ export default function Dashboard({
   const [isBriefingLoading, setIsBriefingLoading] = useState(false);
   const [activeBriefingText, setActiveBriefingText] = useState("");
   
-  // 🔥 ORIGINAL LOGIC RESTORED: AI Assistant sleeps from Midnight - 5 AM 🔥
   const isMorningWindow = currentHour >= 5 && currentHour < 16; 
   const isEveningWindow = currentHour >= 16; 
   const isPhantomZone = currentHour >= 0 && currentHour < 5; 
@@ -181,7 +180,6 @@ export default function Dashboard({
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
-    // Mathematical safety nets applied to prevent payload crashes
     const liquidCash = accounts.filter(a => a.type === "Checking" || a.type === "Cash").reduce((sum, a) => sum + (a.balance || 0), 0);
     const todaySpend = transactions.filter(t => t.type === "Expense" && (t.date || "").includes(todayStr)).reduce((sum, t) => sum + (t.amount || 0), 0);
     const yesterdaySpend = transactions.filter(t => t.type === "Expense" && (t.date || "").includes(yesterdayStr)).reduce((sum, t) => sum + (t.amount || 0), 0);
@@ -194,7 +192,7 @@ export default function Dashboard({
     const upcomingBills = bills.filter(b => !b.isPaid && !b.isOverdue && b.rawDate && new Date(b.rawDate) <= next72Hours);
     const upcomingTotal = upcomingBills.reduce((sum, b) => sum + (b.amount || 0), 0);
 
-    // 💼 2. THE GENERATOR (API Hand-off) - Strict 3-Sentence Rule Enforced
+    // 💼 2. THE GENERATOR (API Hand-off)
     const promptPayload = `
       You are the Ledger Planner AI. Provide a highly precise, fact-based 3-sentence financial briefing based ONLY on the data below.
       Tone: The Realist. Direct, factual, no fluff, no emojis. Provide a tactical next step if cash is negative.
@@ -524,28 +522,48 @@ export default function Dashboard({
                       <p className="text-center text-xs font-bold text-slate-400 py-4">No bills assigned to this payday.</p>
                     ) : (
                       <div className="space-y-3">
+                        {/* 🔥 NEW BENTO CARD LAYOUT FOR BILLS 🔥 */}
                         {sortedBills.map((bill) => (
-                          <div key={bill.id} className={`flex flex-col p-3.5 rounded-2xl border shadow-sm transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-4 flex-1">
-                                <div className="relative p-1 z-10 cursor-pointer" onClick={() => handleBillClick(bill.id)}>
-                                  {bill.isPaid ? <CheckCircle2 className="text-[#1877F2] hover:scale-110 transition-transform" size={28} /> : <Circle className={`${isDarkMode ? "text-slate-600 hover:text-slate-500" : "text-slate-200 hover:text-slate-300"} hover:scale-110 transition-transform`} size={28} />}
-                                </div>
-                                <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => setSelectedEntry(bill)}>
-                                  <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${bill.isOverdue ? isDarkMode ? "bg-red-900/20 border-red-900/50" : "bg-red-50 border-red-100" : isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>{bill.icon}</div>
-                                  <div>
-                                    <div className="flex items-center gap-1.5">
-                                      <p className={`font-bold text-sm ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{bill.name}</p>
-                                      {bill.isRecurring && !bill.isPaid && <RefreshCw size={12} className="text-[#10B981] shrink-0" />}
-                                    </div>
-                                    <p className={`text-[10px] font-bold uppercase tracking-wider mt-0.5 ${bill.isOverdue ? "text-red-500" : isDarkMode ? "text-slate-500" : "text-slate-400"}`}>{bill.isOverdue ? "Overdue • " : "Due "} {bill.fullDate}</p>
-                                  </div>
-                                </div>
+                          <div key={bill.id} className={`flex flex-col p-4 rounded-2xl border shadow-sm transition-all ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-100"}`}>
+                            
+                            {/* Row 1: Emoji & Name */}
+                            <div className="flex items-center gap-3 mb-3 cursor-pointer" onClick={() => setSelectedEntry(bill)}>
+                              <div className={`w-10 h-10 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                                {bill.icon}
                               </div>
-                              <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight cursor-pointer transition-colors ${bill.isOverdue ? isDarkMode ? "bg-red-900/30 text-red-400" : "bg-red-50 text-red-600" : isDarkMode ? "bg-[#1877F2]/10 text-[#1877F2]" : "bg-blue-50 text-[#1877F2]"}`} onClick={() => setSelectedEntry(bill)}>
+                              <p className={`font-bold text-sm ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{bill.name}</p>
+                              {bill.isRecurring && !bill.isPaid && <RefreshCw size={12} className="text-[#10B981] shrink-0 ml-auto" />}
+                            </div>
+
+                            {/* Row 2: Status/Date & Glowing Balance */}
+                            <div className="flex items-end justify-between mb-4 cursor-pointer" onClick={() => setSelectedEntry(bill)}>
+                              <div className="flex flex-col">
+                                <span className={`text-[10px] font-black uppercase tracking-wider ${bill.isOverdue ? "text-red-500" : isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                                  {bill.isOverdue ? "Overdue" : bill.payday === "Due Now" ? "Due Now" : "Status: Due"}
+                                </span>
+                                <span className={`text-xs font-bold mt-0.5 ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
+                                  {bill.fullDate}
+                                </span>
+                              </div>
+                              <div className={`px-4 py-1.5 rounded-xl font-black text-sm tracking-tight shadow-[0_0_15px_rgba(24,119,242,0.3)] ${bill.isOverdue ? "bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.4)]" : "bg-[#1877F2] text-white"}`}>
                                 ${bill.amount.toFixed(2)}
                               </div>
                             </div>
+
+                            {/* Row 3: Slim Mark as Paid Button */}
+                            {!bill.isPaid ? (
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }} 
+                                className={`w-full py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-2 ${isDarkMode ? "bg-[#1E293B] border-slate-600 text-[#1877F2] hover:bg-slate-800" : "bg-blue-50 border-blue-100 text-[#1877F2] hover:bg-blue-100"}`}
+                              >
+                                <CheckCircle2 size={14} /> Mark as Paid
+                              </button>
+                            ) : (
+                              <div className={`w-full py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest border flex items-center justify-center gap-2 ${isDarkMode ? "bg-emerald-900/20 border-emerald-900/50 text-emerald-400" : "bg-emerald-50 border-emerald-100 text-emerald-600"}`}>
+                                <CheckCircle2 size={14} /> Paid
+                              </div>
+                            )}
+                            
                           </div>
                         ))}
                       </div>
@@ -575,25 +593,31 @@ export default function Dashboard({
               <div className="py-8 text-center"><p className="font-bold text-sm text-slate-400">No recent activity.</p></div>
             ) : (
               <div className="space-y-3">
+                {/* 🔥 MATCHING BENTO LAYOUT FOR RECENT ACTIVITY (No button) 🔥 */}
                 {transactions.slice(0, 5).map((tx) => (
-                  <div key={tx.id} onClick={() => setSelectedEntry(tx)} className={`flex items-center justify-between p-3.5 rounded-2xl border shadow-sm cursor-pointer transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
-                    <div className="flex items-center gap-4 truncate">
-                      <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>{tx.icon}</div>
-                      <div className="flex flex-col truncate justify-center">
-                        <p className={`font-bold text-sm truncate leading-tight ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{tx.name}</p>
-                        <div className="flex flex-col mt-0.5">
-                          <span className={`text-[10px] font-black uppercase tracking-widest truncate leading-tight ${getTxCategoryColor(tx)}`}>
-                            {tx.category || "Uncategorized"}
-                          </span>
-                          <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest truncate leading-tight mt-0.5">
-                            {tx.date}
-                          </span>
-                        </div>
+                  <div key={tx.id} onClick={() => setSelectedEntry(tx)} className={`flex flex-col p-4 rounded-2xl border shadow-sm cursor-pointer transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
+                    
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className={`w-9 h-9 rounded-xl border flex items-center justify-center text-lg shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                        {tx.icon}
+                      </div>
+                      <p className={`font-bold text-sm truncate ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{tx.name}</p>
+                    </div>
+                    
+                    <div className="flex items-end justify-between">
+                      <div className="flex flex-col">
+                        <span className={`text-[9px] font-black uppercase tracking-widest ${getTxCategoryColor(tx)}`}>
+                          {tx.category || "Uncategorized"}
+                        </span>
+                        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mt-0.5">
+                          {tx.date}
+                        </span>
+                      </div>
+                      <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight ${getTxAmountClasses(tx, isDarkMode)}`}>
+                        {tx.type === "Income" ? "+" : "-"}${tx.amount.toFixed(2)}
                       </div>
                     </div>
-                    <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight shrink-0 ml-2 transition-colors ${getTxAmountClasses(tx, isDarkMode)}`}>
-                      {tx.type === "Income" ? "+" : "-"}${tx.amount.toFixed(2)}
-                    </div>
+
                   </div>
                 ))}
                 <button onClick={() => changeTab("activity")} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)]">

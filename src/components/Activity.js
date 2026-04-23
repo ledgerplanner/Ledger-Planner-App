@@ -38,7 +38,7 @@ export default function Activity({
   // Sort largest to smallest
   const sortedCategories = Object.entries(categoriesMap).sort((a, b) => b[1] - a[1]);
   
-  // 🔥 THE FOUNDER'S "LUCKY 8" UPGRADE
+  // THE FOUNDER'S "LUCKY 8" UPGRADE
   // Cap at 8 distinct visual slices, group the rest into "Other"
   const topCategories = sortedCategories.slice(0, 8);
   const otherAmount = sortedCategories.slice(8).reduce((sum, [_, amt]) => sum + amt, 0);
@@ -117,7 +117,7 @@ export default function Activity({
 
       <main className="px-6 space-y-6 mt-4">
 
-        {/* 📊 PREMIUM MASSIVE CATEGORY RING (ONLY SHOWS WHEN TOGGLED) */}
+        {/* PREMIUM MASSIVE CATEGORY RING (ONLY SHOWS WHEN TOGGLED) */}
         {activityFilter !== "All" && totalTargetAmount > 0 && (
           <div className={`p-6 rounded-3xl border shadow-sm flex items-center gap-6 ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
             <div className="relative w-40 h-40 shrink-0">
@@ -161,19 +161,33 @@ export default function Activity({
           </div>
         )}
 
-        {/* 🎚️ TOGGLE CHIPS (Income / Expense) */}
+        {/* TOGGLE CHIPS (Income / Expense) */}
         <div className="flex gap-3">
            <button 
              onClick={() => setActivityFilter(activityFilter === "Income" ? "All" : "Income")} 
-             className={`flex-1 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${activityFilter === "Income" ? "bg-[#10B981] text-white shadow-[0_8px_20px_rgba(16,185,129,0.3)] transform -translate-y-0.5" : isDarkMode ? "bg-[#1E293B] text-slate-400 border border-slate-800" : "bg-white text-slate-400 border border-slate-100"}`}
+             className={`flex-1 flex flex-col items-center justify-center py-3 rounded-2xl transition-all ${
+               activityFilter === "Income" 
+                 ? "bg-[#10B981] text-white shadow-[0_8px_20px_rgba(16,185,129,0.3)] transform -translate-y-0.5" 
+                 : isDarkMode ? "bg-[#1E293B] text-slate-400 border border-slate-800" : "bg-white text-slate-400 border border-slate-100"
+             }`}
            >
-             Income
+             <span className="font-black text-xs uppercase tracking-widest">Income</span>
+             {activityFilter === "Income" && (
+               <span className="text-[9px] font-bold mt-1 tracking-wider opacity-90">Tap again to clear</span>
+             )}
            </button>
            <button 
              onClick={() => setActivityFilter(activityFilter === "Expense" ? "All" : "Expense")} 
-             className={`flex-1 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${activityFilter === "Expense" ? "bg-[#F97316] text-white shadow-[0_8px_20px_rgba(249,115,22,0.3)] transform -translate-y-0.5" : isDarkMode ? "bg-[#1E293B] text-slate-400 border border-slate-800" : "bg-white text-slate-400 border border-slate-100"}`}
+             className={`flex-1 flex flex-col items-center justify-center py-3 rounded-2xl transition-all ${
+               activityFilter === "Expense" 
+                 ? "bg-[#F97316] text-white shadow-[0_8px_20px_rgba(249,115,22,0.3)] transform -translate-y-0.5" 
+                 : isDarkMode ? "bg-[#1E293B] text-slate-400 border border-slate-800" : "bg-white text-slate-400 border border-slate-100"
+             }`}
            >
-             Expenses
+             <span className="font-black text-xs uppercase tracking-widest">Expenses</span>
+             {activityFilter === "Expense" && (
+               <span className="text-[9px] font-bold mt-1 tracking-wider opacity-90">Tap again to clear</span>
+             )}
            </button>
         </div>
 
@@ -188,38 +202,44 @@ export default function Activity({
           </div>
         </div>
 
-        {/* LIST (THE BENTO BREAKOUT) */}
+        {/* THE LEDGER VAULT (UNIVERSAL TWO-ROW ARCHITECTURE) */}
         <div className="space-y-4">
-          {/* 🔥 THE BENTO BOX MAIN CARD 🔥 */}
           <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
             {filteredTransactions.length === 0 ? (
               <div className="py-10 text-center text-slate-400 font-bold text-sm uppercase tracking-widest">No activities found.</div>
             ) : (
               <div className="space-y-3">
                 {filteredTransactions.map((tx) => (
-                  /* 🔥 THE INDIVIDUAL INNER CARD 🔥 */
-                  <div key={tx.id} onClick={() => setSelectedEntry(tx)} className={`flex items-center justify-between p-3.5 rounded-2xl border shadow-sm cursor-pointer transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
-                    <div className="flex items-center gap-4 truncate">
+                  <div key={tx.id} onClick={() => setSelectedEntry(tx)} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm cursor-pointer transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
+                    
+                    {/* ROW 1: Identity & Full Wrapping Text */}
+                    <div className="flex items-center gap-3 w-full">
                       <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
                         {tx.icon}
                       </div>
-                      <div className="flex flex-col truncate justify-center">
-                        <p className={`font-bold text-sm truncate leading-tight ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{tx.name}</p>
-                        {/* 🔥 NEW STACKED METADATA WITH 3-WAY COLOR LOGIC 🔥 */}
-                        <div className="flex flex-col mt-0.5">
-                          <span className={`text-[10px] font-black uppercase tracking-widest truncate leading-tight ${getTxCategoryColor(tx)}`}>
-                            {tx.category || "Uncategorized"}
-                          </span>
-                          <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest truncate leading-tight mt-0.5">
-                            {tx.date}
-                          </span>
+                      <div className="flex-1 min-w-0">
+                        <p className={`font-bold text-sm break-words whitespace-normal leading-tight ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{tx.name}</p>
+                      </div>
+                    </div>
+
+                    {/* ROW 2: Stacked Category/Date & Glowing Amount */}
+                    <div className={`mt-3 pt-3 border-t flex items-center justify-between gap-2 ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
+                      <div className="flex-1 min-w-0 flex flex-col">
+                        <span className={`text-[10px] font-black uppercase tracking-widest truncate leading-tight ${getTxCategoryColor(tx)}`}>
+                          {tx.category || "Uncategorized"}
+                        </span>
+                        <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest truncate leading-tight mt-0.5">
+                          {tx.date}
+                        </span>
+                      </div>
+                      
+                      <div className="shrink-0 flex justify-end">
+                        <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight transition-colors ${getTxAmountClasses(tx, isDarkMode)}`}>
+                          {tx.type === "Income" ? "+" : "-"}${tx.amount.toFixed(2)}
                         </div>
                       </div>
                     </div>
-                    {/* 🔥 NEW EMERALD / ORANGE / BLUE GLOWING SHADOWS 🔥 */}
-                    <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight shrink-0 ml-2 transition-colors ${getTxAmountClasses(tx, isDarkMode)}`}>
-                      {tx.type === "Income" ? "+" : "-"}${tx.amount.toFixed(2)}
-                    </div>
+
                   </div>
                 ))}
               </div>

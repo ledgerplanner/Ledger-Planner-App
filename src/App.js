@@ -62,7 +62,7 @@ export default function App() {
   const [isEditingEntry, setIsEditingEntry] = useState(false);
   const [editEntryData, setEditEntryData] = useState({});
   
-  // Smart Initializer State (Fix #5)
+  // Smart Initializer State
   const [collapsedPaydays, setCollapsedPaydays] = useState({ "Due Now": true, "Payday 1": false, "Payday 2": true, "Payday 3": true, "Payday 4": true, "Payday 5": true, "Unscheduled": true });
   const hasInitializedCollapse = useRef(false);
   
@@ -173,11 +173,11 @@ export default function App() {
 
     if (isDemo) {
       setUser({ uid: "demo123", displayName: "Demo User", email: "demo@ledgerplanner.com" });
-      setAccounts(demoAccounts);
-      setBills(demoBills);
-      setTransactions(demoTransactions);
-      setTodos(demoTodos);
-      setPaydayConfig({ frequency: "Weekly", ...demoPaydayConfig });
+      setAccounts(demoAccounts || []);
+      setBills(demoBills || []);
+      setTransactions(demoTransactions || []);
+      setTodos(demoTodos || []);
+      setPaydayConfig({ frequency: "Weekly", ...(demoPaydayConfig || {}) });
       setIsAuthLoading(false);
     }
     
@@ -214,7 +214,7 @@ export default function App() {
 
   useEffect(() => {
     if (selectedAccount) {
-      setEditAccountBalance(selectedAccount.balance.toFixed(2));
+      setEditAccountBalance((selectedAccount.balance || 0).toFixed(2));
       setEditAccountDesc(selectedAccount.description || "");
     }
   }, [selectedAccount]);
@@ -359,26 +359,28 @@ export default function App() {
 
   const handleBillClick = async (id) => {
     const bill = bills.find(b => b.id === id); 
-    if (!bill.isPaid) { 
-      setPaymentModalConfig({ isOpen: true, billId: id, accountId: accounts.find(a => a.type === "Checking" || a.type === "Cash")?.id || (accounts[0]?.id || "") }); 
-    } 
-    else {
-      const refundAccountId = bill.paidFromAccountId;
-      const targetAcc = accounts.find(a => a.id === refundAccountId);
-      let newPaidAmount = bill.paidAmount; 
-      if (bill.isInstallment) newPaidAmount = bill.paidAmount - bill.amount;
-      
-      if (isDemoMode) {
-        setBills(bills.map(b => b.id === id ? { ...b, isPaid: false, paidAmount: newPaidAmount, paidFromAccountId: null, linkedTxId: null } : b));
-        if (targetAcc) setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: a.balance + bill.amount } : a));
-        if (bill.linkedTxId) setTransactions(transactions.filter(t => t.id !== bill.linkedTxId));
-      } else {
-        await updateDoc(doc(db, "users", user.uid, "bills", id), { isPaid: false, paidAmount: newPaidAmount, paidFromAccountId: null, linkedTxId: null });
-        if (targetAcc) await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance + bill.amount });
-        if (bill.linkedTxId) await deleteDoc(doc(db, "users", user.uid, "transactions", bill.linkedTxId));
+    if (!bill || bill.isPaid) {
+      if (bill && bill.isPaid) {
+        const refundAccountId = bill.paidFromAccountId;
+        const targetAcc = accounts.find(a => a.id === refundAccountId);
+        let newPaidAmount = bill.paidAmount || 0; 
+        if (bill.isInstallment) newPaidAmount = (bill.paidAmount || 0) - (bill.amount || 0);
+        
+        if (isDemoMode) {
+          setBills(bills.map(b => b.id === id ? { ...b, isPaid: false, paidAmount: newPaidAmount, paidFromAccountId: null, linkedTxId: null } : b));
+          if (targetAcc) setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: a.balance + (bill.amount || 0) } : a));
+          if (bill.linkedTxId) setTransactions(transactions.filter(t => t.id !== bill.linkedTxId));
+        } else {
+          await updateDoc(doc(db, "users", user.uid, "bills", id), { isPaid: false, paidAmount: newPaidAmount, paidFromAccountId: null, linkedTxId: null });
+          if (targetAcc) await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance + (bill.amount || 0) });
+          if (bill.linkedTxId) await deleteDoc(doc(db, "users", user.uid, "transactions", bill.linkedTxId));
+        }
+        triggerHaptic();
       }
-      triggerHaptic();
+      return;
     }
+    
+    setPaymentModalConfig({ isOpen: true, billId: id, accountId: accounts.find(a => a.type === "Checking" || a.type === "Cash")?.id || (accounts[0]?.id || "") }); 
   };
 
   const handleSaveEntryEdit = async () => {
@@ -386,10 +388,10 @@ export default function App() {
     const colName = selectedEntry.fullDate !== undefined ? "bills" : "transactions";
     
     const updatePayload = { 
-      name: editEntryData.name || selectedEntry.name, 
+      name: editEntryData.name || selectedEntry.name || "Unnamed", 
       amount: parseFloat(editEntryData.amount) || 0, 
-      category: editEntryData.category || selectedEntry.category, 
-      icon: editEntryData.icon || selectedEntry.icon 
+      category: editEntryData.category || selectedEntry.category || "Other", 
+      icon: editEntryData.icon || selectedEntry.icon || "🧾" 
     };
     
     if (selectedEntry.fullDate !== undefined) {
@@ -405,8 +407,8 @@ export default function App() {
             if (localBillDate.getTime() === todayLocal.getTime()) updatePayload.payday = "Due Now";
         }
         
-        updatePayload.isRecurring = editEntryData.isRecurring;
-        updatePayload.isInstallment = editEntryData.isInstallment;
+        updatePayload.isRecurring = editEntryData.isRecurring || false;
+        updatePayload.isInstallment = editEntryData.isInstallment || false;
         if (editEntryData.isInstallment) {
           updatePayload.totalAmount = parseFloat(editEntryData.totalAmount) || 0;
           updatePayload.paidAmount = parseFloat(editEntryData.paidAmount) || 0;
@@ -460,6 +462,7 @@ export default function App() {
     if (isNaN(amt) || amt <= 0 || !transferFrom || !transferTo) return;
     const fromAcc = accounts.find(a => a.id === transferFrom);
     const toAcc = accounts.find(a => a.id === transferTo);
+    if (!fromAcc || !toAcc) return;
     
     const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
     const sentName = `${fromAcc.name} → ${toAcc.name} (Sent)`;
@@ -492,7 +495,7 @@ export default function App() {
     if (isNaN(newBal) || !selectedAccount) return;
     let finalBalance = newBal;
     if (selectedAccount.type === "Credit Card" && newBal > 0) finalBalance = -newBal;
-    const diff = finalBalance - selectedAccount.balance;
+    const diff = finalBalance - (selectedAccount.balance || 0);
     
     if (isDemoMode) {
       setAccounts(accounts.map(a => a.id === selectedAccount.id ? { ...a, balance: finalBalance, description: editAccountDesc } : a));
@@ -516,7 +519,7 @@ export default function App() {
       const txsToDelete = transactions.filter(tx => tx.accountId === accId);
       const batchPromises = txsToDelete.map(tx => deleteDoc(doc(db, "users", user.uid, "transactions", tx.id)));
       const billsToReset = bills.filter(b => b.paidFromAccountId === accId);
-      billsToReset.forEach(b => { batchPromises.push(updateDoc(doc(db, "users", user.uid, "bills", b.id), { isPaid: false, paidAmount: b.isInstallment ? b.paidAmount - b.amount : 0, paidFromAccountId: null, linkedTxId: null })); });
+      billsToReset.forEach(b => { batchPromises.push(updateDoc(doc(db, "users", user.uid, "bills", b.id), { isPaid: false, paidAmount: b.isInstallment ? (b.paidAmount || 0) - (b.amount || 0) : 0, paidFromAccountId: null, linkedTxId: null })); });
       await Promise.all(batchPromises);
     }
     triggerHaptic(); setSelectedAccount(null);
@@ -533,12 +536,14 @@ export default function App() {
   const calculatePaydayGroup = (dateString) => {
     if (!dateString) return "Unscheduled";
     const billDate = new Date(dateString);
+    if (isNaN(billDate.getTime())) return "Unscheduled";
+    
     const todayLocal = new Date(); todayLocal.setHours(0, 0, 0, 0);
     const localBillDate = new Date(billDate.getUTCFullYear(), billDate.getUTCMonth(), billDate.getUTCDate());
 
     if (localBillDate < todayLocal || localBillDate.getTime() === todayLocal.getTime()) return "Due Now";
 
-    const activeFreq = paydayConfig.frequency || "Weekly";
+    const activeFreq = paydayConfig?.frequency || "Weekly";
     const paydaySlotsMap = {
       "Weekly": ["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"],
       "Bi-Weekly": ["Payday 1", "Payday 2", "Payday 3"],
@@ -549,7 +554,7 @@ export default function App() {
 
     const activePaydays = [];
     for (const pdId of validSlots) {
-      if (paydayConfig[pdId] && paydayConfig[pdId].date) {
+      if (paydayConfig?.[pdId] && paydayConfig[pdId].date) {
         const d = new Date(paydayConfig[pdId].date);
         if (!isNaN(d.getTime())) activePaydays.push({ id: pdId, date: d });
       }
@@ -583,27 +588,29 @@ export default function App() {
 
     if (bill.rawDate && !bill.isPaid) {
       const bDate = new Date(bill.rawDate);
-      const localBDate = new Date(bDate.getUTCFullYear(), bDate.getUTCMonth(), bDate.getUTCDate());
-      
-      if (localBDate < todayForDynamic) {
-          currentPayday = "Due Now";
-          isOverdue = true;
-      } else if (localBDate.getTime() === todayForDynamic.getTime()) {
-          currentPayday = "Due Now";
-          isOverdue = false;
-      } else {
-          currentPayday = calculatePaydayGroup(bill.rawDate);
-          isOverdue = false;
+      if (!isNaN(bDate.getTime())) {
+          const localBDate = new Date(bDate.getUTCFullYear(), bDate.getUTCMonth(), bDate.getUTCDate());
+          
+          if (localBDate < todayForDynamic) {
+              currentPayday = "Due Now";
+              isOverdue = true;
+          } else if (localBDate.getTime() === todayForDynamic.getTime()) {
+              currentPayday = "Due Now";
+              isOverdue = false;
+          } else {
+              currentPayday = calculatePaydayGroup(bill.rawDate);
+              isOverdue = false;
+          }
       }
     }
-    return { ...bill, payday: currentPayday, isOverdue: isOverdue };
+    return { ...bill, payday: currentPayday || "Unscheduled", isOverdue: isOverdue };
   }).sort((a, b) => {
     if (a.isOverdue && !b.isOverdue) return -1;
     if (!a.isOverdue && b.isOverdue) return 1;
     if (a.payday === "Due Now" && b.payday !== "Due Now") return -1;
     if (a.payday !== "Due Now" && b.payday === "Due Now") return 1;
     if (!a.rawDate) return 1; if (!b.rawDate) return -1;
-    return new Date(a.rawDate) - new Date(b.rawDate);
+    return new Date(a.rawDate || 0) - new Date(b.rawDate || 0);
   });
 
   // === 🔥 SMART INITIALIZATION HOOK (Fix #5) 🔥 ===
@@ -612,6 +619,8 @@ export default function App() {
       const hasDueNow = dynamicBills.some(b => b.payday === "Due Now" && !b.isPaid);
       if (hasDueNow) {
         setCollapsedPaydays(prev => ({ ...prev, "Due Now": false, "Payday 1": true }));
+      } else {
+        setCollapsedPaydays(prev => ({ ...prev, "Due Now": true, "Payday 1": false }));
       }
       hasInitializedCollapse.current = true;
     }
@@ -626,12 +635,15 @@ export default function App() {
         if (bill.isRecurring !== false) { 
           let newRawDate = bill.rawDate; let displayDate = bill.fullDate; let newPayday = "Payday 1";
           if (bill.rawDate) {
-            const oldDate = new Date(bill.rawDate); oldDate.setUTCMonth(oldDate.getUTCMonth() + 1);
-            newRawDate = oldDate.toISOString().split('T')[0];
-            displayDate = oldDate.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
-            newPayday = calculatePaydayGroup(newRawDate);
+            const oldDate = new Date(bill.rawDate); 
+            if (!isNaN(oldDate.getTime())) {
+                oldDate.setUTCMonth(oldDate.getUTCMonth() + 1);
+                newRawDate = oldDate.toISOString().split('T')[0];
+                displayDate = oldDate.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+                newPayday = calculatePaydayGroup(newRawDate);
+            }
           }
-          let newPaidAmt = bill.isInstallment ? bill.paidAmount : 0;
+          let newPaidAmt = bill.isInstallment ? (bill.paidAmount || 0) : 0;
           batchPromises.push(updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: false, paidAmount: newPaidAmt, linkedTxId: null, paidFromAccountId: null, rawDate: newRawDate, fullDate: displayDate, payday: newPayday, isOverdue: false }));
         } else { batchPromises.push(deleteDoc(doc(db, "users", user.uid, "bills", bill.id))); }
       }
@@ -643,29 +655,32 @@ export default function App() {
     const currentAlerts = [];
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const actionBills = dynamicBills.filter(b => b.isOverdue || (!b.isPaid && b.payday === "Due Now"));
-    actionBills.forEach(b => { currentAlerts.push({ id: `action-${b.id}`, type: 'danger', icon: <AlertCircle size={20} className="text-red-500" />, title: 'Action Required', message: `Your ${b.name} bill is ${b.isOverdue ? 'past due' : 'due now'}.`, amount: b.amount, time: b.isOverdue ? 'URGENT' : 'TODAY', action: () => { setIsNotificationsOpen(false); changeTab("bills"); } }); });
+    actionBills.forEach(b => { currentAlerts.push({ id: `action-${b.id}`, type: 'danger', icon: <AlertCircle size={20} className="text-red-500" />, title: 'Action Required', message: `Your ${b.name || "Bill"} is ${b.isOverdue ? 'past due' : 'due now'}.`, amount: b.amount || 0, time: b.isOverdue ? 'URGENT' : 'TODAY', action: () => { setIsNotificationsOpen(false); changeTab("bills"); } }); });
     const upcomingRecurring = dynamicBills.filter(b => !b.isPaid && b.isRecurring && !b.isOverdue && b.payday !== "Due Now" && b.payday !== "Unscheduled");
-    upcomingRecurring.forEach(b => { if (b.rawDate) { const bDate = new Date(b.rawDate); const diffDays = Math.ceil((bDate - today) / (1000 * 60 * 60 * 24)); if (diffDays >= 0 && diffDays <= 2) { currentAlerts.push({ id: `sub-${b.id}`, type: 'info', icon: <RefreshCw size={20} className="text-[#10B981]" />, title: 'Subscription Nudge', message: `${b.name} is recurring in ${diffDays} day(s).`, amount: b.amount, time: `${diffDays}D`, action: () => { setIsNotificationsOpen(false); changeTab("bills"); } }); } } });
+    upcomingRecurring.forEach(b => { if (b.rawDate) { const bDate = new Date(b.rawDate); if (!isNaN(bDate.getTime())) { const diffDays = Math.ceil((bDate - today) / (1000 * 60 * 60 * 24)); if (diffDays >= 0 && diffDays <= 2) { currentAlerts.push({ id: `sub-${b.id}`, type: 'info', icon: <RefreshCw size={20} className="text-[#10B981]" />, title: 'Subscription Nudge', message: `${b.name || "Subscription"} is recurring in ${diffDays} day(s).`, amount: b.amount || 0, time: `${diffDays}D`, action: () => { setIsNotificationsOpen(false); changeTab("bills"); } }); } } } });
     ["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].forEach(pdId => {
-      const config = paydayConfig[pdId];
+      const config = paydayConfig?.[pdId];
       if (config && config.date) {
-        const pdDate = new Date(config.date); pdDate.setUTCHours(0, 0, 0, 0);
-        const diffDays = Math.ceil((pdDate - today) / (1000 * 60 * 60 * 24));
-        if (diffDays >= 0 && diffDays <= 3) { currentAlerts.push({ id: `payday-${pdId}`, type: 'info', icon: <CalendarIcon size={20} className="text-[#1877F2]" />, title: 'Upcoming Payday', message: `${pdId} is approaching.`, time: `${diffDays}D`, action: () => { setIsNotificationsOpen(false); setIsPaydaySetupOpen(true); } }); }
-        const pdBills = bills.filter(b => b.payday === pdId && !b.isPaid);
-        const pdTotal = pdBills.reduce((sum, b) => sum + b.amount, 0);
-        const pdIncome = parseFloat(config.income) || 0;
-        if (pdTotal > pdIncome && pdIncome > 0) { currentAlerts.push({ id: `gap-${pdId}`, type: 'warning', icon: <ArrowDown size={20} className="text-orange-500" />, title: 'Liquidity Gap', message: `${pdId} is $${(pdTotal - pdIncome).toFixed(2)} short.`, time: 'WARNING', action: () => { setIsNotificationsOpen(false); changeTab("bills"); } }); }
+        const pdDate = new Date(config.date); 
+        if (!isNaN(pdDate.getTime())) {
+            pdDate.setUTCHours(0, 0, 0, 0);
+            const diffDays = Math.ceil((pdDate - today) / (1000 * 60 * 60 * 24));
+            if (diffDays >= 0 && diffDays <= 3) { currentAlerts.push({ id: `payday-${pdId}`, type: 'info', icon: <CalendarIcon size={20} className="text-[#1877F2]" />, title: 'Upcoming Payday', message: `${pdId} is approaching.`, time: `${diffDays}D`, action: () => { setIsNotificationsOpen(false); setIsPaydaySetupOpen(true); } }); }
+            const pdBills = bills.filter(b => b.payday === pdId && !b.isPaid);
+            const pdTotal = pdBills.reduce((sum, b) => sum + (b.amount || 0), 0);
+            const pdIncome = parseFloat(config.income) || 0;
+            if (pdTotal > pdIncome && pdIncome > 0) { currentAlerts.push({ id: `gap-${pdId}`, type: 'warning', icon: <ArrowDown size={20} className="text-orange-500" />, title: 'Liquidity Gap', message: `${pdId} is $${(pdTotal - pdIncome).toFixed(2)} short.`, time: 'WARNING', action: () => { setIsNotificationsOpen(false); changeTab("bills"); } }); }
+        }
       }
     });
-    const liquidCash = accounts.filter(a => a.type === "Checking" || a.type === "Cash").reduce((sum, acc) => sum + acc.balance, 0);
+    const liquidCash = accounts.filter(a => a.type === "Checking" || a.type === "Cash").reduce((sum, acc) => sum + (acc.balance || 0), 0);
     const upcomingBills = bills.filter(b => !b.isPaid && !b.isOverdue);
-    const upcomingBurn = upcomingBills.reduce((sum, b) => sum + b.amount, 0);
+    const upcomingBurn = upcomingBills.reduce((sum, b) => sum + (b.amount || 0), 0);
     const safeToSpend = liquidCash - upcomingBurn;
     if (safeToSpend < 100 && safeToSpend >= 0) { currentAlerts.push({ id: `redline`, type: 'danger', icon: <AlertCircle size={20} className="text-red-500" />, title: 'Redline', message: `Buffer critically low ($${safeToSpend.toFixed(2)}).`, time: 'ALERT', action: () => { setIsNotificationsOpen(false); changeTab("home"); } }); }
     
     const recentTransfers = transactions.filter(tx => tx.category === "Transfers (Venmo/Zelle)" && tx.type === "Income");
-    if (recentTransfers.length > 0) { const latestTransfer = recentTransfers[0]; currentAlerts.push({ id: `transfer-${latestTransfer.id}`, type: 'success', icon: <CheckCircle2 size={20} className="text-[#10B981]" />, title: 'Transfer Complete', message: `$${latestTransfer.amount?.toFixed(2)} was successfully moved.`, time: latestTransfer.date?.split(',')[0], action: () => { setIsNotificationsOpen(false); changeTab("activity"); } }); }
+    if (recentTransfers.length > 0) { const latestTransfer = recentTransfers[0]; currentAlerts.push({ id: `transfer-${latestTransfer.id}`, type: 'success', icon: <CheckCircle2 size={20} className="text-[#10B981]" />, title: 'Transfer Complete', message: `$${(latestTransfer.amount || 0).toFixed(2)} was successfully moved.`, time: latestTransfer.date?.split(',')[0] || "Recent", action: () => { setIsNotificationsOpen(false); changeTab("activity"); } }); }
     return currentAlerts;
   };
 
@@ -708,7 +723,7 @@ export default function App() {
 
       </div>
       <div className="relative z-10 flex justify-center px-1 mb-6">
-        <h2 title={title} className={`text-3xl font-black tracking-tight leading-tight truncate max-w-full ${isDarkMode ? "text-white" : "text-slate-900"}`}>{title}</h2>
+        <h2 title={title || "Overview"} className={`text-3xl font-black tracking-tight leading-tight truncate max-w-full ${isDarkMode ? "text-white" : "text-slate-900"}`}>{title || "Overview"}</h2>
       </div>
       <div className="relative z-10 w-full h-auto opacity-100">{graphicContent}</div>
       <div className={`relative z-10 pt-4 border-t flex justify-center items-center ${isDarkMode ? "border-slate-800" : "border-slate-50"}`}>
@@ -724,11 +739,11 @@ export default function App() {
     const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
     if (isDemoMode) {
       const txId = `tx_demo_${Date.now()}`;
-      setTransactions([{ id: txId, name: bill.name, icon: bill.icon, amount: bill.amount, date: autoTimeStamp, type: "Expense", category: bill.category || "Bill Payment", accountId: targetAcc.id, isBillPayment: true }, ...transactions]);
-      setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: a.balance - bill.amount } : a));
+      setTransactions([{ id: txId, name: bill.name || "Bill", icon: bill.icon || "🧾", amount: bill.amount || 0, date: autoTimeStamp, type: "Expense", category: bill.category || "Bill Payment", accountId: targetAcc.id, isBillPayment: true }, ...transactions]);
+      setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: (a.balance || 0) - (bill.amount || 0) } : a));
       if (bill.isInstallment) {
-        const newPaidAmt = (bill.paidAmount || 0) + bill.amount;
-        if (newPaidAmt >= bill.totalAmount) {
+        const newPaidAmt = (bill.paidAmount || 0) + (bill.amount || 0);
+        if (newPaidAmt >= (bill.totalAmount || 0)) {
           setBills(bills.map(b => b.id === bill.id ? { ...b, isPaid: true, paidAmount: newPaidAmt, paidFromAccountId: targetAcc.id, linkedTxId: txId } : b));
           triggerVictory(); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
         } else {
@@ -740,11 +755,11 @@ export default function App() {
         triggerVictory(); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
       }
     } else {
-      const txRef = await addDoc(collection(db, "users", user.uid, "transactions"), { name: bill.name, icon: bill.icon, amount: bill.amount, date: autoTimeStamp, type: "Expense", category: bill.category || "Bill Payment", accountId: targetAcc.id, isBillPayment: true, createdAt: serverTimestamp() });
-      await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance - bill.amount });
+      const txRef = await addDoc(collection(db, "users", user.uid, "transactions"), { name: bill.name || "Bill", icon: bill.icon || "🧾", amount: bill.amount || 0, date: autoTimeStamp, type: "Expense", category: bill.category || "Bill Payment", accountId: targetAcc.id, isBillPayment: true, createdAt: serverTimestamp() });
+      await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: (targetAcc.balance || 0) - (bill.amount || 0) });
       if (bill.isInstallment) {
-        const newPaidAmt = (bill.paidAmount || 0) + bill.amount;
-        if (newPaidAmt >= bill.totalAmount) {
+        const newPaidAmt = (bill.paidAmount || 0) + (bill.amount || 0);
+        if (newPaidAmt >= (bill.totalAmount || 0)) {
           await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: true, paidAmount: newPaidAmt, paidFromAccountId: targetAcc.id, linkedTxId: txRef.id });
           triggerVictory(); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
         } else {
@@ -763,6 +778,8 @@ export default function App() {
     const bill = bills.find(b => b.id === installmentPromptConfig.billId);
     if(!bill) return;
     const dateObj = new Date(installmentPromptConfig.nextDate);
+    if (isNaN(dateObj.getTime())) return;
+    
     const sortableDay = dateObj.getUTCDate();
     const displayDate = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
     const newPayday = calculatePaydayGroup(installmentPromptConfig.nextDate);
@@ -803,7 +820,13 @@ export default function App() {
 
     if (drawerTab === "bills") {
       let displayDate = "TBD", sortableDay = 31;
-      if (entryDate) { const dateObj = new Date(entryDate); sortableDay = dateObj.getUTCDate(); displayDate = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }); }
+      if (entryDate) { 
+          const dateObj = new Date(entryDate); 
+          if (!isNaN(dateObj.getTime())) {
+              sortableDay = dateObj.getUTCDate(); 
+              displayDate = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }); 
+          }
+      }
       if (isDemoMode) {
         setBills([...bills, { id: `b_demo_${Date.now()}`, name: entryName || "New Bill", icon: entryIcon || "🧾", category: entryCategory || "Other", amount: amountToProcess, date: sortableDay, fullDate: displayDate, rawDate: entryDate, payday: calculatePaydayGroup(entryDate), isPaid: false, isOverdue: false, isRecurring: entryIsRecurring, isInstallment: entryIsInstallment, totalAmount: entryIsInstallment ? parseFloat(entryTotalAmount) || 0 : 0, paidAmount: entryIsInstallment ? parseFloat(entryPaidAmount) || 0 : 0, linkedTxId: null }]);
       } else {
@@ -816,10 +839,10 @@ export default function App() {
         const isIncome = drawerTab === "income";
         if (isDemoMode) {
           setTransactions([{ id: `tx_demo_${Date.now()}`, name: entryName || (isIncome ? "Income" : "Expense"), icon: isIncome ? "💵" : entryIcon, category: entryCategory || "Other", amount: amountToProcess, date: autoTimeStamp, type: isIncome ? "Income" : "Expense", accountId: targetAcc.id }, ...transactions]);
-          setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: a.balance + (isIncome ? amountToProcess : -amountToProcess) } : a));
+          setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: (a.balance || 0) + (isIncome ? amountToProcess : -amountToProcess) } : a));
         } else {
           addDoc(collection(db, "users", user.uid, "transactions"), { name: entryName || (isIncome ? "Income" : "Expense"), icon: isIncome ? "💵" : entryIcon, category: entryCategory || "Other", amount: amountToProcess, date: autoTimeStamp, type: isIncome ? "Income" : "Expense", accountId: targetAcc.id, createdAt: serverTimestamp() }).catch(e => console.log("Offline outbox queued"));
-          updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance + (isIncome ? amountToProcess : -amountToProcess) }).catch(e => console.log("Offline outbox queued"));
+          updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: (targetAcc.balance || 0) + (isIncome ? amountToProcess : -amountToProcess) }).catch(e => console.log("Offline outbox queued"));
         }
       }
       triggerVictory(); closeQab();
@@ -839,11 +862,22 @@ export default function App() {
   const currentRecentCategories = drawerTab === "bills" ? recentBillCategories : recentActivityCategories;
 
   const getEntryAmountColor = (entry) => {
+    if (!entry) return "text-[#1877F2]";
     if (entry.isBillPayment || entry.fullDate !== undefined) return "text-[#1877F2]";
     if (entry.type === 'Income') return "text-[#10B981]";
     if (entry.type === 'Expense') return "text-[#F97316]";
     return "text-[#1877F2]";
   };
+
+  // Safe extraction to prevent IIFE inside JSX issues
+  const getActiveSetupSlots = () => {
+    const activeFreq = editPaydayConfig?.frequency || "Weekly";
+    if (activeFreq === "Monthly") return ["Payday 1"];
+    if (activeFreq === "Semi-Monthly") return ["Payday 1", "Payday 2"];
+    if (activeFreq === "Bi-Weekly") return ["Payday 1", "Payday 2", "Payday 3"];
+    return ["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"];
+  };
+  const activeSetupSlots = getActiveSetupSlots();
 
   return (
     <div 
@@ -1137,7 +1171,7 @@ export default function App() {
                       <button
                         key={freq}
                         onClick={() => setEditPaydayConfig({...editPaydayConfig, frequency: freq})}
-                        className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${editPaydayConfig.frequency === freq || (!editPaydayConfig.frequency && freq === "Weekly") ? "bg-[#1877F2] text-white shadow-md" : isDarkMode ? "text-slate-400 hover:text-slate-200" : "text-slate-500 hover:text-slate-800"}`}
+                        className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${editPaydayConfig?.frequency === freq || (!editPaydayConfig?.frequency && freq === "Weekly") ? "bg-[#1877F2] text-white shadow-md" : isDarkMode ? "text-slate-400 hover:text-slate-200" : "text-slate-500 hover:text-slate-800"}`}
                       >
                         {freq}
                       </button>
@@ -1146,30 +1180,23 @@ export default function App() {
                 </div>
 
                 <div className="space-y-6">
-                  {(() => {
-                    const activeFreq = editPaydayConfig.frequency || "Weekly";
-                    const slotsToShow = activeFreq === "Monthly" ? ["Payday 1"] :
-                                        activeFreq === "Semi-Monthly" ? ["Payday 1", "Payday 2"] :
-                                        activeFreq === "Bi-Weekly" ? ["Payday 1", "Payday 2", "Payday 3"] :
-                                        ["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"];
-
-                    return slotsToShow.map((pd) => (
-                      <div key={pd} className={`p-4 rounded-2xl border ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-slate-50 border-slate-100"}`}>
-                        <h4 className={`text-xs font-black uppercase tracking-widest mb-4 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>{pd}</h4>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            {/* 🔥 LABEL CLARITY FIX #3 🔥 */}
-                            <label className={`block text-[9px] font-bold uppercase mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Pay Date</label>
-                            <input type="date" value={editPaydayConfig[pd]?.date || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...editPaydayConfig[pd], date: e.target.value}})} className={`w-full p-3 rounded-xl border ${isDarkMode ? "bg-slate-800 border-slate-700 text-white dark:[color-scheme:dark]" : "bg-white border-slate-200 text-slate-900"}`} />
-                          </div>
-                          <div>
-                            <label className={`block text-[9px] font-bold uppercase mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Income</label>
-                            <input type="number" placeholder="Income Amount" value={editPaydayConfig[pd]?.income || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...editPaydayConfig[pd], income: e.target.value}})} className={`w-full p-3 rounded-xl border ${isDarkMode ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500" : "bg-white border-slate-200 text-slate-900 placeholder-slate-400"}`} />
-                          </div>
+                  {/* Map over the pre-calculated slots safely */}
+                  {activeSetupSlots.map((pd) => (
+                    <div key={pd} className={`p-4 rounded-2xl border ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-slate-50 border-slate-100"}`}>
+                      <h4 className={`text-xs font-black uppercase tracking-widest mb-4 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>{pd}</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          {/* 🔥 LABEL CLARITY FIX #3 🔥 */}
+                          <label className={`block text-[9px] font-bold uppercase mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Pay Date</label>
+                          <input type="date" value={editPaydayConfig?.[pd]?.date || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), date: e.target.value}})} className={`w-full p-3 rounded-xl border ${isDarkMode ? "bg-slate-800 border-slate-700 text-white dark:[color-scheme:dark]" : "bg-white border-slate-200 text-slate-900"}`} />
+                        </div>
+                        <div>
+                          <label className={`block text-[9px] font-bold uppercase mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Income</label>
+                          <input type="number" placeholder="Income Amount" value={editPaydayConfig?.[pd]?.income || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), income: e.target.value}})} className={`w-full p-3 rounded-xl border ${isDarkMode ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500" : "bg-white border-slate-200 text-slate-900 placeholder-slate-400"}`} />
                         </div>
                       </div>
-                    ));
-                  })()}
+                    </div>
+                  ))}
                 </div>
               </div>
               
@@ -1255,7 +1282,7 @@ export default function App() {
                       step="0.01"
                       value={editAccountBalance} 
                       onChange={(e) => setEditAccountBalance(e.target.value)} 
-                      onFocus={() => setEditAccountBalance(selectedAccount.balance.toFixed(2))} 
+                      onFocus={() => setEditAccountBalance((selectedAccount.balance || 0).toFixed(2))} 
                       className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl font-bold text-lg border focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`} 
                     />
                   </div>
@@ -1291,7 +1318,7 @@ export default function App() {
                 <div className="relative">
                   <label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Pay From Account</label>
                   <select value={paymentModalConfig.accountId} onChange={(e) => setPaymentModalConfig({ ...paymentModalConfig, accountId: e.target.value })} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
-                    {accounts.map((a) => (<option key={a.id} value={a.id}>{a.name} (${a.balance.toFixed(2)})</option>))}
+                    {accounts.map((a) => (<option key={a.id} value={a.id}>{a.name} (${(a.balance || 0).toFixed(2)})</option>))}
                   </select>
                 </div>
                 <button onClick={confirmPaymentRoute} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#10B981] shadow-[0_8px_16px_rgba(16,185,129,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><CheckCircle2 size={16}/> Complete Payment</button>
@@ -1322,7 +1349,7 @@ export default function App() {
                       <h2 className={`text-xl font-black mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{selectedEntry.name}</h2>
                       
                       <p className={`text-5xl font-black tracking-tighter ${getEntryAmountColor(selectedEntry)}`}>
-                        {selectedEntry.type === 'Income' ? '+' : selectedEntry.type === 'Expense' ? '-' : ''}${selectedEntry.amount?.toFixed(2)}
+                        {selectedEntry.type === 'Income' ? '+' : selectedEntry.type === 'Expense' ? '-' : ''}${(selectedEntry.amount || 0).toFixed(2)}
                       </p>
                       
                       <div className={`mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full border ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
@@ -1361,7 +1388,7 @@ export default function App() {
                         <CheckCircle2 size={16} /> Mark as Paid
                       </button>
                     )}
-                    <button onClick={async () => { if(window.confirm("Are you sure you want to delete this entry?")) { const colName = selectedEntry.fullDate ? "bills" : "transactions"; if (isDemoMode) { if (colName === "bills") { setBills(bills.filter(b => b.id !== selectedEntry.id)); } else { setTransactions(transactions.filter(t => t.id !== selectedEntry.id)); } } else { await deleteDoc(doc(db, "users", user.uid, colName, selectedEntry.id)); if(!selectedEntry.fullDate && selectedEntry.accountId) { const acc = accounts.find(a => a.id === selectedEntry.accountId); if(acc) { const revAmount = selectedEntry.type === "Income" ? -selectedEntry.amount : selectedEntry.amount; await updateDoc(doc(db, "users", user.uid, "accounts", acc.id), { balance: acc.balance + revAmount }); } } } setSelectedEntry(null); triggerHaptic(); } }} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-red-500 shadow-[0_8px_16px_rgba(239,68,68,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><Trash2 size={16} /> Delete Entry</button>
+                    <button onClick={async () => { if(window.confirm("Are you sure you want to delete this entry?")) { const colName = selectedEntry.fullDate ? "bills" : "transactions"; if (isDemoMode) { if (colName === "bills") { setBills(bills.filter(b => b.id !== selectedEntry.id)); } else { setTransactions(transactions.filter(t => t.id !== selectedEntry.id)); } } else { await deleteDoc(doc(db, "users", user.uid, colName, selectedEntry.id)); if(!selectedEntry.fullDate && selectedEntry.accountId) { const acc = accounts.find(a => a.id === selectedEntry.accountId); if(acc) { const revAmount = selectedEntry.type === "Income" ? -(selectedEntry.amount || 0) : (selectedEntry.amount || 0); await updateDoc(doc(db, "users", user.uid, "accounts", acc.id), { balance: (acc.balance || 0) + revAmount }); } } } setSelectedEntry(null); triggerHaptic(); } }} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-red-500 shadow-[0_8px_16px_rgba(239,68,68,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><Trash2 size={16} /> Delete Entry</button>
                   </>
                 ) : (
                   <div className="space-y-4">
@@ -1372,7 +1399,7 @@ export default function App() {
                     <div className="relative cursor-pointer" onClick={() => setIsIconSelectorOpen(true)}>
                       <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Icon</label>
                       <div className={`w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
-                        <span className="text-xl leading-none">{editEntryData.icon}</span>
+                        <span className="text-xl leading-none">{editEntryData.icon || "🧾"}</span>
                         <ArrowDown size={14} className={isDarkMode ? "text-slate-400" : "text-slate-500"} />
                       </div>
                     </div>

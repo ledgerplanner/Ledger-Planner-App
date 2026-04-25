@@ -74,11 +74,16 @@ export default function Dashboard({
   else if (currentHour >= 22 || currentHour < 5) { greetingStr = `Up late, ${userName}?`; }
 
   // === MACRO: GAS GAUGE & SHIELD MATH ENGINE (GLOBAL) ===
-  const totalIncomeBalance = accounts.reduce((sum, a) => sum + (a.balance || 0), 0);
-  const unpaidBillsAmount = bills.filter((b) => !b.isPaid).reduce((sum, b) => sum + (b.amount || 0), 0);
+  const totalIncomeBalance = accounts.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
+  const unpaidBillsAmount = bills.filter((b) => !b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
   const safeToSpend = totalIncomeBalance - unpaidBillsAmount;
 
-  const debtRatio = totalIncomeBalance > 0 ? Math.max(0, Math.min((unpaidBillsAmount / totalIncomeBalance) * 100, 100)) : (unpaidBillsAmount > 0 ? 100 : 0);
+  const safeTotalIncome = Number(totalIncomeBalance) || 0;
+  const safeUnpaidBills = Number(unpaidBillsAmount) || 0;
+  
+  const rawDebtRatio = safeTotalIncome > 0 ? Math.max(0, Math.min((safeUnpaidBills / safeTotalIncome) * 100, 100)) : (safeUnpaidBills > 0 ? 100 : 0);
+  const debtRatio = isNaN(rawDebtRatio) ? 0 : rawDebtRatio;
+  
   const isCritical = debtRatio >= 85 || safeToSpend < 0;
   const isWarning = debtRatio >= 60 && debtRatio < 85;
 
@@ -140,10 +145,11 @@ export default function Dashboard({
   transactions.forEach(tx => {
     const txDate = getTxDate(tx);
     const pd = calculateTxPayday(txDate);
+    const safeAmt = Number(tx.amount) || 0;
     if (tx.type === "Income" && actualIncomeByPayday[pd] !== undefined) {
-      actualIncomeByPayday[pd] += tx.amount;
+      actualIncomeByPayday[pd] += safeAmt;
     } else if (tx.type === "Expense" && actualExpensesByPayday[pd] !== undefined) {
-      actualExpensesByPayday[pd] += tx.amount;
+      actualExpensesByPayday[pd] += safeAmt;
     }
   });
 
@@ -157,10 +163,11 @@ export default function Dashboard({
     if (b.isOverdue || b.payday === "Due Now") return true;
     if (b.rawDate) {
       const bDate = new Date(b.rawDate);
+      if (isNaN(bDate.getTime())) return true;
       return bDate.getUTCMonth() === currentMonthIndex && bDate.getUTCFullYear() === currentYear;
     }
     return true; 
-  }).reduce((sum, b) => sum + (b.amount || 0), 0);
+  }).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
 
   // === 🧠 LP ASSISTANT LIVE ORCHESTRATOR 🧠 ===
   const [isBriefingLoading, setIsBriefingLoading] = useState(false);
@@ -180,17 +187,22 @@ export default function Dashboard({
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
-    const liquidCash = accounts.filter(a => a.type === "Checking" || a.type === "Cash").reduce((sum, a) => sum + (a.balance || 0), 0);
-    const todaySpend = transactions.filter(t => t.type === "Expense" && (t.date || "").includes(todayStr)).reduce((sum, t) => sum + (t.amount || 0), 0);
-    const yesterdaySpend = transactions.filter(t => t.type === "Expense" && (t.date || "").includes(yesterdayStr)).reduce((sum, t) => sum + (t.amount || 0), 0);
+    const liquidCash = accounts.filter(a => a.type === "Checking" || a.type === "Cash").reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
+    const todaySpend = transactions.filter(t => t.type === "Expense" && (t.date || "").includes(todayStr)).reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+    const yesterdaySpend = transactions.filter(t => t.type === "Expense" && (t.date || "").includes(yesterdayStr)).reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
     
     const overdueBills = bills.filter(b => !b.isPaid && b.isOverdue);
-    const overdueTotal = overdueBills.reduce((sum, b) => sum + (b.amount || 0), 0);
+    const overdueTotal = overdueBills.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
 
     const next72Hours = new Date(now);
     next72Hours.setDate(now.getDate() + 3);
-    const upcomingBills = bills.filter(b => !b.isPaid && !b.isOverdue && b.rawDate && new Date(b.rawDate) <= next72Hours);
-    const upcomingTotal = upcomingBills.reduce((sum, b) => sum + (b.amount || 0), 0);
+    const upcomingBills = bills.filter(b => {
+      if (b.isPaid || b.isOverdue || !b.rawDate) return false;
+      const bDate = new Date(b.rawDate);
+      if (isNaN(bDate.getTime())) return false;
+      return bDate <= next72Hours;
+    });
+    const upcomingTotal = upcomingBills.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
 
     // 💼 2. THE GENERATOR (API Hand-off)
     const promptPayload = `
@@ -294,7 +306,7 @@ export default function Dashboard({
           <span className="text-[10px] font-bold uppercase tracking-wider">Safe to Spend</span>
         </div>
         <p className={`text-4xl font-black tracking-tighter mb-4 ${safeToSpend < 0 ? "text-red-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>
-          ${safeToSpend.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+          ${(Number(safeToSpend) || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
         </p>
         <div className="flex flex-col gap-2">
           <div className="flex justify-end gap-2 text-xs font-bold uppercase">
@@ -306,13 +318,13 @@ export default function Dashboard({
                     ? isDarkMode ? "bg-emerald-900/30 text-emerald-400" : "bg-emerald-50 text-emerald-600"
                     : isDarkMode ? "bg-slate-800 text-slate-300" : "bg-slate-100 text-slate-700"
             }`}>
-              ${totalIncomeBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+              ${(Number(totalIncomeBalance) || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
             </span>
           </div>
           <div className="flex justify-end gap-2 text-xs font-bold uppercase">
             <span className="text-slate-400 text-[10px]">Unpaid Bills</span>
             <span className={isDarkMode ? "text-red-400 bg-red-900/30 px-2 rounded" : "text-red-600 bg-red-50 px-2 rounded"}>
-              ${unpaidBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+              ${(Number(unpaidBillsAmount) || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
             </span>
           </div>
         </div>
@@ -417,11 +429,11 @@ export default function Dashboard({
             
             const isSet = isDueNow || (pdSettings && (pdSettings.date || pdSettings.income));
             
-            const actualIncome = actualIncomeByPayday[pd] || 0;
-            const expectedIncome = parseFloat(pdSettings?.income) || 0;
+            const actualIncome = Number(actualIncomeByPayday[pd]) || 0;
+            const expectedIncome = Number(parseFloat(pdSettings?.income)) || 0;
             const effectiveIncome = actualIncome > 0 ? actualIncome : expectedIncome;
-            const actualExpenses = actualExpensesByPayday[pd] || 0; 
-            const unpaidBillsTotal = billsByPayday[pd]?.filter(b => !b.isPaid).reduce((sum, b) => sum + b.amount, 0) || 0;
+            const actualExpenses = Number(actualExpensesByPayday[pd]) || 0; 
+            const unpaidBillsTotal = billsByPayday[pd]?.filter(b => !b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0) || 0;
             
             const activeWeeklyBuffer = effectiveIncome - actualExpenses - unpaidBillsTotal;
             const totalWeeklyDrain = actualExpenses + unpaidBillsTotal;
@@ -444,14 +456,14 @@ export default function Dashboard({
                 {isDueNow ? (
                   <div className="flex flex-col items-center text-center mt-2 w-full">
                     <p className={`text-3xl font-black tracking-tight mb-1 text-red-500`}>
-                      ${unpaidBillsTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                      ${(Number(unpaidBillsTotal) || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                     </p>
                     <p className={`text-[9px] font-bold uppercase tracking-wider ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Currently Due</p>
                   </div>
                 ) : isSet ? (
                   <div className="flex flex-col items-center text-center w-full">
                     <p className={`text-3xl font-black tracking-tighter ${activeWeeklyBuffer < 0 ? "text-red-500" : activeWeeklyBuffer > 0 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
-                      ${activeWeeklyBuffer.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                      ${(Number(activeWeeklyBuffer) || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                     </p>
                     <p className={`text-[9px] font-bold uppercase tracking-wider mb-4 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
                       Safe to Spend
@@ -460,12 +472,12 @@ export default function Dashboard({
                     <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-800" : "bg-slate-100"}`}>
                       <div 
                         className={`h-full transition-all duration-1000 ${activeWeeklyBuffer < 0 ? "bg-red-500" : activeWeeklyBuffer < effectiveIncome * 0.2 ? "bg-orange-500" : "bg-[#10B981]"}`} 
-                        style={{ width: `${effectiveIncome > 0 ? fuelPct : 0}%` }}
+                        style={{ width: `${effectiveIncome > 0 ? (Number(fuelPct) || 0) : 0}%` }}
                       ></div>
                     </div>
                     <div className="flex flex-col items-center justify-center mt-3 gap-1 w-full">
-                      <span className="text-[9px] font-black uppercase tracking-widest text-[#10B981]">IN: ${effectiveIncome.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">OUT: ${totalWeeklyDrain.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-[#10B981]">IN: ${(Number(effectiveIncome) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">OUT: ${(Number(totalWeeklyDrain) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                   </div>
                 ) : (
@@ -489,7 +501,7 @@ export default function Dashboard({
 
             const isDueNow = payday === "Due Now";
             const isCollapsed = collapsedPaydays[payday];
-            const checkTotal = groupBills.filter((b) => !b.isPaid).reduce((sum, b) => sum + b.amount, 0);
+            const checkTotal = groupBills.filter((b) => !b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
             const expectedDateStr = isDueNow ? "Currently Due" : pdSettings?.date ? formatPaydayDateStr(pdSettings.date) : "Unscheduled";
             
             const sortedBills = sortBillsSurgically(groupBills);
@@ -504,7 +516,7 @@ export default function Dashboard({
                        <div className="text-slate-400">{isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}</div>
                      </div>
                      <span className={`text-sm font-black ${isDueNow ? "text-red-500" : "text-[#1877F2]"}`}>
-                       ${checkTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                       ${(Number(checkTotal) || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                      </span>
                   </div>
                   {/* Row 2: Date and Label */}
@@ -535,7 +547,7 @@ export default function Dashboard({
                                     </div>
                                 </div>
                                 <div className={`px-4 py-1.5 rounded-xl font-black text-sm tracking-tight shrink-0 shadow-[0_0_15px_rgba(24,119,242,0.3)] ${bill.isOverdue ? "bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.4)]" : "bg-[#1877F2] text-white"}`}>
-                                    ${bill.amount.toFixed(2)}
+                                    ${(Number(bill.amount) || 0).toFixed(2)}
                                 </div>
                             </div>
 
@@ -578,12 +590,12 @@ export default function Dashboard({
                                 <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/50 cursor-pointer" onClick={() => setSelectedEntry(bill)}>
                                     <div className="flex justify-between items-end mb-1.5">
                                         <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Installment Progress</span>
-                                        <span className={`text-[9px] font-black tracking-widest ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>${(bill.paidAmount || 0).toFixed(2)} / ${(bill.totalAmount || 0).toFixed(2)}</span>
+                                        <span className={`text-[9px] font-black tracking-widest ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>${(Number(bill.paidAmount) || 0).toFixed(2)} / ${(Number(bill.totalAmount) || 0).toFixed(2)}</span>
                                     </div>
                                     <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-900" : "bg-slate-100"}`}>
                                         <div 
-                                            className={`h-full transition-all duration-1000 ${bill.paidAmount >= bill.totalAmount ? "bg-[#10B981]" : "bg-[#1877F2]"}`} 
-                                            style={{ width: `${bill.totalAmount > 0 ? Math.min((bill.paidAmount / bill.totalAmount) * 100, 100) : 0}%` }}
+                                            className={`h-full transition-all duration-1000 ${Number(bill.paidAmount) >= Number(bill.totalAmount) ? "bg-[#10B981]" : "bg-[#1877F2]"}`} 
+                                            style={{ width: `${(Number(bill.totalAmount) || 0) > 0 ? Math.min(((Number(bill.paidAmount) || 0) / (Number(bill.totalAmount) || 1)) * 100, 100) : 0}%` }}
                                         ></div>
                                     </div>
                                 </div>
@@ -606,7 +618,7 @@ export default function Dashboard({
             <p className={`text-xs font-bold mt-0.5 ${isDarkMode ? "text-slate-500" : "text-slate-500"}`}>For {currentMonthName}</p>
           </div>
           <span className={`text-xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-            ${totalActiveBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+            ${(Number(totalActiveBillsAmount) || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </span>
         </div>
 
@@ -625,7 +637,7 @@ export default function Dashboard({
                     <div className="flex items-start justify-between gap-4 mb-4">
                         <p className={`font-black text-base truncate leading-tight flex-1 min-w-0 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{tx.name}</p>
                         <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight shrink-0 ${getTxAmountClasses(tx, isDarkMode)}`}>
-                            {tx.type === "Income" ? "+" : "-"}${tx.amount.toFixed(2)}
+                            {tx.type === "Income" ? "+" : "-"}${(Number(tx.amount) || 0).toFixed(2)}
                         </div>
                     </div>
                     

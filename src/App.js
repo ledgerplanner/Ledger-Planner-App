@@ -59,10 +59,12 @@ export default function App() {
   const [isEditingEntry, setIsEditingEntry] = useState(false);
   const [editEntryData, setEditEntryData] = useState({});
   
-  const [collapsedPaydays, setCollapsedPaydays] = useState({});
+  // 🔥 FIX 5: SMART INITIALIZATION DEFAULT STATE 🔥
+  const [collapsedPaydays, setCollapsedPaydays] = useState({ "Due Now": true, "Payday 1": false, "Payday 2": true, "Payday 3": true, "Payday 4": true, "Payday 5": true, "Unscheduled": true });
+  const hasInitializedCollapse = useRef(false);
   
   const [isPaydaySetupOpen, setIsPaydaySetupOpen] = useState(false);
-  const [paydayConfig, setPaydayConfig] = useState({ "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } });
+  const [paydayConfig, setPaydayConfig] = useState({ frequency: "Weekly", "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } });
   const [editPaydayConfig, setEditPaydayConfig] = useState(paydayConfig);
   
   const [paymentModalConfig, setPaymentModalConfig] = useState({ isOpen: false, billId: null, accountId: "" });
@@ -166,7 +168,7 @@ export default function App() {
       setBills(demoBills || []);
       setTransactions(demoTransactions || []);
       setTodos(demoTodos || []);
-      setPaydayConfig(demoPaydayConfig || {});
+      setPaydayConfig({ frequency: "Weekly", ...(demoPaydayConfig || {}) });
       setIsAuthLoading(false);
     }
     
@@ -191,7 +193,7 @@ export default function App() {
     const unsubBills = onSnapshot(collection(userRef, "bills"), (snap) => setBills(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     const unsubTxs = onSnapshot(query(collection(userRef, "transactions"), orderBy("createdAt", "desc")), (snap) => setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     const unsubTodos = onSnapshot(query(collection(userRef, "todos"), orderBy("createdAt", "desc")), (snap) => setTodos(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-    const unsubConfig = onSnapshot(doc(userRef, "settings", "paydayConfig"), (docSnap) => { if (docSnap.exists()) setPaydayConfig(docSnap.data()); });
+    const unsubConfig = onSnapshot(doc(userRef, "settings", "paydayConfig"), (docSnap) => { if (docSnap.exists()) setPaydayConfig({ frequency: "Weekly", ...docSnap.data() }); });
     return () => { unsubAcc(); unsubBills(); unsubTxs(); unsubTodos(); unsubConfig(); };
   }, [isMounted, isDemoMode, user]);
 
@@ -206,6 +208,30 @@ export default function App() {
       setEditAccountDesc(selectedAccount.description || "");
     }
   }, [selectedAccount]);
+
+  // 🔥 FIX 5: SMART INITIALIZATION LOGIC 🔥
+  useEffect(() => {
+    if (!hasInitializedCollapse.current && bills.length > 0) {
+      const todayLocal = new Date(); todayLocal.setHours(0, 0, 0, 0);
+      const hasDueNow = bills.some(b => {
+         if (b.isPaid) return false;
+         if (b.payday === "Due Now" || b.isOverdue) return true;
+         if (b.rawDate) {
+             const d = new Date(b.rawDate);
+             const localB = new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+             if (localB <= todayLocal) return true;
+         }
+         return false;
+      });
+
+      setCollapsedPaydays(prev => ({
+        ...prev,
+        "Due Now": !hasDueNow,
+        "Payday 1": hasDueNow
+      }));
+      hasInitializedCollapse.current = true;
+    }
+  }, [bills]);
 
   const handleAuthSubmit = async (e) => {
     e.preventDefault(); setIsAuthLoading(true); setAuthError("");
@@ -508,7 +534,7 @@ export default function App() {
     triggerHaptic(); setSelectedAccount(null);
   };
 
-  const clearPaydayConfig = () => { setEditPaydayConfig({ "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } }); triggerHaptic(); };
+  const clearPaydayConfig = () => { setEditPaydayConfig({ frequency: "Weekly", "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } }); triggerHaptic(); };
   const savePaydayConfig = async () => { 
     setPaydayConfig(editPaydayConfig); 
     if (!isDemoMode) { await setDoc(doc(db, "users", user.uid, "settings", "paydayConfig"), editPaydayConfig); }
@@ -977,6 +1003,7 @@ export default function App() {
           </div>
         )}
 
+        {/* 🔥 FIX 1 & 2: PAYDAY ROUTING SETUP DRAWER 🔥 */}
         {isPaydaySetupOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsPaydaySetupOpen(false)}></div>
@@ -985,13 +1012,35 @@ export default function App() {
                 <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Payday Routing</h3>
                 <button onClick={() => setIsPaydaySetupOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
-              <div className={`p-6 overflow-y-auto flex-1 space-y-6 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
-                {["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].map((pd) => (
+              <div className={`p-6 overflow-y-auto flex-1 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+                
+                {/* FREQUENCY SELECTOR */}
+                <div className="mb-6">
+                  <label className={`block text-[9px] font-bold uppercase tracking-widest mb-3 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Pay Frequency</label>
+                  <div className={`flex rounded-xl p-1 border ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-slate-100 border-slate-200"}`}>
+                    {["Weekly", "Bi-Weekly", "Semi-Monthly", "Monthly"].map(freq => (
+                      <button
+                        key={freq}
+                        onClick={() => setEditPaydayConfig({...editPaydayConfig, frequency: freq})}
+                        className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${editPaydayConfig?.frequency === freq || (!editPaydayConfig?.frequency && freq === "Weekly") ? "bg-[#1877F2] text-white shadow-md" : isDarkMode ? "text-slate-400 hover:text-slate-200" : "text-slate-500 hover:text-slate-800"}`}
+                      >
+                        {freq}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                {(editPaydayConfig?.frequency === "Monthly" ? ["Payday 1"] :
+                  editPaydayConfig?.frequency === "Semi-Monthly" ? ["Payday 1", "Payday 2"] :
+                  editPaydayConfig?.frequency === "Bi-Weekly" ? ["Payday 1", "Payday 2", "Payday 3"] :
+                  ["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"]).map((pd) => (
                   <div key={pd} className={`p-4 rounded-2xl border ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-slate-50 border-slate-100"}`}>
                     <h4 className={`text-xs font-black uppercase tracking-widest mb-4 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>{pd}</h4>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className={`block text-[9px] font-bold uppercase mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Date</label>
+                        {/* EXPECTED PAY DATE LABEL UPDATE */}
+                        <label className={`block text-[9px] font-bold uppercase mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Pay Date</label>
                         <input type="date" value={editPaydayConfig?.[pd]?.date || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), date: e.target.value}})} className={`w-full p-3 rounded-xl border ${isDarkMode ? "bg-slate-800 border-slate-700 text-white dark:[color-scheme:dark]" : "bg-white border-slate-200 text-slate-900"}`} />
                       </div>
                       <div>
@@ -1001,6 +1050,7 @@ export default function App() {
                     </div>
                   </div>
                 ))}
+                </div>
               </div>
               <div className="p-6 border-t flex gap-3">
                 <button onClick={clearPaydayConfig} className={`flex-1 py-4 rounded-2xl font-black text-xs uppercase tracking-widest border transition-all active:scale-95 ${isDarkMode ? "bg-slate-800 border-slate-700 text-white hover:bg-slate-700" : "bg-white border-slate-200 text-slate-900 hover:bg-slate-50"}`}>Clear All</button>

@@ -5,26 +5,26 @@ import { doc, setDoc } from "firebase/firestore";
 import { auth, db, messaging } from "../firebase";
 
 export default function Dashboard({
-  userName,
-  accounts,
-  bills,
-  transactions,
-  paydayConfig,
-  setEditPaydayConfig,
-  setIsPaydaySetupOpen,
-  setIsNotificationsOpen,
-  collapsedPaydays,
-  toggleCollapse,
-  handleBillClick,
-  setSelectedEntry,
-  isDarkMode,
-  formatPaydayDateStr,
-  renderHeroShell,
-  changeTab,
-  hasConsumedAMBriefing,
-  setHasConsumedAMBriefing,
-  hasConsumedPMBriefing,
-  setHasConsumedPMBriefing
+  userName = "User",
+  accounts = [],
+  bills = [],
+  transactions = [],
+  paydayConfig = {},
+  setEditPaydayConfig = () => {},
+  setIsPaydaySetupOpen = () => {},
+  setIsNotificationsOpen = () => {},
+  collapsedPaydays = {},
+  toggleCollapse = () => {},
+  handleBillClick = () => {},
+  setSelectedEntry = () => {},
+  isDarkMode = false,
+  formatPaydayDateStr = () => "TBD",
+  renderHeroShell = () => null,
+  changeTab = () => {},
+  hasConsumedAMBriefing = false,
+  setHasConsumedAMBriefing = () => {},
+  hasConsumedPMBriefing = false,
+  setHasConsumedPMBriefing = () => {}
 }) {
   // === 🔔 NOTIFICATION STATE ENGINE ===
   const [isPushEnabled, setIsPushEnabled] = useState(false);
@@ -55,7 +55,7 @@ export default function Dashboard({
   };
 
   // === 🔥 SURGICAL OCTAGON SORTING ENGINE ===
-  const sortBillsSurgically = (billList) => {
+  const sortBillsSurgically = (billList = []) => {
     return [...billList].sort((a, b) => {
       if (a.isOverdue && !b.isOverdue) return -1;
       if (!a.isOverdue && b.isOverdue) return 1;
@@ -74,8 +74,8 @@ export default function Dashboard({
   else if (currentHour >= 22 || currentHour < 5) { greetingStr = `Up late, ${userName}?`; }
 
   // === MACRO: GAS GAUGE & SHIELD MATH ENGINE (GLOBAL) ===
-  const totalIncomeBalance = accounts.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
-  const unpaidBillsAmount = bills.filter((b) => !b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+  const totalIncomeBalance = accounts.reduce((sum, a) => sum + (Number(a?.balance) || 0), 0);
+  const unpaidBillsAmount = bills.filter((b) => !b?.isPaid).reduce((sum, b) => sum + (Number(b?.amount) || 0), 0);
   const safeToSpend = totalIncomeBalance - unpaidBillsAmount;
 
   const safeTotalIncome = Number(totalIncomeBalance) || 0;
@@ -102,13 +102,16 @@ export default function Dashboard({
   const paydaysToRender = ["Due Now", ...activeSlots];
 
   const billsByPayday = {};
-  ["Due Now", "Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].forEach((pd) => { billsByPayday[pd] = []; });
-  bills.forEach((bill) => { if (billsByPayday[bill.payday]) billsByPayday[bill.payday].push(bill); });
+  ["Due Now", "Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5", "Unscheduled"].forEach((pd) => { billsByPayday[pd] = []; });
+  bills.forEach((bill) => { 
+    const pd = bill?.payday || "Unscheduled";
+    if (billsByPayday[pd]) billsByPayday[pd].push(bill); 
+  });
 
   const activePaydays = [];
   for (let i = 1; i <= 5; i++) {
     const pdId = `Payday ${i}`;
-    if (paydayConfig[pdId] && paydayConfig[pdId].date) {
+    if (paydayConfig?.[pdId]?.date) {
       const d = new Date(paydayConfig[pdId].date);
       if (!isNaN(d.getTime())) activePaydays.push({ id: pdId, date: d });
     }
@@ -116,6 +119,7 @@ export default function Dashboard({
   activePaydays.sort((a, b) => a.date - b.date);
 
   const getTxDate = (tx) => {
+    if (!tx) return new Date();
     if (tx.rawDate) return new Date(tx.rawDate);
     if (tx.createdAt && typeof tx.createdAt.toDate === 'function') return tx.createdAt.toDate();
     let dStr = tx.date?.toUpperCase() || "";
@@ -139,10 +143,11 @@ export default function Dashboard({
     return assignedPd;
   };
 
-  const actualIncomeByPayday = { "Payday 1": 0, "Payday 2": 0, "Payday 3": 0, "Payday 4": 0, "Payday 5": 0 };
-  const actualExpensesByPayday = { "Payday 1": 0, "Payday 2": 0, "Payday 3": 0, "Payday 4": 0, "Payday 5": 0 };
+  const actualIncomeByPayday = { "Payday 1": 0, "Payday 2": 0, "Payday 3": 0, "Payday 4": 0, "Payday 5": 0, "Due Now": 0, "Unscheduled": 0 };
+  const actualExpensesByPayday = { "Payday 1": 0, "Payday 2": 0, "Payday 3": 0, "Payday 4": 0, "Payday 5": 0, "Due Now": 0, "Unscheduled": 0 };
   
   transactions.forEach(tx => {
+    if (!tx) return;
     const txDate = getTxDate(tx);
     const pd = calculateTxPayday(txDate);
     const safeAmt = Number(tx.amount) || 0;
@@ -159,7 +164,7 @@ export default function Dashboard({
   const currentYear = new Date().getFullYear();
 
   const totalActiveBillsAmount = bills.filter(b => {
-    if (b.isPaid) return false;
+    if (!b || b.isPaid) return false;
     if (b.isOverdue || b.payday === "Due Now") return true;
     if (b.rawDate) {
       const bDate = new Date(b.rawDate);
@@ -167,7 +172,7 @@ export default function Dashboard({
       return bDate.getUTCMonth() === currentMonthIndex && bDate.getUTCFullYear() === currentYear;
     }
     return true; 
-  }).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+  }).reduce((sum, b) => sum + (Number(b?.amount) || 0), 0);
 
   // === 🧠 LP ASSISTANT LIVE ORCHESTRATOR 🧠 ===
   const [isBriefingLoading, setIsBriefingLoading] = useState(false);
@@ -187,22 +192,22 @@ export default function Dashboard({
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
-    const liquidCash = accounts.filter(a => a.type === "Checking" || a.type === "Cash").reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
-    const todaySpend = transactions.filter(t => t.type === "Expense" && (t.date || "").includes(todayStr)).reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
-    const yesterdaySpend = transactions.filter(t => t.type === "Expense" && (t.date || "").includes(yesterdayStr)).reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+    const liquidCash = accounts.filter(a => a?.type === "Checking" || a?.type === "Cash").reduce((sum, a) => sum + (Number(a?.balance) || 0), 0);
+    const todaySpend = transactions.filter(t => t?.type === "Expense" && (t?.date || "").includes(todayStr)).reduce((sum, t) => sum + (Number(t?.amount) || 0), 0);
+    const yesterdaySpend = transactions.filter(t => t?.type === "Expense" && (t?.date || "").includes(yesterdayStr)).reduce((sum, t) => sum + (Number(t?.amount) || 0), 0);
     
-    const overdueBills = bills.filter(b => !b.isPaid && b.isOverdue);
-    const overdueTotal = overdueBills.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+    const overdueBills = bills.filter(b => b && !b.isPaid && b.isOverdue);
+    const overdueTotal = overdueBills.reduce((sum, b) => sum + (Number(b?.amount) || 0), 0);
 
     const next72Hours = new Date(now);
     next72Hours.setDate(now.getDate() + 3);
     const upcomingBills = bills.filter(b => {
-      if (b.isPaid || b.isOverdue || !b.rawDate) return false;
+      if (!b || b.isPaid || b.isOverdue || !b.rawDate) return false;
       const bDate = new Date(b.rawDate);
       if (isNaN(bDate.getTime())) return false;
       return bDate <= next72Hours;
     });
-    const upcomingTotal = upcomingBills.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+    const upcomingTotal = upcomingBills.reduce((sum, b) => sum + (Number(b?.amount) || 0), 0);
 
     // 💼 2. THE GENERATOR (API Hand-off)
     const promptPayload = `
@@ -246,6 +251,7 @@ export default function Dashboard({
 
   // === DYNAMIC STYLING HELPERS ===
   const getTxAmountClasses = (tx, isDark) => {
+    if (!tx) return "";
     if (tx.isBillPayment || tx.category === "Bill Payment") {
       return isDark 
         ? "bg-[#1877F2]/20 text-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.25)]" 
@@ -262,6 +268,7 @@ export default function Dashboard({
   };
 
   const getTxCategoryColor = (tx) => {
+    if (!tx) return "text-slate-500";
     if (tx.isBillPayment || tx.category === "Bill Payment") return "text-[#1877F2]";
     if (tx.type === "Income") return "text-[#10B981]";
     return "text-[#F97316]";
@@ -422,7 +429,7 @@ export default function Dashboard({
         {/* 🔥 HORIZONTAL PAYDAY CARDS 🔥 */}
         <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-4 pt-2 -mx-2 px-3 snap-x">
           {paydaysToRender.map((pd) => {
-            const pdSettings = paydayConfig[pd];
+            const pdSettings = paydayConfig?.[pd] || {};
             const isDueNow = pd === "Due Now";
             
             if (isDueNow && billsByPayday["Due Now"]?.length === 0) return null;
@@ -433,7 +440,7 @@ export default function Dashboard({
             const expectedIncome = Number(parseFloat(pdSettings?.income)) || 0;
             const effectiveIncome = actualIncome > 0 ? actualIncome : expectedIncome;
             const actualExpenses = Number(actualExpensesByPayday[pd]) || 0; 
-            const unpaidBillsTotal = billsByPayday[pd]?.filter(b => !b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0) || 0;
+            const unpaidBillsTotal = billsByPayday[pd]?.filter(b => b && !b.isPaid).reduce((sum, b) => sum + (Number(b?.amount) || 0), 0) || 0;
             
             const activeWeeklyBuffer = effectiveIncome - actualExpenses - unpaidBillsTotal;
             const totalWeeklyDrain = actualExpenses + unpaidBillsTotal;
@@ -496,12 +503,12 @@ export default function Dashboard({
           {paydaysToRender.map((payday) => {
             const groupBills = billsByPayday[payday] || [];
             if (payday === "Due Now" && groupBills.length === 0) return null;
-            const pdSettings = paydayConfig[payday];
+            const pdSettings = paydayConfig?.[payday] || {};
             if (!pdSettings?.date && !pdSettings?.income && groupBills.length === 0) return null;
 
             const isDueNow = payday === "Due Now";
-            const isCollapsed = collapsedPaydays[payday];
-            const checkTotal = groupBills.filter((b) => !b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+            const isCollapsed = collapsedPaydays?.[payday];
+            const checkTotal = groupBills.filter((b) => b && !b.isPaid).reduce((sum, b) => sum + (Number(b?.amount) || 0), 0);
             const expectedDateStr = isDueNow ? "Currently Due" : pdSettings?.date ? formatPaydayDateStr(pdSettings.date) : "Unscheduled";
             
             const sortedBills = sortBillsSurgically(groupBills);
@@ -535,14 +542,16 @@ export default function Dashboard({
                     ) : (
                       <div className="space-y-3">
                         {/* 🔥 MASTERPIECE 3-LEVEL BENTO ENTRY CARDS 🔥 */}
-                        {sortedBills.map((bill) => (
+                        {sortedBills.map((bill) => {
+                          if (!bill) return null;
+                          return (
                           <div key={bill.id} className={`flex flex-col p-4 rounded-2xl border shadow-sm transition-all relative overflow-hidden ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-100"}`}>
                             
                             {/* Top Row: Bill Name & Glowing Amount */}
                             <div className="flex items-start justify-between gap-4 mb-4 cursor-pointer" onClick={() => setSelectedEntry(bill)}>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>{bill.name}</p>
+                                        <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>{bill.name || "Unnamed Bill"}</p>
                                         {bill.isRecurring && !bill.isPaid && <RefreshCw size={12} className="text-[#10B981] shrink-0" />}
                                     </div>
                                 </div>
@@ -555,7 +564,7 @@ export default function Dashboard({
                             <div className="flex items-center gap-3">
                                 {/* Emoji */}
                                 <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 cursor-pointer ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`} onClick={() => setSelectedEntry(bill)}>
-                                    {bill.icon}
+                                    {bill.icon || "🧾"}
                                 </div>
                                 
                                 {/* Stacked Date */}
@@ -564,7 +573,7 @@ export default function Dashboard({
                                         {bill.isOverdue ? "Overdue" : bill.payday === "Due Now" ? "Due Now" : "Status: Due"}
                                     </span>
                                     <span className={`text-xs font-bold mt-0.5 ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
-                                        {bill.fullDate}
+                                        {bill.fullDate || "No Date"}
                                     </span>
                                 </div>
 
@@ -601,7 +610,7 @@ export default function Dashboard({
                                 </div>
                             )}
                           </div>
-                        ))}
+                        )})}
                       </div>
                     )}
                   </div>
@@ -630,12 +639,14 @@ export default function Dashboard({
             ) : (
               <div className="space-y-3">
                 {/* 🔥 MASTERPIECE BENTO LAYOUT APPLIED TO RECENT ACTIVITY 🔥 */}
-                {transactions.slice(0, 5).map((tx) => (
+                {transactions.slice(0, 5).map((tx) => {
+                  if (!tx) return null;
+                  return (
                   <div key={tx.id} onClick={() => setSelectedEntry(tx)} className={`flex flex-col p-4 rounded-2xl border shadow-sm cursor-pointer transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
                     
                     {/* Top Row: Name & Amount */}
                     <div className="flex items-start justify-between gap-4 mb-4">
-                        <p className={`font-black text-base truncate leading-tight flex-1 min-w-0 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{tx.name}</p>
+                        <p className={`font-black text-base truncate leading-tight flex-1 min-w-0 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{tx.name || "Transaction"}</p>
                         <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight shrink-0 ${getTxAmountClasses(tx, isDarkMode)}`}>
                             {tx.type === "Income" ? "+" : "-"}${(Number(tx.amount) || 0).toFixed(2)}
                         </div>
@@ -644,20 +655,20 @@ export default function Dashboard({
                     {/* Middle Row: Emoji & Category/Date */}
                     <div className="flex items-center gap-3">
                         <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
-                            {tx.icon}
+                            {tx.icon || "💳"}
                         </div>
                         <div className="flex flex-col flex-1">
                             <span className={`text-[9px] font-black uppercase tracking-widest ${getTxCategoryColor(tx)}`}>
                                 {tx.category || "Uncategorized"}
                             </span>
                             <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mt-0.5">
-                                {tx.date}
+                                {tx.date || "Recent"}
                             </span>
                         </div>
                     </div>
 
                   </div>
-                ))}
+                )})}
                 
                 {transactions.length > 5 && (
                   <button onClick={() => changeTab("activity")} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] hover:-translate-y-0.5">

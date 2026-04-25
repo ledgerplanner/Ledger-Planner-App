@@ -5,26 +5,26 @@ import { doc, setDoc } from "firebase/firestore";
 import { auth, db, messaging } from "../firebase";
 
 export default function Dashboard({
-  userName = "User",
-  accounts = [],
-  bills = [],
-  transactions = [],
-  paydayConfig = {},
-  setEditPaydayConfig = () => {},
-  setIsPaydaySetupOpen = () => {},
-  setIsNotificationsOpen = () => {},
-  collapsedPaydays = {},
-  toggleCollapse = () => {},
-  handleBillClick = () => {},
-  setSelectedEntry = () => {},
-  isDarkMode = false,
-  formatPaydayDateStr = () => "TBD",
-  renderHeroShell = () => null,
-  changeTab = () => {},
-  hasConsumedAMBriefing = false,
-  setHasConsumedAMBriefing = () => {},
-  hasConsumedPMBriefing = false,
-  setHasConsumedPMBriefing = () => {}
+  userName,
+  accounts,
+  bills,
+  transactions,
+  paydayConfig,
+  setEditPaydayConfig,
+  setIsPaydaySetupOpen,
+  setIsNotificationsOpen,
+  collapsedPaydays,
+  toggleCollapse,
+  handleBillClick,
+  setSelectedEntry,
+  isDarkMode,
+  formatPaydayDateStr,
+  renderHeroShell,
+  changeTab,
+  hasConsumedAMBriefing,
+  setHasConsumedAMBriefing,
+  hasConsumedPMBriefing,
+  setHasConsumedPMBriefing
 }) {
   // === 🔔 NOTIFICATION STATE ENGINE ===
   const [isPushEnabled, setIsPushEnabled] = useState(false);
@@ -55,7 +55,7 @@ export default function Dashboard({
   };
 
   // === 🔥 SURGICAL OCTAGON SORTING ENGINE ===
-  const sortBillsSurgically = (billList = []) => {
+  const sortBillsSurgically = (billList) => {
     return [...billList].sort((a, b) => {
       if (a.isOverdue && !b.isOverdue) return -1;
       if (!a.isOverdue && b.isOverdue) return 1;
@@ -74,16 +74,11 @@ export default function Dashboard({
   else if (currentHour >= 22 || currentHour < 5) { greetingStr = `Up late, ${userName}?`; }
 
   // === MACRO: GAS GAUGE & SHIELD MATH ENGINE (GLOBAL) ===
-  const totalIncomeBalance = accounts.reduce((sum, a) => sum + (Number(a?.balance) || 0), 0);
-  const unpaidBillsAmount = bills.filter((b) => !b?.isPaid).reduce((sum, b) => sum + (Number(b?.amount) || 0), 0);
+  const totalIncomeBalance = accounts.reduce((sum, a) => sum + (a.balance || 0), 0);
+  const unpaidBillsAmount = bills.filter((b) => !b.isPaid).reduce((sum, b) => sum + (b.amount || 0), 0);
   const safeToSpend = totalIncomeBalance - unpaidBillsAmount;
 
-  const safeTotalIncome = Number(totalIncomeBalance) || 0;
-  const safeUnpaidBills = Number(unpaidBillsAmount) || 0;
-  
-  const rawDebtRatio = safeTotalIncome > 0 ? Math.max(0, Math.min((safeUnpaidBills / safeTotalIncome) * 100, 100)) : (safeUnpaidBills > 0 ? 100 : 0);
-  const debtRatio = isNaN(rawDebtRatio) ? 0 : rawDebtRatio;
-  
+  const debtRatio = totalIncomeBalance > 0 ? Math.max(0, Math.min((unpaidBillsAmount / totalIncomeBalance) * 100, 100)) : (unpaidBillsAmount > 0 ? 100 : 0);
   const isCritical = debtRatio >= 85 || safeToSpend < 0;
   const isWarning = debtRatio >= 60 && debtRatio < 85;
 
@@ -102,16 +97,13 @@ export default function Dashboard({
   const paydaysToRender = ["Due Now", ...activeSlots];
 
   const billsByPayday = {};
-  ["Due Now", "Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5", "Unscheduled"].forEach((pd) => { billsByPayday[pd] = []; });
-  bills.forEach((bill) => { 
-    const pd = bill?.payday || "Unscheduled";
-    if (billsByPayday[pd]) billsByPayday[pd].push(bill); 
-  });
+  ["Due Now", "Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].forEach((pd) => { billsByPayday[pd] = []; });
+  bills.forEach((bill) => { if (billsByPayday[bill.payday]) billsByPayday[bill.payday].push(bill); });
 
   const activePaydays = [];
   for (let i = 1; i <= 5; i++) {
     const pdId = `Payday ${i}`;
-    if (paydayConfig?.[pdId]?.date) {
+    if (paydayConfig[pdId] && paydayConfig[pdId].date) {
       const d = new Date(paydayConfig[pdId].date);
       if (!isNaN(d.getTime())) activePaydays.push({ id: pdId, date: d });
     }
@@ -119,7 +111,6 @@ export default function Dashboard({
   activePaydays.sort((a, b) => a.date - b.date);
 
   const getTxDate = (tx) => {
-    if (!tx) return new Date();
     if (tx.rawDate) return new Date(tx.rawDate);
     if (tx.createdAt && typeof tx.createdAt.toDate === 'function') return tx.createdAt.toDate();
     let dStr = tx.date?.toUpperCase() || "";
@@ -143,18 +134,16 @@ export default function Dashboard({
     return assignedPd;
   };
 
-  const actualIncomeByPayday = { "Payday 1": 0, "Payday 2": 0, "Payday 3": 0, "Payday 4": 0, "Payday 5": 0, "Due Now": 0, "Unscheduled": 0 };
-  const actualExpensesByPayday = { "Payday 1": 0, "Payday 2": 0, "Payday 3": 0, "Payday 4": 0, "Payday 5": 0, "Due Now": 0, "Unscheduled": 0 };
+  const actualIncomeByPayday = { "Payday 1": 0, "Payday 2": 0, "Payday 3": 0, "Payday 4": 0, "Payday 5": 0 };
+  const actualExpensesByPayday = { "Payday 1": 0, "Payday 2": 0, "Payday 3": 0, "Payday 4": 0, "Payday 5": 0 };
   
   transactions.forEach(tx => {
-    if (!tx) return;
     const txDate = getTxDate(tx);
     const pd = calculateTxPayday(txDate);
-    const safeAmt = Number(tx.amount) || 0;
     if (tx.type === "Income" && actualIncomeByPayday[pd] !== undefined) {
-      actualIncomeByPayday[pd] += safeAmt;
+      actualIncomeByPayday[pd] += tx.amount;
     } else if (tx.type === "Expense" && actualExpensesByPayday[pd] !== undefined) {
-      actualExpensesByPayday[pd] += safeAmt;
+      actualExpensesByPayday[pd] += tx.amount;
     }
   });
 
@@ -164,15 +153,14 @@ export default function Dashboard({
   const currentYear = new Date().getFullYear();
 
   const totalActiveBillsAmount = bills.filter(b => {
-    if (!b || b.isPaid) return false;
+    if (b.isPaid) return false;
     if (b.isOverdue || b.payday === "Due Now") return true;
     if (b.rawDate) {
       const bDate = new Date(b.rawDate);
-      if (isNaN(bDate.getTime())) return true;
       return bDate.getUTCMonth() === currentMonthIndex && bDate.getUTCFullYear() === currentYear;
     }
     return true; 
-  }).reduce((sum, b) => sum + (Number(b?.amount) || 0), 0);
+  }).reduce((sum, b) => sum + (b.amount || 0), 0);
 
   // === 🧠 LP ASSISTANT LIVE ORCHESTRATOR 🧠 ===
   const [isBriefingLoading, setIsBriefingLoading] = useState(false);
@@ -192,22 +180,17 @@ export default function Dashboard({
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
-    const liquidCash = accounts.filter(a => a?.type === "Checking" || a?.type === "Cash").reduce((sum, a) => sum + (Number(a?.balance) || 0), 0);
-    const todaySpend = transactions.filter(t => t?.type === "Expense" && (t?.date || "").includes(todayStr)).reduce((sum, t) => sum + (Number(t?.amount) || 0), 0);
-    const yesterdaySpend = transactions.filter(t => t?.type === "Expense" && (t?.date || "").includes(yesterdayStr)).reduce((sum, t) => sum + (Number(t?.amount) || 0), 0);
+    const liquidCash = accounts.filter(a => a.type === "Checking" || a.type === "Cash").reduce((sum, a) => sum + (a.balance || 0), 0);
+    const todaySpend = transactions.filter(t => t.type === "Expense" && (t.date || "").includes(todayStr)).reduce((sum, t) => sum + (t.amount || 0), 0);
+    const yesterdaySpend = transactions.filter(t => t.type === "Expense" && (t.date || "").includes(yesterdayStr)).reduce((sum, t) => sum + (t.amount || 0), 0);
     
-    const overdueBills = bills.filter(b => b && !b.isPaid && b.isOverdue);
-    const overdueTotal = overdueBills.reduce((sum, b) => sum + (Number(b?.amount) || 0), 0);
+    const overdueBills = bills.filter(b => !b.isPaid && b.isOverdue);
+    const overdueTotal = overdueBills.reduce((sum, b) => sum + (b.amount || 0), 0);
 
     const next72Hours = new Date(now);
     next72Hours.setDate(now.getDate() + 3);
-    const upcomingBills = bills.filter(b => {
-      if (!b || b.isPaid || b.isOverdue || !b.rawDate) return false;
-      const bDate = new Date(b.rawDate);
-      if (isNaN(bDate.getTime())) return false;
-      return bDate <= next72Hours;
-    });
-    const upcomingTotal = upcomingBills.reduce((sum, b) => sum + (Number(b?.amount) || 0), 0);
+    const upcomingBills = bills.filter(b => !b.isPaid && !b.isOverdue && b.rawDate && new Date(b.rawDate) <= next72Hours);
+    const upcomingTotal = upcomingBills.reduce((sum, b) => sum + (b.amount || 0), 0);
 
     // 💼 2. THE GENERATOR (API Hand-off)
     const promptPayload = `
@@ -251,7 +234,6 @@ export default function Dashboard({
 
   // === DYNAMIC STYLING HELPERS ===
   const getTxAmountClasses = (tx, isDark) => {
-    if (!tx) return "";
     if (tx.isBillPayment || tx.category === "Bill Payment") {
       return isDark 
         ? "bg-[#1877F2]/20 text-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.25)]" 
@@ -268,7 +250,6 @@ export default function Dashboard({
   };
 
   const getTxCategoryColor = (tx) => {
-    if (!tx) return "text-slate-500";
     if (tx.isBillPayment || tx.category === "Bill Payment") return "text-[#1877F2]";
     if (tx.type === "Income") return "text-[#10B981]";
     return "text-[#F97316]";
@@ -313,7 +294,7 @@ export default function Dashboard({
           <span className="text-[10px] font-bold uppercase tracking-wider">Safe to Spend</span>
         </div>
         <p className={`text-4xl font-black tracking-tighter mb-4 ${safeToSpend < 0 ? "text-red-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>
-          ${(Number(safeToSpend) || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+          ${safeToSpend.toLocaleString("en-US", { minimumFractionDigits: 2 })}
         </p>
         <div className="flex flex-col gap-2">
           <div className="flex justify-end gap-2 text-xs font-bold uppercase">
@@ -325,13 +306,13 @@ export default function Dashboard({
                     ? isDarkMode ? "bg-emerald-900/30 text-emerald-400" : "bg-emerald-50 text-emerald-600"
                     : isDarkMode ? "bg-slate-800 text-slate-300" : "bg-slate-100 text-slate-700"
             }`}>
-              ${(Number(totalIncomeBalance) || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+              ${totalIncomeBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
             </span>
           </div>
           <div className="flex justify-end gap-2 text-xs font-bold uppercase">
             <span className="text-slate-400 text-[10px]">Unpaid Bills</span>
             <span className={isDarkMode ? "text-red-400 bg-red-900/30 px-2 rounded" : "text-red-600 bg-red-50 px-2 rounded"}>
-              ${(Number(unpaidBillsAmount) || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+              ${unpaidBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
             </span>
           </div>
         </div>
@@ -429,18 +410,18 @@ export default function Dashboard({
         {/* 🔥 HORIZONTAL PAYDAY CARDS 🔥 */}
         <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-4 pt-2 -mx-2 px-3 snap-x">
           {paydaysToRender.map((pd) => {
-            const pdSettings = paydayConfig?.[pd] || {};
+            const pdSettings = paydayConfig[pd];
             const isDueNow = pd === "Due Now";
             
             if (isDueNow && billsByPayday["Due Now"]?.length === 0) return null;
             
             const isSet = isDueNow || (pdSettings && (pdSettings.date || pdSettings.income));
             
-            const actualIncome = Number(actualIncomeByPayday[pd]) || 0;
-            const expectedIncome = Number(parseFloat(pdSettings?.income)) || 0;
+            const actualIncome = actualIncomeByPayday[pd] || 0;
+            const expectedIncome = parseFloat(pdSettings?.income) || 0;
             const effectiveIncome = actualIncome > 0 ? actualIncome : expectedIncome;
-            const actualExpenses = Number(actualExpensesByPayday[pd]) || 0; 
-            const unpaidBillsTotal = billsByPayday[pd]?.filter(b => b && !b.isPaid).reduce((sum, b) => sum + (Number(b?.amount) || 0), 0) || 0;
+            const actualExpenses = actualExpensesByPayday[pd] || 0; 
+            const unpaidBillsTotal = billsByPayday[pd]?.filter(b => !b.isPaid).reduce((sum, b) => sum + b.amount, 0) || 0;
             
             const activeWeeklyBuffer = effectiveIncome - actualExpenses - unpaidBillsTotal;
             const totalWeeklyDrain = actualExpenses + unpaidBillsTotal;
@@ -463,14 +444,14 @@ export default function Dashboard({
                 {isDueNow ? (
                   <div className="flex flex-col items-center text-center mt-2 w-full">
                     <p className={`text-3xl font-black tracking-tight mb-1 text-red-500`}>
-                      ${(Number(unpaidBillsTotal) || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                      ${unpaidBillsTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                     </p>
                     <p className={`text-[9px] font-bold uppercase tracking-wider ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Currently Due</p>
                   </div>
                 ) : isSet ? (
                   <div className="flex flex-col items-center text-center w-full">
                     <p className={`text-3xl font-black tracking-tighter ${activeWeeklyBuffer < 0 ? "text-red-500" : activeWeeklyBuffer > 0 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
-                      ${(Number(activeWeeklyBuffer) || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                      ${activeWeeklyBuffer.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                     </p>
                     <p className={`text-[9px] font-bold uppercase tracking-wider mb-4 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
                       Safe to Spend
@@ -479,12 +460,12 @@ export default function Dashboard({
                     <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-800" : "bg-slate-100"}`}>
                       <div 
                         className={`h-full transition-all duration-1000 ${activeWeeklyBuffer < 0 ? "bg-red-500" : activeWeeklyBuffer < effectiveIncome * 0.2 ? "bg-orange-500" : "bg-[#10B981]"}`} 
-                        style={{ width: `${effectiveIncome > 0 ? (Number(fuelPct) || 0) : 0}%` }}
+                        style={{ width: `${effectiveIncome > 0 ? fuelPct : 0}%` }}
                       ></div>
                     </div>
                     <div className="flex flex-col items-center justify-center mt-3 gap-1 w-full">
-                      <span className="text-[9px] font-black uppercase tracking-widest text-[#10B981]">IN: ${(Number(effectiveIncome) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">OUT: ${(Number(totalWeeklyDrain) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-[#10B981]">IN: ${effectiveIncome.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">OUT: ${totalWeeklyDrain.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                   </div>
                 ) : (
@@ -503,35 +484,35 @@ export default function Dashboard({
           {paydaysToRender.map((payday) => {
             const groupBills = billsByPayday[payday] || [];
             if (payday === "Due Now" && groupBills.length === 0) return null;
-            const pdSettings = paydayConfig?.[payday] || {};
+            const pdSettings = paydayConfig[payday];
             if (!pdSettings?.date && !pdSettings?.income && groupBills.length === 0) return null;
 
             const isDueNow = payday === "Due Now";
-            const isCollapsed = collapsedPaydays?.[payday];
-            const checkTotal = groupBills.filter((b) => b && !b.isPaid).reduce((sum, b) => sum + (Number(b?.amount) || 0), 0);
+            const isCollapsed = collapsedPaydays[payday];
+            const checkTotal = groupBills.filter((b) => !b.isPaid).reduce((sum, b) => sum + b.amount, 0);
             const expectedDateStr = isDueNow ? "Currently Due" : pdSettings?.date ? formatPaydayDateStr(pdSettings.date) : "Unscheduled";
             
             const sortedBills = sortBillsSurgically(groupBills);
 
             return (
               <div key={payday} className="space-y-2">
-                <div className={`flex flex-col px-3 py-3 cursor-pointer transition-colors rounded-xl ${isDarkMode ? "hover:bg-slate-800/50" : "hover:bg-slate-50"}`} onClick={() => toggleCollapse(payday)}>
-                  {/* Row 1: Name and Balance */}
-                  <div className="flex items-center justify-between w-full mb-1">
-                     <div className="flex items-center gap-2">
-                       <h3 className={`text-sm font-black uppercase tracking-widest ${isDueNow ? "text-red-500" : isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{payday}</h3>
-                       <div className="text-slate-400">{isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}</div>
-                     </div>
-                     <span className={`text-sm font-black ${isDueNow ? "text-red-500" : "text-[#1877F2]"}`}>
-                       ${(Number(checkTotal) || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                     </span>
-                  </div>
-                  {/* Row 2: Date and Label */}
+                <div className={`flex flex-col px-3 py-2 cursor-pointer transition-colors rounded-xl ${isDarkMode ? "hover:bg-slate-800/50" : "hover:bg-slate-50"}`} onClick={() => toggleCollapse(payday)}>
                   <div className="flex items-center justify-between w-full">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{expectedDateStr}</span>
-                    <span className={`text-[9px] font-bold uppercase tracking-widest ${isDueNow ? "text-red-500/80" : isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-                       {isDueNow ? "Total Due Now" : "Total Due"}
-                    </span>
+                     <div className="flex items-center gap-2">
+                       <h3 className={`text-[11px] font-black uppercase tracking-widest ${isDueNow ? "text-red-500" : isDarkMode ? "text-slate-300" : "text-slate-700"}`}>{payday}</h3>
+                       <div className="text-slate-400">{isCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}</div>
+                     </div>
+                     <div className="flex flex-col items-end">
+                       <span className={`text-xs font-black ${isDueNow ? "text-red-500" : "text-[#1877F2]"}`}>
+                         ${checkTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                       </span>
+                       <span className={`text-[9px] font-bold uppercase tracking-widest mt-0.5 ${isDueNow ? "text-red-500" : isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
+                         {isDueNow ? "Total Due Now" : "Total Due"}
+                       </span>
+                     </div>
+                  </div>
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{expectedDateStr}</span>
                   </div>
                 </div>
 
@@ -541,76 +522,50 @@ export default function Dashboard({
                       <p className="text-center text-xs font-bold text-slate-400 py-4">No bills assigned to this payday.</p>
                     ) : (
                       <div className="space-y-3">
-                        {/* 🔥 MASTERPIECE 3-LEVEL BENTO ENTRY CARDS 🔥 */}
-                        {sortedBills.map((bill) => {
-                          if (!bill) return null;
-                          return (
-                          <div key={bill.id} className={`flex flex-col p-4 rounded-2xl border shadow-sm transition-all relative overflow-hidden ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-100"}`}>
+                        {/* 🔥 NEW BENTO CARD LAYOUT FOR BILLS 🔥 */}
+                        {sortedBills.map((bill) => (
+                          <div key={bill.id} className={`flex flex-col p-4 rounded-2xl border shadow-sm transition-all ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-100"}`}>
                             
-                            {/* Top Row: Bill Name & Glowing Amount */}
-                            <div className="flex items-start justify-between gap-4 mb-4 cursor-pointer" onClick={() => setSelectedEntry(bill)}>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>{bill.name || "Unnamed Bill"}</p>
-                                        {bill.isRecurring && !bill.isPaid && <RefreshCw size={12} className="text-[#10B981] shrink-0" />}
-                                    </div>
-                                </div>
-                                <div className={`px-4 py-1.5 rounded-xl font-black text-sm tracking-tight shrink-0 shadow-[0_0_15px_rgba(24,119,242,0.3)] ${bill.isOverdue ? "bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.4)]" : "bg-[#1877F2] text-white"}`}>
-                                    ${(Number(bill.amount) || 0).toFixed(2)}
-                                </div>
+                            {/* Row 1: Emoji & Name */}
+                            <div className="flex items-center gap-3 mb-3 cursor-pointer" onClick={() => setSelectedEntry(bill)}>
+                              <div className={`w-10 h-10 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                                {bill.icon}
+                              </div>
+                              <p className={`font-bold text-sm ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{bill.name}</p>
+                              {bill.isRecurring && !bill.isPaid && <RefreshCw size={12} className="text-[#10B981] shrink-0 ml-auto" />}
                             </div>
 
-                            {/* Middle Row: Emoji, Date, and Action */}
-                            <div className="flex items-center gap-3">
-                                {/* Emoji */}
-                                <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 cursor-pointer ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`} onClick={() => setSelectedEntry(bill)}>
-                                    {bill.icon || "🧾"}
-                                </div>
-                                
-                                {/* Stacked Date */}
-                                <div className="flex flex-col flex-1 cursor-pointer" onClick={() => setSelectedEntry(bill)}>
-                                    <span className={`text-[10px] font-black uppercase tracking-wider ${bill.isOverdue ? "text-red-500" : isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-                                        {bill.isOverdue ? "Overdue" : bill.payday === "Due Now" ? "Due Now" : "Status: Due"}
-                                    </span>
-                                    <span className={`text-xs font-bold mt-0.5 ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
-                                        {bill.fullDate || "No Date"}
-                                    </span>
-                                </div>
-
-                                {/* Mark As Paid Button / Paid Badge */}
-                                <div className="shrink-0">
-                                    {!bill.isPaid ? (
-                                        <button 
-                                            onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }} 
-                                            className={`px-3 sm:px-4 py-2.5 rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-1.5 ${isDarkMode ? "bg-[#1E293B] border-slate-600 text-[#1877F2] hover:bg-slate-800" : "bg-blue-50 border-blue-100 text-[#1877F2] hover:bg-blue-100"}`}
-                                        >
-                                            <CheckCircle2 size={14} /> Mark as Paid
-                                        </button>
-                                    ) : (
-                                        <div className={`px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest border flex items-center justify-center gap-1.5 ${isDarkMode ? "bg-emerald-900/20 border-emerald-900/50 text-emerald-400" : "bg-emerald-50 border-emerald-100 text-emerald-600"}`}>
-                                            <CheckCircle2 size={14} /> Paid
-                                        </div>
-                                    )}
-                                </div>
+                            {/* Row 2: Status/Date & Glowing Balance */}
+                            <div className="flex items-end justify-between mb-4 cursor-pointer" onClick={() => setSelectedEntry(bill)}>
+                              <div className="flex flex-col">
+                                <span className={`text-[10px] font-black uppercase tracking-wider ${bill.isOverdue ? "text-red-500" : isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                                  {bill.isOverdue ? "Overdue" : bill.payday === "Due Now" ? "Due Now" : "Status: Due"}
+                                </span>
+                                <span className={`text-xs font-bold mt-0.5 ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
+                                  {bill.fullDate}
+                                </span>
+                              </div>
+                              <div className={`px-4 py-1.5 rounded-xl font-black text-sm tracking-tight shadow-[0_0_15px_rgba(24,119,242,0.3)] ${bill.isOverdue ? "bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.4)]" : "bg-[#1877F2] text-white"}`}>
+                                ${bill.amount.toFixed(2)}
+                              </div>
                             </div>
 
-                            {/* Bottom Row: Installment Bar (Only if applicable) */}
-                            {bill.isInstallment && (
-                                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/50 cursor-pointer" onClick={() => setSelectedEntry(bill)}>
-                                    <div className="flex justify-between items-end mb-1.5">
-                                        <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Installment Progress</span>
-                                        <span className={`text-[9px] font-black tracking-widest ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>${(Number(bill.paidAmount) || 0).toFixed(2)} / ${(Number(bill.totalAmount) || 0).toFixed(2)}</span>
-                                    </div>
-                                    <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-900" : "bg-slate-100"}`}>
-                                        <div 
-                                            className={`h-full transition-all duration-1000 ${Number(bill.paidAmount) >= Number(bill.totalAmount) ? "bg-[#10B981]" : "bg-[#1877F2]"}`} 
-                                            style={{ width: `${(Number(bill.totalAmount) || 0) > 0 ? Math.min(((Number(bill.paidAmount) || 0) / (Number(bill.totalAmount) || 1)) * 100, 100) : 0}%` }}
-                                        ></div>
-                                    </div>
-                                </div>
+                            {/* Row 3: Slim Mark as Paid Button */}
+                            {!bill.isPaid ? (
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }} 
+                                className={`w-full py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-2 ${isDarkMode ? "bg-[#1E293B] border-slate-600 text-[#1877F2] hover:bg-slate-800" : "bg-blue-50 border-blue-100 text-[#1877F2] hover:bg-blue-100"}`}
+                              >
+                                <CheckCircle2 size={14} /> Mark as Paid
+                              </button>
+                            ) : (
+                              <div className={`w-full py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest border flex items-center justify-center gap-2 ${isDarkMode ? "bg-emerald-900/20 border-emerald-900/50 text-emerald-400" : "bg-emerald-50 border-emerald-100 text-emerald-600"}`}>
+                                <CheckCircle2 size={14} /> Paid
+                              </div>
                             )}
+                            
                           </div>
-                        )})}
+                        ))}
                       </div>
                     )}
                   </div>
@@ -627,7 +582,7 @@ export default function Dashboard({
             <p className={`text-xs font-bold mt-0.5 ${isDarkMode ? "text-slate-500" : "text-slate-500"}`}>For {currentMonthName}</p>
           </div>
           <span className={`text-xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-            ${(Number(totalActiveBillsAmount) || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+            ${totalActiveBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </span>
         </div>
 
@@ -638,43 +593,36 @@ export default function Dashboard({
               <div className="py-8 text-center"><p className="font-bold text-sm text-slate-400">No recent activity.</p></div>
             ) : (
               <div className="space-y-3">
-                {/* 🔥 MASTERPIECE BENTO LAYOUT APPLIED TO RECENT ACTIVITY 🔥 */}
-                {transactions.slice(0, 5).map((tx) => {
-                  if (!tx) return null;
-                  return (
+                {/* 🔥 MATCHING BENTO LAYOUT FOR RECENT ACTIVITY (No button) 🔥 */}
+                {transactions.slice(0, 5).map((tx) => (
                   <div key={tx.id} onClick={() => setSelectedEntry(tx)} className={`flex flex-col p-4 rounded-2xl border shadow-sm cursor-pointer transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
                     
-                    {/* Top Row: Name & Amount */}
-                    <div className="flex items-start justify-between gap-4 mb-4">
-                        <p className={`font-black text-base truncate leading-tight flex-1 min-w-0 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{tx.name || "Transaction"}</p>
-                        <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight shrink-0 ${getTxAmountClasses(tx, isDarkMode)}`}>
-                            {tx.type === "Income" ? "+" : "-"}${(Number(tx.amount) || 0).toFixed(2)}
-                        </div>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className={`w-9 h-9 rounded-xl border flex items-center justify-center text-lg shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                        {tx.icon}
+                      </div>
+                      <p className={`font-bold text-sm truncate ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{tx.name}</p>
                     </div>
                     
-                    {/* Middle Row: Emoji & Category/Date */}
-                    <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
-                            {tx.icon || "💳"}
-                        </div>
-                        <div className="flex flex-col flex-1">
-                            <span className={`text-[9px] font-black uppercase tracking-widest ${getTxCategoryColor(tx)}`}>
-                                {tx.category || "Uncategorized"}
-                            </span>
-                            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mt-0.5">
-                                {tx.date || "Recent"}
-                            </span>
-                        </div>
+                    <div className="flex items-end justify-between">
+                      <div className="flex flex-col">
+                        <span className={`text-[9px] font-black uppercase tracking-widest ${getTxCategoryColor(tx)}`}>
+                          {tx.category || "Uncategorized"}
+                        </span>
+                        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mt-0.5">
+                          {tx.date}
+                        </span>
+                      </div>
+                      <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight ${getTxAmountClasses(tx, isDarkMode)}`}>
+                        {tx.type === "Income" ? "+" : "-"}${tx.amount.toFixed(2)}
+                      </div>
                     </div>
 
                   </div>
-                )})}
-                
-                {transactions.length > 5 && (
-                  <button onClick={() => changeTab("activity")} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] hover:-translate-y-0.5">
-                    <List size={16} /> See All Activity
-                  </button>
-                )}
+                ))}
+                <button onClick={() => changeTab("activity")} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)]">
+                  <List size={16} /> See All Activity
+                </button>
               </div>
             )}
           </div>

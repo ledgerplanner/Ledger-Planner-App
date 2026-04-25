@@ -421,7 +421,7 @@ export default function Dashboard({
             const expectedIncome = parseFloat(pdSettings?.income) || 0;
             const effectiveIncome = actualIncome > 0 ? actualIncome : expectedIncome;
             const actualExpenses = actualExpensesByPayday[pd] || 0; 
-            const unpaidBillsTotal = billsByPayday[pd]?.filter(b => !b.isPaid).reduce((sum, b) => sum + b.amount, 0) || 0;
+            const unpaidBillsTotal = billsByPayday[pd]?.filter(b => !b.isPaid).reduce((sum, b) => sum + (b.amount || 0), 0) || 0;
             
             const activeWeeklyBuffer = effectiveIncome - actualExpenses - unpaidBillsTotal;
             const totalWeeklyDrain = actualExpenses + unpaidBillsTotal;
@@ -489,30 +489,30 @@ export default function Dashboard({
 
             const isDueNow = payday === "Due Now";
             const isCollapsed = collapsedPaydays[payday];
-            const checkTotal = groupBills.filter((b) => !b.isPaid).reduce((sum, b) => sum + b.amount, 0);
+            const checkTotal = groupBills.filter((b) => !b.isPaid).reduce((sum, b) => sum + (b.amount || 0), 0);
             const expectedDateStr = isDueNow ? "Currently Due" : pdSettings?.date ? formatPaydayDateStr(pdSettings.date) : "Unscheduled";
             
             const sortedBills = sortBillsSurgically(groupBills);
 
             return (
               <div key={payday} className="space-y-2">
-                <div className={`flex flex-col px-3 py-2 cursor-pointer transition-colors rounded-xl ${isDarkMode ? "hover:bg-slate-800/50" : "hover:bg-slate-50"}`} onClick={() => toggleCollapse(payday)}>
-                  <div className="flex items-center justify-between w-full">
+                <div className={`flex flex-col px-3 py-3 cursor-pointer transition-colors rounded-xl ${isDarkMode ? "hover:bg-slate-800/50" : "hover:bg-slate-50"}`} onClick={() => toggleCollapse(payday)}>
+                  {/* Row 1: Name and Balance perfectly aligned */}
+                  <div className="flex items-center justify-between w-full mb-1">
                      <div className="flex items-center gap-2">
-                       <h3 className={`text-[11px] font-black uppercase tracking-widest ${isDueNow ? "text-red-500" : isDarkMode ? "text-slate-300" : "text-slate-700"}`}>{payday}</h3>
-                       <div className="text-slate-400">{isCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}</div>
+                       <h3 className={`text-sm font-black uppercase tracking-widest ${isDueNow ? "text-red-500" : isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{payday}</h3>
+                       <div className="text-slate-400">{isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}</div>
                      </div>
-                     <div className="flex flex-col items-end">
-                       <span className={`text-xs font-black ${isDueNow ? "text-red-500" : "text-[#1877F2]"}`}>
-                         ${checkTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                       </span>
-                       <span className={`text-[9px] font-bold uppercase tracking-widest mt-0.5 ${isDueNow ? "text-red-500" : isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
-                         {isDueNow ? "Total Due Now" : "Total Due"}
-                       </span>
-                     </div>
+                     <span className={`text-sm font-black ${isDueNow ? "text-red-500" : "text-[#1877F2]"}`}>
+                       ${checkTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                     </span>
                   </div>
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{expectedDateStr}</span>
+                  {/* Row 2: Date and Label perfectly aligned */}
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{expectedDateStr}</span>
+                    <span className={`text-[9px] font-bold uppercase tracking-widest ${isDueNow ? "text-red-500/80" : isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                       {isDueNow ? "Total Due Now" : "Total Due"}
+                    </span>
                   </div>
                 </div>
 
@@ -522,48 +522,69 @@ export default function Dashboard({
                       <p className="text-center text-xs font-bold text-slate-400 py-4">No bills assigned to this payday.</p>
                     ) : (
                       <div className="space-y-3">
-                        {/* 🔥 NEW BENTO CARD LAYOUT FOR BILLS 🔥 */}
+                        {/* 🔥 3-LEVEL BENTO ENTRY CARDS 🔥 */}
                         {sortedBills.map((bill) => (
-                          <div key={bill.id} className={`flex flex-col p-4 rounded-2xl border shadow-sm transition-all ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-100"}`}>
+                          <div key={bill.id} className={`flex flex-col p-4 rounded-2xl border shadow-sm transition-all relative overflow-hidden ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-100"}`}>
                             
-                            {/* Row 1: Emoji & Name */}
-                            <div className="flex items-center gap-3 mb-3 cursor-pointer" onClick={() => setSelectedEntry(bill)}>
-                              <div className={`w-10 h-10 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
-                                {bill.icon}
-                              </div>
-                              <p className={`font-bold text-sm ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{bill.name}</p>
-                              {bill.isRecurring && !bill.isPaid && <RefreshCw size={12} className="text-[#10B981] shrink-0 ml-auto" />}
+                            {/* Top Row: Bill Name & Glowing Amount */}
+                            <div className="flex items-start justify-between gap-4 mb-4 cursor-pointer" onClick={() => setSelectedEntry(bill)}>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>{bill.name}</p>
+                                        {bill.isRecurring && !bill.isPaid && <RefreshCw size={12} className="text-[#10B981] shrink-0" />}
+                                    </div>
+                                </div>
+                                <div className={`px-4 py-1.5 rounded-xl font-black text-sm tracking-tight shrink-0 shadow-[0_0_15px_rgba(24,119,242,0.3)] ${bill.isOverdue ? "bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.4)]" : "bg-[#1877F2] text-white"}`}>
+                                    ${(bill.amount || 0).toFixed(2)}
+                                </div>
                             </div>
 
-                            {/* Row 2: Status/Date & Glowing Balance */}
-                            <div className="flex items-end justify-between mb-4 cursor-pointer" onClick={() => setSelectedEntry(bill)}>
-                              <div className="flex flex-col">
-                                <span className={`text-[10px] font-black uppercase tracking-wider ${bill.isOverdue ? "text-red-500" : isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-                                  {bill.isOverdue ? "Overdue" : bill.payday === "Due Now" ? "Due Now" : "Status: Due"}
-                                </span>
-                                <span className={`text-xs font-bold mt-0.5 ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
-                                  {bill.fullDate}
-                                </span>
-                              </div>
-                              <div className={`px-4 py-1.5 rounded-xl font-black text-sm tracking-tight shadow-[0_0_15px_rgba(24,119,242,0.3)] ${bill.isOverdue ? "bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.4)]" : "bg-[#1877F2] text-white"}`}>
-                                ${bill.amount.toFixed(2)}
-                              </div>
+                            {/* Middle Row: Emoji, Date, and Action */}
+                            <div className="flex items-center gap-3">
+                                <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 cursor-pointer ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`} onClick={() => setSelectedEntry(bill)}>
+                                    {bill.icon}
+                                </div>
+                                
+                                <div className="flex flex-col flex-1 cursor-pointer" onClick={() => setSelectedEntry(bill)}>
+                                    <span className={`text-[10px] font-black uppercase tracking-wider ${bill.isOverdue ? "text-red-500" : isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                                        {bill.isOverdue ? "Overdue" : bill.payday === "Due Now" ? "Due Now" : "Status: Due"}
+                                    </span>
+                                    <span className={`text-xs font-bold mt-0.5 ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
+                                        {bill.fullDate}
+                                    </span>
+                                </div>
+
+                                <div className="shrink-0">
+                                    {!bill.isPaid ? (
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }} 
+                                            className={`px-3 sm:px-4 py-2.5 rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-1.5 ${isDarkMode ? "bg-[#1E293B] border-slate-600 text-[#1877F2] hover:bg-slate-800" : "bg-blue-50 border-blue-100 text-[#1877F2] hover:bg-blue-100"}`}
+                                        >
+                                            <CheckCircle2 size={14} /> Mark as Paid
+                                        </button>
+                                    ) : (
+                                        <div className={`px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest border flex items-center justify-center gap-1.5 ${isDarkMode ? "bg-emerald-900/20 border-emerald-900/50 text-emerald-400" : "bg-emerald-50 border-emerald-100 text-emerald-600"}`}>
+                                            <CheckCircle2 size={14} /> Paid
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
-                            {/* Row 3: Slim Mark as Paid Button */}
-                            {!bill.isPaid ? (
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }} 
-                                className={`w-full py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-2 ${isDarkMode ? "bg-[#1E293B] border-slate-600 text-[#1877F2] hover:bg-slate-800" : "bg-blue-50 border-blue-100 text-[#1877F2] hover:bg-blue-100"}`}
-                              >
-                                <CheckCircle2 size={14} /> Mark as Paid
-                              </button>
-                            ) : (
-                              <div className={`w-full py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest border flex items-center justify-center gap-2 ${isDarkMode ? "bg-emerald-900/20 border-emerald-900/50 text-emerald-400" : "bg-emerald-50 border-emerald-100 text-emerald-600"}`}>
-                                <CheckCircle2 size={14} /> Paid
-                              </div>
+                            {/* Bottom Row: Installment Bar (Only if applicable) */}
+                            {bill.isInstallment && (
+                                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/50 cursor-pointer" onClick={() => setSelectedEntry(bill)}>
+                                    <div className="flex justify-between items-end mb-1.5">
+                                        <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Installment Progress</span>
+                                        <span className={`text-[9px] font-black tracking-widest ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>${(bill.paidAmount || 0).toFixed(2)} / ${(bill.totalAmount || 0).toFixed(2)}</span>
+                                    </div>
+                                    <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-900" : "bg-slate-100"}`}>
+                                        <div 
+                                            className={`h-full transition-all duration-1000 ${bill.paidAmount >= bill.totalAmount ? "bg-[#10B981]" : "bg-[#1877F2]"}`} 
+                                            style={{ width: `${bill.totalAmount > 0 ? Math.min((bill.paidAmount / bill.totalAmount) * 100, 100) : 0}%` }}
+                                        ></div>
+                                    </div>
+                                </div>
                             )}
-                            
                           </div>
                         ))}
                       </div>
@@ -593,36 +614,41 @@ export default function Dashboard({
               <div className="py-8 text-center"><p className="font-bold text-sm text-slate-400">No recent activity.</p></div>
             ) : (
               <div className="space-y-3">
-                {/* 🔥 MATCHING BENTO LAYOUT FOR RECENT ACTIVITY (No button) 🔥 */}
+                {/* 🔥 3-LEVEL BENTO LAYOUT APPLIED TO RECENT ACTIVITY (Capped at 5) 🔥 */}
                 {transactions.slice(0, 5).map((tx) => (
                   <div key={tx.id} onClick={() => setSelectedEntry(tx)} className={`flex flex-col p-4 rounded-2xl border shadow-sm cursor-pointer transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
                     
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className={`w-9 h-9 rounded-xl border flex items-center justify-center text-lg shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
-                        {tx.icon}
-                      </div>
-                      <p className={`font-bold text-sm truncate ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{tx.name}</p>
+                    {/* Top Row: Name & Amount */}
+                    <div className="flex items-start justify-between gap-4 mb-4">
+                        <p className={`font-black text-base truncate leading-tight flex-1 min-w-0 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{tx.name}</p>
+                        <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight shrink-0 ${getTxAmountClasses(tx, isDarkMode)}`}>
+                            {tx.type === "Income" ? "+" : "-"}${(tx.amount || 0).toFixed(2)}
+                        </div>
                     </div>
                     
-                    <div className="flex items-end justify-between">
-                      <div className="flex flex-col">
-                        <span className={`text-[9px] font-black uppercase tracking-widest ${getTxCategoryColor(tx)}`}>
-                          {tx.category || "Uncategorized"}
-                        </span>
-                        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mt-0.5">
-                          {tx.date}
-                        </span>
-                      </div>
-                      <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight ${getTxAmountClasses(tx, isDarkMode)}`}>
-                        {tx.type === "Income" ? "+" : "-"}${tx.amount.toFixed(2)}
-                      </div>
+                    {/* Middle Row: Emoji & Category/Date */}
+                    <div className="flex items-center gap-3">
+                        <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                            {tx.icon}
+                        </div>
+                        <div className="flex flex-col flex-1">
+                            <span className={`text-[9px] font-black uppercase tracking-widest ${getTxCategoryColor(tx)}`}>
+                                {tx.category || "Uncategorized"}
+                            </span>
+                            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mt-0.5">
+                                {tx.date}
+                            </span>
+                        </div>
                     </div>
 
                   </div>
                 ))}
-                <button onClick={() => changeTab("activity")} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)]">
-                  <List size={16} /> See All Activity
-                </button>
+                
+                {transactions.length > 5 && (
+                  <button onClick={() => changeTab("activity")} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] hover:-translate-y-0.5">
+                    <List size={16} /> See All Activity
+                  </button>
+                )}
               </div>
             )}
           </div>

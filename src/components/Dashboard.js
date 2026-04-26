@@ -58,7 +58,6 @@ export default function Dashboard({
     ? -(Math.abs(unpaidBillsAmount) - Math.abs(totalIncomeBalance))
     : totalIncomeBalance - unpaidBillsAmount;
 
-  // HERO RING FIX: Accurately calculating the true Debt Load percentage
   const debtRatio = totalIncomeBalance > 0 ? Math.max(0, Math.min((unpaidBillsAmount / totalIncomeBalance) * 100, 100)) : (unpaidBillsAmount > 0 ? 100 : 0);
   
   const strokeDasharray = 251.2;
@@ -111,7 +110,6 @@ export default function Dashboard({
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Debt Load</span>
-          {/* HERO RING FIX: Displaying the actual debtRatio percentage */}
           <span className={`text-2xl font-black ${safeToSpend < 0 ? "text-red-500" : "text-[#1877F2]"}`}>{Math.round(debtRatio)}%</span>
         </div>
       </div>
@@ -153,8 +151,8 @@ export default function Dashboard({
          </button>
       </div>
 
-      <div className="w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-8">
-        <div className="flex gap-4 w-max pr-6 pb-4">
+      <div className="w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-6">
+        <div className="flex gap-4 w-max pr-6 pb-2">
           {hzPaydays.map((pd) => {
             const pdSettings = paydayConfig?.[pd] || {};
             const groupBills = billsByPayday[pd] || [];
@@ -192,7 +190,6 @@ export default function Dashboard({
                 </div>
 
                 <div className="flex justify-between items-end w-full pt-3 border-t border-dashed border-slate-700/30">
-                  {/* LABEL UPDATES & DUE NOW CLEANUP */}
                   {pd === "Due Now" ? (
                     <div className="flex flex-col flex-1"></div> 
                   ) : (
@@ -212,6 +209,9 @@ export default function Dashboard({
           })}
         </div>
       </div>
+
+      {/* FINAL 1% VISUAL ANCHOR: The Missing Separator Line */}
+      <div className={`mx-6 mb-6 border-t ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}></div>
 
       <main className="px-6 space-y-4">
         <div className="space-y-4">
@@ -288,7 +288,6 @@ export default function Dashboard({
                                   )}
                                </div>
 
-                               {/* PILL SHRINKAGE UPDATE */}
                                <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 text-[#1877F2] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} drop-shadow-[0_0_12px_rgba(24,119,242,0.7)]`}>
                                   ${(Number(bill?.amount) || 0).toFixed(2)}
                                </div>
@@ -343,10 +342,11 @@ export default function Dashboard({
                   }
 
                   return (
-                    <div key={tx?.id} className={`flex flex-col p-4 rounded-2xl border active:scale-[0.98] transition-all ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-100"}`}>
+                    <div key={tx?.id} className={`flex flex-col p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-100"}`}>
                       
                       <div className="flex items-start justify-between w-full mb-4">
-                         <div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => setSelectedEntry(tx)}>
+                         {/* FINAL 1% PENCIL RULE: Removed onClick and cursor-pointer from this wrapper */}
+                         <div className="flex items-center gap-3 flex-1">
                             <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
                                {tx?.icon || "💳"}
                             </div>
@@ -354,6 +354,7 @@ export default function Dashboard({
                                {tx?.name || "Transaction"}
                             </p>
                          </div>
+                         {/* The Pencil button is now the strict trigger for the drawer */}
                          <button 
                            onClick={(e) => { e.stopPropagation(); setSelectedEntry(tx); }} 
                            className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
@@ -367,7 +368,6 @@ export default function Dashboard({
                             <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{tx?.category || "General"}</span>
                             <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mt-0.5">{tx?.date || "Recent"}</span>
                          </div>
-                         {/* PILL SHRINKAGE UPDATE */}
                          <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 ${txColorStr} ${txBgBorderStr} ${txShadowStr}`}>
                             {txPrefix}${(Number(tx?.amount) || 0).toFixed(2)}
                          </div>

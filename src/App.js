@@ -38,7 +38,11 @@ export default function App() {
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [activeTab, setActiveTab] = useState("home");
+  
+  // 🔥 FIX 6: CIRCADIAN ENGINE STATE 🔥
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [manualThemeOverride, setManualThemeOverride] = useState(false);
+  
   const [currentTime, setCurrentTime] = useState(new Date());
   
   const [isScrolled, setIsScrolled] = useState(false);
@@ -59,11 +63,10 @@ export default function App() {
   const [isEditingEntry, setIsEditingEntry] = useState(false);
   const [editEntryData, setEditEntryData] = useState({});
   
-  // 🔥 FIX 4: SMART INITIALIZATION DEFAULT STATE 🔥
+  // SMART INITIALIZATION DEFAULT STATE
   const [collapsedPaydays, setCollapsedPaydays] = useState({ "Due Now": true, "Payday 1": true, "Payday 2": true, "Payday 3": true, "Payday 4": true, "Payday 5": true, "Unscheduled": true });
   const hasInitializedCollapse = useRef(false);
   
-  // 🔥 FIX 1: PAYDAY FREQUENCY CONFIG 🔥
   const [isPaydaySetupOpen, setIsPaydaySetupOpen] = useState(false);
   const [paydayConfig, setPaydayConfig] = useState({ frequency: "Weekly", "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } });
   const [editPaydayConfig, setEditPaydayConfig] = useState(paydayConfig);
@@ -198,10 +201,24 @@ export default function App() {
     return () => { unsubAcc(); unsubBills(); unsubTxs(); unsubTodos(); unsubConfig(); };
   }, [isMounted, isDemoMode, user]);
 
+  // 🔥 FIX 6: THE CIRCADIAN ENGINE (TIME CLOCK) 🔥
   useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    const timer = setInterval(() => {
+      const now = new Date();
+      setCurrentTime(now);
+      
+      if (!manualThemeOverride) {
+        const currentHour = now.getHours();
+        // 10 PM (22:00) through 4:59 AM = Dark Mode
+        if (currentHour >= 22 || currentHour < 5) {
+          setIsDarkMode(true);
+        } else {
+          setIsDarkMode(false);
+        }
+      }
+    }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [manualThemeOverride]);
 
   useEffect(() => {
     if (selectedAccount) {
@@ -210,7 +227,7 @@ export default function App() {
     }
   }, [selectedAccount]);
 
-  // 🔥 FIX 4: SMART INITIALIZATION LOGIC 🔥
+  // SMART INITIALIZATION LOGIC
   useEffect(() => {
     if (!hasInitializedCollapse.current && bills.length > 0) {
       const todayLocal = new Date(); todayLocal.setHours(0, 0, 0, 0);
@@ -312,6 +329,7 @@ export default function App() {
 
   const userName = isDemoMode ? "Aaron" : user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || "Founder";
 
+  // 🔥 FIX 1: HERO DATE STRINGS RESTORED 🔥
   const getOrdinalNum = (n) => n + (n > 0 ? ['th', 'st', 'nd', 'rd'][(n > 3 && n < 21) || n % 10 > 3 ? 0 : n % 10] : '');
   const dayStr = currentTime.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
   const monthStr = currentTime.toLocaleDateString("en-US", { month: "long" }).toUpperCase();
@@ -678,7 +696,8 @@ export default function App() {
       <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#1877F2]/10 rounded-full blur-3xl"></div>
       <div className="flex justify-between items-center mb-6 relative z-30 h-10">
         <div className="flex items-center gap-2">
-          <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
+          {/* 🔥 FIX 6: MANUAL THEME TOGGLE OVERRIDE 🔥 */}
+          <button onClick={() => { setIsDarkMode(!isDarkMode); setManualThemeOverride(true); }} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
             {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
           </button>
           <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
@@ -702,8 +721,12 @@ export default function App() {
       <div className="relative z-10 flex justify-center px-1 mb-6">
         <h2 title={title || "Overview"} className={`text-3xl font-black tracking-tight leading-tight truncate max-w-full ${isDarkMode ? "text-white" : "text-slate-900"}`}>{title || "Overview"}</h2>
       </div>
+      
+      {/* 🚀 GRAPHIC CONTENT INJECTION (Controlled by Dashboard) 🚀 */}
       <div className="relative z-10 w-full h-auto opacity-100">{graphicContent}</div>
+      
       <div className={`relative z-10 pt-4 border-t flex justify-center items-center ${isDarkMode ? "border-slate-800" : "border-slate-50"}`}>
+        {/* 🔥 FIX 1: HERO DATE RENDER RESTORED 🔥 */}
         <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{heroDateTimeStr}</span>
       </div>
     </header>
@@ -1004,7 +1027,7 @@ export default function App() {
           </div>
         )}
 
-        {/* 🔥 FIX 1 & 2: PAYDAY ROUTING SETUP DRAWER 🔥 */}
+        {/* 🔥 FIX 2: PAYDAY FREQUENCY ALIGNMENT 🔥 */}
         {isPaydaySetupOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsPaydaySetupOpen(false)}></div>
@@ -1015,15 +1038,15 @@ export default function App() {
               </div>
               <div className={`p-6 overflow-y-auto flex-1 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
                 
-                {/* FREQUENCY SELECTOR */}
+                {/* 🔥 FREQUENCY SELECTOR ALIGNMENT FIX 🔥 */}
                 <div className="mb-6">
                   <label className={`block text-[9px] font-bold uppercase tracking-widest mb-3 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Pay Frequency</label>
-                  <div className={`flex rounded-xl p-1 border ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-slate-100 border-slate-200"}`}>
+                  <div className={`grid grid-cols-2 gap-2 p-1.5 rounded-2xl border ${isDarkMode ? "bg-slate-800/80 border-slate-700" : "bg-slate-100/80 border-slate-200"}`}>
                     {["Weekly", "Bi-Weekly", "Semi-Monthly", "Monthly"].map(freq => (
                       <button
                         key={freq}
                         onClick={() => setEditPaydayConfig({...editPaydayConfig, frequency: freq})}
-                        className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${editPaydayConfig?.frequency === freq || (!editPaydayConfig?.frequency && freq === "Weekly") ? "bg-[#1877F2] text-white shadow-md" : isDarkMode ? "text-slate-400 hover:text-slate-200" : "text-slate-500 hover:text-slate-800"}`}
+                        className={`w-full py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 flex items-center justify-center text-center ${editPaydayConfig?.frequency === freq || (!editPaydayConfig?.frequency && freq === "Weekly") ? "bg-[#1877F2] text-white shadow-[0_4px_12px_rgba(24,119,242,0.3)] transform scale-100" : isDarkMode ? "text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transform scale-[0.98]" : "text-slate-500 hover:text-slate-800 hover:bg-white shadow-sm transform scale-[0.98]"}`}
                       >
                         {freq}
                       </button>

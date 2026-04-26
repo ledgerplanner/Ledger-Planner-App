@@ -34,7 +34,6 @@ export default function Dashboard({
     }
   }, []);
 
-  // === SURGICAL SORTING ===
   const sortBillsSurgically = (billList) => {
     return [...billList].sort((a, b) => {
       if (a.isOverdue && !b.isOverdue) return -1;
@@ -45,13 +44,15 @@ export default function Dashboard({
     });
   };
 
+  // === DYNAMIC GREETING (SUNDAY MODE) ===
   const currentHour = new Date().getHours();
   let greetingStr = `Evening, ${userName}`;
-  if (currentHour >= 5 && currentHour < 17) { greetingStr = `Morning, ${userName}`; }
+  if (currentHour >= 5 && currentHour < 12) { greetingStr = `Morning, ${userName}`; }
   if (currentHour >= 12 && currentHour < 17) { greetingStr = `Afternoon, ${userName}`; }
+  if (currentHour >= 17 && currentHour < 22) { greetingStr = `Evening, ${userName}`; }
   if (currentHour >= 22 || currentHour < 5) { greetingStr = `Up late, ${userName}?`; }
 
-  // === MATH ENGINE & HERO LOGIC ===
+  // === HERO MATH ENGINE ===
   const totalIncomeBalance = accounts.reduce((sum, a) => sum + (Number(a?.balance) || 0), 0);
   const unpaidBillsAmount = bills.filter((b) => !b?.isPaid).reduce((sum, b) => sum + (Number(b?.amount) || 0), 0);
   const safeToSpend = totalIncomeBalance - unpaidBillsAmount;
@@ -91,7 +92,7 @@ export default function Dashboard({
               <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${isDarkMode ? "bg-emerald-900/30 text-emerald-400 border-emerald-900/50" : "bg-emerald-50 text-emerald-600 border-emerald-100"}`}>${totalIncomeBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
            </div>
            <div className="flex justify-between items-center w-full max-w-[160px]">
-              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Unpaid</span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Unpaid Bills</span>
               <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${isDarkMode ? "bg-slate-800 text-slate-300 border-slate-700" : "bg-slate-100 text-slate-600 border-slate-200"}`}>${unpaidBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
            </div>
         </div>
@@ -99,7 +100,7 @@ export default function Dashboard({
     </div>
   );
 
-  // === FREQUENCY LOGIC FOR HORIZONTAL CARDS ===
+  // === FREQUENCY LOGIC ===
   const freq = paydayConfig?.frequency || "Weekly";
   let allowedPaydays = [];
   if (freq === "Monthly") allowedPaydays = ["Payday 1"];
@@ -113,43 +114,58 @@ export default function Dashboard({
     <div className={`animate-fade-in pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
       {renderHeroShell(greetingStr, graphicContent)}
 
-      {/* HORIZONTAL WEEKLY PREDICTIVE CARDS */}
-      <div className="w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-6 -mt-4">
-        <div className="flex gap-3 w-max pr-6">
+      {/* 🔥 MINI-LEDGER PREDICTIVE CARDS 🔥 */}
+      <div className="w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-8 -mt-4">
+        <div className="flex gap-4 w-max pr-6">
           {hzPaydays.map((pd) => {
             const pdSettings = paydayConfig?.[pd] || {};
             const groupBills = billsByPayday[pd] || [];
-            
-            // Hide unscheduled if it's not Due Now
             if (pd !== "Due Now" && !pdSettings?.date) return null;
-            
-            const unpaidForPd = groupBills.filter(b => !b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
-            
-            // Hide Due Now if $0 (No fires to put out)
-            if (pd === "Due Now" && unpaidForPd === 0) return null;
 
-            const expectedIncome = Number(pdSettings.income) || 0;
-            const netAmount = expectedIncome - unpaidForPd;
-            const isDeficit = netAmount < 0;
-            const expectedDateStr = pd === "Due Now" ? "Action Required" : formatPaydayDateStr(pdSettings.date);
+            const unpaidBills = groupBills.filter(b => !b.isPaid);
+            const paidBills = groupBills.filter(b => b.isPaid);
+            const unpaidCount = unpaidBills.length;
+            const unpaidTotal = unpaidBills.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+            const paidTotal = paidBills.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+
+            // Hide Due Now if clean
+            if (pd === "Due Now" && unpaidCount === 0) return null;
+
+            const totalExpectedIncome = Number(pdSettings.income) || 0;
+            const remainingIncome = totalExpectedIncome - paidTotal;
+            const netSurplus = remainingIncome - unpaidTotal;
+            const isDeficit = netSurplus < 0;
+            const expectedDateStr = pd === "Due Now" ? "ACTION REQ" : formatPaydayDateStr(pdSettings.date).toUpperCase();
 
             return (
-              <div key={`hz-${pd}`} onClick={() => { if(collapsedPaydays[pd]) toggleCollapse(pd); document.getElementById(`vert-${pd}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} className={`shrink-0 w-36 p-4 rounded-[1.5rem] border cursor-pointer active:scale-95 transition-transform shadow-sm ${pd === "Due Now" ? (isDarkMode ? "bg-red-900/10 border-red-900/30" : "bg-red-50/50 border-red-100") : (isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100")}`}>
-                <h4 className={`text-[10px] font-black uppercase tracking-widest mb-1 ${pd === "Due Now" ? "text-red-500" : isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{pd}</h4>
+              <div key={`hz-${pd}`} onClick={() => { if(collapsedPaydays[pd]) toggleCollapse(pd); document.getElementById(`vert-${pd}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} className={`shrink-0 w-52 p-5 rounded-[1.75rem] border cursor-pointer active:scale-95 transition-all shadow-md flex flex-col justify-between h-40 ${pd === "Due Now" ? (isDarkMode ? "bg-red-900/10 border-red-900/40" : "bg-red-50 border-red-100") : (isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100")}`}>
                 
-                {pd === "Due Now" ? (
-                   <p className={`text-lg font-black tracking-tighter mb-3 text-red-500`}>
-                     -${unpaidForPd.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                   </p>
-                ) : (
-                   <p className={`text-lg font-black tracking-tighter mb-3 ${isDeficit ? "text-red-500" : "text-[#10B981]"}`}>
-                     {isDeficit ? "" : "+"}${Math.abs(netAmount).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                   </p>
-                )}
-                
-                <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "bg-slate-800 text-slate-400" : "bg-slate-50 text-slate-500"}`}>
-                  <CalendarIcon size={10} /> {expectedDateStr}
+                {/* ROW 1: Name & Date */}
+                <div className="flex justify-between items-center w-full">
+                  <h4 className={`text-[10px] font-black uppercase tracking-widest ${pd === "Due Now" ? "text-red-500" : "text-slate-400"}`}>{pd}</h4>
+                  <span className={`text-[9px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>{expectedDateStr}</span>
                 </div>
+
+                {/* ROW 2: The Big Balance */}
+                <div className="text-center py-2">
+                   <p className={`text-2xl font-black tracking-tighter ${pd === "Due Now" ? "text-red-500" : isDeficit ? "text-red-500" : "text-[#10B981]"}`}>
+                     {isDeficit ? "" : pd === "Due Now" ? "" : "+"}${Math.abs(netSurplus).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                   </p>
+                   <span className="text-[8px] font-black uppercase tracking-[0.15em] text-slate-400 opacity-60">Weekly Safe to Spend</span>
+                </div>
+
+                {/* ROW 3: Income & Bill Breakdown */}
+                <div className="flex justify-between items-end w-full pt-3 border-t border-dashed border-slate-700/30">
+                  <div className="flex flex-col">
+                    <span className="text-[7px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Remaining Cash</span>
+                    <span className={`text-[10px] font-black ${isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>+${Math.max(0, remainingIncome).toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <span className="text-[7px] font-black uppercase text-slate-400 tracking-widest mb-0.5">{unpaidCount} Bills Out</span>
+                    <span className={`text-[10px] font-black ${isDarkMode ? "text-red-400" : "text-red-500"}`}>-${unpaidTotal.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
+                  </div>
+                </div>
+
               </div>
             );
           })}
@@ -163,7 +179,7 @@ export default function Dashboard({
            </button>
         </div>
 
-        {/* ALIGNED VERTICAL PAY CARDS */}
+        {/* VERTICAL PAY CARDS (REST OF FILE) */}
         <div className="space-y-4">
           {["Due Now", "Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].map((payday) => {
             const groupBills = billsByPayday[payday] || [];

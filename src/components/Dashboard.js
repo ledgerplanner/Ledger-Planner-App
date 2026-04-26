@@ -121,8 +121,9 @@ export default function Dashboard({
     <div className={`animate-fade-in pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
       {renderHeroShell(greetingStr, graphicContent)}
 
+      {/* HORIZONTAL CARDS WITH PB-4 SCROLL CLEARANCE */}
       <div className="w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-8 -mt-4">
-        <div className="flex gap-4 w-max pr-6">
+        <div className="flex gap-4 w-max pr-6 pb-4">
           {hzPaydays.map((pd) => {
             const pdSettings = paydayConfig?.[pd] || {};
             const groupBills = billsByPayday[pd] || [];
@@ -255,7 +256,8 @@ export default function Dashboard({
                                   )}
                                </div>
 
-                               <div className={`font-black text-lg tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_8px_rgba(24,119,242,0.6)]`}>
+                               {/* BILL AMOUNT WITH NEON PILL GLOW */}
+                               <div className={`px-3 py-1.5 rounded-[10px] border font-black text-lg tracking-tighter shrink-0 text-[#1877F2] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} drop-shadow-[0_0_12px_rgba(24,119,242,0.7)]`}>
                                   ${(Number(bill?.amount) || 0).toFixed(2)}
                                </div>
                             </div>
@@ -284,38 +286,67 @@ export default function Dashboard({
           <div className={`rounded-[2rem] p-4 border ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
             {transactions.length === 0 ? ( <p className="text-center py-8 font-bold text-slate-400">No activity yet.</p> ) : (
               <div className="space-y-3">
-                {transactions.slice(0, 5).map((tx) => (
-                  <div key={tx?.id} className={`flex flex-col p-4 rounded-2xl border active:scale-[0.98] transition-all ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-100"}`}>
-                    
-                    <div className="flex items-start justify-between w-full mb-4">
-                       <div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => setSelectedEntry(tx)}>
-                          <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
-                             {tx?.icon || "💳"}
-                          </div>
-                          <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                             {tx?.name || "Transaction"}
-                          </p>
-                       </div>
-                       <button 
-                         onClick={(e) => { e.stopPropagation(); setSelectedEntry(tx); }} 
-                         className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
-                       >
-                          <Edit2 size={16} strokeWidth={2.5} />
-                       </button>
-                    </div>
+                {transactions.slice(0, 5).map((tx) => {
+                  
+                  // DYNAMIC COLOR ENGINE FOR ACTIVITY PILLS
+                  const isBillTx = tx?.isBillPayment || tx?.type === "Bill" || (tx?.category && tx?.category.toLowerCase().includes("bill"));
+                  let txColorStr = "";
+                  let txBgBorderStr = "";
+                  let txShadowStr = "";
+                  let txPrefix = "";
 
-                    <div className="flex items-center justify-between gap-2">
-                       <div className="flex flex-col shrink-0">
-                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{tx?.category || "General"}</span>
-                          <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mt-0.5">{tx?.date || "Recent"}</span>
-                       </div>
-                       <div className={`font-black text-lg tracking-tighter shrink-0 ${tx?.type === "Income" ? "text-emerald-500 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "text-orange-500 drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]"}`}>
-                          {tx?.type === "Income" ? "+" : "-"}${(Number(tx?.amount) || 0).toFixed(2)}
-                       </div>
-                    </div>
+                  if (tx?.type === "Income") {
+                      txColorStr = "text-emerald-500";
+                      txBgBorderStr = isDarkMode ? "bg-emerald-900/20 border-emerald-500/30" : "bg-emerald-50 border-emerald-200";
+                      txShadowStr = "drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]";
+                      txPrefix = "+";
+                  } else if (isBillTx) {
+                      txColorStr = "text-[#1877F2]";
+                      txBgBorderStr = isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200";
+                      txShadowStr = "drop-shadow-[0_0_12px_rgba(24,119,242,0.7)]";
+                      txPrefix = "-";
+                  } else {
+                      txColorStr = "text-orange-500";
+                      txBgBorderStr = isDarkMode ? "bg-orange-900/20 border-orange-500/30" : "bg-orange-50 border-orange-200";
+                      txShadowStr = "drop-shadow-[0_0_12px_rgba(249,115,22,0.7)]";
+                      txPrefix = "-";
+                  }
 
-                  </div>
-                ))}
+                  return (
+                    <div key={tx?.id} className={`flex flex-col p-4 rounded-2xl border active:scale-[0.98] transition-all ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-100"}`}>
+                      
+                      <div className="flex items-start justify-between w-full mb-4">
+                         <div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => setSelectedEntry(tx)}>
+                            <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                               {tx?.icon || "💳"}
+                            </div>
+                            <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                               {tx?.name || "Transaction"}
+                            </p>
+                         </div>
+                         <button 
+                           onClick={(e) => { e.stopPropagation(); setSelectedEntry(tx); }} 
+                           className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
+                         >
+                            <Edit2 size={16} strokeWidth={2.5} />
+                         </button>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2">
+                         <div className="flex flex-col shrink-0">
+                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{tx?.category || "General"}</span>
+                            <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mt-0.5">{tx?.date || "Recent"}</span>
+                         </div>
+
+                         {/* DYNAMIC ACTIVITY AMOUNT PILL */}
+                         <div className={`px-3 py-1.5 rounded-[10px] border font-black text-lg tracking-tighter shrink-0 ${txColorStr} ${txBgBorderStr} ${txShadowStr}`}>
+                            {txPrefix}${(Number(tx?.amount) || 0).toFixed(2)}
+                         </div>
+                      </div>
+
+                    </div>
+                  );
+                })}
                 
                 <button onClick={() => changeTab("activity")} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95">
                   <List size={16} /> See All Recent Activity

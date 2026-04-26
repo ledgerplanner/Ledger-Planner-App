@@ -68,6 +68,40 @@ export default function Dashboard({
   ["Due Now", "Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].forEach((pd) => { billsByPayday[pd] = []; });
   bills.forEach((bill) => { if (bill?.payday && billsByPayday[bill.payday]) billsByPayday[bill.payday].push(bill); });
 
+  const freq = paydayConfig?.frequency || "Weekly";
+  let allowedPaydays = [];
+  if (freq === "Monthly") allowedPaydays = ["Payday 1"];
+  else if (freq === "Semi-Monthly") allowedPaydays = ["Payday 1", "Payday 2"];
+  else if (freq === "Bi-Weekly") allowedPaydays = ["Payday 1", "Payday 2", "Payday 3"];
+  else allowedPaydays = ["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"];
+  
+  const hzPaydays = ["Due Now", ...allowedPaydays];
+
+  // === WATERFALL ENGINE (CUMULATIVE MATH) ===
+  let runningBalance = totalIncomeBalance;
+  const hzBalances = {};
+
+  hzPaydays.forEach((pd) => {
+    const groupBills = billsByPayday[pd] || [];
+    const pdSettings = paydayConfig?.[pd] || {};
+
+    if (pd !== "Due Now" && !pdSettings?.date) {
+      hzBalances[pd] = runningBalance;
+      return;
+    }
+
+    const unpaidTotal = groupBills.filter(b => !b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+    const paidTotal = groupBills.filter(b => b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+
+    let income = 0;
+    if (pd !== "Due Now") {
+      income = Math.max(0, (Number(pdSettings.income) || 0) - paidTotal);
+    }
+
+    runningBalance = runningBalance + income - unpaidTotal;
+    hzBalances[pd] = runningBalance;
+  });
+
   const graphicContent = (
     <div className="flex items-center justify-between relative z-10 mb-6 w-full">
       <div className="relative w-36 h-36 flex-shrink-0">
@@ -76,7 +110,7 @@ export default function Dashboard({
           <circle cx="50" cy="50" r="40" fill="transparent" stroke={safeToSpend < 0 ? "#EF4444" : "#3B82F6"} strokeWidth="12" strokeLinecap="round" strokeDasharray={strokeDasharray} strokeDashoffset={strokeDashoffset} className="transition-all duration-1000 ease-out" />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Left</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Debt Load</span>
           <span className={`text-2xl font-black ${safeToSpend < 0 ? "text-red-500" : "text-[#1877F2]"}`}>{Math.round(percentageLeft)}%</span>
         </div>
       </div>
@@ -108,21 +142,19 @@ export default function Dashboard({
     </div>
   );
 
-  const freq = paydayConfig?.frequency || "Weekly";
-  let allowedPaydays = [];
-  if (freq === "Monthly") allowedPaydays = ["Payday 1"];
-  else if (freq === "Semi-Monthly") allowedPaydays = ["Payday 1", "Payday 2"];
-  else if (freq === "Bi-Weekly") allowedPaydays = ["Payday 1", "Payday 2", "Payday 3"];
-  else allowedPaydays = ["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"];
-  
-  const hzPaydays = ["Due Now", ...allowedPaydays];
-
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
       {renderHeroShell(greetingStr, graphicContent)}
 
-      {/* HORIZONTAL CARDS WITH PB-4 SCROLL CLEARANCE */}
-      <div className="w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-8 -mt-4">
+      {/* SETUP BUTTON MOVED ABOVE CARDS */}
+      <div className="flex justify-center px-6 mb-5 -mt-2">
+         <button onClick={() => setIsPaydaySetupOpen(true)} className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border shadow-sm transition-all active:scale-95 ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#1877F2]" : "bg-white border-slate-200 text-[#1877F2]"}`}>
+            <Settings2 size={18} strokeWidth={2.5} /> Set Your Pay Dates & Amounts
+         </button>
+      </div>
+
+      {/* HORIZONTAL CARDS */}
+      <div className="w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-8">
         <div className="flex gap-4 w-max pr-6 pb-4">
           {hzPaydays.map((pd) => {
             const pdSettings = paydayConfig?.[pd] || {};
@@ -139,9 +171,12 @@ export default function Dashboard({
 
             const totalExpectedIncome = Number(pdSettings.income) || 0;
             const remainingIncome = totalExpectedIncome - paidTotal;
-            const netSurplus = remainingIncome - unpaidTotal;
-            const isDeficit = netSurplus < 0;
             const expectedDateStr = pd === "Due Now" ? "ACTION REQ" : formatPaydayDateStr(pdSettings.date).toUpperCase();
+
+            // Hooking into the Waterfall logic
+            const waterfallBalance = hzBalances[pd];
+            const isDeficit = waterfallBalance < 0;
+            const subLabelStr = pd === "Due Now" ? "AVAILABLE NOW" : "AVAILABLE THIS WEEK";
 
             return (
               <div key={`hz-${pd}`} onClick={() => { if(collapsedPaydays[pd]) toggleCollapse(pd); document.getElementById(`vert-${pd}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} className={`shrink-0 w-52 p-5 rounded-[1.75rem] border cursor-pointer active:scale-95 transition-all shadow-md flex flex-col justify-between h-40 ${pd === "Due Now" ? (isDarkMode ? "bg-red-900/10 border-red-900/40" : "bg-red-50 border-red-100") : (isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100")}`}>
@@ -153,9 +188,9 @@ export default function Dashboard({
 
                 <div className="text-center py-2">
                    <p className={`text-2xl font-black tracking-tighter ${pd === "Due Now" ? "text-red-500" : isDeficit ? "text-red-500" : "text-[#10B981]"}`}>
-                     {isDeficit ? "-" : pd === "Due Now" ? "" : "+"}${Math.abs(netSurplus).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                     {isDeficit ? "-" : ""}${Math.abs(waterfallBalance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                    </p>
-                   <span className="text-[8px] font-black uppercase tracking-[0.15em] text-slate-400 opacity-60">Weekly Safe to Spend</span>
+                   <span className="text-[8px] font-black uppercase tracking-[0.15em] text-slate-400 opacity-60">{subLabelStr}</span>
                 </div>
 
                 <div className="flex justify-between items-end w-full pt-3 border-t border-dashed border-slate-700/30">
@@ -176,12 +211,6 @@ export default function Dashboard({
       </div>
 
       <main className="px-6 space-y-4">
-        <div className="flex justify-center px-1 mb-5">
-           <button onClick={() => setIsPaydaySetupOpen(true)} className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border shadow-sm transition-all active:scale-95 ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#1877F2]" : "bg-white border-slate-200 text-[#1877F2]"}`}>
-              <Settings2 size={18} strokeWidth={2.5} /> Set Your Pay Dates & Amounts
-           </button>
-        </div>
-
         <div className="space-y-4">
           {["Due Now", "Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].map((payday) => {
             const groupBills = billsByPayday[payday] || [];
@@ -256,7 +285,6 @@ export default function Dashboard({
                                   )}
                                </div>
 
-                               {/* BILL AMOUNT WITH NEON PILL GLOW */}
                                <div className={`px-3 py-1.5 rounded-[10px] border font-black text-lg tracking-tighter shrink-0 text-[#1877F2] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} drop-shadow-[0_0_12px_rgba(24,119,242,0.7)]`}>
                                   ${(Number(bill?.amount) || 0).toFixed(2)}
                                </div>
@@ -287,8 +315,6 @@ export default function Dashboard({
             {transactions.length === 0 ? ( <p className="text-center py-8 font-bold text-slate-400">No activity yet.</p> ) : (
               <div className="space-y-3">
                 {transactions.slice(0, 5).map((tx) => {
-                  
-                  // DYNAMIC COLOR ENGINE FOR ACTIVITY PILLS
                   const isBillTx = tx?.isBillPayment || tx?.type === "Bill" || (tx?.category && tx?.category.toLowerCase().includes("bill"));
                   let txColorStr = "";
                   let txBgBorderStr = "";
@@ -337,8 +363,6 @@ export default function Dashboard({
                             <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{tx?.category || "General"}</span>
                             <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mt-0.5">{tx?.date || "Recent"}</span>
                          </div>
-
-                         {/* DYNAMIC ACTIVITY AMOUNT PILL */}
                          <div className={`px-3 py-1.5 rounded-[10px] border font-black text-lg tracking-tighter shrink-0 ${txColorStr} ${txBgBorderStr} ${txShadowStr}`}>
                             {txPrefix}${(Number(tx?.amount) || 0).toFixed(2)}
                          </div>

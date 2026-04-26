@@ -197,7 +197,7 @@ export default function App() {
     const unsubBills = onSnapshot(collection(userRef, "bills"), (snap) => setBills(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     const unsubTxs = onSnapshot(query(collection(userRef, "transactions"), orderBy("createdAt", "desc")), (snap) => setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     const unsubTodos = onSnapshot(query(collection(userRef, "todos"), orderBy("createdAt", "desc")), (snap) => setTodos(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-    const unsubConfig = onSnapshot(doc(userRef, "settings", "paydayConfig"), (docSnap) => { if (docSnap.exists()) setPaydayConfig({ frequency: "Weekly", ...docSnap.data() }); });
+    const unsubConfig = onSnapshot(doc(db, "users", user.uid, "settings", "paydayConfig"), (docSnap) => { if (docSnap.exists()) setPaydayConfig({ frequency: "Weekly", ...docSnap.data() }); });
     return () => { unsubAcc(); unsubBills(); unsubTxs(); unsubTodos(); unsubConfig(); };
   }, [isMounted, isDemoMode, user]);
 

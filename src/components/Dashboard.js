@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Circle, CheckCircle2, ChevronUp, ChevronDown, Settings2, List, AlertCircle, RefreshCw, Zap, Calendar as CalendarIcon } from "lucide-react";
+import { Circle, CheckCircle2, ChevronUp, ChevronDown, Settings2, List, AlertCircle, RefreshCw, Zap, Calendar as CalendarIcon, Edit2 } from "lucide-react";
 import { getToken } from "firebase/messaging";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db, messaging } from "../firebase";
@@ -51,11 +51,9 @@ export default function Dashboard({
   if (currentHour >= 17 && currentHour < 22) { greetingStr = `Evening, ${userName}`; }
   if (currentHour >= 22 || currentHour < 5) { greetingStr = `Up late, ${userName}?`; }
 
-  // === RECALIBRATED HERO MATH ENGINE ===
   const totalIncomeBalance = accounts.reduce((sum, a) => sum + (Number(a?.balance) || 0), 0);
   const unpaidBillsAmount = bills.filter((b) => !b?.isPaid).reduce((sum, b) => sum + (Number(b?.amount) || 0), 0);
   
-  // Adjusted logic to subtract absolute magnitude if income is negative
   const safeToSpend = totalIncomeBalance < 0 
     ? -(Math.abs(unpaidBillsAmount) - Math.abs(totalIncomeBalance))
     : totalIncomeBalance - unpaidBillsAmount;
@@ -222,13 +220,21 @@ export default function Dashboard({
                         sortedBills.map((bill) => (
                           <div key={bill?.id} className={`flex flex-col p-4 rounded-2xl border shadow-sm ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-100"}`}>
                             
-                            <div className="flex items-center gap-3 mb-4 cursor-pointer" onClick={() => setSelectedEntry(bill)}>
-                               <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
-                                  {bill?.icon || "🧾"}
+                            <div className="flex items-start justify-between w-full mb-4">
+                               <div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => setSelectedEntry(bill)}>
+                                  <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                                     {bill?.icon || "🧾"}
+                                  </div>
+                                  <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                                     {bill?.name || "Unnamed"}
+                                  </p>
                                </div>
-                               <p className={`font-black text-base truncate flex-1 leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                                  {bill?.name || "Unnamed"}
-                               </p>
+                               <button 
+                                 onClick={(e) => { e.stopPropagation(); setSelectedEntry(bill); }} 
+                                 className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
+                               >
+                                  <Edit2 size={16} strokeWidth={2.5} />
+                               </button>
                             </div>
 
                             <div className="flex items-center justify-between gap-2">
@@ -279,15 +285,23 @@ export default function Dashboard({
             {transactions.length === 0 ? ( <p className="text-center py-8 font-bold text-slate-400">No activity yet.</p> ) : (
               <div className="space-y-3">
                 {transactions.slice(0, 5).map((tx) => (
-                  <div key={tx?.id} onClick={() => setSelectedEntry(tx)} className={`flex flex-col p-4 rounded-2xl border cursor-pointer active:scale-[0.98] transition-all ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-100"}`}>
+                  <div key={tx?.id} className={`flex flex-col p-4 rounded-2xl border active:scale-[0.98] transition-all ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-100"}`}>
                     
-                    <div className="flex items-center gap-3 mb-4">
-                       <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
-                          {tx?.icon || "💳"}
+                    <div className="flex items-start justify-between w-full mb-4">
+                       <div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => setSelectedEntry(tx)}>
+                          <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                             {tx?.icon || "💳"}
+                          </div>
+                          <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                             {tx?.name || "Transaction"}
+                          </p>
                        </div>
-                       <p className={`font-black text-base truncate flex-1 leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                          {tx?.name || "Transaction"}
-                       </p>
+                       <button 
+                         onClick={(e) => { e.stopPropagation(); setSelectedEntry(tx); }} 
+                         className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
+                       >
+                          <Edit2 size={16} strokeWidth={2.5} />
+                       </button>
                     </div>
 
                     <div className="flex items-center justify-between gap-2">

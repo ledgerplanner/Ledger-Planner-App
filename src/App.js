@@ -59,10 +59,11 @@ export default function App() {
   const [isEditingEntry, setIsEditingEntry] = useState(false);
   const [editEntryData, setEditEntryData] = useState({});
   
-  // 🔥 FIX 5: SMART INITIALIZATION DEFAULT STATE 🔥
-  const [collapsedPaydays, setCollapsedPaydays] = useState({ "Due Now": true, "Payday 1": false, "Payday 2": true, "Payday 3": true, "Payday 4": true, "Payday 5": true, "Unscheduled": true });
+  // 🔥 FIX 4: SMART INITIALIZATION DEFAULT STATE 🔥
+  const [collapsedPaydays, setCollapsedPaydays] = useState({ "Due Now": true, "Payday 1": true, "Payday 2": true, "Payday 3": true, "Payday 4": true, "Payday 5": true, "Unscheduled": true });
   const hasInitializedCollapse = useRef(false);
   
+  // 🔥 FIX 1: PAYDAY FREQUENCY CONFIG 🔥
   const [isPaydaySetupOpen, setIsPaydaySetupOpen] = useState(false);
   const [paydayConfig, setPaydayConfig] = useState({ frequency: "Weekly", "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } });
   const [editPaydayConfig, setEditPaydayConfig] = useState(paydayConfig);
@@ -209,7 +210,7 @@ export default function App() {
     }
   }, [selectedAccount]);
 
-  // 🔥 FIX 5: SMART INITIALIZATION LOGIC 🔥
+  // 🔥 FIX 4: SMART INITIALIZATION LOGIC 🔥
   useEffect(() => {
     if (!hasInitializedCollapse.current && bills.length > 0) {
       const todayLocal = new Date(); todayLocal.setHours(0, 0, 0, 0);

@@ -251,6 +251,12 @@ export default function App() {
     }
   }, [bills]);
 
+  // 🔥 SURGICAL FIX: The Drawer Sync Shield 🔥
+  const handleOpenPaydaySetup = () => {
+    setEditPaydayConfig(paydayConfig);
+    setIsPaydaySetupOpen(true);
+  };
+
   const handleAuthSubmit = async (e) => {
     e.preventDefault(); setIsAuthLoading(true); setAuthError("");
     try {
@@ -668,7 +674,7 @@ export default function App() {
         if (!isNaN(pdDate.getTime())) {
             pdDate.setUTCHours(0, 0, 0, 0);
             const diffDays = Math.ceil((pdDate - today) / (1000 * 60 * 60 * 24));
-            if (diffDays >= 0 && diffDays <= 3) { currentAlerts.push({ id: `payday-${pdId}`, type: 'info', icon: <CalendarIcon size={20} className="text-[#1877F2]" />, title: 'Upcoming Payday', message: `${pdId} is approaching.`, time: `${diffDays}D`, action: () => { setIsNotificationsOpen(false); setIsPaydaySetupOpen(true); } }); }
+            if (diffDays >= 0 && diffDays <= 3) { currentAlerts.push({ id: `payday-${pdId}`, type: 'info', icon: <CalendarIcon size={20} className="text-[#1877F2]" />, title: 'Upcoming Payday', message: `${pdId} is approaching.`, time: `${diffDays}D`, action: () => { setIsNotificationsOpen(false); handleOpenPaydaySetup(); } }); }
             const pdBills = bills.filter(b => b.payday === pdId && !b.isPaid);
             const pdTotal = pdBills.reduce((sum, b) => sum + (b.amount || 0), 0);
             const pdIncome = parseFloat(config.income) || 0;
@@ -900,7 +906,7 @@ export default function App() {
         {/* MAIN ROUTER CONTENT */}
         <div className="flex-1 flex flex-col relative h-full overflow-hidden">
           <div className={`flex-1 overflow-y-auto hide-scrollbar lg:pb-0 ${isDemoMode ? "pb-[220px]" : "pb-24"}`} ref={scrollRef} onScroll={handleScroll}>
-            {activeTab === "home" && <Dashboard userName={userName} accounts={accounts} bills={dynamicBills} transactions={transactions} paydayConfig={paydayConfig} setEditPaydayConfig={setEditPaydayConfig} setIsPaydaySetupOpen={setIsPaydaySetupOpen} setIsNotificationsOpen={setIsNotificationsOpen} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} isDarkMode={isDarkMode} formatPaydayDateStr={formatPaydayDateStr} renderHeroShell={renderHeroShell} changeTab={changeTab} hasConsumedAMBriefing={hasConsumedAMBriefing} setHasConsumedAMBriefing={setHasConsumedAMBriefing} hasConsumedPMBriefing={hasConsumedPMBriefing} setHasConsumedPMBriefing={setHasConsumedPMBriefing} />}
+            {activeTab === "home" && <Dashboard userName={userName} accounts={accounts} bills={dynamicBills} transactions={transactions} paydayConfig={paydayConfig} setEditPaydayConfig={setEditPaydayConfig} setIsPaydaySetupOpen={handleOpenPaydaySetup} setIsNotificationsOpen={setIsNotificationsOpen} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} isDarkMode={isDarkMode} formatPaydayDateStr={formatPaydayDateStr} renderHeroShell={renderHeroShell} changeTab={changeTab} hasConsumedAMBriefing={hasConsumedAMBriefing} setHasConsumedAMBriefing={setHasConsumedAMBriefing} hasConsumedPMBriefing={hasConsumedPMBriefing} setHasConsumedPMBriefing={setHasConsumedPMBriefing} />}
             {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} isDemoMode={isDemoMode} />}
             {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} paydayConfig={paydayConfig} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} handleRolloverMonth={handleRolloverMonth} />}
             {activeTab === "activity" && <Activity userName={userName} transactions={transactions} activitySearch={activitySearch} setActivitySearch={setActivitySearch} activityFilter={activityFilter} setActivityFilter={setActivityFilter} isDarkMode={isDarkMode} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} />}

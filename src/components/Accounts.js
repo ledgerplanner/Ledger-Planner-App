@@ -20,12 +20,16 @@ export default function Accounts({
   
   const today = new Date();
   
-  // Find Account Inception Date (to enforce the Zero-Rule)
+  // Find Account Inception Date (to enforce the Zero-Rule and kill 1969 glitches)
   let inceptionDate = today;
   if (transactions && transactions.length > 0) {
     const validDates = transactions
-      .map(tx => new Date(tx.rawDate || tx.date || today))
-      .filter(d => !isNaN(d));
+      .map(tx => {
+          if (!tx.rawDate && !tx.date) return null;
+          return new Date(tx.rawDate || tx.date);
+      })
+      .filter(d => d && !isNaN(d.getTime()) && d.getFullYear() > 2000); // Ruthless filter
+      
     if (validDates.length > 0) {
       inceptionDate = new Date(Math.min(...validDates));
     }
@@ -60,7 +64,7 @@ export default function Accounts({
           
           currentCalcNW -= netCashFlowMonthAhead;
 
-          // ZERO-RULE: If the month predates the user's first transaction, force $0.00
+          // ZERO-RULE: If the month predates the user's true first transaction, force $0.00
           let displayVal = currentCalcNW;
           if (tYear < inceptionDate.getFullYear() || (tYear === inceptionDate.getFullYear() && tMonth < inceptionDate.getMonth())) {
               displayVal = 0;

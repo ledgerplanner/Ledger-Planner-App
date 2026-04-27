@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   Home, Wallet, Calendar as CalendarIcon, CreditCard, CheckSquare,
   Bell, Moon, Sun, X, Plus, ArrowRight, CheckCircle2, Trash2, ArrowDown, AlertCircle, Edit2, LogOut, RefreshCw, Save, ArrowRightLeft, Settings, Zap, User, HelpCircle,
-  PlayCircle, ChevronUp, ChevronDown, ShieldCheck, TrendingUp
+  PlayCircle, ChevronUp, ChevronDown, ShieldCheck, TrendingUp, Target
 } from "lucide-react";
 
 // === FIREBASE INITIALIZATION ===
@@ -84,11 +84,20 @@ export default function App() {
   const [editAccountBalance, setEditAccountBalance] = useState("0");
   const [editAccountDesc, setEditAccountDesc] = useState("");
   
+  // === BRAND NEW: GOAL ENGINE & LIABILITY STATES ===
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
   const [newAccName, setNewAccName] = useState("");
   const [newAccBalance, setNewAccBalance] = useState("");
   const [newAccType, setNewAccType] = useState("Checking");
   const [newAccDesc, setNewAccDesc] = useState("");
+  const [newAccIsLiability, setNewAccIsLiability] = useState(false);
+
+  const [isAddGoalOpen, setIsAddGoalOpen] = useState(false);
+  const [newGoalName, setNewGoalName] = useState("");
+  const [newGoalTarget, setNewGoalTarget] = useState("");
+  const [newGoalDeposit, setNewGoalDeposit] = useState("");
+  const [newGoalIcon, setNewGoalIcon] = useState("🎯");
+  const [isGoalIconSelectorOpen, setIsGoalIconSelectorOpen] = useState(false);
 
   const [activitySearch, setActivitySearch] = useState("");
   const [activityFilter, setActivityFilter] = useState("All");
@@ -140,7 +149,7 @@ export default function App() {
     return [];
   });
 
-  const categoryEmojis = ["💵", "💲", "🧾", "📋", "🏠", "💧", "⚡", "📺", "🚗", "⛽", "🚕", "🚇", "✈️", "🌴", "🏋️", "💳", "🎓", "🛒", "🛍️", "👗", "👟", "💅", "💈", "🍔", "🌮", "🍣", "☕", "🍻", "🍹", "🏥", "💊", "🐶", "🐾", "🎉", "🎟️", "🎬", "🎮", "🕹️", "📱", "💻", "💼", "💰", "₿", "💎", "⌚", "🎧", "🏪", "📶", "☁️", "🤖", "🚀"];
+  const categoryEmojis = ["💵", "💲", "🧾", "📋", "🏠", "💧", "⚡", "📺", "🚗", "⛽", "🚕", "🚇", "✈️", "🌴", "🏋️", "💳", "🎓", "🛒", "🛍️", "👗", "👟", "💅", "💈", "🍔", "🌮", "🍣", "☕", "🍻", "🍹", "🏥", "💊", "🐶", "🐾", "🎉", "🎟️", "🎬", "🎮", "🕹️", "📱", "💻", "💼", "💰", "₿", "💎", "⌚", "🎧", "🏪", "📶", "☁️", "🤖", "🚀", "🎯"];
   
   const modernCategories = [
     { group: "Income & Wealth", items: ["Primary Salary", "Side Hustle / Gig", "Tips / Cash", "Investments / Crypto", "Transfers (Venmo/Zelle)", "Refunds & Adjustments", "Cash App", "PayDay Loans", "Unemployment"] },
@@ -463,11 +472,17 @@ export default function App() {
     setIsEditingEntry(false); triggerVictory();
   };
 
+  // 🔥 TARGET 2: ASSET / LIABILITY MATH ENGINE 🔥
   const handleAddAccount = async () => { 
     const startBal = parseFloat(newAccBalance);
     if (!newAccName.trim() || isNaN(startBal)) return;
-    let finalBalance = startBal;
-    if (newAccType === "Credit Card" && startBal > 0) finalBalance = -startBal;
+    
+    let finalBalance = Math.abs(startBal);
+    // Apply liability toggle or credit card auto-math
+    if (newAccIsLiability || newAccType === "Credit Card") {
+        finalBalance = -finalBalance;
+    }
+    
     const getIcon = (type) => { if (type === "Credit Card") return "💳"; if (type === "401k / Retirement") return "🌴"; if (type === "Savings") return "📈"; if (type === "Cash") return "💵"; return "🏦"; };
     
     if (isDemoMode) {
@@ -480,7 +495,26 @@ export default function App() {
         await addDoc(collection(db, "users", user.uid, "transactions"), { name: `${newAccName} (Opening)`, icon: getIcon(newAccType), amount: Math.abs(startBal), date: autoTimeStamp, type: finalBalance < 0 ? "Expense" : "Income", category: finalBalance < 0 ? "Initial Debt" : "Opening Balance", accountId: accRef.id, createdAt: serverTimestamp() });
       }
     }
-    triggerVictory(); setIsAddAccountOpen(false); setNewAccName(""); setNewAccBalance(""); setNewAccDesc(""); setNewAccType("Checking");
+    triggerVictory(); setIsAddAccountOpen(false); setNewAccName(""); setNewAccBalance(""); setNewAccDesc(""); setNewAccType("Checking"); setNewAccIsLiability(false);
+  };
+
+  // 🔥 TARGET 4: GOAL CREATION MATH ENGINE 🔥
+  const handleAddGoal = async () => {
+    const target = parseFloat(newGoalTarget);
+    const deposit = parseFloat(newGoalDeposit) || 0; // Default blank to $0.00
+    if (!newGoalName.trim() || isNaN(target) || target <= 0) return; // Must have valid target
+
+    if (isDemoMode) {
+      const newGoal = { id: `goal_demo_${Date.now()}`, name: newGoalName, type: "Goal", balance: deposit, targetAmount: target, icon: newGoalIcon };
+      setAccounts([...accounts, newGoal]);
+    } else {
+      const accRef = await addDoc(collection(db, "users", user.uid, "accounts"), { name: newGoalName, type: "Goal", balance: deposit, targetAmount: target, icon: newGoalIcon, isArchived: false });
+      if (deposit > 0) {
+        const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+        await addDoc(collection(db, "users", user.uid, "transactions"), { name: `${newGoalName} (Initial Deposit)`, icon: newGoalIcon, amount: deposit, date: autoTimeStamp, type: "Expense", category: "Savings Transfer", accountId: accRef.id, createdAt: serverTimestamp() });
+      }
+    }
+    triggerVictory(); setIsAddGoalOpen(false); setNewGoalName(""); setNewGoalTarget(""); setNewGoalDeposit(""); setNewGoalIcon("🎯");
   };
 
   const handleTransferNumpad = (btn) => {
@@ -907,7 +941,7 @@ export default function App() {
         <div className="flex-1 flex flex-col relative h-full overflow-hidden">
           <div className={`flex-1 overflow-y-auto hide-scrollbar lg:pb-0 ${isDemoMode ? "pb-[220px]" : "pb-24"}`} ref={scrollRef} onScroll={handleScroll}>
             {activeTab === "home" && <Dashboard userName={userName} accounts={accounts} bills={dynamicBills} transactions={transactions} paydayConfig={paydayConfig} setEditPaydayConfig={setEditPaydayConfig} setIsPaydaySetupOpen={handleOpenPaydaySetup} setIsNotificationsOpen={setIsNotificationsOpen} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} isDarkMode={isDarkMode} formatPaydayDateStr={formatPaydayDateStr} renderHeroShell={renderHeroShell} changeTab={changeTab} hasConsumedAMBriefing={hasConsumedAMBriefing} setHasConsumedAMBriefing={setHasConsumedAMBriefing} hasConsumedPMBriefing={hasConsumedPMBriefing} setHasConsumedPMBriefing={setHasConsumedPMBriefing} />}
-            {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} isDemoMode={isDemoMode} />}
+            {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setIsAddGoalOpen={setIsAddGoalOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} isDemoMode={isDemoMode} />}
             {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} paydayConfig={paydayConfig} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} handleRolloverMonth={handleRolloverMonth} />}
             {activeTab === "activity" && <Activity userName={userName} transactions={transactions} activitySearch={activitySearch} setActivitySearch={setActivitySearch} activityFilter={activityFilter} setActivityFilter={setActivityFilter} isDarkMode={isDarkMode} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} />}
             {activeTab === "todo" && <Todo userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} newTodoType={newTodoType} setNewTodoType={setNewTodoType} isDarkMode={isDarkMode} handleAddTodo={async (e) => { e.preventDefault(); if(!newTodoText.trim()) return; if (isDemoMode) { setTodos([{ id: `todo_demo_${Date.now()}`, text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false }, ...todos]); } else { await addDoc(collection(db, "users", user.uid, "todos"), { text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() }); } triggerVictory(); setNewTodoText(""); setNewTodoPriority(3); }} toggleTodoStatus={async (id) => { triggerHaptic(); const todo = todos.find(t => t.id === id); if (isDemoMode) { setTodos(todos.map(t => t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)); } else { await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); } }} setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} />}
@@ -1103,8 +1137,53 @@ export default function App() {
                 <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Current Balance</label><input type="number" value={newAccBalance} onChange={(e) => setNewAccBalance(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
                 <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Type</label><select value={newAccType} onChange={(e) => setNewAccType(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}><option>Checking</option><option>Savings</option><option>Credit Card</option><option>Cash</option><option>401k / Retirement</option></select></div>
                 <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Details</label><input type="text" placeholder={newAccType} value={newAccDesc} onChange={(e) => setNewAccDesc(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white placeholder-slate-600" : "bg-white border-slate-200 text-slate-900 placeholder-slate-300"}`} /></div>
+                
+                {/* BRAND NEW LIABILITY TOGGLE FOR MOBILE KEYBOARDS */}
+                <div className={`flex items-center justify-between mt-2 mb-2 p-4 rounded-2xl border transition-colors ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                   <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Liability / Debt</span>
+                   <button onClick={() => setNewAccIsLiability(!newAccIsLiability)} className={`w-12 h-6 rounded-full transition-colors relative ${newAccIsLiability ? "bg-red-500" : "bg-[#10B981]"}`}>
+                      <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${newAccIsLiability ? "translate-x-7" : "translate-x-1"}`}></div>
+                   </button>
+                </div>
+
                 <button onClick={handleAddAccount} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2">Save Account <CheckCircle2 size={16} /></button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* BRAND NEW: GOAL CREATION ENGINE DRAWER */}
+        {isAddGoalOpen && (
+          <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsAddGoalOpen(false)}></div>
+            <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+              <div className="p-6 border-b flex justify-between items-center">
+                <h3 className={`font-black uppercase tracking-widest flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}><Target size={18}/> Create Savings Goal</h3>
+                <button onClick={() => setIsAddGoalOpen(false)} className={closeButtonClass}><X size={18} /></button>
+              </div>
+              <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+                <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Goal Vision</label><input type="text" placeholder="e.g. Miami Trip, Emergency Fund" value={newGoalName} onChange={(e) => setNewGoalName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white placeholder-slate-600" : "bg-white border-slate-200 text-slate-900 placeholder-slate-400"}`} /></div>
+                
+                <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Target Amount</label><input type="number" value={newGoalTarget} onChange={(e) => setNewGoalTarget(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
+                
+                <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Initial Deposit</label><input type="number" value={newGoalDeposit} onChange={(e) => setNewGoalDeposit(e.target.value)} placeholder="0.00" className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white placeholder-slate-600" : "bg-white border-slate-200 text-slate-900 placeholder-slate-400"}`} /></div>
+                
+                <div className="relative cursor-pointer" onClick={() => setIsGoalIconSelectorOpen(true)}>
+                  <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Icon</label>
+                  <div className={`w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}><span className="text-xl leading-none">{newGoalIcon}</span><ArrowDown size={14} className={isDarkMode ? "text-slate-400" : "text-slate-500"} /></div>
+                </div>
+
+                <button onClick={handleAddGoal} disabled={!newGoalName.trim() || !newGoalTarget || parseFloat(newGoalTarget) <= 0} className={`w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-[0_8px_16px_rgba(16,185,129,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2 ${!newGoalName.trim() || !newGoalTarget || parseFloat(newGoalTarget) <= 0 ? "bg-slate-300 opacity-50 shadow-none cursor-not-allowed" : "bg-[#10B981]"}`}>Launch Goal 🚀</button>
+              </div>
+
+              {isGoalIconSelectorOpen && (
+                 <div className={`absolute inset-0 z-[150] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
+                    <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}><h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Icon</h3><button onClick={() => setIsGoalIconSelectorOpen(false)} className={closeButtonClass}><X size={18}/></button></div>
+                    <div className={`flex-1 overflow-y-auto p-4 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : "pb-20"}`}>
+                       <div className="grid grid-cols-6 lg:grid-cols-8 gap-3">{categoryEmojis.map(emoji => (<button key={emoji} onClick={() => { setNewGoalIcon(emoji); setIsGoalIconSelectorOpen(false); }} className={`w-12 h-12 flex items-center justify-center rounded-xl text-2xl border transition-all active:scale-90 ${newGoalIcon === emoji ? `bg-[#10B981] text-white border-transparent shadow-md` : isDarkMode ? "bg-slate-800 border-slate-700 hover:bg-slate-700" : "bg-slate-50 border-slate-200 hover:bg-slate-100"}`}>{emoji}</button>))}</div>
+                    </div>
+                 </div>
+              )}
             </div>
           </div>
         )}
@@ -1155,7 +1234,7 @@ export default function App() {
               </div>
               <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
                 <div className="relative">
-                  <label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest text-slate-400 z-10">Update Balance</label>
+                  <label className={`absolute left-4 top-2 text-[9px] font-black uppercase tracking-widest z-10 ${isDarkMode ? "text-[#1877F2]" : "text-[#1877F2]"}`}>QUICK BALANCE UPDATE</label>
                   <div className="relative w-full flex items-center">
                     <span className={`absolute left-5 top-[22px] font-bold text-lg ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
                     <input 

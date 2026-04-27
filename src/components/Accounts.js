@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowRightLeft, PlusCircle, Target } from "lucide-react";
+import { ArrowRightLeft, PlusCircle, Target, Edit2 } from "lucide-react";
 
 export default function Accounts({
   userName,
@@ -15,38 +15,58 @@ export default function Accounts({
 }) {
   const [activeChartNode, setActiveChartNode] = useState(5);
 
-  // === DYNAMIC TIME-MACHINE CHART ENGINE (Negative Unlocked) ===
-  const netWorth = accounts.reduce((sum, a) => sum + (a.balance || 0), 0);
+  // === DYNAMIC TIME-MACHINE CHART ENGINE (Precision & Zero-Rule Unlocked) ===
+  const netWorth = accounts.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
   
+  const today = new Date();
+  
+  // Find Account Inception Date (to enforce the Zero-Rule)
+  let inceptionDate = today;
+  if (transactions && transactions.length > 0) {
+    const validDates = transactions
+      .map(tx => new Date(tx.rawDate || tx.date || today))
+      .filter(d => !isNaN(d));
+    if (validDates.length > 0) {
+      inceptionDate = new Date(Math.min(...validDates));
+    }
+  }
+
   const historyData = [];
   let currentCalcNW = netWorth;
-  const today = new Date();
 
   for(let i=0; i<6; i++) {
     const targetDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
     const monthName = targetDate.toLocaleString('default', { month: 'short' });
+    const tMonth = targetDate.getMonth();
+    const tYear = targetDate.getFullYear();
     
     if (i === 0) {
-        historyData.unshift({ label: monthName, val: currentCalcNW, month: targetDate.getMonth(), year: targetDate.getFullYear() });
+        historyData.unshift({ label: monthName, val: currentCalcNW, month: tMonth, year: tYear });
     } else {
         if (isDemoMode) {
           const variance = 1 - (Math.random() * (0.06 - 0.02) + 0.02);
           currentCalcNW = currentCalcNW * variance;
-          historyData.unshift({ label: monthName, val: currentCalcNW, month: targetDate.getMonth(), year: targetDate.getFullYear() });
+          historyData.unshift({ label: monthName, val: currentCalcNW, month: tMonth, year: tYear });
         } else {
-          const monthAhead = historyData[0];
+          const monthAhead = historyData[0]; 
           const txsInMonthAhead = transactions.filter(tx => {
-              if (!tx.createdAt) return false;
-              const d = typeof tx.createdAt.toDate === 'function' ? tx.createdAt.toDate() : new Date(tx.createdAt);
+              const d = new Date(tx.rawDate || tx.date || today);
               return d.getMonth() === monthAhead.month && d.getFullYear() === monthAhead.year;
           });
           
           const netCashFlowMonthAhead = txsInMonthAhead.reduce((sum, tx) => {
-              return sum + (tx.type === "Income" ? tx.amount : -tx.amount);
+              return sum + (tx.type === "Income" ? Number(tx.amount) : -Number(tx.amount));
           }, 0);
           
           currentCalcNW -= netCashFlowMonthAhead;
-          historyData.unshift({ label: monthName, val: currentCalcNW, month: targetDate.getMonth(), year: targetDate.getFullYear() });
+
+          // ZERO-RULE: If the month predates the user's first transaction, force $0.00
+          let displayVal = currentCalcNW;
+          if (tYear < inceptionDate.getFullYear() || (tYear === inceptionDate.getFullYear() && tMonth < inceptionDate.getMonth())) {
+              displayVal = 0;
+          }
+
+          historyData.unshift({ label: monthName, val: displayVal, month: tMonth, year: tYear });
         }
     }
   }
@@ -124,25 +144,44 @@ export default function Accounts({
                     const isNegative = acc.balance < 0;
                     const isPositive = acc.balance > 0;
                     return (
-                    <div key={acc.id} onClick={() => { setSelectedAccount(acc); setEditAccountBalance(Math.abs(acc.balance).toString()); }} className={`flex items-center justify-between p-3.5 rounded-2xl border shadow-sm cursor-pointer transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
-                        <div className="flex items-center gap-4 flex-1 min-w-0 pr-3">
-                            <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
-                                {acc.icon}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className={`font-bold text-sm break-words whitespace-normal leading-tight mb-0.5 ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{acc.name}</p>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{acc.description || acc.type}</p>
-                            </div>
+                    <div key={acc.id} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
+                        
+                        {/* ROW 1: Identity & Scroll-Protector Pencil */}
+                        <div className="flex items-start justify-between w-full mb-4">
+                           <div className="flex items-center gap-3 flex-1">
+                              <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                                  {acc.icon}
+                              </div>
+                              <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
+                                  {acc.name}
+                              </p>
+                           </div>
+                           <button 
+                             onClick={(e) => { e.stopPropagation(); setSelectedAccount(acc); setEditAccountBalance(Math.abs(acc.balance).toString()); }}
+                             className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
+                           >
+                              <Edit2 size={16} strokeWidth={2.5} />
+                           </button>
                         </div>
-                        <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight transition-colors shrink-0 ${
-                        isNegative 
-                            ? isDarkMode ? "bg-red-900/30 text-red-400" : "bg-red-50 text-red-600"
-                            : isPositive 
-                            ? isDarkMode ? "bg-emerald-900/30 text-emerald-400" : "bg-emerald-50 text-emerald-600"
-                            : isDarkMode ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-500"
-                        }`}>
-                        {isNegative ? "-" : ""}${Math.abs(acc.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+
+                        {/* ROW 2: Description & Shrunken Amount Pill */}
+                        <div className="flex items-center justify-between gap-2">
+                           <div className="flex flex-col shrink-0">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                  {acc.description || acc.type}
+                              </span>
+                           </div>
+                           <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 transition-colors ${
+                               isNegative 
+                                   ? isDarkMode ? "bg-red-900/30 text-red-400 border-red-900/50 shadow-[0_4px_12px_rgba(239,68,68,0.2)]" : "bg-red-50 text-red-600 border-red-200 shadow-[0_4px_12px_rgba(239,68,68,0.2)]"
+                                   : isPositive 
+                                   ? isDarkMode ? "bg-emerald-900/30 text-emerald-400 border-emerald-900/50 shadow-[0_4px_12px_rgba(16,185,129,0.2)]" : "bg-emerald-50 text-emerald-600 border-emerald-200 shadow-[0_4px_12px_rgba(16,185,129,0.2)]"
+                                   : isDarkMode ? "bg-slate-800 text-slate-400 border-slate-700" : "bg-slate-100 text-slate-500 border-slate-200"
+                           }`}>
+                               {isNegative ? "-" : ""}${Math.abs(acc.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                           </div>
                         </div>
+
                     </div>
                     );
                 })}
@@ -152,7 +191,7 @@ export default function Accounts({
         </div>
 
         {/* ========================================== */}
-        {/* 🔥 SAVINGS GOALS VAULT (HARD-LEDGER) 🔥 */}
+        {/* 🔥 SAVINGS GOALS VAULT (GORILLA GLUED) 🔥 */}
         {/* ========================================== */}
         <hr className="my-8 border-dashed border-slate-200 dark:border-slate-800" />
         

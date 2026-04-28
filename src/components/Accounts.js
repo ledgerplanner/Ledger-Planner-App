@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowRightLeft, PlusCircle, Target, Edit2 } from "lucide-react";
+import { ArrowRightLeft, PlusCircle, Edit2 } from "lucide-react";
 
 export default function Accounts({
   userName,
@@ -16,7 +16,9 @@ export default function Accounts({
   const [activeChartNode, setActiveChartNode] = useState(5);
 
   // === DYNAMIC TIME-MACHINE CHART ENGINE (Precision & Zero-Rule Unlocked) ===
-  const netWorth = accounts.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
+  // Filter out any lingering "Goal" accounts from Net Worth to keep it pure
+  const liquidAccounts = accounts.filter(a => a.type !== "Goal");
+  const netWorth = liquidAccounts.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
   
   const today = new Date();
   
@@ -115,10 +117,6 @@ export default function Accounts({
     </div>
   );
 
-  // === HARD-LEDGER DATA SPLIT ===
-  const standardAccounts = accounts.filter(a => a.type !== "Goal");
-  const goalAccounts = accounts.filter(a => a.type === "Goal");
-
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
       {renderHeroShell(`${userName}'s Accounts`, graphicContent)}
@@ -129,7 +127,7 @@ export default function Accounts({
           <button onClick={() => setIsTransferOpen(true)} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#1877F2] text-white shadow-blue-900/20" : "bg-[#1877F2] text-white shadow-blue-500/30"}`}>
             <ArrowRightLeft size={20} /> Transfer
           </button>
-          <button onClick={() => setIsAddGoalOpen(true)} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#10B981] text-white shadow-emerald-900/20" : "bg-[#10B981] text-white shadow-emerald-500/30"}`}>
+          <button onClick={() => setIsAddAccountOpen(true)} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#10B981] text-white shadow-emerald-900/20" : "bg-[#10B981] text-white shadow-emerald-500/30"}`}>
             <PlusCircle size={20} /> Add Account
           </button>
         </div>
@@ -140,11 +138,11 @@ export default function Accounts({
         <div className="space-y-4">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">All Accounts</h3>
           <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
-            {standardAccounts.length === 0 ? (
-                <p className="text-center text-xs font-bold text-slate-400 py-6">No standard accounts added.</p>
+            {liquidAccounts.length === 0 ? (
+                <p className="text-center text-xs font-bold text-slate-400 py-6">No accounts added.</p>
             ) : (
                 <div className="space-y-3">
-                {standardAccounts.map((acc) => {
+                {liquidAccounts.map((acc) => {
                     const isNegative = acc.balance < 0;
                     const isPositive = acc.balance > 0;
                     return (
@@ -193,63 +191,6 @@ export default function Accounts({
             )}
           </div>
         </div>
-
-        {/* ========================================== */}
-        {/* 🔥 SAVINGS GOALS VAULT (GORILLA GLUED) 🔥 */}
-        {/* ========================================== */}
-        <hr className="my-8 border-dashed border-slate-200 dark:border-slate-800" />
-        
-        <div className="space-y-4">
-            <div className="flex items-center justify-between px-2">
-                <h3 className="text-xs font-black uppercase tracking-widest text-[#10B981]">Savings Goals Vault</h3>
-            </div>
-            
-            <button onClick={() => setIsAddAccountOpen(true)} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-[0.98] border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-emerald-900/30 text-[#10B981] hover:bg-slate-800" : "bg-white border-emerald-100 text-[#10B981] hover:bg-emerald-50"}`}>
-                <Target size={18} strokeWidth={2.5} /> Add New Goal
-            </button>
-
-            {goalAccounts.length > 0 && (
-                <div className="space-y-3 pt-2">
-                    {goalAccounts.map((goal) => {
-                        const savedAmount = goal.balance || 0;
-                        const targetAmount = goal.targetAmount || 0;
-                        const remaining = Math.max(0, targetAmount - savedAmount);
-                        const progressPct = targetAmount > 0 ? Math.min((savedAmount / targetAmount) * 100, 100) : 0;
-                        
-                        return (
-                            <div key={goal.id} onClick={() => { setSelectedAccount(goal); setEditAccountBalance(Math.abs(goal.balance).toString()); }} className={`flex flex-col p-5 rounded-[2rem] border shadow-sm cursor-pointer transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#1E293B] border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
-                                
-                                <div className="flex items-center gap-4 mb-5 flex-1 min-w-0">
-                                    <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-emerald-900/20 border-emerald-900/50" : "bg-emerald-50 border-emerald-100"}`}>
-                                        {goal.icon}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className={`font-bold text-sm break-words whitespace-normal leading-tight mb-0.5 ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{goal.name}</p>
-                                        <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{progressPct.toFixed(0)}% FUNDED</p>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2 w-full">
-                                    <div className="flex justify-between items-end w-full">
-                                        <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-[#10B981]" : "text-[#10B981]"}`}>
-                                            ${remaining.toLocaleString("en-US", { minimumFractionDigits: 2 })} REMAINING
-                                        </span>
-                                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
-                                            OF ${targetAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                                        </span>
-                                    </div>
-                                    <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-800" : "bg-slate-100"}`}>
-                                        <div className="h-full bg-[#10B981] transition-all duration-1000 ease-out" style={{ width: `${progressPct}%` }}></div>
-                                    </div>
-                                </div>
-                                
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
-        </div>
-
       </main>
     </div>
   );

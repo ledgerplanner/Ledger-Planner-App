@@ -16,21 +16,28 @@ export default function Accounts({
   const [activeChartNode, setActiveChartNode] = useState(5);
 
   // === DYNAMIC TIME-MACHINE CHART ENGINE (Precision & Zero-Rule Unlocked) ===
-  // Filter out any lingering "Goal" accounts from Net Worth to keep it pure
-  const liquidAccounts = accounts.filter(a => a.type !== "Goal");
-  const netWorth = liquidAccounts.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
+  const netWorth = accounts.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
   
   const today = new Date();
   
-  // Find Account Inception Date (to enforce the Zero-Rule and kill 1969 glitches)
+  // Find Account Inception Date (to enforce the Zero-Rule and kill the 2001 Ghost)
   let inceptionDate = today;
   if (transactions && transactions.length > 0) {
     const validDates = transactions
       .map(tx => {
           if (!tx.rawDate && !tx.date) return null;
-          return new Date(tx.rawDate || tx.date);
+          
+          let parsedDate = new Date(tx.rawDate || tx.date);
+          
+          // THE 2001 GHOST INTERCEPTOR
+          // If the mobile browser panicked and assigned the year 2001, forcefully correct it.
+          if (parsedDate.getFullYear() === 2001) {
+              parsedDate.setFullYear(today.getFullYear());
+          }
+
+          return parsedDate;
       })
-      .filter(d => d && !isNaN(d.getTime()) && d.getFullYear() > 2000); // Ruthless filter
+      .filter(d => d && !isNaN(d.getTime())); 
       
     if (validDates.length > 0) {
       inceptionDate = new Date(Math.min(...validDates));
@@ -56,7 +63,9 @@ export default function Accounts({
         } else {
           const monthAhead = historyData[0]; 
           const txsInMonthAhead = transactions.filter(tx => {
-              const d = new Date(tx.rawDate || tx.date || today);
+              let d = new Date(tx.rawDate || tx.date || today);
+              if (d.getFullYear() === 2001) d.setFullYear(today.getFullYear()); // Ghost interceptor
+              
               return d.getMonth() === monthAhead.month && d.getFullYear() === monthAhead.year;
           });
           
@@ -138,11 +147,11 @@ export default function Accounts({
         <div className="space-y-4">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">All Accounts</h3>
           <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
-            {liquidAccounts.length === 0 ? (
+            {accounts.length === 0 ? (
                 <p className="text-center text-xs font-bold text-slate-400 py-6">No accounts added.</p>
             ) : (
                 <div className="space-y-3">
-                {liquidAccounts.map((acc) => {
+                {accounts.map((acc) => {
                     const isNegative = acc.balance < 0;
                     const isPositive = acc.balance > 0;
                     return (

@@ -30,7 +30,6 @@ export default function Accounts({
           let parsedDate = new Date(tx.rawDate || tx.date);
           
           // THE 2001 GHOST INTERCEPTOR
-          // If the mobile browser panicked and assigned the year 2001, forcefully correct it.
           if (parsedDate.getFullYear() === 2001) {
               parsedDate.setFullYear(today.getFullYear());
           }
@@ -168,7 +167,7 @@ export default function Accounts({
                               </p>
                            </div>
                            <button 
-                             onClick={(e) => { e.stopPropagation(); setSelectedAccount(acc); setEditAccountBalance(Math.abs(acc.balance).toString()); }}
+                             onClick={(e) => { e.stopPropagation(); setSelectedAccount(acc); setEditAccountBalance(acc.balance.toString()); }}
                              className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
                            >
                               <Edit2 size={16} strokeWidth={2.5} />

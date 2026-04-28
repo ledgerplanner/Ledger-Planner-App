@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   Home, Wallet, Calendar as CalendarIcon, CreditCard, CheckSquare,
   Bell, Moon, Sun, X, Plus, ArrowRight, CheckCircle2, Trash2, ArrowDown, AlertCircle, Edit2, LogOut, RefreshCw, Save, ArrowRightLeft, Settings, Zap, User, HelpCircle,
-  PlayCircle, ChevronUp, ChevronDown, ShieldCheck, TrendingUp, Target
+  PlayCircle, ChevronUp, ChevronDown, ShieldCheck, TrendingUp
 } from "lucide-react";
 
 // === FIREBASE INITIALIZATION ===
@@ -84,20 +84,12 @@ export default function App() {
   const [editAccountBalance, setEditAccountBalance] = useState("0");
   const [editAccountDesc, setEditAccountDesc] = useState("");
   
-  // === BRAND NEW: GOAL ENGINE & LIABILITY STATES ===
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
   const [newAccName, setNewAccName] = useState("");
   const [newAccBalance, setNewAccBalance] = useState("");
   const [newAccType, setNewAccType] = useState("Checking");
   const [newAccDesc, setNewAccDesc] = useState("");
   const [newAccIsLiability, setNewAccIsLiability] = useState(false);
-
-  const [isAddGoalOpen, setIsAddGoalOpen] = useState(false);
-  const [newGoalName, setNewGoalName] = useState("");
-  const [newGoalTarget, setNewGoalTarget] = useState("");
-  const [newGoalDeposit, setNewGoalDeposit] = useState("");
-  const [newGoalIcon, setNewGoalIcon] = useState("🎯");
-  const [isGoalIconSelectorOpen, setIsGoalIconSelectorOpen] = useState(false);
 
   const [activitySearch, setActivitySearch] = useState("");
   const [activityFilter, setActivityFilter] = useState("All");
@@ -149,7 +141,7 @@ export default function App() {
     return [];
   });
 
-  const categoryEmojis = ["💵", "💲", "🧾", "📋", "🏠", "💧", "⚡", "📺", "🚗", "⛽", "🚕", "🚇", "✈️", "🌴", "🏋️", "💳", "🎓", "🛒", "🛍️", "👗", "👟", "💅", "💈", "🍔", "🌮", "🍣", "☕", "🍻", "🍹", "🏥", "💊", "🐶", "🐾", "🎉", "🎟️", "🎬", "🎮", "🕹️", "📱", "💻", "💼", "💰", "₿", "💎", "⌚", "🎧", "🏪", "📶", "☁️", "🤖", "🚀", "🎯"];
+  const categoryEmojis = ["💵", "💲", "🧾", "📋", "🏠", "💧", "⚡", "📺", "🚗", "⛽", "🚕", "🚇", "✈️", "🌴", "🏋️", "💳", "🎓", "🛒", "🛍️", "👗", "👟", "💅", "💈", "🍔", "🌮", "🍣", "☕", "🍻", "🍹", "🏥", "💊", "🐶", "🐾", "🎉", "🎟️", "🎬", "🎮", "🕹️", "📱", "💻", "💼", "💰", "₿", "💎", "⌚", "🎧", "🏪", "📶", "☁️", "🤖", "🚀"];
   
   const modernCategories = [
     { group: "Income & Wealth", items: ["Primary Salary", "Side Hustle / Gig", "Tips / Cash", "Investments / Crypto", "Transfers (Venmo/Zelle)", "Refunds & Adjustments", "Cash App", "PayDay Loans", "Unemployment"] },
@@ -496,25 +488,6 @@ export default function App() {
       }
     }
     triggerVictory(); setIsAddAccountOpen(false); setNewAccName(""); setNewAccBalance(""); setNewAccDesc(""); setNewAccType("Checking"); setNewAccIsLiability(false);
-  };
-
-  // 🔥 TARGET 4: GOAL CREATION MATH ENGINE 🔥
-  const handleAddGoal = async () => {
-    const target = parseFloat(newGoalTarget);
-    const deposit = parseFloat(newGoalDeposit) || 0; // Default blank to $0.00
-    if (!newGoalName.trim() || isNaN(target) || target <= 0) return; // Must have valid target
-
-    if (isDemoMode) {
-      const newGoal = { id: `goal_demo_${Date.now()}`, name: newGoalName, type: "Goal", balance: deposit, targetAmount: target, icon: newGoalIcon };
-      setAccounts([...accounts, newGoal]);
-    } else {
-      const accRef = await addDoc(collection(db, "users", user.uid, "accounts"), { name: newGoalName, type: "Goal", balance: deposit, targetAmount: target, icon: newGoalIcon, isArchived: false });
-      if (deposit > 0) {
-        const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
-        await addDoc(collection(db, "users", user.uid, "transactions"), { name: `${newGoalName} (Initial Deposit)`, icon: newGoalIcon, amount: deposit, date: autoTimeStamp, type: "Expense", category: "Savings Transfer", accountId: accRef.id, createdAt: serverTimestamp() });
-      }
-    }
-    triggerVictory(); setIsAddGoalOpen(false); setNewGoalName(""); setNewGoalTarget(""); setNewGoalDeposit(""); setNewGoalIcon("🎯");
   };
 
   const handleTransferNumpad = (btn) => {
@@ -941,7 +914,7 @@ export default function App() {
         <div className="flex-1 flex flex-col relative h-full overflow-hidden">
           <div className={`flex-1 overflow-y-auto hide-scrollbar lg:pb-0 ${isDemoMode ? "pb-[220px]" : "pb-24"}`} ref={scrollRef} onScroll={handleScroll}>
             {activeTab === "home" && <Dashboard userName={userName} accounts={accounts} bills={dynamicBills} transactions={transactions} paydayConfig={paydayConfig} setEditPaydayConfig={setEditPaydayConfig} setIsPaydaySetupOpen={handleOpenPaydaySetup} setIsNotificationsOpen={setIsNotificationsOpen} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} isDarkMode={isDarkMode} formatPaydayDateStr={formatPaydayDateStr} renderHeroShell={renderHeroShell} changeTab={changeTab} hasConsumedAMBriefing={hasConsumedAMBriefing} setHasConsumedAMBriefing={setHasConsumedAMBriefing} hasConsumedPMBriefing={hasConsumedPMBriefing} setHasConsumedPMBriefing={setHasConsumedPMBriefing} />}
-            {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setIsAddGoalOpen={setIsAddGoalOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} isDemoMode={isDemoMode} />}
+            {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} isDemoMode={isDemoMode} />}
             {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} paydayConfig={paydayConfig} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} handleRolloverMonth={handleRolloverMonth} />}
             {activeTab === "activity" && <Activity userName={userName} transactions={transactions} activitySearch={activitySearch} setActivitySearch={setActivitySearch} activityFilter={activityFilter} setActivityFilter={setActivityFilter} isDarkMode={isDarkMode} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} />}
             {activeTab === "todo" && <Todo userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} newTodoType={newTodoType} setNewTodoType={setNewTodoType} isDarkMode={isDarkMode} handleAddTodo={async (e) => { e.preventDefault(); if(!newTodoText.trim()) return; if (isDemoMode) { setTodos([{ id: `todo_demo_${Date.now()}`, text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false }, ...todos]); } else { await addDoc(collection(db, "users", user.uid, "todos"), { text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() }); } triggerVictory(); setNewTodoText(""); setNewTodoPriority(3); }} toggleTodoStatus={async (id) => { triggerHaptic(); const todo = todos.find(t => t.id === id); if (isDemoMode) { setTodos(todos.map(t => t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)); } else { await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); } }} setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} />}
@@ -1067,7 +1040,6 @@ export default function App() {
           </div>
         )}
 
-        {/* 🔥 FIX 2: PAYDAY FREQUENCY ALIGNMENT 🔥 */}
         {isPaydaySetupOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsPaydaySetupOpen(false)}></div>
@@ -1078,7 +1050,6 @@ export default function App() {
               </div>
               <div className={`p-6 overflow-y-auto flex-1 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
                 
-                {/* 🔥 FREQUENCY SELECTOR ALIGNMENT FIX 🔥 */}
                 <div className="mb-6">
                   <label className={`block text-[9px] font-bold uppercase tracking-widest mb-3 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Pay Frequency</label>
                   <div className={`grid grid-cols-2 gap-2 p-1.5 rounded-2xl border ${isDarkMode ? "bg-slate-800/80 border-slate-700" : "bg-slate-100/80 border-slate-200"}`}>
@@ -1103,7 +1074,6 @@ export default function App() {
                     <h4 className={`text-xs font-black uppercase tracking-widest mb-4 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>{pd}</h4>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        {/* EXPECTED PAY DATE LABEL UPDATE */}
                         <label className={`block text-[9px] font-bold uppercase mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Pay Date</label>
                         <input type="date" value={editPaydayConfig?.[pd]?.date || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), date: e.target.value}})} className={`w-full p-3 rounded-xl border ${isDarkMode ? "bg-slate-800 border-slate-700 text-white dark:[color-scheme:dark]" : "bg-white border-slate-200 text-slate-900"}`} />
                       </div>
@@ -1148,42 +1118,6 @@ export default function App() {
 
                 <button onClick={handleAddAccount} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2">Save Account <CheckCircle2 size={16} /></button>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* BRAND NEW: GOAL CREATION ENGINE DRAWER */}
-        {isAddGoalOpen && (
-          <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
-            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsAddGoalOpen(false)}></div>
-            <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
-              <div className="p-6 border-b flex justify-between items-center">
-                <h3 className={`font-black uppercase tracking-widest flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}><Target size={18}/> Create Savings Goal</h3>
-                <button onClick={() => setIsAddGoalOpen(false)} className={closeButtonClass}><X size={18} /></button>
-              </div>
-              <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
-                <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Goal Vision</label><input type="text" placeholder="e.g. Miami Trip, Emergency Fund" value={newGoalName} onChange={(e) => setNewGoalName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white placeholder-slate-600" : "bg-white border-slate-200 text-slate-900 placeholder-slate-400"}`} /></div>
-                
-                <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Target Amount</label><input type="number" value={newGoalTarget} onChange={(e) => setNewGoalTarget(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
-                
-                <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Initial Deposit</label><input type="number" value={newGoalDeposit} onChange={(e) => setNewGoalDeposit(e.target.value)} placeholder="0.00" className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white placeholder-slate-600" : "bg-white border-slate-200 text-slate-900 placeholder-slate-400"}`} /></div>
-                
-                <div className="relative cursor-pointer" onClick={() => setIsGoalIconSelectorOpen(true)}>
-                  <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Icon</label>
-                  <div className={`w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}><span className="text-xl leading-none">{newGoalIcon}</span><ArrowDown size={14} className={isDarkMode ? "text-slate-400" : "text-slate-500"} /></div>
-                </div>
-
-                <button onClick={handleAddGoal} disabled={!newGoalName.trim() || !newGoalTarget || parseFloat(newGoalTarget) <= 0} className={`w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-[0_8px_16px_rgba(16,185,129,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2 ${!newGoalName.trim() || !newGoalTarget || parseFloat(newGoalTarget) <= 0 ? "bg-slate-300 opacity-50 shadow-none cursor-not-allowed" : "bg-[#10B981]"}`}>Launch Goal 🚀</button>
-              </div>
-
-              {isGoalIconSelectorOpen && (
-                 <div className={`absolute inset-0 z-[150] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
-                    <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}><h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Icon</h3><button onClick={() => setIsGoalIconSelectorOpen(false)} className={closeButtonClass}><X size={18}/></button></div>
-                    <div className={`flex-1 overflow-y-auto p-4 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : "pb-20"}`}>
-                       <div className="grid grid-cols-6 lg:grid-cols-8 gap-3">{categoryEmojis.map(emoji => (<button key={emoji} onClick={() => { setNewGoalIcon(emoji); setIsGoalIconSelectorOpen(false); }} className={`w-12 h-12 flex items-center justify-center rounded-xl text-2xl border transition-all active:scale-90 ${newGoalIcon === emoji ? `bg-[#10B981] text-white border-transparent shadow-md` : isDarkMode ? "bg-slate-800 border-slate-700 hover:bg-slate-700" : "bg-slate-50 border-slate-200 hover:bg-slate-100"}`}>{emoji}</button>))}</div>
-                    </div>
-                 </div>
-              )}
             </div>
           </div>
         )}

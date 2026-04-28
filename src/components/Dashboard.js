@@ -211,7 +211,7 @@ export default function Dashboard({
       </div>
 
       {/* FINAL 1% VISUAL ANCHOR: The Missing Separator Line */}
-      <div className={`mx-6 mb-6 border-t ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}></div>
+      <div className={`mx-6 mb-6 border-t ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}></div>
 
       <main className="px-6 space-y-4">
         <div className="space-y-4">
@@ -312,7 +312,7 @@ export default function Dashboard({
           })}
         </div>
 
-        <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800 mt-8">
+        <div className={`space-y-4 pt-4 border-t mt-8 ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Recent Activity</h3>
           <div className={`rounded-[2rem] p-4 border ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
             {transactions.length === 0 ? ( <p className="text-center py-8 font-bold text-slate-400">No activity yet.</p> ) : (
@@ -345,7 +345,6 @@ export default function Dashboard({
                     <div key={tx?.id} className={`flex flex-col p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-100"}`}>
                       
                       <div className="flex items-start justify-between w-full mb-4">
-                         {/* FINAL 1% PENCIL RULE: Removed onClick and cursor-pointer from this wrapper */}
                          <div className="flex items-center gap-3 flex-1">
                             <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
                                {tx?.icon || "💳"}
@@ -354,7 +353,6 @@ export default function Dashboard({
                                {tx?.name || "Transaction"}
                             </p>
                          </div>
-                         {/* The Pencil button is now the strict trigger for the drawer */}
                          <button 
                            onClick={(e) => { e.stopPropagation(); setSelectedEntry(tx); }} 
                            className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}

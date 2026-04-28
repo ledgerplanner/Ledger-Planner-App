@@ -89,7 +89,6 @@ export default function App() {
   const [newAccBalance, setNewAccBalance] = useState("");
   const [newAccType, setNewAccType] = useState("Checking");
   const [newAccDesc, setNewAccDesc] = useState("");
-  const [newAccIsLiability, setNewAccIsLiability] = useState(false);
 
   const [activitySearch, setActivitySearch] = useState("");
   const [activityFilter, setActivityFilter] = useState("All");
@@ -464,16 +463,12 @@ export default function App() {
     setIsEditingEntry(false); triggerVictory();
   };
 
-  // 🔥 TARGET 2: ASSET / LIABILITY MATH ENGINE 🔥
   const handleAddAccount = async () => { 
     const startBal = parseFloat(newAccBalance);
     if (!newAccName.trim() || isNaN(startBal)) return;
     
-    let finalBalance = Math.abs(startBal);
-    // Apply liability toggle or credit card auto-math
-    if (newAccIsLiability || newAccType === "Credit Card") {
-        finalBalance = -finalBalance;
-    }
+    let finalBalance = startBal;
+    if (newAccType === "Credit Card" && startBal > 0) finalBalance = -startBal;
     
     const getIcon = (type) => { if (type === "Credit Card") return "💳"; if (type === "401k / Retirement") return "🌴"; if (type === "Savings") return "📈"; if (type === "Cash") return "💵"; return "🏦"; };
     
@@ -487,7 +482,7 @@ export default function App() {
         await addDoc(collection(db, "users", user.uid, "transactions"), { name: `${newAccName} (Opening)`, icon: getIcon(newAccType), amount: Math.abs(startBal), date: autoTimeStamp, type: finalBalance < 0 ? "Expense" : "Income", category: finalBalance < 0 ? "Initial Debt" : "Opening Balance", accountId: accRef.id, createdAt: serverTimestamp() });
       }
     }
-    triggerVictory(); setIsAddAccountOpen(false); setNewAccName(""); setNewAccBalance(""); setNewAccDesc(""); setNewAccType("Checking"); setNewAccIsLiability(false);
+    triggerVictory(); setIsAddAccountOpen(false); setNewAccName(""); setNewAccBalance(""); setNewAccDesc(""); setNewAccType("Checking");
   };
 
   const handleTransferNumpad = (btn) => {
@@ -1040,6 +1035,7 @@ export default function App() {
           </div>
         )}
 
+        {/* 🔥 FIX 2: PAYDAY FREQUENCY ALIGNMENT 🔥 */}
         {isPaydaySetupOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsPaydaySetupOpen(false)}></div>
@@ -1050,6 +1046,7 @@ export default function App() {
               </div>
               <div className={`p-6 overflow-y-auto flex-1 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
                 
+                {/* 🔥 FREQUENCY SELECTOR ALIGNMENT FIX 🔥 */}
                 <div className="mb-6">
                   <label className={`block text-[9px] font-bold uppercase tracking-widest mb-3 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Pay Frequency</label>
                   <div className={`grid grid-cols-2 gap-2 p-1.5 rounded-2xl border ${isDarkMode ? "bg-slate-800/80 border-slate-700" : "bg-slate-100/80 border-slate-200"}`}>
@@ -1107,14 +1104,6 @@ export default function App() {
                 <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Current Balance</label><input type="number" value={newAccBalance} onChange={(e) => setNewAccBalance(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
                 <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Type</label><select value={newAccType} onChange={(e) => setNewAccType(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}><option>Checking</option><option>Savings</option><option>Credit Card</option><option>Cash</option><option>401k / Retirement</option></select></div>
                 <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Details</label><input type="text" placeholder={newAccType} value={newAccDesc} onChange={(e) => setNewAccDesc(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white placeholder-slate-600" : "bg-white border-slate-200 text-slate-900 placeholder-slate-300"}`} /></div>
-                
-                {/* BRAND NEW LIABILITY TOGGLE FOR MOBILE KEYBOARDS */}
-                <div className={`flex items-center justify-between mt-2 mb-2 p-4 rounded-2xl border transition-colors ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
-                   <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Liability / Debt</span>
-                   <button onClick={() => setNewAccIsLiability(!newAccIsLiability)} className={`w-12 h-6 rounded-full transition-colors relative ${newAccIsLiability ? "bg-red-500" : "bg-[#10B981]"}`}>
-                      <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${newAccIsLiability ? "translate-x-7" : "translate-x-1"}`}></div>
-                   </button>
-                </div>
 
                 <button onClick={handleAddAccount} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2">Save Account <CheckCircle2 size={16} /></button>
               </div>

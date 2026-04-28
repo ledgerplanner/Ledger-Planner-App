@@ -152,7 +152,7 @@ export default function Dashboard({
       </div>
 
       <div className="w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-6">
-        <div className="flex gap-4 pr-6 pb-2">
+        <div className="flex gap-4 pr-6 pb-2 min-h-[170px]">
           {hzPaydays.map((pd) => {
             const pdSettings = paydayConfig?.[pd] || {};
             const groupBills = billsByPayday[pd] || [];

@@ -130,7 +130,9 @@ export default function Bills({
             <div className="space-y-4">
               {paydaysToRender.map((payday) => {
                 const groupBills = billsByPayday[payday] || [];
-                if (groupBills.length === 0) return null; 
+                
+                // Hide Due Now and Unscheduled if they are empty, but always show active paydays.
+                if (groupBills.length === 0 && (payday === "Due Now" || payday === "Unscheduled")) return null;
 
                 const isDueNow = payday === "Due Now";
                 const isCollapsed = collapsedSections[payday];
@@ -142,7 +144,7 @@ export default function Bills({
                 return (
                   <div key={payday} className="space-y-2">
                     
-                    {/* ACCORDION HEADER (Stacked Layout + Synchronized Typography) */}
+                    {/* ACCORDION HEADER */}
                     <div className="flex flex-col px-2 py-4 cursor-pointer transition-colors" onClick={() => toggleCollapse(payday)}>
                       <div className="flex justify-between items-start w-full">
                          <div className="flex flex-col">
@@ -168,86 +170,90 @@ export default function Bills({
                     {/* ACCORDION BODY (3-LEVEL BENTO DESIGN) */}
                     {!isCollapsed && (
                       <div className={`rounded-[2rem] p-4 border shadow-sm ${isDueNow ? isDarkMode ? "bg-red-900/10 border-red-900/30" : "bg-red-50/30 border-red-100" : isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
-                        <div className="space-y-3">
-                          {sortedBills.map((bill) => {
-                            const isOverdue = bill.isOverdue || bill.payday === "Due Now";
-                            const leftToPay = Math.max(0, (bill.totalAmount || 0) - (bill.paidAmount || 0));
-                            const remainingPct = bill.totalAmount > 0 ? (leftToPay / bill.totalAmount) * 100 : 0;
-                            
-                            return (
-                              <div key={bill.id} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
-                                
-                                {/* LEVEL 1: Identity & Edit Pencil */}
-                                <div className="flex items-start justify-between w-full mb-6">
-                                   <div className="flex items-center gap-3 flex-1">
-                                      <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isOverdue ? isDarkMode ? "bg-red-900/20 border-red-900/50" : "bg-red-50 border-red-100" : isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
-                                          {bill.icon}
-                                      </div>
-                                      <div className="flex flex-col">
-                                        <div className="flex items-center gap-1.5">
-                                           <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
-                                               {bill.name}
-                                           </p>
-                                           {bill.isRecurring && !bill.isPaid && <RefreshCw size={12} className="text-[#10B981] shrink-0" />}
+                        {groupBills.length === 0 ? (
+                           <p className="text-center py-5 text-xs font-bold text-slate-400">No bills routed to this payday.</p>
+                        ) : (
+                          <div className="space-y-3">
+                            {sortedBills.map((bill) => {
+                              const isOverdue = bill.isOverdue || bill.payday === "Due Now";
+                              const leftToPay = Math.max(0, (bill.totalAmount || 0) - (bill.paidAmount || 0));
+                              const remainingPct = bill.totalAmount > 0 ? (leftToPay / bill.totalAmount) * 100 : 0;
+                              
+                              return (
+                                <div key={bill.id} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
+                                  
+                                  {/* LEVEL 1: Identity & Edit Pencil */}
+                                  <div className="flex items-start justify-between w-full mb-6">
+                                     <div className="flex items-center gap-3 flex-1">
+                                        <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isOverdue ? isDarkMode ? "bg-red-900/20 border-red-900/50" : "bg-red-50 border-red-100" : isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                                            {bill.icon}
                                         </div>
-                                      </div>
-                                   </div>
-                                   <button 
-                                     onClick={(e) => { e.stopPropagation(); setSelectedEntry(bill); }}
-                                     className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
-                                   >
-                                      <Edit2 size={16} strokeWidth={2.5} />
-                                   </button>
-                                </div>
-
-                                {/* LEVEL 2: Action Row (Stacked Date, Centered Wide Button, Glowing Pill) */}
-                                <div className="flex items-center justify-between w-full">
-                                   <div className="flex flex-col shrink-0 w-24">
-                                      <span className={`text-[9px] font-black uppercase tracking-widest mb-0.5 ${isOverdue ? "text-red-500" : "text-slate-400"}`}>
-                                         DUE
-                                      </span>
-                                      <span className={`text-xs font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                                         {bill.fullDate || "TBD"}
-                                      </span>
-                                   </div>
-                                   
-                                   <div className="flex-1 flex justify-center">
-                                      <button 
-                                        onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }} 
-                                        className="w-full max-w-[180px] py-3 rounded-[12px] font-black text-[10px] uppercase tracking-widest text-white bg-[#1877F2] active:scale-95 transition-all flex items-center justify-center gap-1.5"
-                                      >
-                                        <CheckCircle2 size={14} strokeWidth={2.5} /> MARK AS PAID
-                                      </button>
-                                   </div>
-
-                                   <div className="flex justify-end shrink-0 w-24">
-                                      <div className={`px-3 py-1.5 rounded-[8px] border font-black text-[13px] tracking-tighter shrink-0 transition-colors shadow-[0_0_15px_rgba(24,119,242,0.4)] ${isDarkMode ? "bg-slate-800 text-[#1877F2] border-[#1877F2]/30" : "bg-blue-50/50 text-[#1877F2] border-blue-200"}`}>
-                                         ${(bill.amount || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                      </div>
-                                   </div>
-                                </div>
-
-                                {/* LEVEL 3: Installment Bar */}
-                                {bill.isInstallment && !bill.isPaid && (
-                                  <div className="mt-5 pt-3 border-t border-slate-200 w-full animate-fade-in">
-                                    <div className="flex justify-between items-end mb-2 px-1">
-                                      <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">
-                                        Installment Plan
-                                      </span>
-                                      <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">
-                                        ${(bill.paidAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} / ${(bill.totalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                      </span>
-                                    </div>
-                                    <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-900 shadow-inner" : "bg-slate-100"}`}>
-                                      <div className="h-full bg-[#1877F2] transition-all duration-500 ease-out" style={{ width: `${Math.min(((bill.paidAmount || 0) / (bill.totalAmount || 1)) * 100, 100)}%` }}></div>
-                                    </div>
+                                        <div className="flex flex-col">
+                                          <div className="flex items-center gap-1.5">
+                                             <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
+                                                 {bill.name}
+                                             </p>
+                                             {bill.isRecurring && !bill.isPaid && <RefreshCw size={12} className="text-[#10B981] shrink-0" />}
+                                          </div>
+                                        </div>
+                                     </div>
+                                     <button 
+                                       onClick={(e) => { e.stopPropagation(); setSelectedEntry(bill); }}
+                                       className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
+                                     >
+                                        <Edit2 size={16} strokeWidth={2.5} />
+                                     </button>
                                   </div>
-                                )}
 
-                              </div>
-                            );
-                          })}
-                        </div>
+                                  {/* LEVEL 2: Action Row */}
+                                  <div className="flex items-center justify-between w-full">
+                                     <div className="flex flex-col shrink-0 w-24">
+                                        <span className={`text-[9px] font-black uppercase tracking-widest mb-0.5 ${isOverdue ? "text-red-500" : "text-slate-400"}`}>
+                                           DUE
+                                        </span>
+                                        <span className={`text-xs font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                                           {bill.fullDate || "TBD"}
+                                        </span>
+                                     </div>
+                                     
+                                     <div className="flex-1 flex justify-center">
+                                        <button 
+                                          onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }} 
+                                          className="w-full max-w-[180px] py-3 rounded-[12px] font-black text-[10px] uppercase tracking-widest text-white bg-[#1877F2] active:scale-95 transition-all flex items-center justify-center gap-1.5"
+                                        >
+                                          <CheckCircle2 size={14} strokeWidth={2.5} /> MARK AS PAID
+                                        </button>
+                                     </div>
+
+                                     <div className="flex justify-end shrink-0 w-24">
+                                        <div className={`px-3 py-1.5 rounded-[8px] border font-black text-[13px] tracking-tighter shrink-0 transition-colors shadow-[0_0_15px_rgba(24,119,242,0.4)] ${isDarkMode ? "bg-slate-800 text-[#1877F2] border-[#1877F2]/30" : "bg-blue-50/50 text-[#1877F2] border-blue-200"}`}>
+                                           ${(bill.amount || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </div>
+                                     </div>
+                                  </div>
+
+                                  {/* LEVEL 3: Installment Bar */}
+                                  {bill.isInstallment && !bill.isPaid && (
+                                    <div className="mt-5 pt-3 border-t border-slate-200 w-full animate-fade-in">
+                                      <div className="flex justify-between items-end mb-2 px-1">
+                                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">
+                                          Installment Plan
+                                        </span>
+                                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">
+                                          ${(bill.paidAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} / ${(bill.totalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        </span>
+                                      </div>
+                                      <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-900 shadow-inner" : "bg-slate-100"}`}>
+                                        <div className="h-full bg-[#1877F2] transition-all duration-500 ease-out" style={{ width: `${Math.min(((bill.paidAmount || 0) / (bill.totalAmount || 1)) * 100, 100)}%` }}></div>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -258,10 +264,10 @@ export default function Bills({
         </div>
 
         {/* ========================================================= */}
-        {/* THE GREAT DIVIDE (SIGNATURE SEPARATOR)                      */}
+        {/* THE GREAT DIVIDE (SIGNATURE SEPARATOR - HARDCODED WHITE)  */}
         {/* ========================================================= */}
         {paidBills.length > 0 && unpaidBills.length > 0 && (
-          <div className={`mx-2 mt-8 mb-2 border-t ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}></div>
+          <div className="mx-2 mt-8 mb-2 border-t border-slate-200"></div>
         )}
 
         {/* ========================================================= */}
@@ -293,7 +299,7 @@ export default function Bills({
                        </button>
                     </div>
 
-                    {/* LEVEL 2: Action Row (Stacked Text, Centered Button, Pill) */}
+                    {/* LEVEL 2: Action Row */}
                     <div className="flex items-center justify-between w-full">
                        <div className="flex flex-col shrink-0 w-24">
                           <span className="text-[9px] font-black uppercase tracking-widest mb-0.5 text-slate-400">

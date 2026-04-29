@@ -141,6 +141,23 @@ export default function Dashboard({
     </div>
   );
 
+  // === STRICT MONTH MATH ENGINE ===
+  const todayForMath = new Date();
+  const currentMonthName = todayForMath.toLocaleString("en-US", { month: "long" });
+  const currentMonthIdx = todayForMath.getUTCMonth();
+  const currentYearIdx = todayForMath.getUTCFullYear();
+
+  const currentMonthBillsTotal = bills.reduce((sum, bill) => {
+    if (!bill.rawDate) return sum;
+    const bDate = new Date(bill.rawDate);
+    if (!isNaN(bDate.getTime())) {
+      if (bDate.getUTCMonth() === currentMonthIdx && bDate.getUTCFullYear() === currentYearIdx) {
+        return sum + (Number(bill.amount) || 0);
+      }
+    }
+    return sum;
+  }, 0);
+
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
       {renderHeroShell(greetingStr, graphicContent)}
@@ -310,6 +327,14 @@ export default function Dashboard({
               </div>
             );
           })}
+        </div>
+
+        {/* === MONTHLY SUMMARY ANCHOR === */}
+        <div className={`mt-6 p-5 rounded-[1.5rem] border shadow-sm flex items-center justify-between ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
+           <span className="text-xs font-black uppercase tracking-widest text-slate-400">Total Bills for {currentMonthName}</span>
+           <div className={`px-3 py-1.5 rounded-[8px] border font-black text-lg tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"}`}>
+              ${currentMonthBillsTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+           </div>
         </div>
 
         <div className="space-y-4 pt-4 border-t border-slate-200 mt-8">

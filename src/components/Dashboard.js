@@ -211,7 +211,7 @@ export default function Dashboard({
       </div>
 
       {/* FINAL 1% VISUAL ANCHOR: The Missing Separator Line */}
-      <div className={`mx-6 mb-6 border-t ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}></div>
+      <div className="mx-6 mb-6 border-t border-slate-200"></div>
 
       <main className="px-6 space-y-4">
         <div className="space-y-4">
@@ -312,7 +312,7 @@ export default function Dashboard({
           })}
         </div>
 
-        <div className={`space-y-4 pt-4 border-t mt-8 ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
+        <div className="space-y-4 pt-4 border-t border-slate-200 mt-8">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Recent Activity</h3>
           <div className={`rounded-[2rem] p-4 border ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
             {transactions.length === 0 ? ( <p className="text-center py-8 font-bold text-slate-400">No activity yet.</p> ) : (

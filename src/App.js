@@ -1218,7 +1218,7 @@ export default function App() {
               </div>
               <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
                 <div className="relative">
-                  <label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest">Pay From Account</label>
+                  <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Pay From Account</label>
                   <select value={paymentModalConfig.accountId} onChange={(e) => setPaymentModalConfig({ ...paymentModalConfig, accountId: e.target.value })} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
                     {accounts.map((a) => (<option key={a.id} value={a.id}>{a.name} (${(a.balance || 0).toFixed(2)})</option>))}
                   </select>

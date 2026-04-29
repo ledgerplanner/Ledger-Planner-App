@@ -330,7 +330,7 @@ export default function Dashboard({
         </div>
 
         {/* === MONTHLY SUMMARY ANCHOR === */}
-        <div className={`mt-6 py-4 px-5 rounded-[1.5rem] border shadow-sm flex flex-col items-center justify-center gap-1.5 ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
+        <div className={`mt-6 py-4 px-5 rounded-[1.5rem] border shadow-sm flex flex-col items-center justify-center gap-2 ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
            <span className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Total Bills for {currentMonthName}</span>
            <div className={`px-3 py-1.5 rounded-[8px] border font-black text-lg tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"}`}>
               ${currentMonthBillsTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

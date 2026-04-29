@@ -83,12 +83,14 @@ export default function App() {
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [editAccountBalance, setEditAccountBalance] = useState("0");
   const [editAccountDesc, setEditAccountDesc] = useState("");
+  const [editAccIsNegative, setEditAccIsNegative] = useState(false);
   
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
   const [newAccName, setNewAccName] = useState("");
   const [newAccBalance, setNewAccBalance] = useState("");
   const [newAccType, setNewAccType] = useState("Checking");
   const [newAccDesc, setNewAccDesc] = useState("");
+  const [newAccIsNegative, setNewAccIsNegative] = useState(false);
 
   const [activitySearch, setActivitySearch] = useState("");
   const [activityFilter, setActivityFilter] = useState("All");
@@ -201,7 +203,6 @@ export default function App() {
     return () => { unsubAcc(); unsubBills(); unsubTxs(); unsubTodos(); unsubConfig(); };
   }, [isMounted, isDemoMode, user]);
 
-  // 🔥 FIX 6: THE CIRCADIAN ENGINE (TIME CLOCK) 🔥
   useEffect(() => {
     const timer = setInterval(() => {
       const now = new Date();
@@ -209,7 +210,6 @@ export default function App() {
       
       if (!manualThemeOverride) {
         const currentHour = now.getHours();
-        // 10 PM (22:00) through 4:59 AM = Dark Mode
         if (currentHour >= 22 || currentHour < 5) {
           setIsDarkMode(true);
         } else {
@@ -222,12 +222,12 @@ export default function App() {
 
   useEffect(() => {
     if (selectedAccount) {
-      setEditAccountBalance((selectedAccount.balance || 0).toFixed(2));
+      setEditAccountBalance(Math.abs(selectedAccount.balance || 0).toFixed(2));
       setEditAccountDesc(selectedAccount.description || "");
+      setEditAccIsNegative((selectedAccount.balance || 0) < 0);
     }
   }, [selectedAccount]);
 
-  // SMART INITIALIZATION LOGIC
   useEffect(() => {
     if (!hasInitializedCollapse.current && bills.length > 0) {
       const todayLocal = new Date(); todayLocal.setHours(0, 0, 0, 0);
@@ -251,7 +251,6 @@ export default function App() {
     }
   }, [bills]);
 
-  // 🔥 SURGICAL FIX: The Drawer Sync Shield 🔥
   const handleOpenPaydaySetup = () => {
     setEditPaydayConfig(paydayConfig);
     setIsPaydaySetupOpen(true);
@@ -335,7 +334,6 @@ export default function App() {
 
   const userName = isDemoMode ? "Aaron" : user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || "Founder";
 
-  // 🔥 FIX 1: HERO DATE STRINGS RESTORED 🔥
   const getOrdinalNum = (n) => n + (n > 0 ? ['th', 'st', 'nd', 'rd'][(n > 3 && n < 21) || n % 10 > 3 ? 0 : n % 10] : '');
   const dayStr = currentTime.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
   const monthStr = currentTime.toLocaleDateString("en-US", { month: "long" }).toUpperCase();
@@ -467,8 +465,8 @@ export default function App() {
     const startBal = parseFloat(newAccBalance);
     if (!newAccName.trim() || isNaN(startBal)) return;
     
-    let finalBalance = startBal;
-    if (newAccType === "Credit Card" && startBal > 0) finalBalance = -startBal;
+    let finalBalance = Math.abs(startBal);
+    if (newAccIsNegative) finalBalance = -finalBalance;
     
     const getIcon = (type) => { if (type === "Credit Card") return "💳"; if (type === "401k / Retirement") return "🌴"; if (type === "Savings") return "📈"; if (type === "Cash") return "💵"; return "🏦"; };
     
@@ -482,7 +480,7 @@ export default function App() {
         await addDoc(collection(db, "users", user.uid, "transactions"), { name: `${newAccName} (Opening)`, icon: getIcon(newAccType), amount: Math.abs(startBal), date: autoTimeStamp, type: finalBalance < 0 ? "Expense" : "Income", category: finalBalance < 0 ? "Initial Debt" : "Opening Balance", accountId: accRef.id, createdAt: serverTimestamp() });
       }
     }
-    triggerVictory(); setIsAddAccountOpen(false); setNewAccName(""); setNewAccBalance(""); setNewAccDesc(""); setNewAccType("Checking");
+    triggerVictory(); setIsAddAccountOpen(false); setNewAccName(""); setNewAccBalance(""); setNewAccDesc(""); setNewAccType("Checking"); setNewAccIsNegative(false);
   };
 
   const handleTransferNumpad = (btn) => {
@@ -529,8 +527,10 @@ export default function App() {
   const updateAccountBalance = async () => { 
     const newBal = parseFloat(editAccountBalance);
     if (isNaN(newBal) || !selectedAccount) return;
-    let finalBalance = newBal;
-    if (selectedAccount.type === "Credit Card" && newBal > 0) finalBalance = -newBal;
+    
+    let finalBalance = Math.abs(newBal);
+    if (editAccIsNegative) finalBalance = -finalBalance;
+    
     const diff = finalBalance - (selectedAccount.balance || 0);
     
     if (isDemoMode) {
@@ -1035,7 +1035,6 @@ export default function App() {
           </div>
         )}
 
-        {/* 🔥 FIX 2: PAYDAY FREQUENCY ALIGNMENT 🔥 */}
         {isPaydaySetupOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsPaydaySetupOpen(false)}></div>
@@ -1046,7 +1045,6 @@ export default function App() {
               </div>
               <div className={`p-6 overflow-y-auto flex-1 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
                 
-                {/* 🔥 FREQUENCY SELECTOR ALIGNMENT FIX 🔥 */}
                 <div className="mb-6">
                   <label className={`block text-[9px] font-bold uppercase tracking-widest mb-3 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Pay Frequency</label>
                   <div className={`grid grid-cols-2 gap-2 p-1.5 rounded-2xl border ${isDarkMode ? "bg-slate-800/80 border-slate-700" : "bg-slate-100/80 border-slate-200"}`}>
@@ -1101,8 +1099,21 @@ export default function App() {
               </div>
               <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
                 <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Name</label><input type="text" value={newAccName} onChange={(e) => setNewAccName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
-                <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Current Balance</label><input type="text" inputMode="decimal" pattern="[0-9.-]*" value={newAccBalance} onChange={(e) => setNewAccBalance(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
-                <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Type</label><select value={newAccType} onChange={(e) => setNewAccType(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}><option>Checking</option><option>Savings</option><option>Credit Card</option><option>Cash</option><option>401k / Retirement</option></select></div>
+                
+                <div className="relative">
+                  <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Current Balance</label>
+                  <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={newAccBalance} onChange={(e) => setNewAccBalance(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                  
+                  {/* NEW NEGATIVE BALANCE TOGGLE */}
+                  <div className="flex items-center justify-between mt-3 ml-2 pr-2">
+                    <span className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Negative Balance (Debt)</span>
+                    <button onClick={() => setNewAccIsNegative(!newAccIsNegative)} className={`w-10 h-5 rounded-full transition-colors relative ${newAccIsNegative ? "bg-red-500" : "bg-slate-300 dark:bg-slate-700"}`}>
+                      <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-[3px] transition-transform ${newAccIsNegative ? "translate-x-5" : "translate-x-1"}`}></div>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="relative mt-2"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Type</label><select value={newAccType} onChange={(e) => setNewAccType(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}><option>Checking</option><option>Savings</option><option>Credit Card</option><option>Cash</option><option>401k / Retirement</option></select></div>
                 <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Details</label><input type="text" placeholder={newAccType} value={newAccDesc} onChange={(e) => setNewAccDesc(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white placeholder-slate-600" : "bg-white border-slate-200 text-slate-900 placeholder-slate-300"}`} /></div>
 
                 <button onClick={handleAddAccount} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2">Save Account <CheckCircle2 size={16} /></button>
@@ -1166,12 +1177,21 @@ export default function App() {
                       pattern="[0-9.-]*"
                       value={editAccountBalance} 
                       onChange={(e) => setEditAccountBalance(e.target.value)} 
-                      onFocus={() => setEditAccountBalance((selectedAccount.balance || 0).toFixed(2))} 
+                      onFocus={() => setEditAccountBalance(Math.abs(selectedAccount.balance || 0).toFixed(2))} 
                       className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl font-bold text-lg border focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`} 
                     />
                   </div>
+                  
+                  {/* NEW NEGATIVE BALANCE TOGGLE */}
+                  <div className="flex items-center justify-between mt-3 ml-2 pr-2">
+                    <span className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Negative Balance (Debt)</span>
+                    <button onClick={() => setEditAccIsNegative(!editAccIsNegative)} className={`w-10 h-5 rounded-full transition-colors relative ${editAccIsNegative ? "bg-red-500" : "bg-slate-300 dark:bg-slate-700"}`}>
+                      <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-[3px] transition-transform ${editAccIsNegative ? "translate-x-5" : "translate-x-1"}`}></div>
+                    </button>
+                  </div>
                 </div>
-                <div className="relative">
+
+                <div className="relative mt-2">
                   <label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest text-slate-400 z-10">Account Details</label>
                   <input 
                     type="text" 

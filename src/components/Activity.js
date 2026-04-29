@@ -1,5 +1,5 @@
 import React from "react";
-import { Search } from "lucide-react";
+import { Search, Edit2 } from "lucide-react";
 
 export default function Activity({ 
   userName, transactions, activitySearch, setActivitySearch, 
@@ -173,7 +173,7 @@ export default function Activity({
            >
              <span className="font-black text-xs uppercase tracking-widest">Income</span>
              {activityFilter === "Income" && (
-               <span className="text-[9px] font-bold mt-1 tracking-wider opacity-90">Tap again to clear</span>
+               <span className="text-[9px] font-bold mt-1 tracking-wider opacity-90">Tap again to view all</span>
              )}
            </button>
            <button 
@@ -186,10 +186,15 @@ export default function Activity({
            >
              <span className="font-black text-xs uppercase tracking-widest">Expenses</span>
              {activityFilter === "Expense" && (
-               <span className="text-[9px] font-bold mt-1 tracking-wider opacity-90">Tap again to clear</span>
+               <span className="text-[9px] font-bold mt-1 tracking-wider opacity-90">Tap again to view all</span>
              )}
            </button>
         </div>
+
+        {/* ========================================================= */}
+        {/* THE GREAT DIVIDE (SIGNATURE SEPARATOR)                      */}
+        {/* ========================================================= */}
+        <div className={`border-t ${isDarkMode ? "border-white" : "border-slate-200"}`}></div>
 
         {/* SEARCH BAR */}
         <div className="flex gap-2">
@@ -210,16 +215,24 @@ export default function Activity({
             ) : (
               <div className="space-y-3">
                 {filteredTransactions.map((tx) => (
-                  <div key={tx.id} onClick={() => setSelectedEntry(tx)} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm cursor-pointer transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
+                  <div key={tx.id} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
                     
-                    {/* ROW 1: Identity & Full Wrapping Text */}
-                    <div className="flex items-center gap-3 w-full">
-                      <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
-                        {tx.icon}
+                    {/* ROW 1: Identity & Edit Pencil */}
+                    <div className="flex items-start justify-between w-full mb-4">
+                      <div className="flex items-center gap-3 flex-1 cursor-pointer" onClick={() => setSelectedEntry(tx)}>
+                        <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                          {tx.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`font-bold text-sm break-words whitespace-normal leading-tight ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{tx.name}</p>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`font-bold text-sm break-words whitespace-normal leading-tight ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{tx.name}</p>
-                      </div>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setSelectedEntry(tx); }}
+                        className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
+                      >
+                        <Edit2 size={16} strokeWidth={2.5} />
+                      </button>
                     </div>
 
                     {/* ROW 2: Stacked Category/Date & Glowing Amount */}

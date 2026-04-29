@@ -30,6 +30,7 @@ export default function Accounts({
           let parsedDate = new Date(tx.rawDate || tx.date);
           
           // THE 2001 GHOST INTERCEPTOR
+          // If the mobile browser panicked and assigned the year 2001, forcefully correct it.
           if (parsedDate.getFullYear() === 2001) {
               parsedDate.setFullYear(today.getFullYear());
           }
@@ -99,7 +100,7 @@ export default function Accounts({
           </p>
         </div>
       </div>
-      <div className="flex items-end justify-between h-48 gap-2 border-b border-dashed border-slate-200 dark:border-slate-700 pb-2">
+      <div className="flex items-end justify-between h-28 gap-2 border-b border-dashed border-slate-200 dark:border-slate-700 pb-2">
         {historyData.map((item, i) => {
           const heightPct = (Math.abs(item.val) / maxChartVal) * 100;
           const isActive = activeChartNode === i;
@@ -130,16 +131,6 @@ export default function Accounts({
       {renderHeroShell(`${userName}'s Accounts`, graphicContent)}
       <main className="px-6 space-y-6 mt-4">
         
-        {/* COMMAND GRID */}
-        <div className="grid grid-cols-2 gap-3">
-          <button onClick={() => setIsTransferOpen(true)} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#1877F2] text-white shadow-blue-900/20" : "bg-[#1877F2] text-white shadow-blue-500/30"}`}>
-            <ArrowRightLeft size={20} /> Transfer
-          </button>
-          <button onClick={() => setIsAddAccountOpen(true)} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#10B981] text-white shadow-emerald-900/20" : "bg-[#10B981] text-white shadow-emerald-500/30"}`}>
-            <PlusCircle size={20} /> Add Account
-          </button>
-        </div>
-
         {/* ========================================== */}
         {/* 🔥 STANDARD LIQUID ACCOUNTS (BENTO BOX) 🔥 */}
         {/* ========================================== */}
@@ -199,6 +190,17 @@ export default function Accounts({
             )}
           </div>
         </div>
+
+        {/* COMMAND GRID */}
+        <div className="grid grid-cols-2 gap-3 mt-6">
+          <button onClick={() => setIsTransferOpen(true)} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#1877F2] text-white shadow-blue-900/20" : "bg-[#1877F2] text-white shadow-blue-500/30"}`}>
+            <ArrowRightLeft size={20} /> Transfer
+          </button>
+          <button onClick={() => setIsAddAccountOpen(true)} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#10B981] text-white shadow-emerald-900/20" : "bg-[#10B981] text-white shadow-emerald-500/30"}`}>
+            <PlusCircle size={20} /> Add Account
+          </button>
+        </div>
+
       </main>
     </div>
   );

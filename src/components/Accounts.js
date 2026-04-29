@@ -194,7 +194,7 @@ export default function Accounts({
         {/* ========================================================= */}
         {/* THE GREAT DIVIDE (SIGNATURE SEPARATOR)                      */}
         {/* ========================================================= */}
-        <div className={`border-t ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}></div>
+        <div className={`border-t ${isDarkMode ? "border-white" : "border-slate-200"}`}></div>
 
         {/* COMMAND GRID */}
         <div className="grid grid-cols-2 gap-3">

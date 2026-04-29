@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { CheckCircle2, RefreshCw, ChevronUp, ChevronDown, RotateCcw, Edit2 } from "lucide-react";
 
 export default function Bills({
@@ -9,23 +9,10 @@ export default function Bills({
   handleBillClick,
   setSelectedEntry,
   renderHeroShell,
-  handleRolloverMonth
+  handleRolloverMonth,
+  collapsedPaydays,
+  toggleCollapse
 }) {
-  // TARGET 1: Boot up strictly with "Due Now" open and everything else locked shut.
-  const [collapsedSections, setCollapsedSections] = useState({
-    "Due Now": false,
-    "Payday 1": true,
-    "Payday 2": true,
-    "Payday 3": true,
-    "Payday 4": true,
-    "Payday 5": true,
-    "Unscheduled": true
-  });
-
-  const toggleCollapse = (section) => {
-    setCollapsedSections((prev) => ({ ...prev, [section]: !prev[section] }));
-  };
-
   // === SURGICAL OCTAGON SORTING ENGINE ===
   const sortBillsSurgically = (billList) => {
     return [...billList].sort((a, b) => {
@@ -135,14 +122,14 @@ export default function Bills({
                 if (groupBills.length === 0 && (payday === "Due Now" || payday === "Unscheduled")) return null;
 
                 const isDueNow = payday === "Due Now";
-                const isCollapsed = collapsedSections[payday];
+                const isCollapsed = collapsedPaydays?.[payday];
                 const checkTotal = groupBills.reduce((sum, b) => sum + (b.amount || 0), 0);
                 const sortedBills = sortBillsSurgically(groupBills);
                 const pdSettings = paydayConfig?.[payday] || {};
                 const expectedDateStr = formatAccordionDateStr(pdSettings?.date).toUpperCase();
 
                 return (
-                  <div key={payday} className="space-y-2">
+                  <div key={payday} id={`vert-${payday}`} className="space-y-2 scroll-mt-24">
                     
                     {/* ACCORDION HEADER */}
                     <div className="flex flex-col px-2 py-4 cursor-pointer transition-colors" onClick={() => toggleCollapse(payday)}>
@@ -176,8 +163,6 @@ export default function Bills({
                           <div className="space-y-3">
                             {sortedBills.map((bill) => {
                               const isOverdue = bill.isOverdue || bill.payday === "Due Now";
-                              const leftToPay = Math.max(0, (bill.totalAmount || 0) - (bill.paidAmount || 0));
-                              const remainingPct = bill.totalAmount > 0 ? (leftToPay / bill.totalAmount) * 100 : 0;
                               
                               return (
                                 <div key={bill.id} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
@@ -206,12 +191,12 @@ export default function Bills({
                                   </div>
 
                                   {/* LEVEL 2: Action Row */}
-                                  <div className="flex items-center justify-between w-full gap-2">
-                                     <div className="flex flex-col shrink-0 w-16">
-                                        <span className={`text-[9px] font-black uppercase tracking-widest mb-0.5 ${isOverdue ? "text-red-500" : "text-slate-400"}`}>
-                                           DUE
+                                  <div className="flex items-center justify-between gap-2">
+                                     <div className="flex flex-col shrink-0">
+                                        <span className={`text-[10px] font-black uppercase tracking-wider ${isOverdue ? "text-red-500" : "text-slate-400"}`}>
+                                           {isOverdue ? "Overdue" : "Due"}
                                         </span>
-                                        <span className={`text-xs font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                                        <span className={`text-xs font-bold ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
                                            {bill.fullDate || "TBD"}
                                         </span>
                                      </div>
@@ -225,10 +210,8 @@ export default function Bills({
                                         </button>
                                      </div>
 
-                                     <div className="flex justify-end shrink-0 w-16">
-                                        <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"}`}>
-                                           ${(Number(bill.amount) || 0).toFixed(2)}
-                                        </div>
+                                     <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"}`}>
+                                        ${(Number(bill.amount) || 0).toFixed(2)}
                                      </div>
                                   </div>
 
@@ -300,9 +283,9 @@ export default function Bills({
                     </div>
 
                     {/* LEVEL 2: Action Row */}
-                    <div className="flex items-center justify-between w-full gap-2">
-                       <div className="flex flex-col shrink-0 w-16">
-                          <span className="text-[9px] font-black uppercase tracking-widest mb-0.5 text-slate-400">
+                    <div className="flex items-center justify-between gap-2">
+                       <div className="flex flex-col shrink-0">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
                              Status
                           </span>
                           <span className={`text-xs font-bold ${isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>
@@ -319,10 +302,8 @@ export default function Bills({
                           </button>
                        </div>
 
-                       <div className="flex justify-end shrink-0 w-16">
-                          <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 transition-colors ${isDarkMode ? "bg-slate-800/50 text-slate-400 border-slate-700" : "bg-slate-50 text-slate-500 border-slate-200"}`}>
-                             ${(Number(bill.amount) || 0).toFixed(2)}
-                          </div>
+                       <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 transition-colors ${isDarkMode ? "bg-slate-800/50 text-slate-400 border-slate-700" : "bg-slate-50 text-slate-500 border-slate-200"}`}>
+                          ${(Number(bill.amount) || 0).toFixed(2)}
                        </div>
                     </div>
                     

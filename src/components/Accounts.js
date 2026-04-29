@@ -191,8 +191,13 @@ export default function Accounts({
           </div>
         </div>
 
+        {/* ========================================================= */}
+        {/* THE GREAT DIVIDE (SIGNATURE SEPARATOR)                      */}
+        {/* ========================================================= */}
+        <div className={`border-t ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}></div>
+
         {/* COMMAND GRID */}
-        <div className="grid grid-cols-2 gap-3 mt-6">
+        <div className="grid grid-cols-2 gap-3">
           <button onClick={() => setIsTransferOpen(true)} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#1877F2] text-white shadow-blue-900/20" : "bg-[#1877F2] text-white shadow-blue-500/30"}`}>
             <ArrowRightLeft size={20} /> Transfer
           </button>

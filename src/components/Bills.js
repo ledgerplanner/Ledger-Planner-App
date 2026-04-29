@@ -142,12 +142,12 @@ export default function Bills({
                 return (
                   <div key={payday} className="space-y-2">
                     
-                    {/* ACCORDION HEADER (Stacked Layout) */}
+                    {/* ACCORDION HEADER (Stacked Layout + Synchronized Typography) */}
                     <div className="flex flex-col px-2 py-4 cursor-pointer transition-colors" onClick={() => toggleCollapse(payday)}>
                       <div className="flex justify-between items-start w-full">
                          <div className="flex flex-col">
                             <div className="flex items-center gap-2 mb-1">
-                               <h3 className={`text-sm font-black uppercase tracking-widest ${isDueNow ? "text-red-500" : isDarkMode ? "text-[#1877F2]" : "text-[#1877F2]"}`}>{payday}</h3>
+                               <h3 className={`text-sm font-black uppercase tracking-widest ${isDueNow ? "text-red-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>{payday}</h3>
                                <div className="text-slate-500">{isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}</div>
                             </div>
                             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
@@ -200,7 +200,7 @@ export default function Bills({
                                    </button>
                                 </div>
 
-                                {/* LEVEL 2: Action Row (Stacked Date, Centered Button, Pill) */}
+                                {/* LEVEL 2: Action Row (Stacked Date, Centered Wide Button, Glowing Pill) */}
                                 <div className="flex items-center justify-between w-full">
                                    <div className="flex flex-col shrink-0 w-24">
                                       <span className={`text-[9px] font-black uppercase tracking-widest mb-0.5 ${isOverdue ? "text-red-500" : "text-slate-400"}`}>
@@ -214,20 +214,20 @@ export default function Bills({
                                    <div className="flex-1 flex justify-center">
                                       <button 
                                         onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }} 
-                                        className="w-full max-w-[150px] py-2.5 rounded-[12px] font-black text-[10px] uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_4px_12px_rgba(24,119,242,0.3)] active:scale-95 transition-all flex items-center justify-center gap-1.5"
+                                        className="w-full max-w-[180px] py-3 rounded-[12px] font-black text-[10px] uppercase tracking-widest text-white bg-[#1877F2] active:scale-95 transition-all flex items-center justify-center gap-1.5"
                                       >
-                                        <CheckCircle2 size={14} strokeWidth={2.5} /> Mark as Paid
+                                        <CheckCircle2 size={14} strokeWidth={2.5} /> MARK AS PAID
                                       </button>
                                    </div>
 
                                    <div className="flex justify-end shrink-0 w-24">
-                                      <div className={`px-2.5 py-1.5 rounded-[8px] border font-black text-[13px] tracking-tighter shrink-0 transition-colors ${isDarkMode ? "bg-slate-800/80 text-[#1877F2] border-[#1877F2]/30 shadow-sm" : "bg-blue-50/50 text-[#1877F2] border-blue-200 shadow-sm"}`}>
+                                      <div className={`px-3 py-1.5 rounded-[8px] border font-black text-[13px] tracking-tighter shrink-0 transition-colors shadow-[0_0_15px_rgba(24,119,242,0.4)] ${isDarkMode ? "bg-slate-800 text-[#1877F2] border-[#1877F2]/30" : "bg-blue-50/50 text-[#1877F2] border-blue-200"}`}>
                                          ${(bill.amount || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                       </div>
                                    </div>
                                 </div>
 
-                                {/* LEVEL 3: Installment Bar (White Line Fix applied) */}
+                                {/* LEVEL 3: Installment Bar */}
                                 {bill.isInstallment && !bill.isPaid && (
                                   <div className="mt-5 pt-3 border-t border-slate-200 w-full animate-fade-in">
                                     <div className="flex justify-between items-end mb-2 px-1">
@@ -258,10 +258,17 @@ export default function Bills({
         </div>
 
         {/* ========================================================= */}
+        {/* THE GREAT DIVIDE (SIGNATURE SEPARATOR)                      */}
+        {/* ========================================================= */}
+        {paidBills.length > 0 && unpaidBills.length > 0 && (
+          <div className={`mx-2 mt-8 mb-2 border-t ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}></div>
+        )}
+
+        {/* ========================================================= */}
         {/* 🔥 PAID & SETTLED (UPGRADED TO 3-LEVEL BENTO ARCHITECTURE) 🔥 */}
         {/* ========================================================= */}
         {paidBills.length > 0 && (
-          <div className="space-y-4 mt-8">
+          <div className="space-y-4 mt-6">
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Paid & Settled</h3>
             <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
               <div className="space-y-3">
@@ -307,13 +314,13 @@ export default function Bills({
                        </div>
 
                        <div className="flex justify-end shrink-0 w-24">
-                          <div className={`px-2.5 py-1.5 rounded-[8px] border font-black text-[13px] tracking-tighter shrink-0 transition-colors ${isDarkMode ? "bg-slate-800/50 text-slate-400 border-slate-700" : "bg-slate-50 text-slate-500 border-slate-200"}`}>
+                          <div className={`px-3 py-1.5 rounded-[8px] border font-black text-[13px] tracking-tighter shrink-0 transition-colors ${isDarkMode ? "bg-slate-800/50 text-slate-400 border-slate-700" : "bg-slate-50 text-slate-500 border-slate-200"}`}>
                              ${(bill.amount || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </div>
                        </div>
                     </div>
                     
-                    {/* LEVEL 3: Installment Plan (White Line Fix applied) */}
+                    {/* LEVEL 3: Installment Plan */}
                     {bill.isInstallment && (
                       <div className="mt-5 pt-3 border-t border-slate-200 w-full">
                         <div className="flex justify-between items-end mb-2 px-1">

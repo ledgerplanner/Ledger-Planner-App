@@ -82,7 +82,7 @@ export default function Bills({
           ${paidBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xl text-slate-400">/ ${totalBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </p>
         <button onClick={handleRolloverMonth} className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-sm ${isDarkMode ? "bg-slate-800 text-[#10B981] hover:bg-slate-700" : "bg-white border-slate-200 border text-[#10B981] hover:bg-emerald-50"}`}>
-          <RefreshCw size={14} strokeWidth={3} /> Start New Month
+          <RefreshCw size={14} strokeWidth={2.5} /> Start New Month
         </button>
       </div>
     </div>
@@ -178,7 +178,7 @@ export default function Bills({
                                              <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
                                                  {bill.name}
                                              </p>
-                                             {bill.isRecurring && !bill.isPaid && <RefreshCw size={12} className="text-[#10B981] shrink-0" />}
+                                             {bill.isRecurring && !bill.isPaid && <RefreshCw size={12} strokeWidth={2} className="text-[#10B981] shrink-0" />}
                                           </div>
                                         </div>
                                      </div>
@@ -186,7 +186,7 @@ export default function Bills({
                                        onClick={(e) => { e.stopPropagation(); setSelectedEntry(bill); }}
                                        className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
                                      >
-                                        <Edit2 size={16} strokeWidth={2.5} />
+                                        <Edit2 size={16} strokeWidth={2} />
                                      </button>
                                   </div>
 
@@ -194,10 +194,10 @@ export default function Bills({
                                   <div className="flex items-center justify-between gap-2">
                                      <div className="flex flex-col shrink-0">
                                         <span className={`text-[10px] font-black uppercase tracking-wider ${isOverdue ? "text-red-500" : "text-slate-400"}`}>
-                                           {isOverdue ? "Overdue" : "Due"}
+                                            {isOverdue ? "Overdue" : "Due"}
                                         </span>
                                         <span className={`text-xs font-bold ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
-                                           {bill.fullDate || "TBD"}
+                                            {bill.fullDate || "TBD"}
                                         </span>
                                      </div>
                                      
@@ -278,7 +278,7 @@ export default function Bills({
                          onClick={(e) => { e.stopPropagation(); setSelectedEntry(bill); }}
                          className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
                        >
-                          <Edit2 size={16} strokeWidth={2.5} />
+                          <Edit2 size={16} strokeWidth={2} />
                        </button>
                     </div>
 
@@ -298,7 +298,7 @@ export default function Bills({
                             onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }} 
                             className={`px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 ${isDarkMode ? "bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white" : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
                           >
-                             <RotateCcw size={14} strokeWidth={2.5} /> Revert
+                             <RotateCcw size={14} strokeWidth={2} /> Revert
                           </button>
                        </div>
 

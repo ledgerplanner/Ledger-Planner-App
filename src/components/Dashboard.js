@@ -148,14 +148,20 @@ export default function Dashboard({
   const currentYearIdx = todayForMath.getUTCFullYear();
 
   const currentMonthBillsTotal = bills.reduce((sum, bill) => {
-    if (!bill.rawDate) return sum;
-    const bDate = new Date(bill.rawDate);
-    if (!isNaN(bDate.getTime())) {
-      if (bDate.getUTCMonth() === currentMonthIdx && bDate.getUTCFullYear() === currentYearIdx) {
-        return sum + (Number(bill.amount) || 0);
+    let include = false;
+    if (bill.rawDate) {
+      const bDate = new Date(bill.rawDate);
+      if (!isNaN(bDate.getTime())) {
+        if (bDate.getUTCMonth() === currentMonthIdx && bDate.getUTCFullYear() === currentYearIdx) {
+          include = true;
+        }
       }
     }
-    return sum;
+    // Include past-due liabilities into the active balance requirement
+    if (!bill.isPaid && bill.isOverdue) {
+      include = true;
+    }
+    return include ? sum + (Number(bill.amount) || 0) : sum;
   }, 0);
 
   return (
@@ -234,16 +240,17 @@ export default function Dashboard({
         <div className="space-y-4">
           {["Due Now", "Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].map((payday) => {
             const groupBills = billsByPayday[payday] || [];
+            const activeGroupBills = groupBills.filter(b => !b.isPaid); // Filter out paid bills for a Clean Slate view
             const pdSettings = paydayConfig?.[payday] || {};
             const isDueNow = payday === "Due Now";
             
-            if (isDueNow && groupBills.length === 0) return null;
+            if (isDueNow && activeGroupBills.length === 0) return null;
             if (!isDueNow && !pdSettings?.date) return null;
 
             const isCollapsed = collapsedPaydays?.[payday];
-            const checkTotal = groupBills.filter((b) => !b?.isPaid).reduce((sum, b) => sum + (Number(b?.amount) || 0), 0);
+            const checkTotal = activeGroupBills.reduce((sum, b) => sum + (Number(b?.amount) || 0), 0);
             const expectedDateStr = isDueNow ? "Currently Due" : formatPaydayDateStr(pdSettings.date);
-            const sortedBills = sortBillsSurgically(groupBills);
+            const sortedBills = sortBillsSurgically(activeGroupBills);
 
             return (
               <div key={payday} id={`vert-${payday}`} className="space-y-2 scroll-mt-24">

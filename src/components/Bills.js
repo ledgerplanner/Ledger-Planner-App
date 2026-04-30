@@ -57,10 +57,10 @@ export default function Bills({
     }
   });
 
-  // === GRAPHIC HEADER (CENTERED POLISH) ===
+  // === GRAPHIC HEADER (HORIZONTAL REVERT + COLOR LOGIC) ===
   const graphicContent = (
-    <div className="flex flex-col items-center justify-center relative z-10 mb-2 w-full gap-4">
-      <div className="relative w-44 h-44 flex-shrink-0">
+    <div className="flex items-center justify-between relative z-10 mb-6 w-full">
+      <div className="relative w-40 h-40 flex-shrink-0">
         <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
           <defs>
             <linearGradient id="billGlow" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -68,18 +68,23 @@ export default function Bills({
               <stop offset="100%" stopColor="#059669" />
             </linearGradient>
           </defs>
-          <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "#1E293B" : "#F1F5F9"} strokeWidth="10" />
-          <circle cx="50" cy="50" r="40" fill="transparent" stroke="url(#billGlow)" strokeWidth="10" strokeLinecap="round" strokeDasharray={251.2} strokeDashoffset={251.2 - (251.2 * progressPercentage) / 100} className="transition-all duration-1000 ease-out" />
+          <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "#1E293B" : "#F1F5F9"} strokeWidth="12" />
+          <circle cx="50" cy="50" r="40" fill="transparent" stroke="url(#billGlow)" strokeWidth="12" strokeLinecap="round" strokeDasharray={251.2} strokeDashoffset={251.2 - (251.2 * progressPercentage) / 100} className="transition-all duration-1000 ease-out" />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={`text-4xl font-black tracking-tighter ${isDarkMode ? "text-white" : "text-slate-900"}`}>{Math.round(progressPercentage)}%</span>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">Paid</span>
+          <span className={`text-3xl font-black ${isDarkMode ? "text-white" : "text-slate-900"}`}>{Math.round(progressPercentage)}%</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Paid</span>
         </div>
       </div>
-      <div className="flex flex-col items-center text-center">
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Monthly Progress</p>
-        <p className={`text-3xl font-black tracking-tighter ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-          ${paidBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xl text-slate-400 opacity-60">/ ${totalBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+      <div className="flex-1 pl-4 text-right">
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Monthly Progress</p>
+        <p className="text-4xl font-black tracking-tighter mb-4">
+          <span className={paidBillsAmount === 0 ? "text-red-500" : "text-[#10B981]"}>
+            ${paidBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+          <span className="text-xl text-slate-400 opacity-60">
+            {" "} / ${totalBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
         </p>
       </div>
     </div>
@@ -96,7 +101,7 @@ export default function Bills({
     <div className={`animate-fade-in pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
       {renderHeroShell(`${userName}'s Bills`, graphicContent)}
 
-      <main className="px-6 space-y-8 mt-4">
+      <main className="px-6 space-y-8 mt-2">
         
         {/* ========================================================= */}
         {/* 🔥 UNPAID BILLS (ACCORDION & 3-LEVEL BENTO ARCHITECTURE) 🔥 */}

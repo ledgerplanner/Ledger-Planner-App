@@ -39,7 +39,6 @@ export default function App() {
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [activeTab, setActiveTab] = useState("home");
   
-  // 🔥 FIX 6: CIRCADIAN ENGINE STATE 🔥
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [manualThemeOverride, setManualThemeOverride] = useState(false);
   
@@ -63,7 +62,6 @@ export default function App() {
   const [isEditingEntry, setIsEditingEntry] = useState(false);
   const [editEntryData, setEditEntryData] = useState({});
   
-  // SMART INITIALIZATION DEFAULT STATE
   const [collapsedPaydays, setCollapsedPaydays] = useState({ "Due Now": true, "Payday 1": true, "Payday 2": true, "Payday 3": true, "Payday 4": true, "Payday 5": true, "Unscheduled": true });
   const hasInitializedCollapse = useRef(false);
   
@@ -156,6 +154,15 @@ export default function App() {
     { group: "Entrepreneur", items: ["Domain / Hosting", "Software / SaaS", "AI Subscriptions", "Marketing & Ads", "Contractors & Freelancers", "Business Fees / LLC", "Office Supplies"] },
     { group: "Other", items: ["Miscellaneous Expense", "Charity / Gifts", "Other"] }
   ];
+
+  // === DYNAMIC HAPTIC ENGINE ===
+  const triggerHaptic = (pattern = 50) => { 
+    if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) {
+      window.navigator.vibrate(pattern); 
+    }
+  };
+  const triggerVictory = () => { triggerHaptic([30, 50, 30]); setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2000); };
+  const triggerWarning = () => { triggerHaptic([50, 100, 50]); };
 
   useEffect(() => {
     setIsMounted(true);
@@ -275,6 +282,7 @@ export default function App() {
   };
 
   const handleLogout = async () => { 
+    triggerWarning();
     if (!window.confirm("Are you sure you want to log out?")) return;
     if (isDemoMode) { window.location.href = "https://ledgerplanner.com"; return; }
     try { await signOut(auth); } 
@@ -324,9 +332,6 @@ export default function App() {
     }
   };
 
-  const triggerHaptic = () => { if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) window.navigator.vibrate(50); };
-  const triggerVictory = () => { triggerHaptic(); setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2000); };
-
   const userName = isDemoMode ? "Aaron" : user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || "Founder";
 
   const getOrdinalNum = (n) => n + (n > 0 ? ['th', 'st', 'nd', 'rd'][(n > 3 && n < 21) || n % 10 > 3 ? 0 : n % 10] : '');
@@ -345,7 +350,7 @@ export default function App() {
   };
 
   const changeTab = (tabId) => { 
-    triggerHaptic(); 
+    triggerHaptic(20); 
     setActiveTab(tabId); 
     if (tabId === "activity") { setActivityFilter("All"); setActivitySearch(""); }
     if (scrollRef.current) scrollRef.current.scrollTo({ top: 0, behavior: "smooth" }); 
@@ -370,6 +375,8 @@ export default function App() {
   const handleFactoryReset = async () => {
     if (resetConfirm !== "RESET") return;
     if (isDemoMode) { alert("Factory reset is disabled in Demo Mode."); setResetConfirm(""); setIsSettingsOpen(false); return; }
+    
+    triggerWarning();
     if (window.confirm("FINAL WARNING: This will permanently delete all your data. Proceed?")) {
       try {
         const collectionsToClear = ["accounts", "bills", "transactions", "todos"];
@@ -388,7 +395,7 @@ export default function App() {
         setTodos([]);
         setPaydayConfig({ frequency: "Weekly", "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } });
 
-        setResetConfirm(""); setIsSettingsOpen(false); triggerHaptic(); alert("Vault wiped. Welcome to a clean slate.");
+        setResetConfirm(""); setIsSettingsOpen(false); triggerVictory(); alert("Vault wiped. Welcome to a clean slate.");
       } catch (e) { console.error("Factory reset failed", e); }
     }
   };
@@ -396,6 +403,8 @@ export default function App() {
   const clearCompletedTodos = async () => {
     const completed = todos.filter(t => t.isCompleted);
     if (completed.length === 0) return;
+    
+    triggerWarning();
     if (!window.confirm("Delete all completed tasks?")) return;
 
     if (isDemoMode) {
@@ -405,7 +414,7 @@ export default function App() {
        const batchPromises = completed.map(t => deleteDoc(doc(db, "users", user.uid, "todos", t.id)));
        await Promise.all(batchPromises);
     }
-    triggerHaptic();
+    triggerHaptic(50);
   };
 
   const handleBillClick = async (id) => {
@@ -426,7 +435,7 @@ export default function App() {
           if (targetAcc) await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance + (bill.amount || 0) });
           if (bill.linkedTxId) await deleteDoc(doc(db, "users", user.uid, "transactions", bill.linkedTxId));
         }
-        triggerHaptic();
+        triggerHaptic(50);
       }
       return;
     }
@@ -503,6 +512,7 @@ export default function App() {
   };
 
   const handleTransferNumpad = (btn) => {
+    triggerHaptic(15);
     if (btn === "=") {
       try { const toEval = transferAmount.replace(/×/g, "*").replace(/÷/g, "/"); if (/^[0-9+\-*/. ]+$/.test(toEval)) setTransferAmount(String(Function('"use strict";return (' + toEval + ")")())); } 
       catch (e) { setTransferAmount("Error"); setTimeout(() => setTransferAmount("0"), 1000); }
@@ -566,6 +576,7 @@ export default function App() {
 
   const deleteAccount = async () => {
     if (!selectedAccount) return;
+    triggerWarning();
     if (!window.confirm(`Are you sure you want to delete ${selectedAccount.name}?`)) return;
     const accId = selectedAccount.id;
     if (isDemoMode) { setAccounts(accounts.filter(a => a.id !== accId)); } 
@@ -577,10 +588,10 @@ export default function App() {
       billsToReset.forEach(b => { batchPromises.push(updateDoc(doc(db, "users", user.uid, "bills", b.id), { isPaid: false, paidAmount: b.isInstallment ? (b.paidAmount || 0) - (b.amount || 0) : 0, paidFromAccountId: null, linkedTxId: null })); });
       await Promise.all(batchPromises);
     }
-    triggerHaptic(); setSelectedAccount(null);
+    triggerHaptic(50); setSelectedAccount(null);
   };
 
-  const clearPaydayConfig = () => { setEditPaydayConfig({ frequency: "Weekly", "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } }); triggerHaptic(); };
+  const clearPaydayConfig = () => { setEditPaydayConfig({ frequency: "Weekly", "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } }); triggerHaptic(50); };
   const savePaydayConfig = async () => { 
     setPaydayConfig(editPaydayConfig); 
     if (!isDemoMode) { await setDoc(doc(db, "users", user.uid, "settings", "paydayConfig"), editPaydayConfig); }
@@ -657,6 +668,7 @@ export default function App() {
   });
 
   const handleRolloverMonth = async () => {
+    triggerWarning();
     if (!window.confirm("Ready to start a new month?")) return;
     if (isDemoMode) { alert("Rollover is disabled in Demo Mode."); return; }
     const batchPromises = [];
@@ -723,8 +735,7 @@ export default function App() {
       <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#1877F2]/10 rounded-full blur-3xl"></div>
       <div className="flex justify-between items-center mb-6 relative z-30 h-10">
         <div className="flex items-center gap-2">
-          {/* 🔥 FIX 6: MANUAL THEME TOGGLE OVERRIDE 🔥 */}
-          <button onClick={() => { setIsDarkMode(!isDarkMode); setManualThemeOverride(true); }} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
+          <button onClick={() => { setIsDarkMode(!isDarkMode); setManualThemeOverride(true); triggerHaptic(20); }} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
             {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
           </button>
           <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
@@ -749,11 +760,9 @@ export default function App() {
         <h2 title={title || "Overview"} className={`text-3xl font-black tracking-tight leading-tight truncate max-w-full ${isDarkMode ? "text-white" : "text-slate-900"}`}>{title || "Overview"}</h2>
       </div>
       
-      {/* 🚀 GRAPHIC CONTENT INJECTION (Controlled by Dashboard) 🚀 */}
       <div className="relative z-10 w-full h-auto opacity-100">{graphicContent}</div>
       
       <div className={`relative z-10 pt-4 border-t flex justify-center items-center ${isDarkMode ? "border-slate-800" : "border-slate-50"}`}>
-        {/* 🔥 FIX 1: HERO DATE RENDER RESTORED 🔥 */}
         <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{heroDateTimeStr}</span>
       </div>
     </header>
@@ -775,7 +784,7 @@ export default function App() {
           triggerVictory(); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
         } else {
           setBills(bills.map(b => b.id === bill.id ? { ...b, paidAmount: newPaidAmt, isOverdue: false } : b));
-          triggerHaptic(); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" }); setInstallmentPromptConfig({ isOpen: true, billId: bill.id, nextDate: "" });
+          triggerHaptic(50); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" }); setInstallmentPromptConfig({ isOpen: true, billId: bill.id, nextDate: "" });
         }
       } else {
         setBills(bills.map(b => b.id === bill.id ? { ...b, isPaid: true, paidAmount: 0, paidFromAccountId: targetAcc.id, linkedTxId: txId } : b));
@@ -791,7 +800,7 @@ export default function App() {
           triggerVictory(); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" });
         } else {
           await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { paidAmount: newPaidAmt, isOverdue: false });
-          triggerHaptic(); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" }); setInstallmentPromptConfig({ isOpen: true, billId: bill.id, nextDate: "" });
+          triggerHaptic(50); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "" }); setInstallmentPromptConfig({ isOpen: true, billId: bill.id, nextDate: "" });
         }
       } else {
         await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: true, paidAmount: 0, paidFromAccountId: targetAcc.id, linkedTxId: txRef.id });
@@ -821,6 +830,7 @@ export default function App() {
   const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0"); setEntryName(""); setEntryDate(""); setEntryIcon("🧾"); setEntryCategory(""); setEntryAccount(""); setEntryIsRecurring(false); setEntryIsInstallment(false); setEntryTotalAmount(""); setEntryPaidAmount(""); setIsCategorySelectorOpen(false); setIsIconSelectorOpen(false); };
   
   const handleNumpad = (btn) => {
+    triggerHaptic(15);
     if (btn === "=") { try { const toEval = inputValue.replace(/×/g, "*").replace(/÷/g, "/"); if (/^[0-9+\-*/. ]+$/.test(toEval)) setInputValue(String(Function('"use strict";return (' + toEval + ")")())); } catch (e) { setInputValue("0"); } } 
     else if (inputValue === "0" && btn !== ".") setInputValue(btn); else setInputValue(inputValue + btn);
   };
@@ -857,7 +867,7 @@ export default function App() {
       } else {
         addDoc(collection(db, "users", user.uid, "bills"), { name: entryName || "New Bill", icon: entryIcon || "🧾", category: entryCategory || "Other", amount: amountToProcess, date: sortableDay, fullDate: displayDate, rawDate: entryDate, payday: calculatePaydayGroup(entryDate), isPaid: false, isOverdue: false, isRecurring: entryIsRecurring, isInstallment: entryIsInstallment, totalAmount: entryIsInstallment ? parseFloat(entryTotalAmount) || 0 : 0, paidAmount: entryIsInstallment ? parseFloat(entryPaidAmount) || 0 : 0, linkedTxId: null }).catch(e => console.log("Offline outbox queued"));
       }
-      triggerHaptic(); closeQab();
+      triggerHaptic(50); closeQab();
     } else if (drawerTab === "income" || drawerTab === "transactions") {
       const targetAcc = accounts.find(a => a.id === entryAccount) || accounts[0];
       if (targetAcc) {
@@ -926,23 +936,24 @@ export default function App() {
 
         {/* MAIN ROUTER CONTENT */}
         <div className="flex-1 flex flex-col relative h-full overflow-hidden">
-          <div className={`flex-1 overflow-y-auto hide-scrollbar lg:pb-0 ${isDemoMode ? "pb-[220px]" : "pb-24"}`} ref={scrollRef} onScroll={handleScroll}>
+          <div className={`flex-1 overflow-y-auto hide-scrollbar lg:pb-0 ${isDemoMode ? "pb-[220px]" : "pb-28"}`} ref={scrollRef} onScroll={handleScroll}>
             {activeTab === "home" && <Dashboard userName={userName} accounts={accounts} bills={dynamicBills} transactions={transactions} paydayConfig={paydayConfig} setEditPaydayConfig={setEditPaydayConfig} setIsPaydaySetupOpen={handleOpenPaydaySetup} setIsNotificationsOpen={setIsNotificationsOpen} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} isDarkMode={isDarkMode} formatPaydayDateStr={formatPaydayDateStr} renderHeroShell={renderHeroShell} changeTab={changeTab} hasConsumedAMBriefing={hasConsumedAMBriefing} setHasConsumedAMBriefing={setHasConsumedAMBriefing} hasConsumedPMBriefing={hasConsumedPMBriefing} setHasConsumedPMBriefing={setHasConsumedPMBriefing} />}
             {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} isDemoMode={isDemoMode} />}
             {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} paydayConfig={paydayConfig} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} handleRolloverMonth={handleRolloverMonth} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} />}
             {activeTab === "activity" && <Activity userName={userName} transactions={transactions} activitySearch={activitySearch} setActivitySearch={setActivitySearch} activityFilter={activityFilter} setActivityFilter={setActivityFilter} isDarkMode={isDarkMode} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} />}
-            {activeTab === "todo" && <Todo userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} newTodoType={newTodoType} setNewTodoType={setNewTodoType} isDarkMode={isDarkMode} handleAddTodo={async (e) => { e.preventDefault(); if(!newTodoText.trim()) return; if (isDemoMode) { setTodos([{ id: `todo_demo_${Date.now()}`, text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false }, ...todos]); } else { await addDoc(collection(db, "users", user.uid, "todos"), { text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() }); } triggerVictory(); setNewTodoText(""); setNewTodoPriority(3); }} toggleTodoStatus={async (id) => { triggerHaptic(); const todo = todos.find(t => t.id === id); if (isDemoMode) { setTodos(todos.map(t => t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)); } else { await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); } }} setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} clearCompletedTodos={clearCompletedTodos} />}
+            {activeTab === "todo" && <Todo userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} newTodoType={newTodoType} setNewTodoType={setNewTodoType} isDarkMode={isDarkMode} handleAddTodo={async (e) => { e.preventDefault(); if(!newTodoText.trim()) return; if (isDemoMode) { setTodos([{ id: `todo_demo_${Date.now()}`, text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false }, ...todos]); } else { await addDoc(collection(db, "users", user.uid, "todos"), { text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() }); } triggerVictory(); setNewTodoText(""); setNewTodoPriority(3); }} toggleTodoStatus={async (id) => { triggerHaptic(50); const todo = todos.find(t => t.id === id); if (isDemoMode) { setTodos(todos.map(t => t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)); } else { await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); } }} setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} clearCompletedTodos={clearCompletedTodos} />}
           </div>
 
-          <div className={`fixed lg:hidden ${isDemoMode ? "bottom-[200px]" : "bottom-24"} right-6 z-50`}>
-            <button onClick={() => setIsQabOpen(true)} className={`w-14 h-14 rounded-full flex items-center justify-center text-white bg-[#1877F2] shadow-[0_12px_24px_rgba(24,119,242,0.4)] border-4 ${isDarkMode ? "border-[#0F172A]" : "border-white"}`}><Plus size={28} /></button>
+          <div className={`fixed lg:hidden ${isDemoMode ? "bottom-[200px]" : "bottom-28"} right-6 z-50`}>
+            <button onClick={() => { triggerHaptic(20); setIsQabOpen(true); }} className={`w-14 h-14 rounded-full flex items-center justify-center text-white bg-[#1877F2] shadow-[0_12px_24px_rgba(24,119,242,0.4)] border-4 ${isDarkMode ? "border-[#0F172A]" : "border-white"}`}><Plus size={28} /></button>
           </div>
 
-          <div className={`lg:hidden fixed ${isDemoMode ? "bottom-[120px]" : "bottom-0"} left-0 w-full backdrop-blur-md border-t px-2 pt-3 pb-6 flex justify-between items-center z-[100] ${isDarkMode ? "bg-[#1E293B]/95 border-slate-800" : "bg-white/95 border-slate-100"}`}>
+          {/* 🔥 PREMIUM NAVIGATION BAR (INK BLACK / CENTERED) 🔥 */}
+          <div className={`lg:hidden fixed ${isDemoMode ? "bottom-[120px]" : "bottom-0"} left-0 w-full backdrop-blur-md border-t px-2 h-[88px] pb-4 pt-2 flex justify-between items-center z-[100] ${isDarkMode ? "bg-[#1E293B]/95 border-slate-800" : "bg-white/95 border-slate-100"}`}>
             {[{ id: "home", icon: Home, label: "Home" }, { id: "accounts", icon: Wallet, label: "Accounts" }, { id: "bills", icon: CalendarIcon, label: "Bills" }, { id: "activity", icon: CreditCard, label: "Activity" }, { id: "todo", icon: CheckSquare, label: "To-Do" }].map((tab) => (
-              <button key={tab.id} onClick={() => changeTab(tab.id)} className="flex-1 flex flex-col items-center gap-1 group">
-                <tab.icon size={24} strokeWidth={activeTab === tab.id ? 2.5 : 2} className={`transition-all duration-300 ${activeTab === tab.id ? "text-[#1877F2] transform -translate-y-1" : isDarkMode ? "text-slate-500" : "text-slate-400"}`} />
-                <span className={`text-[9px] font-black uppercase tracking-widest ${activeTab === tab.id ? "text-[#1877F2]" : isDarkMode ? "text-slate-500" : "text-slate-400"}`}>{tab.label}</span>
+              <button key={tab.id} onClick={() => changeTab(tab.id)} className="flex-1 flex flex-col items-center justify-center gap-1 group h-full">
+                <tab.icon size={30} strokeWidth={2.5} className={`transition-all duration-300 ${activeTab === tab.id ? "text-[#1877F2] transform -translate-y-1 drop-shadow-sm" : isDarkMode ? "text-white opacity-90" : "text-black opacity-90"}`} />
+                <span className={`text-[10px] font-black uppercase tracking-wide transition-all ${activeTab === tab.id ? "text-[#1877F2]" : isDarkMode ? "text-white opacity-90" : "text-black opacity-90"}`}>{tab.label}</span>
               </button>
             ))}
           </div>
@@ -1108,10 +1119,9 @@ export default function App() {
                   <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Current Balance</label>
                   <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={newAccBalance} onChange={(e) => setNewAccBalance(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                   
-                  {/* NEW NEGATIVE BALANCE TOGGLE */}
                   <div className="flex items-center justify-between mt-3 ml-2 pr-2">
                     <span className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Negative Balance (Debt)</span>
-                    <button onClick={() => setNewAccIsNegative(!newAccIsNegative)} className={`w-10 h-5 rounded-full transition-colors relative ${newAccIsNegative ? "bg-red-500" : "bg-slate-300 dark:bg-slate-700"}`}>
+                    <button onClick={() => { triggerHaptic(20); setNewAccIsNegative(!newAccIsNegative); }} className={`w-10 h-5 rounded-full transition-colors relative ${newAccIsNegative ? "bg-red-500" : "bg-slate-300 dark:bg-slate-700"}`}>
                       <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-[3px] transition-transform ${newAccIsNegative ? "translate-x-5" : "translate-x-1"}`}></div>
                     </button>
                   </div>
@@ -1145,7 +1155,7 @@ export default function App() {
                 
                 <div className="text-center relative flex justify-center items-center mb-6">
                   <span className="text-6xl font-extrabold tracking-tighter text-[#10B981]">${transferAmount}</span>
-                  <button onClick={() => setTransferAmount(transferAmount.slice(0, -1) || "0")} className={`absolute right-4 p-3 rounded-full text-2xl lg:text-4xl active:scale-90 transition-transform touch-manipulation text-[#10B981] opacity-70 hover:opacity-100`}>⌫</button>
+                  <button onClick={() => { triggerHaptic(15); setTransferAmount(transferAmount.slice(0, -1) || "0"); }} className={`absolute right-4 p-3 rounded-full text-2xl lg:text-4xl active:scale-90 transition-transform touch-manipulation text-[#10B981] opacity-70 hover:opacity-100`}>⌫</button>
                 </div>
 
                 <div className="grid grid-cols-4 gap-3 mt-auto">
@@ -1186,10 +1196,9 @@ export default function App() {
                     />
                   </div>
                   
-                  {/* NEW NEGATIVE BALANCE TOGGLE */}
                   <div className="flex items-center justify-between mt-3 ml-2 pr-2">
                     <span className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Negative Balance (Debt)</span>
-                    <button onClick={() => setEditAccIsNegative(!editAccIsNegative)} className={`w-10 h-5 rounded-full transition-colors relative ${editAccIsNegative ? "bg-red-500" : "bg-slate-300 dark:bg-slate-700"}`}>
+                    <button onClick={() => { triggerHaptic(20); setEditAccIsNegative(!editAccIsNegative); }} className={`w-10 h-5 rounded-full transition-colors relative ${editAccIsNegative ? "bg-red-500" : "bg-slate-300 dark:bg-slate-700"}`}>
                       <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-[3px] transition-transform ${editAccIsNegative ? "translate-x-5" : "translate-x-1"}`}></div>
                     </button>
                   </div>
@@ -1289,7 +1298,7 @@ export default function App() {
                         <CheckCircle2 size={16} /> Mark as Paid
                       </button>
                     )}
-                    <button onClick={async () => { if(window.confirm("Are you sure you want to delete this entry?")) { const colName = selectedEntry.fullDate ? "bills" : "transactions"; if (isDemoMode) { if (colName === "bills") { setBills(bills.filter(b => b.id !== selectedEntry.id)); } else { setTransactions(transactions.filter(t => t.id !== selectedEntry.id)); } } else { await deleteDoc(doc(db, "users", user.uid, colName, selectedEntry.id)); if(!selectedEntry.fullDate && selectedEntry.accountId) { const acc = accounts.find(a => a.id === selectedEntry.accountId); if(acc) { const revAmount = selectedEntry.type === "Income" ? -(selectedEntry.amount || 0) : (selectedEntry.amount || 0); await updateDoc(doc(db, "users", user.uid, "accounts", acc.id), { balance: (acc.balance || 0) + revAmount }); } } } setSelectedEntry(null); triggerHaptic(); } }} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-red-500 shadow-[0_8px_16px_rgba(239,68,68,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><Trash2 size={16} /> Delete Entry</button>
+                    <button onClick={async () => { triggerWarning(); if(window.confirm("Are you sure you want to delete this entry?")) { const colName = selectedEntry.fullDate ? "bills" : "transactions"; if (isDemoMode) { if (colName === "bills") { setBills(bills.filter(b => b.id !== selectedEntry.id)); } else { setTransactions(transactions.filter(t => t.id !== selectedEntry.id)); } } else { await deleteDoc(doc(db, "users", user.uid, colName, selectedEntry.id)); if(!selectedEntry.fullDate && selectedEntry.accountId) { const acc = accounts.find(a => a.id === selectedEntry.accountId); if(acc) { const revAmount = selectedEntry.type === "Income" ? -(selectedEntry.amount || 0) : (selectedEntry.amount || 0); await updateDoc(doc(db, "users", user.uid, "accounts", acc.id), { balance: (acc.balance || 0) + revAmount }); } } } setSelectedEntry(null); triggerHaptic(50); } }} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-red-500 shadow-[0_8px_16px_rgba(239,68,68,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><Trash2 size={16} /> Delete Entry</button>
                   </>
                 ) : (
                   <div className="space-y-4">
@@ -1309,13 +1318,13 @@ export default function App() {
                         <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
                           <div className="flex items-center justify-between">
                             <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Recurring Bill</span>
-                            <button onClick={() => setEditEntryData({...editEntryData, isRecurring: !editEntryData.isRecurring})} className={`w-12 h-6 rounded-full transition-colors relative ${editEntryData.isRecurring ? "bg-[#1877F2]" : "bg-slate-300 dark:bg-slate-700"}`}>
+                            <button onClick={() => { triggerHaptic(20); setEditEntryData({...editEntryData, isRecurring: !editEntryData.isRecurring}); }} className={`w-12 h-6 rounded-full transition-colors relative ${editEntryData.isRecurring ? "bg-[#1877F2]" : "bg-slate-300 dark:bg-slate-700"}`}>
                               <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${editEntryData.isRecurring ? "translate-x-7" : "translate-x-1"}`}></div>
                             </button>
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Installment Plan</span>
-                            <button onClick={() => setEditEntryData({...editEntryData, isInstallment: !editEntryData.isInstallment})} className={`w-12 h-6 rounded-full transition-colors relative ${editEntryData.isInstallment ? "bg-[#1877F2]" : "bg-slate-300 dark:bg-slate-700"}`}>
+                            <button onClick={() => { triggerHaptic(20); setEditEntryData({...editEntryData, isInstallment: !editEntryData.isInstallment}); }} className={`w-12 h-6 rounded-full transition-colors relative ${editEntryData.isInstallment ? "bg-[#1877F2]" : "bg-slate-300 dark:bg-slate-700"}`}>
                               <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${editEntryData.isInstallment ? "translate-x-7" : "translate-x-1"}`}></div>
                             </button>
                           </div>
@@ -1345,9 +1354,9 @@ export default function App() {
                 <div className={`w-12 h-1.5 rounded-full mx-auto mb-6 opacity-30 lg:hidden ${qabActiveBg}`}></div>
                 {qabStep === 1 ? (
                   <div className="flex rounded-xl p-1 mb-6 mx-auto max-w-[280px] border bg-white/80">
-                    <button onClick={() => { setDrawerTab("bills"); setEntryIcon("🧾"); setEntryCategory(""); }} className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg ${drawerTab === "bills" ? `${qabActiveBg} text-white` : "text-slate-400"}`}>Bills</button>
-                    <button onClick={() => { setDrawerTab("income"); setEntryIcon("💵"); setEntryCategory(""); }} className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg ${drawerTab === "income" ? `${qabActiveBg} text-white` : "text-slate-400"}`}>Income</button>
-                    <button onClick={() => { setDrawerTab("transactions"); setEntryIcon("💳"); setEntryCategory(""); }} className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg ${drawerTab === "transactions" ? `${qabActiveBg} text-white` : "text-slate-400"}`}>Activity</button>
+                    <button onClick={() => { triggerHaptic(20); setDrawerTab("bills"); setEntryIcon("🧾"); setEntryCategory(""); }} className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg ${drawerTab === "bills" ? `${qabActiveBg} text-white` : "text-slate-400"}`}>Bills</button>
+                    <button onClick={() => { triggerHaptic(20); setDrawerTab("income"); setEntryIcon("💵"); setEntryCategory(""); }} className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg ${drawerTab === "income" ? `${qabActiveBg} text-white` : "text-slate-400"}`}>Income</button>
+                    <button onClick={() => { triggerHaptic(20); setDrawerTab("transactions"); setEntryIcon("💳"); setEntryCategory(""); }} className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg ${drawerTab === "transactions" ? `${qabActiveBg} text-white` : "text-slate-400"}`}>Activity</button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-4 mb-6 -mt-2">
@@ -1357,7 +1366,7 @@ export default function App() {
                 )}
                 <div className="text-center relative flex justify-center items-center">
                   <span className={`text-6xl font-extrabold tracking-tighter ${qabActiveText}`}>${inputValue}</span>
-                  {qabStep === 1 && <button onClick={() => setInputValue(inputValue.slice(0, -1) || "0")} className={`absolute right-4 p-3 rounded-full ${qabActiveText} text-2xl lg:text-4xl active:scale-90 transition-transform touch-manipulation`}>⌫</button>}
+                  {qabStep === 1 && <button onClick={() => { triggerHaptic(15); setInputValue(inputValue.slice(0, -1) || "0"); }} className={`absolute right-4 p-3 rounded-full ${qabActiveText} text-2xl lg:text-4xl active:scale-90 transition-transform touch-manipulation`}>⌫</button>}
                 </div>
               </div>
               <div className={`p-6 mt-auto lg:rounded-b-[2.5rem] flex-1 flex flex-col overflow-y-auto ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
@@ -1391,11 +1400,11 @@ export default function App() {
                           <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
                             <div className="flex items-center justify-between">
                               <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Recurring Bill</span>
-                              <button onClick={() => setEntryIsRecurring(!entryIsRecurring)} className={`w-12 h-6 rounded-full transition-colors relative ${entryIsRecurring ? "bg-[#1877F2]" : "bg-slate-300 dark:bg-slate-700"}`}><div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${entryIsRecurring ? "translate-x-7" : "translate-x-1"}`}></div></button>
+                              <button onClick={() => { triggerHaptic(20); setEntryIsRecurring(!entryIsRecurring); }} className={`w-12 h-6 rounded-full transition-colors relative ${entryIsRecurring ? "bg-[#1877F2]" : "bg-slate-300 dark:bg-slate-700"}`}><div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${entryIsRecurring ? "translate-x-7" : "translate-x-1"}`}></div></button>
                             </div>
                             <div className="flex items-center justify-between">
                               <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Installment Plan</span>
-                              <button onClick={() => setEntryIsInstallment(!entryIsInstallment)} className={`w-12 h-6 rounded-full transition-colors relative ${entryIsInstallment ? "bg-[#1877F2]" : "bg-slate-300 dark:bg-slate-700"}`}><div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${entryIsInstallment ? "translate-x-7" : "translate-x-1"}`}></div></button>
+                              <button onClick={() => { triggerHaptic(20); setEntryIsInstallment(!entryIsInstallment); }} className={`w-12 h-6 rounded-full transition-colors relative ${entryIsInstallment ? "bg-[#1877F2]" : "bg-slate-300 dark:bg-slate-700"}`}><div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${entryIsInstallment ? "translate-x-7" : "translate-x-1"}`}></div></button>
                             </div>
                             {entryIsInstallment && (
                               <div className="grid grid-cols-2 gap-3 animate-fade-in mt-2">

@@ -6,7 +6,7 @@ import { db, auth } from "../firebase";
 export default function Todo({
   userName, todos, newTodoText, setNewTodoText,
   newTodoPriority, setNewTodoPriority, newTodoType, setNewTodoType,
-  isDarkMode, handleAddTodo, toggleTodoStatus, renderHeroShell
+  isDarkMode, handleAddTodo, toggleTodoStatus, renderHeroShell, clearCompletedTodos
 }) {
   const [activeModalTodo, setActiveModalTodo] = useState(null);
   
@@ -223,9 +223,17 @@ export default function Todo({
 
         {completedTasks.length > 0 && (
           <section className={`p-4 rounded-[2rem] border shadow-sm animate-fade-in transition-colors ${isDarkMode ? "bg-orange-900/10 border-orange-900/30" : "bg-orange-50/60 border-orange-100"}`}>
-            <div className="flex items-center gap-2 mb-4 px-2">
-              <CheckCircle2 size={16} className="text-[#F97316]" />
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-[#F97316]">Completed Tasks</h3>
+            <div className="flex items-center justify-between mb-4 px-2">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-[#F97316]" />
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-[#F97316]">Completed Tasks</h3>
+              </div>
+              <button 
+                onClick={clearCompletedTodos}
+                className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all active:scale-95 ${isDarkMode ? "bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30" : "bg-orange-100 text-orange-600 border-orange-200 hover:bg-orange-200"}`}
+              >
+                Delete All
+              </button>
             </div>
             <div className="space-y-2">
               {completedTasks.map(renderTaskCard)}

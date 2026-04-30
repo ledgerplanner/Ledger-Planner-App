@@ -142,7 +142,7 @@ export default function App() {
     return [];
   });
 
-  const categoryEmojis = ["💵", "💲", "🧾", "📋", "🏠", "💧", "⚡", "📺", "🚗", "⛽", "🚕", "🚇", "✈️", "🌴", "🏋️", "💳", "🎓", "🛒", "🛍️", "👗", "👟", "💅", "💈", "🍔", "🌮", "🍣", "☕", "🍻", "🍹", "🏥", "💊", "🐶", "🐾", "🎉", "🎟️", "🎬", "🎮", "🕹️", "📱", "💻", "💼", "💰", "₿", "💎", "⌚", "🎧", "🏪", "📶", "☁️", "🤖", "🚀"];
+  const categoryEmojis = ["💵", "💲", "🤑", "💰", "🏦", "💹", "₿", "💎", "💳", "🧾", "📋", "💼", "🏠", "🏢", "🔑", "🛋️", "🧹", "💧", "⚡", "📶", "📡", "☁️", "📺", "🎬", "🍿", "🎵", "🎧", "🚗", "🚲", "🚂", "✈️", "⛽", "🛠️", "🅿️", "🎫", "🚕", "🚇", "🛒", "🛍️", "📦", "👕", "👗", "👟", "💅", "💄", "💈", "🕶️", "💍", "🍔", "🍕", "🌮", "🍣", "🥗", "🍳", "☕", "🍦", "🍻", "🍹", "🍷", "🏥", "💊", "🦷", "👓", "🧘", "🏋️", "🐾", "🐶", "🎁", "🎉", "🎟️", "🎮", "🕹️", "📱", "💻", "⌚", "🤖", "🚀", "🌴", "🎓", "🏪"];
   
   const modernCategories = [
     { group: "Income & Wealth", items: ["Primary Salary", "Side Hustle / Gig", "Tips / Cash", "Investments / Crypto", "Transfers (Venmo/Zelle)", "Refunds & Adjustments", "Cash App", "PayDay Loans", "Unemployment"] },
@@ -155,12 +155,6 @@ export default function App() {
     { group: "Health", items: ["Medical / Doctor", "Pharmacy / Rx", "Dental / Vision", "Therapy / Mental Health", "Health Insurance", "Fitness / Wellness"] },
     { group: "Entrepreneur", items: ["Domain / Hosting", "Software / SaaS", "AI Subscriptions", "Marketing & Ads", "Contractors & Freelancers", "Business Fees / LLC", "Office Supplies"] },
     { group: "Other", items: ["Miscellaneous Expense", "Charity / Gifts", "Other"] }
-  ];
-
-  const engineManualItems = [
-    { id: 1, title: "The Ledger Baseline", desc: "Why do we add Accounts first? Because your true net position is impossible to calculate without a baseline. This is your total liquid capital.", videoId: "your_video_id_1" },
-    { id: 2, title: "Payday Routing Engine", desc: "Automate your peace of mind. By assigning exact income dates, the engine automatically clusters your upcoming bills to the correct paycheck.", videoId: "your_video_id_2" },
-    { id: 3, title: "Safe-to-Spend Logic", desc: "The most important number in the app. It calculates your liquid cash minus ALL unpaid bills on the board. If it's green, you're clear.", videoId: "your_video_id_3" }
   ];
 
   useEffect(() => {
@@ -281,6 +275,7 @@ export default function App() {
   };
 
   const handleLogout = async () => { 
+    if (!window.confirm("Are you sure you want to log out?")) return;
     if (isDemoMode) { window.location.href = "https://ledgerplanner.com"; return; }
     try { await signOut(auth); } 
     catch (error) { console.error("Logout forced locally:", error); } 
@@ -384,9 +379,33 @@ export default function App() {
           const promises = snap.docs.map(d => deleteDoc(doc(db, "users", user.uid, colName, d.id)));
           await Promise.all(promises);
         }
+        
+        await deleteDoc(doc(db, "users", user.uid, "settings", "paydayConfig"));
+
+        setAccounts([]);
+        setBills([]);
+        setTransactions([]);
+        setTodos([]);
+        setPaydayConfig({ frequency: "Weekly", "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } });
+
         setResetConfirm(""); setIsSettingsOpen(false); triggerHaptic(); alert("Vault wiped. Welcome to a clean slate.");
       } catch (e) { console.error("Factory reset failed", e); }
     }
+  };
+
+  const clearCompletedTodos = async () => {
+    const completed = todos.filter(t => t.isCompleted);
+    if (completed.length === 0) return;
+    if (!window.confirm("Delete all completed tasks?")) return;
+
+    if (isDemoMode) {
+       setTodos(todos.filter(t => !t.isCompleted));
+    } else {
+       setTodos(todos.filter(t => !t.isCompleted));
+       const batchPromises = completed.map(t => deleteDoc(doc(db, "users", user.uid, "todos", t.id)));
+       await Promise.all(batchPromises);
+    }
+    triggerHaptic();
   };
 
   const handleBillClick = async (id) => {
@@ -912,7 +931,7 @@ export default function App() {
             {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} isDemoMode={isDemoMode} />}
             {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} paydayConfig={paydayConfig} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} handleRolloverMonth={handleRolloverMonth} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} />}
             {activeTab === "activity" && <Activity userName={userName} transactions={transactions} activitySearch={activitySearch} setActivitySearch={setActivitySearch} activityFilter={activityFilter} setActivityFilter={setActivityFilter} isDarkMode={isDarkMode} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} />}
-            {activeTab === "todo" && <Todo userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} newTodoType={newTodoType} setNewTodoType={setNewTodoType} isDarkMode={isDarkMode} handleAddTodo={async (e) => { e.preventDefault(); if(!newTodoText.trim()) return; if (isDemoMode) { setTodos([{ id: `todo_demo_${Date.now()}`, text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false }, ...todos]); } else { await addDoc(collection(db, "users", user.uid, "todos"), { text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() }); } triggerVictory(); setNewTodoText(""); setNewTodoPriority(3); }} toggleTodoStatus={async (id) => { triggerHaptic(); const todo = todos.find(t => t.id === id); if (isDemoMode) { setTodos(todos.map(t => t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)); } else { await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); } }} setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} />}
+            {activeTab === "todo" && <Todo userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} newTodoType={newTodoType} setNewTodoType={setNewTodoType} isDarkMode={isDarkMode} handleAddTodo={async (e) => { e.preventDefault(); if(!newTodoText.trim()) return; if (isDemoMode) { setTodos([{ id: `todo_demo_${Date.now()}`, text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false }, ...todos]); } else { await addDoc(collection(db, "users", user.uid, "todos"), { text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() }); } triggerVictory(); setNewTodoText(""); setNewTodoPriority(3); }} toggleTodoStatus={async (id) => { triggerHaptic(); const todo = todos.find(t => t.id === id); if (isDemoMode) { setTodos(todos.map(t => t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)); } else { await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); } }} setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} clearCompletedTodos={clearCompletedTodos} />}
           </div>
 
           <div className={`fixed lg:hidden ${isDemoMode ? "bottom-[200px]" : "bottom-24"} right-6 z-50`}>
@@ -939,6 +958,8 @@ export default function App() {
                 <button onClick={() => setIsSettingsOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
               <div className={`p-6 overflow-y-auto space-y-6 flex-1 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+                
+                {/* 1. Identity Engine */}
                 <div className={`p-5 rounded-3xl border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
                   <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2"><User size={14}/> Identity Engine</h4>
                   <div className="relative mb-4">
@@ -947,6 +968,18 @@ export default function App() {
                   </div>
                   <button onClick={handleUpdateIdentity} disabled={!(editName || "").trim() || editName === userName} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 ${(!(editName || "").trim() || editName === userName) ? "bg-slate-300 text-slate-500 cursor-not-allowed" : "bg-[#1877F2] text-white shadow-[0_8px_16px_rgba(24,119,242,0.3)]"}`}>Update Identity</button>
                 </div>
+                
+                {/* 2. Signature Line */}
+                <div className={`border-t ${isDarkMode ? "border-white" : "border-slate-200"}`}></div>
+
+                {/* 3. Contact Support */}
+                <div className={`p-5 rounded-3xl border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2"><HelpCircle size={14}/> Contact Support</h4>
+                  <p className={`text-xs font-bold mb-4 leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Found a glitch in the matrix or need a new feature? Contact support below.</p>
+                  <a href="mailto:support@ledgerplanner.com" className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 border transition-all active:scale-95 ${isDarkMode ? "bg-slate-800 border-slate-600 text-white hover:bg-slate-700" : "bg-slate-50 border-slate-200 text-slate-900 hover:bg-slate-100"}`}>REPORT BUG / REQUEST FEATURE</a>
+                </div>
+
+                {/* 4. Subscription */}
                 <div className={`p-5 rounded-3xl border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2"><CreditCard size={14}/> Subscription</h4>
                    <div className={`p-4 rounded-2xl border flex items-center justify-between ${isDarkMode ? "bg-[#0F172A] border-slate-600" : "bg-slate-50 border-slate-200"}`}>
@@ -954,37 +987,8 @@ export default function App() {
                     <button onClick={() => alert("Subscription portal connecting...")} className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-colors ${isDarkMode ? "bg-slate-800 border-slate-600 text-white hover:bg-slate-700" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100 shadow-sm"}`}>Manage</button>
                   </div>
                 </div>
-                <div className={`pt-6 border-t ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}>
-                  <h3 className={`font-black uppercase tracking-widest text-sm mb-4 px-1 flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>🧠 The Engine Manual</h3>
-                  <div className="space-y-3 mb-8">
-                    {engineManualItems.map(item => (
-                      <div key={item.id} className={`rounded-3xl border overflow-hidden transition-colors ${isDarkMode ? 'border-slate-700 bg-[#1E293B]' : 'border-slate-200 bg-white'}`}>
-                        <div className="p-5 flex justify-between items-center cursor-pointer select-none" onClick={() => setOpenManualId(openManualId === item.id ? null : item.id)}>
-                          <span className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{item.title}</span>
-                          <div className={`p-1.5 rounded-full ${isDarkMode ? "bg-slate-800 text-slate-400" : "bg-slate-50 text-slate-500"}`}>{openManualId === item.id ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}</div>
-                        </div>
-                        {openManualId === item.id && (
-                          <div className={`px-5 pb-5 animate-fade-in border-t ${isDarkMode ? 'border-slate-700/50' : 'border-slate-100'} pt-4`}>
-                            <p className={`text-[11px] font-bold leading-relaxed mb-4 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{item.desc}</p>
-                            <button onClick={() => window.open(`https://youtube.com/watch?v=${item.videoId}`, '_blank')} className="w-full py-3 rounded-xl font-black text-[10px] uppercase tracking-widest text-white bg-red-600 shadow-[0_4px_12px_rgba(220,38,38,0.3)] flex items-center justify-center gap-2 transition-transform active:scale-95"><PlayCircle size={16} /> Watch Tutorial</button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  <h3 className={`font-black uppercase tracking-widest text-sm mb-4 px-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Knowledge Base</h3>
-                  <div className="grid grid-cols-2 gap-3 mb-6">
-                    <div className={`p-5 rounded-3xl border flex flex-col items-center justify-center text-center cursor-pointer transition-transform active:scale-95 shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}><ShieldCheck size={28} className="text-[#1877F2] mb-3"/><span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Security & Vault</span></div>
-                    <div className={`p-5 rounded-3xl border flex flex-col items-center justify-center text-center cursor-pointer transition-transform active:scale-95 shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}><Zap size={28} className="text-[#F97316] mb-3"/><span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Troubleshooting</span></div>
-                    <div className={`p-5 rounded-3xl border flex flex-col items-center justify-center text-center cursor-pointer transition-transform active:scale-95 shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}><TrendingUp size={28} className="text-[#10B981] mb-3"/><span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Ledger Math</span></div>
-                    <div className={`p-5 rounded-3xl border flex flex-col items-center justify-center text-center cursor-pointer transition-transform active:scale-95 shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}><CreditCard size={28} className="text-purple-500 mb-3"/><span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Billing & Pro</span></div>
-                  </div>
-                  <div className={`p-5 rounded-3xl border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2"><HelpCircle size={14}/> Dispatch Command</h4>
-                    <p className={`text-xs font-bold mb-4 leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Found a glitch in the matrix or need a new feature? Ping the architect directly.</p>
-                    <a href="mailto:support@ledgerplanner.com" className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 border transition-all active:scale-95 ${isDarkMode ? "bg-slate-800 border-slate-600 text-white hover:bg-slate-700" : "bg-slate-50 border-slate-200 text-slate-900 hover:bg-slate-100"}`}>Report Bug / Request Feature</a>
-                  </div>
-                </div>
+                
+                {/* 5. Danger Zone */}
                 <div className={`p-5 rounded-3xl border shadow-sm mt-6 ${isDarkMode ? "bg-red-900/10 border-red-900/30" : "bg-red-50/50 border-red-100"}`}>
                   <h4 className="text-[10px] font-black uppercase tracking-widest text-red-500/70 mb-4 flex items-center gap-2"><AlertCircle size={14}/> Danger Zone</h4>
                   <div className="mb-4">

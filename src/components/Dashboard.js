@@ -211,7 +211,8 @@ export default function Dashboard({
                 </div>
 
                 <div className="text-center py-2">
-                   <p className={`text-2xl font-black tracking-tighter ${pd === "Due Now" ? "text-red-500" : isDeficit ? "text-red-500" : "text-[#10B981]"}`}>
+                   {/* DYNAMIC COLOR LOGIC APPLIED HERE */}
+                   <p className={`text-2xl font-black tracking-tighter ${isDeficit ? "text-red-500" : "text-[#10B981]"}`}>
                      {isDeficit ? "-" : ""}${Math.abs(waterfallBalance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                    </p>
                    <span className="text-[8px] font-black uppercase tracking-[0.15em] text-slate-400 opacity-60">{subLabelStr}</span>

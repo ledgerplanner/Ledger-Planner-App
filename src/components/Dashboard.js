@@ -59,23 +59,8 @@ export default function Dashboard({
 
   const totalIncomeBalance = accounts.reduce((sum, a) => sum + (Number(a?.balance) || 0), 0);
   
-  // FIXED: Surgical filtering to block future months from the Hero total
-  const unpaidBillsAmount = bills.filter((b) => !b?.isPaid).reduce((sum, bill) => {
-    let include = false;
-    if (bill.isOverdue) {
-      include = true; // Always count past-due liabilities
-    } else if (bill.rawDate) {
-      const parts = bill.rawDate.split("-");
-      if (parts.length === 3) {
-        const bMonth = parseInt(parts[1], 10) - 1;
-        const bYear = parseInt(parts[0], 10);
-        if (bMonth === currentMonthIdx && bYear === currentYearIdx) {
-          include = true; // Only include if it matches the current local month
-        }
-      }
-    }
-    return include ? sum + (Number(bill?.amount) || 0) : sum;
-  }, 0);
+  // RESTORED: Pure global net for all unpaid bills across all months
+  const unpaidBillsAmount = bills.filter((b) => !b?.isPaid).reduce((sum, b) => sum + (Number(b?.amount) || 0), 0);
   
   const safeToSpend = totalIncomeBalance < 0 
     ? -(Math.abs(unpaidBillsAmount) - Math.abs(totalIncomeBalance))

@@ -17,7 +17,7 @@ import {
   signInWithPopup,
   updateProfile
 } from "firebase/auth";
-import { collection, doc, setDoc, addDoc, updateDoc, deleteDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp } from "firebase/firestore";
+import { collection, doc, setDoc, addDoc, updateDoc, deleteDoc, getDocs, getDoc, onSnapshot, query, orderBy, serverTimestamp } from "firebase/firestore";
 
 // === DEMO DATA IMPORT ===
 import { demoAccounts, demoBills, demoTransactions, demoTodos, demoPaydayConfig } from "./demoData";
@@ -64,6 +64,7 @@ export default function App() {
   
   const [collapsedPaydays, setCollapsedPaydays] = useState({ "Due Now": true, "Payday 1": true, "Payday 2": true, "Payday 3": true, "Payday 4": true, "Payday 5": true, "Unscheduled": true });
   const hasInitializedCollapse = useRef(false);
+  const [hasCheckedRollover, setHasCheckedRollover] = useState(false);
   
   const [isPaydaySetupOpen, setIsPaydaySetupOpen] = useState(false);
   const [paydayConfig, setPaydayConfig] = useState({ frequency: "Weekly", "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } });
@@ -203,6 +204,59 @@ export default function App() {
     const unsubConfig = onSnapshot(doc(db, "users", user.uid, "settings", "paydayConfig"), (docSnap) => { if (docSnap.exists()) setPaydayConfig({ frequency: "Weekly", ...docSnap.data() }); });
     return () => { unsubAcc(); unsubBills(); unsubTxs(); unsubTodos(); unsubConfig(); };
   }, [isMounted, isDemoMode, user]);
+
+  // === SILENT AUTO-ROLLOVER ENGINE ===
+  useEffect(() => {
+    if (!isMounted || isDemoMode || !user || hasCheckedRollover || bills.length === 0) return;
+
+    const checkAutoRollover = async () => {
+      try {
+        const systemRef = doc(db, "users", user.uid, "settings", "system");
+        const sysSnap = await getDoc(systemRef);
+        const today = new Date();
+        const currentMonthKey = `${today.getUTCFullYear()}-${today.getUTCMonth() + 1}`;
+
+        if (sysSnap.exists()) {
+          const data = sysSnap.data();
+          if (data.lastActiveMonth && data.lastActiveMonth !== currentMonthKey) {
+            console.log("System Auto-Rollover Triggered");
+            const batchPromises = [];
+            bills.forEach(bill => {
+              if (bill.isPaid) {
+                if (bill.isRecurring !== false) { 
+                  let newRawDate = bill.rawDate; let displayDate = bill.fullDate; let newPayday = "Payday 1";
+                  if (bill.rawDate) {
+                    const oldDate = new Date(bill.rawDate); 
+                    if (!isNaN(oldDate.getTime())) {
+                        oldDate.setUTCMonth(oldDate.getUTCMonth() + 1);
+                        newRawDate = oldDate.toISOString().split('T')[0];
+                        displayDate = oldDate.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+                        newPayday = calculatePaydayGroup(newRawDate);
+                    }
+                  }
+                  let newPaidAmt = bill.isInstallment ? (bill.paidAmount || 0) : 0;
+                  batchPromises.push(updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: false, paidAmount: newPaidAmt, linkedTxId: null, paidFromAccountId: null, rawDate: newRawDate, fullDate: displayDate, payday: newPayday, isOverdue: false }));
+                } else { batchPromises.push(deleteDoc(doc(db, "users", user.uid, "bills", bill.id))); }
+              }
+            });
+            await Promise.all(batchPromises);
+            await setDoc(systemRef, { lastActiveMonth: currentMonthKey }, { merge: true });
+          } else if (!data.lastActiveMonth) {
+            await setDoc(systemRef, { lastActiveMonth: currentMonthKey }, { merge: true });
+          }
+        } else {
+          await setDoc(systemRef, { lastActiveMonth: currentMonthKey }, { merge: true });
+        }
+      } catch (e) {
+        console.error("Auto-rollover silent fail:", e);
+      } finally {
+        setHasCheckedRollover(true);
+      }
+    };
+
+    checkAutoRollover();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMounted, isDemoMode, user, bills.length, hasCheckedRollover]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -372,6 +426,46 @@ export default function App() {
     } catch (e) { console.error("Failed to update name", e); }
   };
 
+  const executeRolloverCore = async () => {
+    const batchPromises = [];
+    bills.forEach(bill => {
+      if (bill.isPaid) {
+        if (bill.isRecurring !== false) { 
+          let newRawDate = bill.rawDate; let displayDate = bill.fullDate; let newPayday = "Payday 1";
+          if (bill.rawDate) {
+            const oldDate = new Date(bill.rawDate); 
+            if (!isNaN(oldDate.getTime())) {
+                oldDate.setUTCMonth(oldDate.getUTCMonth() + 1);
+                newRawDate = oldDate.toISOString().split('T')[0];
+                displayDate = oldDate.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+                newPayday = calculatePaydayGroup(newRawDate);
+            }
+          }
+          let newPaidAmt = bill.isInstallment ? (bill.paidAmount || 0) : 0;
+          batchPromises.push(updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: false, paidAmount: newPaidAmt, linkedTxId: null, paidFromAccountId: null, rawDate: newRawDate, fullDate: displayDate, payday: newPayday, isOverdue: false }));
+        } else { batchPromises.push(deleteDoc(doc(db, "users", user.uid, "bills", bill.id))); }
+      }
+    });
+    await Promise.all(batchPromises);
+  };
+
+  const handleRolloverMonth = async () => {
+    triggerWarning();
+    if (!window.confirm("SYSTEM OVERRIDE: Are you sure you want to force a manual month rollover?")) return;
+    if (isDemoMode) { alert("Rollover is disabled in Demo Mode."); return; }
+    
+    await executeRolloverCore();
+    
+    if (!isDemoMode && user) {
+      const today = new Date();
+      const currentMonthKey = `${today.getUTCFullYear()}-${today.getUTCMonth() + 1}`;
+      await setDoc(doc(db, "users", user.uid, "settings", "system"), { lastActiveMonth: currentMonthKey }, { merge: true });
+    }
+    
+    triggerVictory();
+    setIsSettingsOpen(false);
+  };
+
   const handleFactoryReset = async () => {
     if (resetConfirm !== "RESET") return;
     if (isDemoMode) { alert("Factory reset is disabled in Demo Mode."); setResetConfirm(""); setIsSettingsOpen(false); return; }
@@ -388,6 +482,7 @@ export default function App() {
         }
         
         await deleteDoc(doc(db, "users", user.uid, "settings", "paydayConfig"));
+        await deleteDoc(doc(db, "users", user.uid, "settings", "system"));
 
         setAccounts([]);
         setBills([]);
@@ -666,32 +761,6 @@ export default function App() {
     if (!a.rawDate) return 1; if (!b.rawDate) return -1;
     return new Date(a.rawDate || 0) - new Date(b.rawDate || 0);
   });
-
-  const handleRolloverMonth = async () => {
-    triggerWarning();
-    if (!window.confirm("Ready to start a new month?")) return;
-    if (isDemoMode) { alert("Rollover is disabled in Demo Mode."); return; }
-    const batchPromises = [];
-    bills.forEach(bill => {
-      if (bill.isPaid) {
-        if (bill.isRecurring !== false) { 
-          let newRawDate = bill.rawDate; let displayDate = bill.fullDate; let newPayday = "Payday 1";
-          if (bill.rawDate) {
-            const oldDate = new Date(bill.rawDate); 
-            if (!isNaN(oldDate.getTime())) {
-                oldDate.setUTCMonth(oldDate.getUTCMonth() + 1);
-                newRawDate = oldDate.toISOString().split('T')[0];
-                displayDate = oldDate.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
-                newPayday = calculatePaydayGroup(newRawDate);
-            }
-          }
-          let newPaidAmt = bill.isInstallment ? (bill.paidAmount || 0) : 0;
-          batchPromises.push(updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: false, paidAmount: newPaidAmt, linkedTxId: null, paidFromAccountId: null, rawDate: newRawDate, fullDate: displayDate, payday: newPayday, isOverdue: false }));
-        } else { batchPromises.push(deleteDoc(doc(db, "users", user.uid, "bills", bill.id))); }
-      }
-    });
-    await Promise.all(batchPromises); triggerVictory();
-  };
 
   const generateAlerts = () => {
     const currentAlerts = [];
@@ -998,8 +1067,17 @@ export default function App() {
                     <button onClick={() => alert("Subscription portal connecting...")} className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-colors ${isDarkMode ? "bg-slate-800 border-slate-600 text-white hover:bg-slate-700" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100 shadow-sm"}`}>Manage</button>
                   </div>
                 </div>
+
+                {/* 5. System Override (Manual Rollover) */}
+                <div className={`p-5 rounded-3xl border shadow-sm mt-6 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2"><RefreshCw size={14}/> System Override</h4>
+                  <p className={`text-xs font-bold mb-4 leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>The Master Engine auto-rolls your month. If you need to force a manual rollover, use the override below.</p>
+                  <button onClick={handleRolloverMonth} className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 border transition-all active:scale-95 ${isDarkMode ? "bg-slate-800 border-slate-600 text-white hover:bg-slate-700" : "bg-slate-50 border-slate-200 text-slate-900 hover:bg-slate-100"}`}>
+                    <RefreshCw size={14} strokeWidth={2.5} /> Force Month Rollover
+                  </button>
+                </div>
                 
-                {/* 5. Danger Zone */}
+                {/* 6. Danger Zone */}
                 <div className={`p-5 rounded-3xl border shadow-sm mt-6 ${isDarkMode ? "bg-red-900/10 border-red-900/30" : "bg-red-50/50 border-red-100"}`}>
                   <h4 className="text-[10px] font-black uppercase tracking-widest text-red-500/70 mb-4 flex items-center gap-2"><AlertCircle size={14}/> Danger Zone</h4>
                   <div className="mb-4">

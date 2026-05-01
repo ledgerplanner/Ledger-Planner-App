@@ -255,7 +255,6 @@ export default function App() {
     };
 
     checkAutoRollover();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMounted, isDemoMode, user, bills.length, hasCheckedRollover]);
 
   useEffect(() => {

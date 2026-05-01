@@ -51,8 +51,31 @@ export default function Dashboard({
   if (currentHour >= 17 && currentHour < 22) { greetingStr = `Evening, ${userName}`; }
   if (currentHour >= 22 || currentHour < 5) { greetingStr = `Up late, ${userName}?`; }
 
+  // === STRICT LOCAL CALENDAR ENGINE ===
+  const todayForMath = new Date();
+  const currentMonthName = todayForMath.toLocaleString("en-US", { month: "long" });
+  const currentMonthIdx = todayForMath.getMonth(); // Strict Local Month
+  const currentYearIdx = todayForMath.getFullYear(); // Strict Local Year
+
   const totalIncomeBalance = accounts.reduce((sum, a) => sum + (Number(a?.balance) || 0), 0);
-  const unpaidBillsAmount = bills.filter((b) => !b?.isPaid).reduce((sum, b) => sum + (Number(b?.amount) || 0), 0);
+  
+  // FIXED: Surgical filtering to block future months from the Hero total
+  const unpaidBillsAmount = bills.filter((b) => !b?.isPaid).reduce((sum, bill) => {
+    let include = false;
+    if (bill.isOverdue) {
+      include = true; // Always count past-due liabilities
+    } else if (bill.rawDate) {
+      const parts = bill.rawDate.split("-");
+      if (parts.length === 3) {
+        const bMonth = parseInt(parts[1], 10) - 1;
+        const bYear = parseInt(parts[0], 10);
+        if (bMonth === currentMonthIdx && bYear === currentYearIdx) {
+          include = true; // Only include if it matches the current local month
+        }
+      }
+    }
+    return include ? sum + (Number(bill?.amount) || 0) : sum;
+  }, 0);
   
   const safeToSpend = totalIncomeBalance < 0 
     ? -(Math.abs(unpaidBillsAmount) - Math.abs(totalIncomeBalance))
@@ -141,18 +164,15 @@ export default function Dashboard({
     </div>
   );
 
-  // === STRICT MONTH MATH ENGINE ===
-  const todayForMath = new Date();
-  const currentMonthName = todayForMath.toLocaleString("en-US", { month: "long" });
-  const currentMonthIdx = todayForMath.getUTCMonth();
-  const currentYearIdx = todayForMath.getUTCFullYear();
-
+  // === LOCAL MONTH MATH ENGINE (BOTTOM COMPONENT) ===
   const currentMonthBillsTotal = bills.reduce((sum, bill) => {
     let include = false;
     if (bill.rawDate) {
-      const bDate = new Date(bill.rawDate);
-      if (!isNaN(bDate.getTime())) {
-        if (bDate.getUTCMonth() === currentMonthIdx && bDate.getUTCFullYear() === currentYearIdx) {
+      const parts = bill.rawDate.split("-");
+      if (parts.length === 3) {
+        const bMonth = parseInt(parts[1], 10) - 1;
+        const bYear = parseInt(parts[0], 10);
+        if (bMonth === currentMonthIdx && bYear === currentYearIdx) {
           include = true;
         }
       }

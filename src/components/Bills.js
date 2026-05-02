@@ -209,9 +209,11 @@ export default function Bills({
                                      <div className="flex-1 flex justify-center px-1">
                                         <button 
                                           onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }} 
-                                          className="px-3 sm:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0"
+                                          className="px-3 sm:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 sm:gap-1.5 whitespace-nowrap shrink-0"
                                         >
-                                          <CheckCircle2 size={14} strokeWidth={2.5} /> MARK AS PAID
+                                          <CheckCircle2 size={14} strokeWidth={2.5} />
+                                          <span className="hidden sm:inline">MARK AS PAID</span>
+                                          <span className="sm:hidden">PAY</span>
                                         </button>
                                      </div>
 

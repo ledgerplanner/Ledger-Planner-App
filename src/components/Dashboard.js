@@ -127,7 +127,7 @@ export default function Dashboard({
           <div className={`w-1.5 h-1.5 rounded-full ${safeToSpend < 0 ? "bg-red-500" : "bg-emerald-500 animate-pulse"}`}></div>
           <span className="text-[9px] font-black uppercase tracking-wider">{userName.toUpperCase()}'S BALANCE</span>
         </div>
-        <p className={`text-3xl min-[341px]:text-4xl font-black tracking-tighter mb-3 ${safeToSpend < 0 ? "text-red-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>
+        <p className={`text-3xl min-[360px]:text-4xl font-black tracking-tighter mb-3 ${safeToSpend < 0 ? "text-red-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>
           {safeToSpend < 0 ? "-" : ""}${Math.abs(safeToSpend).toLocaleString("en-US", { minimumFractionDigits: 2 })}
         </p>
         
@@ -299,7 +299,7 @@ export default function Dashboard({
                                </button>
                             </div>
 
-                            <div className="flex items-center justify-between gap-1 min-[341px]:gap-2 w-full">
+                            <div className="flex items-center justify-between gap-1 min-[360px]:gap-2 w-full">
                                <div className="flex flex-col shrink-0">
                                   <span className={`text-[10px] font-black uppercase tracking-wider ${(bill?.isOverdue || bill?.payday === "Due Now") ? "text-red-500" : "text-slate-400"}`}>
                                      {bill?.isOverdue ? "Overdue" : bill?.payday === "Due Now" ? "Due Now" : "Due"}
@@ -311,13 +311,13 @@ export default function Dashboard({
                                
                                <div className="flex-1 flex justify-center px-1">
                                   {!bill?.isPaid ? (
-                                      <button onClick={(e) => { e.stopPropagation(); handleBillClick(bill?.id); }} className="px-3 min-[341px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[341px]:gap-1.5 whitespace-nowrap shrink-0">
+                                      <button onClick={(e) => { e.stopPropagation(); handleBillClick(bill?.id); }} className="px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0">
                                         <CheckCircle2 size={14} />
-                                        <span className="hidden min-[341px]:inline">MARK AS PAID</span>
-                                        <span className="min-[341px]:hidden">PAY</span>
+                                        <span className="hidden min-[360px]:inline">MARK AS PAID</span>
+                                        <span className="min-[360px]:hidden">PAY</span>
                                       </button>
                                   ) : (
-                                      <div className="px-3 min-[341px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0"><CheckCircle2 size={14} /> Paid</div>
+                                      <div className="px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0"><CheckCircle2 size={14} /> Paid</div>
                                   )}
                                </div>
 

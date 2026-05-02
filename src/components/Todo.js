@@ -161,7 +161,7 @@ export default function Todo({
               placeholder="New task or future purchase?" 
               value={newTodoText} 
               onChange={(e) => setNewTodoText(e.target.value)}
-              className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold bg-transparent border outline-none transition-colors focus:border-[#1877F2] ${isDarkMode ? "text-white border-slate-700" : "text-slate-900 border-slate-200"}`}
+              className={`flex-1 min-w-0 py-3 px-4 rounded-xl text-sm font-bold bg-transparent border outline-none transition-colors focus:border-[#1877F2] ${isDarkMode ? "text-white border-slate-700" : "text-slate-900 border-slate-200"}`}
             />
             <button 
               type="submit" 

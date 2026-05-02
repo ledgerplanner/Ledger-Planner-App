@@ -66,17 +66,17 @@ export default function Activity({
   const getTxAmountClasses = (tx, isDark) => {
     if (tx.isBillPayment || tx.category === "Bill Payment") {
       return isDark 
-        ? "bg-[#1877F2]/20 text-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.25)]" 
-        : "bg-blue-50 text-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.2)]";
+        ? "bg-[#1877F2]/20 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)]" 
+        : "bg-blue-50 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)]";
     }
     if (tx.type === "Income") {
       return isDark 
-        ? "bg-emerald-900/30 text-emerald-400 shadow-[0_8px_16px_rgba(16,185,129,0.2)]" 
-        : "bg-emerald-50 text-emerald-600 shadow-[0_8px_16px_rgba(16,185,129,0.2)]";
+        ? "bg-emerald-900/30 text-emerald-400 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]" 
+        : "bg-emerald-50 text-emerald-600 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]";
     }
     return isDark 
-      ? "bg-orange-900/30 text-orange-400 shadow-[0_8px_16px_rgba(249,115,22,0.2)]" 
-      : "bg-orange-50 text-orange-600 shadow-[0_8px_16px_rgba(249,115,22,0.2)]";
+      ? "bg-orange-900/30 text-orange-400 drop-shadow-[0_0_12px_rgba(249,115,22,0.7)]" 
+      : "bg-orange-50 text-orange-600 drop-shadow-[0_0_12px_rgba(249,115,22,0.7)]";
   };
 
   const getTxCategoryColor = (tx) => {
@@ -247,7 +247,7 @@ export default function Activity({
                       </div>
                       
                       <div className="shrink-0 flex justify-end">
-                        <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight transition-colors ${getTxAmountClasses(tx, isDarkMode)}`}>
+                        <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight whitespace-nowrap transition-colors ${getTxAmountClasses(tx, isDarkMode)}`}>
                           {tx.type === "Income" ? "+" : "-"}${tx.amount.toFixed(2)}
                         </div>
                       </div>

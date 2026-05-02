@@ -126,6 +126,18 @@ export default function App() {
   const [isIconSelectorOpen, setIsIconSelectorOpen] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
+  // === NEW: CROSS-MONTH REFRESH ENGINE ===
+  const sessionMonth = useRef(new Date().getMonth());
+  const [needsRefresh, setNeedsRefresh] = useState(false);
+
+  // === NEW: GLOBAL ACTION MODAL ENGINE ===
+  const [globalActionConfig, setGlobalActionConfig] = useState({ isOpen: false, title: "", message: "", confirmText: "Confirm", isDanger: true, action: null });
+
+  const openGlobalAction = (title, message, confirmText, isDanger, action) => {
+    triggerWarning();
+    setGlobalActionConfig({ isOpen: true, title, message, confirmText, isDanger, action });
+  };
+
   const [recentBillCategories, setRecentBillCategories] = useState(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem('lp_recent_bill_cat');
@@ -270,6 +282,11 @@ export default function App() {
           setIsDarkMode(false);
         }
       }
+
+      // === THE CROSS-MONTH DRIFT DETECTOR ===
+      if (now.getMonth() !== sessionMonth.current) {
+        setNeedsRefresh(true);
+      }
     }, 1000);
     return () => clearInterval(timer);
   }, [manualThemeOverride]);
@@ -334,13 +351,14 @@ export default function App() {
     catch (error) { setAuthError("Google Sign-In failed."); setIsAuthLoading(false); }
   };
 
+  // === UPGRADED: LOGOUT ===
   const handleLogout = async () => { 
-    triggerWarning();
-    if (!window.confirm("Are you sure you want to log out?")) return;
-    if (isDemoMode) { window.location.href = "https://ledgerplanner.com"; return; }
-    try { await signOut(auth); } 
-    catch (error) { console.error("Logout forced locally:", error); } 
-    finally { setUser(null); setActiveTab("home"); }
+    openGlobalAction("Log Out", "Are you sure you want to log out of your session?", "Log Out", true, async () => {
+      if (isDemoMode) { window.location.href = "https://ledgerplanner.com"; return; }
+      try { await signOut(auth); } 
+      catch (error) { console.error("Logout forced locally:", error); } 
+      finally { setUser(null); setActiveTab("home"); setGlobalActionConfig(prev => ({ ...prev, isOpen: false })); }
+    });
   };
 
   if (!isMounted) return <div className={`min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}></div>;
@@ -448,29 +466,31 @@ export default function App() {
     await Promise.all(batchPromises);
   };
 
+  // === UPGRADED: MANUAL ROLLOVER ===
   const handleRolloverMonth = async () => {
-    triggerWarning();
-    if (!window.confirm("SYSTEM OVERRIDE: Are you sure you want to force a manual month rollover?")) return;
-    if (isDemoMode) { alert("Rollover is disabled in Demo Mode."); return; }
-    
-    await executeRolloverCore();
-    
-    if (!isDemoMode && user) {
-      const today = new Date();
-      const currentMonthKey = `${today.getUTCFullYear()}-${today.getUTCMonth() + 1}`;
-      await setDoc(doc(db, "users", user.uid, "settings", "system"), { lastActiveMonth: currentMonthKey }, { merge: true });
-    }
-    
-    triggerVictory();
-    setIsSettingsOpen(false);
+    openGlobalAction("Force Rollover", "SYSTEM OVERRIDE: Are you sure you want to force a manual month rollover?", "Force Sync", true, async () => {
+      if (isDemoMode) { alert("Rollover is disabled in Demo Mode."); setGlobalActionConfig(prev => ({ ...prev, isOpen: false })); return; }
+      
+      await executeRolloverCore();
+      
+      if (!isDemoMode && user) {
+        const today = new Date();
+        const currentMonthKey = `${today.getUTCFullYear()}-${today.getUTCMonth() + 1}`;
+        await setDoc(doc(db, "users", user.uid, "settings", "system"), { lastActiveMonth: currentMonthKey }, { merge: true });
+      }
+      
+      triggerVictory();
+      setIsSettingsOpen(false);
+      setGlobalActionConfig(prev => ({ ...prev, isOpen: false }));
+    });
   };
 
+  // === UPGRADED: FACTORY RESET ===
   const handleFactoryReset = async () => {
     if (resetConfirm !== "RESET") return;
     if (isDemoMode) { alert("Factory reset is disabled in Demo Mode."); setResetConfirm(""); setIsSettingsOpen(false); return; }
     
-    triggerWarning();
-    if (window.confirm("FINAL WARNING: This will permanently delete all your data. Proceed?")) {
+    openGlobalAction("Wipe Vault", "FINAL WARNING: This will permanently delete all your accounts, bills, transactions, and tasks. Proceed?", "Destroy", true, async () => {
       try {
         const collectionsToClear = ["accounts", "bills", "transactions", "todos"];
         for (const colName of collectionsToClear) {
@@ -489,26 +509,27 @@ export default function App() {
         setTodos([]);
         setPaydayConfig({ frequency: "Weekly", "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } });
 
-        setResetConfirm(""); setIsSettingsOpen(false); triggerVictory(); alert("Vault wiped. Welcome to a clean slate.");
+        setResetConfirm(""); setIsSettingsOpen(false); setGlobalActionConfig(prev => ({ ...prev, isOpen: false })); triggerVictory(); alert("Vault wiped. Welcome to a clean slate.");
       } catch (e) { console.error("Factory reset failed", e); }
-    }
+    });
   };
 
+  // === UPGRADED: CLEAR TODOS ===
   const clearCompletedTodos = async () => {
     const completed = todos.filter(t => t.isCompleted);
     if (completed.length === 0) return;
     
-    triggerWarning();
-    if (!window.confirm("Delete all completed tasks?")) return;
-
-    if (isDemoMode) {
-       setTodos(todos.filter(t => !t.isCompleted));
-    } else {
-       setTodos(todos.filter(t => !t.isCompleted));
-       const batchPromises = completed.map(t => deleteDoc(doc(db, "users", user.uid, "todos", t.id)));
-       await Promise.all(batchPromises);
-    }
-    triggerHaptic(50);
+    openGlobalAction("Clear Tasks", "Delete all completed tasks from the board?", "Delete", true, async () => {
+      if (isDemoMode) {
+         setTodos(todos.filter(t => !t.isCompleted));
+      } else {
+         setTodos(todos.filter(t => !t.isCompleted));
+         const batchPromises = completed.map(t => deleteDoc(doc(db, "users", user.uid, "todos", t.id)));
+         await Promise.all(batchPromises);
+      }
+      triggerHaptic(50);
+      setGlobalActionConfig(prev => ({ ...prev, isOpen: false }));
+    });
   };
 
   const handleBillClick = async (id) => {
@@ -668,21 +689,23 @@ export default function App() {
     triggerVictory(); setSelectedAccount(null);
   };
 
+  // === UPGRADED: DELETE ACCOUNT ===
   const deleteAccount = async () => {
     if (!selectedAccount) return;
-    triggerWarning();
-    if (!window.confirm(`Are you sure you want to delete ${selectedAccount.name}?`)) return;
-    const accId = selectedAccount.id;
-    if (isDemoMode) { setAccounts(accounts.filter(a => a.id !== accId)); } 
-    else {
-      await deleteDoc(doc(db, "users", user.uid, "accounts", accId));
-      const txsToDelete = transactions.filter(tx => tx.accountId === accId);
-      const batchPromises = txsToDelete.map(tx => deleteDoc(doc(db, "users", user.uid, "transactions", tx.id)));
-      const billsToReset = bills.filter(b => b.paidFromAccountId === accId);
-      billsToReset.forEach(b => { batchPromises.push(updateDoc(doc(db, "users", user.uid, "bills", b.id), { isPaid: false, paidAmount: b.isInstallment ? (b.paidAmount || 0) - (b.amount || 0) : 0, paidFromAccountId: null, linkedTxId: null })); });
-      await Promise.all(batchPromises);
-    }
-    triggerHaptic(50); setSelectedAccount(null);
+    
+    openGlobalAction("Delete Account", `Are you sure you want to permanently delete ${selectedAccount.name}? This will unlink related transactions.`, "Delete", true, async () => {
+      const accId = selectedAccount.id;
+      if (isDemoMode) { setAccounts(accounts.filter(a => a.id !== accId)); } 
+      else {
+        await deleteDoc(doc(db, "users", user.uid, "accounts", accId));
+        const txsToDelete = transactions.filter(tx => tx.accountId === accId);
+        const batchPromises = txsToDelete.map(tx => deleteDoc(doc(db, "users", user.uid, "transactions", tx.id)));
+        const billsToReset = bills.filter(b => b.paidFromAccountId === accId);
+        billsToReset.forEach(b => { batchPromises.push(updateDoc(doc(db, "users", user.uid, "bills", b.id), { isPaid: false, paidAmount: b.isInstallment ? (b.paidAmount || 0) - (b.amount || 0) : 0, paidFromAccountId: null, linkedTxId: null })); });
+        await Promise.all(batchPromises);
+      }
+      triggerHaptic(50); setSelectedAccount(null); setGlobalActionConfig(prev => ({ ...prev, isOpen: false }));
+    });
   };
 
   const clearPaydayConfig = () => { setEditPaydayConfig({ frequency: "Weekly", "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } }); triggerHaptic(50); };
@@ -764,6 +787,20 @@ export default function App() {
   const generateAlerts = () => {
     const currentAlerts = [];
     const today = new Date(); today.setHours(0, 0, 0, 0);
+
+    // === NEW: INJECT REFRESH REMINDER ===
+    if (needsRefresh) {
+      currentAlerts.unshift({ 
+        id: 'refresh-required', 
+        type: 'danger', 
+        icon: <RefreshCw size={20} className="text-red-500 animate-[spin_3s_linear_infinite]" />, 
+        title: 'System Update', 
+        message: 'New month detected. Refresh to initialize the new vault.', 
+        time: 'REQUIRED', 
+        action: () => window.location.reload() 
+      });
+    }
+
     const actionBills = dynamicBills.filter(b => b.isOverdue || (!b.isPaid && b.payday === "Due Now"));
     actionBills.forEach(b => { currentAlerts.push({ id: `action-${b.id}`, type: 'danger', icon: <AlertCircle size={20} className="text-red-500" />, title: 'Action Required', message: `Your ${b.name || "Bill"} is ${b.isOverdue ? 'past due' : 'due now'}.`, amount: b.amount || 0, time: b.isOverdue ? 'URGENT' : 'TODAY', action: () => { setIsNotificationsOpen(false); changeTab("bills"); } }); });
     const upcomingRecurring = dynamicBills.filter(b => !b.isPaid && b.isRecurring && !b.isOverdue && b.payday !== "Due Now" && b.payday !== "Unscheduled");
@@ -1109,7 +1146,13 @@ export default function App() {
                     <button onClick={enablePushNotifications} className="px-4 py-2 bg-[#10B981] text-white text-[10px] font-black uppercase tracking-widest rounded-xl active:scale-95 transition-transform shadow-md">Enable</button>
                   </div>
                 )}
-                {activeAlerts.length === 0 ? (<div className="text-center py-10 opacity-50"><CheckCircle2 size={40} className="mx-auto mb-4 text-[#10B981]" /><p className="font-bold text-sm">All Systems Go</p></div>) : (
+                {/* UPGRADED: "All Systems Go" text visibility fix */}
+                {activeAlerts.length === 0 ? (
+                  <div className="text-center py-10 opacity-60">
+                    <CheckCircle2 size={40} className="mx-auto mb-4 text-[#10B981]" />
+                    <p className={`font-bold text-sm ${isDarkMode ? "text-slate-300" : "text-slate-900"}`}>All Systems Go</p>
+                  </div>
+                ) : (
                   activeAlerts.map(alert => (
                     <div key={alert.id} onClick={alert.action} className={`flex items-start gap-4 p-4 rounded-2xl cursor-pointer border transition-colors ${alert.type === 'danger' ? (isDarkMode ? "bg-red-900/20 border-red-900/50 hover:bg-red-900/30" : "bg-red-50 border-red-100 hover:bg-red-100") : (isDarkMode ? "bg-[#1E293B] border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50 shadow-sm")}`}>
                       <div className={`mt-1 p-2 rounded-full ${isDarkMode ? "bg-[#0F172A]" : "bg-slate-50"}`}>{alert.icon}</div>
@@ -1375,7 +1418,27 @@ export default function App() {
                         <CheckCircle2 size={16} /> Mark as Paid
                       </button>
                     )}
-                    <button onClick={async () => { triggerWarning(); if(window.confirm("Are you sure you want to delete this entry?")) { const colName = selectedEntry.fullDate ? "bills" : "transactions"; if (isDemoMode) { if (colName === "bills") { setBills(bills.filter(b => b.id !== selectedEntry.id)); } else { setTransactions(transactions.filter(t => t.id !== selectedEntry.id)); } } else { await deleteDoc(doc(db, "users", user.uid, colName, selectedEntry.id)); if(!selectedEntry.fullDate && selectedEntry.accountId) { const acc = accounts.find(a => a.id === selectedEntry.accountId); if(acc) { const revAmount = selectedEntry.type === "Income" ? -(selectedEntry.amount || 0) : (selectedEntry.amount || 0); await updateDoc(doc(db, "users", user.uid, "accounts", acc.id), { balance: (acc.balance || 0) + revAmount }); } } } setSelectedEntry(null); triggerHaptic(50); } }} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-red-500 shadow-[0_8px_16px_rgba(239,68,68,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><Trash2 size={16} /> Delete Entry</button>
+                    <button onClick={() => { 
+                      openGlobalAction("Delete Entry", "Are you sure you want to permanently delete this entry?", "Delete", true, async () => {
+                        const colName = selectedEntry.fullDate ? "bills" : "transactions"; 
+                        if (isDemoMode) { 
+                          if (colName === "bills") { setBills(bills.filter(b => b.id !== selectedEntry.id)); } 
+                          else { setTransactions(transactions.filter(t => t.id !== selectedEntry.id)); } 
+                        } else { 
+                          await deleteDoc(doc(db, "users", user.uid, colName, selectedEntry.id)); 
+                          if(!selectedEntry.fullDate && selectedEntry.accountId) { 
+                            const acc = accounts.find(a => a.id === selectedEntry.accountId); 
+                            if(acc) { 
+                              const revAmount = selectedEntry.type === "Income" ? -(selectedEntry.amount || 0) : (selectedEntry.amount || 0); 
+                              await updateDoc(doc(db, "users", user.uid, "accounts", acc.id), { balance: (acc.balance || 0) + revAmount }); 
+                            } 
+                          } 
+                        } 
+                        setSelectedEntry(null); 
+                        triggerHaptic(50);
+                        setGlobalActionConfig(prev => ({ ...prev, isOpen: false }));
+                      });
+                    }} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-red-500 shadow-[0_8px_16px_rgba(239,68,68,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><Trash2 size={16} /> Delete Entry</button>
                   </>
                 ) : (
                   <div className="space-y-4">
@@ -1564,6 +1627,27 @@ export default function App() {
                 <button onClick={handleSaveNextInstallmentDate} disabled={!installmentPromptConfig.nextDate} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2 ${!installmentPromptConfig.nextDate ? "bg-slate-300 opacity-50 shadow-none cursor-not-allowed" : "bg-[#1877F2]"}`}><CalendarIcon size={16}/> Route to Payday</button>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* === NEW: GLOBAL ACTION MODAL === */}
+        {globalActionConfig.isOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+             <div className={`w-full max-w-sm p-6 rounded-3xl shadow-2xl ${isDarkMode ? "bg-[#1E293B] border border-slate-700" : "bg-white"}`}>
+                <h3 className={`text-xl font-black mb-2 flex items-center gap-2 ${globalActionConfig.isDanger ? "text-red-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>
+                   {globalActionConfig.isDanger && <AlertCircle size={20} />} {globalActionConfig.title}
+                </h3>
+                <p className={`text-sm mb-6 font-bold ${isDarkMode ? "text-slate-300" : "text-slate-500"}`}>{globalActionConfig.message}</p>
+                
+                <div className="flex gap-3">
+                   <button onClick={() => setGlobalActionConfig({ ...globalActionConfig, isOpen: false })} className={`flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 ${isDarkMode ? "bg-slate-800 text-slate-300 hover:bg-slate-700" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
+                      Cancel
+                   </button>
+                   <button onClick={() => { if(globalActionConfig.action) globalActionConfig.action(); }} className={`flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-white transition-all active:scale-95 shadow-lg ${globalActionConfig.isDanger ? "bg-red-500 hover:bg-red-600 shadow-[0_8px_16px_rgba(239,68,68,0.3)]" : "bg-[#1877F2] hover:bg-blue-600 shadow-[0_8px_16px_rgba(24,119,242,0.3)]"}`}>
+                      {globalActionConfig.confirmText}
+                   </button>
+                </div>
+             </div>
           </div>
         )}
 

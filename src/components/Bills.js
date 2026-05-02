@@ -196,9 +196,8 @@ export default function Bills({
                                   </div>
 
                                   {/* LEVEL 2: Action Row */}
-                                  <div className="flex items-center justify-between gap-2">
+                                  <div className="flex items-center justify-between gap-1 sm:gap-2 w-full">
                                      <div className="flex flex-col shrink-0">
-                                        {/* FIX 4: Corrected 3-way string check */}
                                         <span className={`text-[10px] font-black uppercase tracking-wider ${isUrgent ? "text-red-500" : "text-slate-400"}`}>
                                             {isStrictlyOverdue ? "OVERDUE" : isDueToday ? "DUE NOW" : "DUE"}
                                         </span>
@@ -207,16 +206,16 @@ export default function Bills({
                                         </span>
                                      </div>
                                      
-                                     <div className="flex-1 flex justify-center">
+                                     <div className="flex-1 flex justify-center px-1">
                                         <button 
                                           onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }} 
-                                          className="px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0"
+                                          className="px-3 sm:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0"
                                         >
                                           <CheckCircle2 size={14} strokeWidth={2.5} /> MARK AS PAID
                                         </button>
                                      </div>
 
-                                     <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"}`}>
+                                     <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
                                         ${(Number(bill.amount) || 0).toFixed(2)}
                                      </div>
                                   </div>
@@ -289,7 +288,7 @@ export default function Bills({
                     </div>
 
                     {/* LEVEL 2: Action Row */}
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center justify-between gap-1 sm:gap-2 w-full">
                        <div className="flex flex-col shrink-0">
                           <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
                               Status
@@ -299,16 +298,16 @@ export default function Bills({
                           </span>
                        </div>
                        
-                       <div className="flex-1 flex justify-center">
+                       <div className="flex-1 flex justify-center px-1">
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }} 
-                            className={`px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 ${isDarkMode ? "bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white" : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
+                            className={`px-3 sm:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 ${isDarkMode ? "bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white" : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
                           >
                              <RotateCcw size={14} strokeWidth={2} /> Revert
                           </button>
                        </div>
 
-                       <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 transition-colors ${isDarkMode ? "bg-slate-800/50 text-slate-400 border-slate-700" : "bg-slate-50 text-slate-500 border-slate-200"}`}>
+                       <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 transition-colors ${isDarkMode ? "bg-slate-800/50 text-slate-400 border-slate-700" : "bg-slate-50 text-slate-500 border-slate-200"} whitespace-nowrap`}>
                           ${(Number(bill.amount) || 0).toFixed(2)}
                        </div>
                     </div>

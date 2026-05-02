@@ -151,6 +151,9 @@ export default function Dashboard({
 
   // === LOCAL MONTH MATH ENGINE (BOTTOM COMPONENT) ===
   const currentMonthBillsTotal = bills.reduce((sum, bill) => {
+    // FIX 2: Strict filter. If it's paid, it drops from the local month total entirely.
+    if (bill.isPaid) return sum;
+
     let include = false;
     if (bill.rawDate) {
       const parts = bill.rawDate.split("-");
@@ -163,7 +166,7 @@ export default function Dashboard({
       }
     }
     // Include past-due liabilities into the active balance requirement
-    if (!bill.isPaid && bill.isOverdue) {
+    if (bill.isOverdue) {
       include = true;
     }
     return include ? sum + (Number(bill.amount) || 0) : sum;
@@ -302,8 +305,9 @@ export default function Dashboard({
 
                             <div className="flex items-center justify-between gap-2">
                                <div className="flex flex-col shrink-0">
-                                  <span className={`text-[10px] font-black uppercase tracking-wider ${bill?.isOverdue ? "text-red-500" : "text-slate-400"}`}>
-                                     {bill?.isOverdue ? "Overdue" : "Due"}
+                                  {/* FIX 1: 3-way check. If it's Due Now, say Due Now and paint it red. If Overdue, Overdue and red. Else, Due and Slate. */}
+                                  <span className={`text-[10px] font-black uppercase tracking-wider ${(bill?.isOverdue || bill?.payday === "Due Now") ? "text-red-500" : "text-slate-400"}`}>
+                                     {bill?.isOverdue ? "Overdue" : bill?.payday === "Due Now" ? "Due Now" : "Due"}
                                   </span>
                                   <span className={`text-xs font-bold ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
                                      {bill?.fullDate || "TBD"}

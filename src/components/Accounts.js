@@ -173,11 +173,11 @@ export default function Accounts({
                                   {acc.description || acc.type}
                               </span>
                            </div>
-                           <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 transition-colors ${
+                           <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 transition-colors whitespace-nowrap ${
                                isNegative 
-                                   ? isDarkMode ? "bg-red-900/30 text-red-400 border-red-900/50 shadow-[0_4px_12px_rgba(239,68,68,0.2)]" : "bg-red-50 text-red-600 border-red-200 shadow-[0_4px_12px_rgba(239,68,68,0.2)]"
+                                   ? isDarkMode ? "bg-red-900/30 text-red-400 border-red-900/50 drop-shadow-[0_0_12px_rgba(239,68,68,0.7)]" : "bg-red-50 text-red-600 border-red-200 drop-shadow-[0_0_12px_rgba(239,68,68,0.7)]"
                                    : isPositive 
-                                   ? isDarkMode ? "bg-emerald-900/30 text-emerald-400 border-emerald-900/50 shadow-[0_4px_12px_rgba(16,185,129,0.2)]" : "bg-emerald-50 text-emerald-600 border-emerald-200 shadow-[0_4px_12px_rgba(16,185,129,0.2)]"
+                                   ? isDarkMode ? "bg-emerald-900/30 text-emerald-400 border-emerald-900/50 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]" : "bg-emerald-50 text-emerald-600 border-emerald-200 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]"
                                    : isDarkMode ? "bg-slate-800 text-slate-400 border-slate-700" : "bg-slate-100 text-slate-500 border-slate-200"
                            }`}>
                                {isNegative ? "-" : ""}${Math.abs(acc.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}

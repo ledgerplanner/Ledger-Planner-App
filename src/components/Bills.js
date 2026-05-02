@@ -196,7 +196,7 @@ export default function Bills({
                                   </div>
 
                                   {/* LEVEL 2: Action Row */}
-                                  <div className="flex items-center justify-between gap-1 sm:gap-2 w-full">
+                                  <div className="flex items-center justify-between gap-1 min-[341px]:gap-2 w-full">
                                      <div className="flex flex-col shrink-0">
                                         <span className={`text-[10px] font-black uppercase tracking-wider ${isUrgent ? "text-red-500" : "text-slate-400"}`}>
                                             {isStrictlyOverdue ? "OVERDUE" : isDueToday ? "DUE NOW" : "DUE"}
@@ -209,11 +209,11 @@ export default function Bills({
                                      <div className="flex-1 flex justify-center px-1">
                                         <button 
                                           onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }} 
-                                          className="px-3 sm:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 sm:gap-1.5 whitespace-nowrap shrink-0"
+                                          className="px-3 min-[341px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[341px]:gap-1.5 whitespace-nowrap shrink-0"
                                         >
                                           <CheckCircle2 size={14} strokeWidth={2.5} />
-                                          <span className="hidden sm:inline">MARK AS PAID</span>
-                                          <span className="sm:hidden">PAY</span>
+                                          <span className="hidden min-[341px]:inline">MARK AS PAID</span>
+                                          <span className="min-[341px]:hidden">PAY</span>
                                         </button>
                                      </div>
 
@@ -290,7 +290,7 @@ export default function Bills({
                     </div>
 
                     {/* LEVEL 2: Action Row */}
-                    <div className="flex items-center justify-between gap-1 sm:gap-2 w-full">
+                    <div className="flex items-center justify-between gap-1 min-[341px]:gap-2 w-full">
                        <div className="flex flex-col shrink-0">
                           <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
                               Status
@@ -303,7 +303,7 @@ export default function Bills({
                        <div className="flex-1 flex justify-center px-1">
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }} 
-                            className={`px-3 sm:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 ${isDarkMode ? "bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white" : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
+                            className={`px-3 min-[341px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 ${isDarkMode ? "bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white" : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
                           >
                              <RotateCcw size={14} strokeWidth={2} /> Revert
                           </button>

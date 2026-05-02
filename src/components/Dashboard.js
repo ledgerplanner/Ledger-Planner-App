@@ -239,7 +239,6 @@ export default function Dashboard({
         </div>
       </div>
 
-      {/* FINAL 1% VISUAL ANCHOR: The Missing Separator Line */}
       <div className="mx-6 mb-6 border-t border-slate-200"></div>
 
       <main className="px-6 space-y-4">
@@ -300,7 +299,6 @@ export default function Dashboard({
                                </button>
                             </div>
 
-                            {/* FOLD 4 FIX: gap-1 sm:gap-2 for tighter squeeze on narrow screens */}
                             <div className="flex items-center justify-between gap-1 sm:gap-2 w-full">
                                <div className="flex flex-col shrink-0">
                                   <span className={`text-[10px] font-black uppercase tracking-wider ${(bill?.isOverdue || bill?.payday === "Due Now") ? "text-red-500" : "text-slate-400"}`}>
@@ -313,7 +311,6 @@ export default function Dashboard({
                                
                                <div className="flex-1 flex justify-center px-1">
                                   {!bill?.isPaid ? (
-                                      {/* FOLD 4 FIX: px-3 sm:px-5, whitespace-nowrap, shrink-0 */}
                                       <button onClick={(e) => { e.stopPropagation(); handleBillClick(bill?.id); }} className="px-3 sm:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0"><CheckCircle2 size={14} /> Mark as Paid</button>
                                   ) : (
                                       <div className="px-3 sm:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0"><CheckCircle2 size={14} /> Paid</div>
@@ -344,7 +341,6 @@ export default function Dashboard({
           })}
         </div>
 
-        {/* === MONTHLY SUMMARY ANCHOR === */}
         <div className={`mt-6 py-4 px-5 rounded-[1.5rem] border shadow-sm flex flex-col items-center justify-center gap-2 ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
            <span className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Total Bills for {currentMonthName}</span>
            <div className={`px-3 py-1.5 rounded-[8px] border font-black text-lg tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"}`}>
@@ -401,7 +397,6 @@ export default function Dashboard({
                          </button>
                       </div>
 
-                      {/* FOLD 4 FIX: gap-1 sm:gap-2, whitespace-nowrap */}
                       <div className="flex items-center justify-between gap-1 sm:gap-2 w-full">
                          <div className="flex flex-col shrink-0">
                             <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{tx?.category || "General"}</span>

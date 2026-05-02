@@ -151,7 +151,6 @@ export default function Dashboard({
 
   // === LOCAL MONTH MATH ENGINE (BOTTOM COMPONENT) ===
   const currentMonthBillsTotal = bills.reduce((sum, bill) => {
-    // FIX 2: Strict filter. If it's paid, it drops from the local month total entirely.
     if (bill.isPaid) return sum;
 
     let include = false;
@@ -165,7 +164,6 @@ export default function Dashboard({
         }
       }
     }
-    // Include past-due liabilities into the active balance requirement
     if (bill.isOverdue) {
       include = true;
     }
@@ -214,7 +212,6 @@ export default function Dashboard({
                 </div>
 
                 <div className="text-center py-2">
-                   {/* DYNAMIC COLOR LOGIC APPLIED HERE */}
                    <p className={`text-2xl font-black tracking-tighter ${isDeficit ? "text-red-500" : "text-[#10B981]"}`}>
                      {isDeficit ? "-" : ""}${Math.abs(waterfallBalance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                    </p>
@@ -303,9 +300,9 @@ export default function Dashboard({
                                </button>
                             </div>
 
-                            <div className="flex items-center justify-between gap-2">
+                            {/* FOLD 4 FIX: gap-1 sm:gap-2 for tighter squeeze on narrow screens */}
+                            <div className="flex items-center justify-between gap-1 sm:gap-2 w-full">
                                <div className="flex flex-col shrink-0">
-                                  {/* FIX 1: 3-way check. If it's Due Now, say Due Now and paint it red. If Overdue, Overdue and red. Else, Due and Slate. */}
                                   <span className={`text-[10px] font-black uppercase tracking-wider ${(bill?.isOverdue || bill?.payday === "Due Now") ? "text-red-500" : "text-slate-400"}`}>
                                      {bill?.isOverdue ? "Overdue" : bill?.payday === "Due Now" ? "Due Now" : "Due"}
                                   </span>
@@ -314,15 +311,16 @@ export default function Dashboard({
                                   </span>
                                </div>
                                
-                               <div className="flex-1 flex justify-center">
+                               <div className="flex-1 flex justify-center px-1">
                                   {!bill?.isPaid ? (
-                                      <button onClick={(e) => { e.stopPropagation(); handleBillClick(bill?.id); }} className="px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center gap-1.5"><CheckCircle2 size={14} /> Mark as Paid</button>
+                                      {/* FOLD 4 FIX: px-3 sm:px-5, whitespace-nowrap, shrink-0 */}
+                                      <button onClick={(e) => { e.stopPropagation(); handleBillClick(bill?.id); }} className="px-3 sm:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0"><CheckCircle2 size={14} /> Mark as Paid</button>
                                   ) : (
-                                      <div className="px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center gap-1.5"><CheckCircle2 size={14} /> Paid</div>
+                                      <div className="px-3 sm:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0"><CheckCircle2 size={14} /> Paid</div>
                                   )}
                                </div>
 
-                               <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 text-[#1877F2] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} drop-shadow-[0_0_12px_rgba(24,119,242,0.7)]`}>
+                               <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 text-[#1877F2] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] whitespace-nowrap`}>
                                   ${(Number(bill?.amount) || 0).toFixed(2)}
                                </div>
                             </div>
@@ -403,12 +401,13 @@ export default function Dashboard({
                          </button>
                       </div>
 
-                      <div className="flex items-center justify-between gap-2">
+                      {/* FOLD 4 FIX: gap-1 sm:gap-2, whitespace-nowrap */}
+                      <div className="flex items-center justify-between gap-1 sm:gap-2 w-full">
                          <div className="flex flex-col shrink-0">
                             <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{tx?.category || "General"}</span>
                             <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mt-0.5">{tx?.date || "Recent"}</span>
                          </div>
-                         <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 ${txColorStr} ${txBgBorderStr} ${txShadowStr}`}>
+                         <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 ${txColorStr} ${txBgBorderStr} ${txShadowStr} whitespace-nowrap`}>
                             {txPrefix}${(Number(tx?.amount) || 0).toFixed(2)}
                          </div>
                       </div>

@@ -93,7 +93,7 @@ export default function Todo({
       <div className="flex-1 flex flex-col items-end text-right space-y-1">
         <p className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>DAILY OPERATIONS</p>
         <div className="flex items-baseline gap-1.5 pt-1">
-          <p className={`text-6xl font-black tracking-tighter leading-none transition-all duration-300 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{completedCount}</p>
+          <p className="text-6xl font-black tracking-tighter leading-none transition-all duration-300 text-[#1877F2]">{completedCount}</p>
           <p className={`text-3xl font-black tracking-tighter leading-none opacity-50 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>/ {totalTasks}</p>
         </div>
         <p className={`text-xs font-bold truncate pt-1 ${isDarkMode ? "text-slate-300" : "text-slate-500"}`}>Total completed tasks</p>

@@ -83,7 +83,7 @@ export default function Bills({
             ${paidBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
           <span className="text-xl text-slate-400 opacity-60">
-            {" "} / ${totalBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+             / ${totalBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         </p>
       </div>
@@ -164,7 +164,10 @@ export default function Bills({
                         ) : (
                           <div className="space-y-3">
                             {sortedBills.map((bill) => {
-                              const isOverdue = bill.isOverdue || bill.payday === "Due Now";
+                              // FIX 4: Decouple Strictly Overdue from Due Now
+                              const isStrictlyOverdue = bill.isOverdue;
+                              const isDueToday = bill.payday === "Due Now";
+                              const isUrgent = isStrictlyOverdue || isDueToday;
                               
                               return (
                                 <div key={bill.id} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
@@ -172,7 +175,7 @@ export default function Bills({
                                   {/* LEVEL 1: Identity & Edit Pencil */}
                                   <div className="flex items-start justify-between w-full mb-6">
                                      <div className="flex items-center gap-3 flex-1">
-                                        <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isOverdue ? isDarkMode ? "bg-red-900/20 border-red-900/50" : "bg-red-50 border-red-100" : isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                                        <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isUrgent ? isDarkMode ? "bg-red-900/20 border-red-900/50" : "bg-red-50 border-red-100" : isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
                                             {bill.icon}
                                         </div>
                                         <div className="flex flex-col">
@@ -195,8 +198,9 @@ export default function Bills({
                                   {/* LEVEL 2: Action Row */}
                                   <div className="flex items-center justify-between gap-2">
                                      <div className="flex flex-col shrink-0">
-                                        <span className={`text-[10px] font-black uppercase tracking-wider ${isOverdue ? "text-red-500" : "text-slate-400"}`}>
-                                            {isOverdue ? "Overdue" : "Due"}
+                                        {/* FIX 4: Corrected 3-way string check */}
+                                        <span className={`text-[10px] font-black uppercase tracking-wider ${isUrgent ? "text-red-500" : "text-slate-400"}`}>
+                                            {isStrictlyOverdue ? "OVERDUE" : isDueToday ? "DUE NOW" : "DUE"}
                                         </span>
                                         <span className={`text-xs font-bold ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
                                             {bill.fullDate || "TBD"}
@@ -288,10 +292,10 @@ export default function Bills({
                     <div className="flex items-center justify-between gap-2">
                        <div className="flex flex-col shrink-0">
                           <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                             Status
+                              Status
                           </span>
                           <span className={`text-xs font-bold ${isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>
-                             Settled
+                              Settled
                           </span>
                        </div>
                        

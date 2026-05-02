@@ -127,7 +127,7 @@ export default function Dashboard({
           <div className={`w-1.5 h-1.5 rounded-full ${safeToSpend < 0 ? "bg-red-500" : "bg-emerald-500 animate-pulse"}`}></div>
           <span className="text-[9px] font-black uppercase tracking-wider">{userName.toUpperCase()}'S BALANCE</span>
         </div>
-        <p className={`text-4xl font-black tracking-tighter mb-3 ${safeToSpend < 0 ? "text-red-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>
+        <p className={`text-3xl min-[350px]:text-4xl font-black tracking-tighter mb-3 ${safeToSpend < 0 ? "text-red-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>
           {safeToSpend < 0 ? "-" : ""}${Math.abs(safeToSpend).toLocaleString("en-US", { minimumFractionDigits: 2 })}
         </p>
         
@@ -311,7 +311,11 @@ export default function Dashboard({
                                
                                <div className="flex-1 flex justify-center px-1">
                                   {!bill?.isPaid ? (
-                                      <button onClick={(e) => { e.stopPropagation(); handleBillClick(bill?.id); }} className="px-3 sm:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0"><CheckCircle2 size={14} /> Mark as Paid</button>
+                                      <button onClick={(e) => { e.stopPropagation(); handleBillClick(bill?.id); }} className="px-3 sm:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 sm:gap-1.5 whitespace-nowrap shrink-0">
+                                        <CheckCircle2 size={14} />
+                                        <span className="hidden sm:inline">Mark as Paid</span>
+                                        <span className="sm:hidden">Pay?</span>
+                                      </button>
                                   ) : (
                                       <div className="px-3 sm:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0"><CheckCircle2 size={14} /> Paid</div>
                                   )}
@@ -341,6 +345,7 @@ export default function Dashboard({
           })}
         </div>
 
+        {/* === MONTHLY SUMMARY ANCHOR === */}
         <div className={`mt-6 py-4 px-5 rounded-[1.5rem] border shadow-sm flex flex-col items-center justify-center gap-2 ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
            <span className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Total Bills for {currentMonthName}</span>
            <div className={`px-3 py-1.5 rounded-[8px] border font-black text-lg tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"}`}>

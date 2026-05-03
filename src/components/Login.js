@@ -1,5 +1,7 @@
-import React from "react";
-import { Mail, Lock, User, Loader2, AlertCircle } from "lucide-react";
+import React, { useState } from "react";
+import { Mail, Lock, User, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { auth } from "../firebase";
+import { sendPasswordResetEmail } from "firebase/auth";
 
 export default function Login({
   isAuthLoading,
@@ -16,6 +18,34 @@ export default function Login({
   firstName,
   setFirstName
 }) {
+  const [resetEmailSent, setResetEmailSent] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      setAuthError("Enter your email address above to reset your password.");
+      setResetEmailSent(false);
+      return;
+    }
+    
+    try {
+      setIsResetting(true);
+      setAuthError("");
+      setResetEmailSent(false);
+      await sendPasswordResetEmail(auth, email.trim());
+      setResetEmailSent(true);
+    } catch (err) {
+      let errorMsg = "Failed to send reset email. Please try again.";
+      if (err.code === "auth/user-not-found") errorMsg = "No account found with this email address.";
+      if (err.code === "auth/invalid-email") errorMsg = "Please enter a valid email address.";
+      if (err.code === "auth/missing-email") errorMsg = "Please enter your email address.";
+      if (err.code === "auth/too-many-requests") errorMsg = "Too many requests. Please try again later.";
+      setAuthError(errorMsg);
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   if (isAuthLoading) {
     return (
       <div className="h-screen bg-[#F8FAFC] flex justify-center items-center font-sans">
@@ -44,9 +74,16 @@ export default function Login({
 
         {/* AUTH FORM */}
         <form onSubmit={handleAuthSubmit} className="space-y-4 flex-1 flex flex-col">
+          
+          {/* DYNAMIC ALERT BANNERS */}
           {authError && (
-            <div className="bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-3 rounded-xl flex items-center gap-2">
-              <AlertCircle size={16} /> {authError}
+            <div className="bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-3 rounded-xl flex items-center gap-2 animate-fade-in">
+              <AlertCircle size={16} className="shrink-0" /> {authError}
+            </div>
+          )}
+          {resetEmailSent && !authError && (
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs font-bold p-3 rounded-xl flex items-center gap-2 animate-fade-in">
+              <CheckCircle2 size={16} className="shrink-0" /> Password reset link sent to your email.
             </div>
           )}
 
@@ -75,7 +112,7 @@ export default function Login({
                 type="email" 
                 required 
                 value={email} 
-                onChange={(e) => setEmail(e.target.value)} 
+                onChange={(e) => { setEmail(e.target.value); setResetEmailSent(false); }} 
                 className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#1877F2] transition-colors" 
                 placeholder="name@email.com" 
               />
@@ -84,11 +121,23 @@ export default function Login({
           </div>
           
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider pl-1">Password</label>
+            <div className="flex justify-between items-center pl-1 pr-1">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Password</label>
+              {isLoginMode && (
+                <button 
+                  type="button" 
+                  onClick={handleForgotPassword}
+                  disabled={isResetting}
+                  className="text-[10px] font-black text-[#1877F2] hover:underline transition-all active:scale-95"
+                >
+                  {isResetting ? "Sending..." : "Forgot Password?"}
+                </button>
+              )}
+            </div>
             <div className="relative">
               <input 
                 type="password" 
-                required 
+                required={!resetEmailSent} 
                 value={password} 
                 onChange={(e) => setPassword(e.target.value)} 
                 className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#1877F2] transition-colors" 
@@ -101,7 +150,7 @@ export default function Login({
           <button 
             type="submit" 
             disabled={!email || !password || (!isLoginMode && !firstName)} 
-            className={`w-full mt-2 py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${!email || !password || (!isLoginMode && !firstName) ? "bg-slate-200 text-slate-400 cursor-not-allowed" : "bg-[#1877F2] text-white shadow-[0_8px_20px_rgba(24,119,242,0.3)] hover:-translate-y-0.5"}`}
+            className={`w-full mt-2 py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${!email || !password || (!isLoginMode && !firstName) ? "bg-slate-200 text-slate-400 cursor-not-allowed" : "bg-[#1877F2] text-white shadow-[0_8px_20px_rgba(24,119,242,0.3)] hover:-translate-y-0.5 active:scale-95"}`}
           >
             {isLoginMode ? "Log In" : "Sign Up"}
           </button>
@@ -112,7 +161,7 @@ export default function Login({
               {isLoginMode ? "Don't have an account? " : "Already have an account? "}
               <button 
                 type="button" 
-                onClick={() => { setIsLoginMode(!isLoginMode); setAuthError(""); setFirstName(""); }} 
+                onClick={() => { setIsLoginMode(!isLoginMode); setAuthError(""); setFirstName(""); setResetEmailSent(false); }} 
                 className="font-black text-[#1877F2] hover:underline"
               >
                 {isLoginMode ? "Create one" : "Log in"}

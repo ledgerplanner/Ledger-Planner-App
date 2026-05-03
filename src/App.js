@@ -1065,7 +1065,9 @@ export default function App() {
             {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} isDemoMode={isDemoMode} />}
             {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} paydayConfig={paydayConfig} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} handleRolloverMonth={handleRolloverMonth} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} />}
             {activeTab === "activity" && <Activity userName={userName} transactions={transactions} activitySearch={activitySearch} setActivitySearch={setActivitySearch} activityFilter={activityFilter} setActivityFilter={setActivityFilter} isDarkMode={isDarkMode} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} />}
-            {activeTab === "todo" && <Todo userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} newTodoType={newTodoType} setNewTodoType={setNewTodoType} isDarkMode={isDarkMode} handleAddTodo={async (e) => { e.preventDefault(); if(!newTodoText.trim()) return; if (isDemoMode) { setTodos([{ id: `todo_demo_${Date.now()}`, text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false }, ...todos]); } else { await addDoc(collection(db, "users", user.uid, "todos"), { text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() }); } triggerVictory(); setNewTodoText(""); setNewTodoPriority(3); }} toggleTodoStatus={async (id) => { triggerHaptic(50); const todo = todos.find(t => t.id === id); if (isDemoMode) { setTodos(todos.map(t => t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)); } else { await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); } }} setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} clearCompletedTodos={clearCompletedTodos} />}
+            
+            {/* INJECTED openGlobalAction PIPELINE */}
+            {activeTab === "todo" && <Todo userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} newTodoType={newTodoType} setNewTodoType={setNewTodoType} isDarkMode={isDarkMode} handleAddTodo={async (e) => { e.preventDefault(); if(!newTodoText.trim()) return; if (isDemoMode) { setTodos([{ id: `todo_demo_${Date.now()}`, text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false }, ...todos]); } else { await addDoc(collection(db, "users", user.uid, "todos"), { text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() }); } triggerVictory(); setNewTodoText(""); setNewTodoPriority(3); }} toggleTodoStatus={async (id) => { triggerHaptic(50); const todo = todos.find(t => t.id === id); if (isDemoMode) { setTodos(todos.map(t => t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)); } else { await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); } }} setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} clearCompletedTodos={clearCompletedTodos} openGlobalAction={openGlobalAction} />}
           </div>
 
           <div className={`fixed lg:hidden ${isDemoMode ? "bottom-[200px]" : "bottom-28"} right-6 z-50`}>
@@ -1496,132 +1498,43 @@ export default function App() {
                         </div>
                       </>
                     )}
-                    <button onClick={handleSaveEntryEdit} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><Save size={16} /> Save Changes</button>
-                  </div>
-                )}
-              </div>
-              
-              {/* EDIT ENTRY: ICON SELECTOR OVERLAY */}
-              {isIconSelectorOpen && isEditingEntry && (
-                 <div className={`absolute inset-0 z-[150] flex flex-col ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
-                    <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}><h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Icon</h3><button onClick={() => setIsIconSelectorOpen(false)} className={closeButtonClass}><X size={18}/></button></div>
-                    <div className={`flex-1 overflow-y-auto p-4 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : "pb-20"}`}>
-                       <div className="grid grid-cols-6 lg:grid-cols-8 gap-3">{categoryEmojis.map(emoji => (<button key={emoji} onClick={() => { setEditEntryData({...editEntryData, icon: emoji}); setIsIconSelectorOpen(false); }} className={`w-12 h-12 flex items-center justify-center rounded-xl text-2xl border transition-all active:scale-90 ${editEntryData.icon === emoji ? `bg-[#1877F2] text-white border-transparent shadow-md` : isDarkMode ? "bg-slate-800 border-slate-700 hover:bg-slate-700" : "bg-slate-50 border-slate-200 hover:bg-slate-100"}`}>{emoji}</button>))}</div>
-                    </div>
-                 </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {isQabOpen && (
-          <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
-            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={closeQab}></div>
-            <div className={`w-full lg:max-w-md lg:h-[80vh] rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col max-h-[95vh] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
-              <button onClick={closeQab} className={`absolute top-5 right-5 z-20 ${closeButtonClass}`}><X size={18} /></button>
-              <div className={`px-6 pt-6 pb-6 border-b shrink-0 ${qabActiveSoftBg} rounded-t-[2.5rem]`}>
-                <div className={`w-12 h-1.5 rounded-full mx-auto mb-6 opacity-30 lg:hidden ${qabActiveBg}`}></div>
-                {qabStep === 1 ? (
-                  <div className="flex rounded-xl p-1 mb-6 mx-auto max-w-[280px] border bg-white/80">
-                    <button onClick={() => { triggerHaptic(20); setDrawerTab("bills"); setEntryIcon("🧾"); setEntryCategory(""); }} className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg ${drawerTab === "bills" ? `${qabActiveBg} text-white` : "text-slate-400"}`}>Bills</button>
-                    <button onClick={() => { triggerHaptic(20); setDrawerTab("income"); setEntryIcon("💵"); setEntryCategory(""); }} className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg ${drawerTab === "income" ? `${qabActiveBg} text-white` : "text-slate-400"}`}>Income</button>
-                    <button onClick={() => { triggerHaptic(20); setDrawerTab("transactions"); setEntryIcon("💳"); setEntryCategory(""); }} className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg ${drawerTab === "transactions" ? `${qabActiveBg} text-white` : "text-slate-400"}`}>Activity</button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-4 mb-6 -mt-2">
-                    <button onClick={() => setQabStep(1)} className={`p-2 rounded-full ${qabActiveText}`}><ArrowRight className="rotate-180" size={20} /></button>
-                    <div className="flex flex-col"><h3 className={`font-black text-sm uppercase tracking-widest ${qabActiveText}`}>{qabActiveLabel} Details</h3><p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Step 2 of 2</p></div>
-                  </div>
-                )}
-                <div className="text-center relative flex justify-center items-center">
-                  <span className={`text-6xl font-extrabold tracking-tighter ${qabActiveText}`}>${inputValue}</span>
-                  {qabStep === 1 && <button onClick={() => { triggerHaptic(15); setInputValue(inputValue.slice(0, -1) || "0"); }} className={`absolute right-4 p-3 rounded-full ${qabActiveText} text-2xl lg:text-4xl active:scale-90 transition-transform touch-manipulation`}>⌫</button>}
-                </div>
-              </div>
-              <div className={`p-6 mt-auto lg:rounded-b-[2.5rem] flex-1 flex flex-col overflow-y-auto ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
-                {qabStep === 1 ? (
-                  <>
-                    <div className="grid grid-cols-4 gap-3 mt-2">
-                      {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", ".", "0", "=", "+"].map((btn) => {
-                        return ( <button key={btn} onClick={() => handleNumpad(btn)} className={`w-full h-14 rounded-2xl text-2xl font-bold flex items-center justify-center bg-slate-100 transition-all active:scale-95 active:bg-slate-200 touch-manipulation`}> {btn} </button> );
-                      })}
-                    </div>
-                    <button onClick={() => { if (isQabAmountValid) setQabStep(2); }} disabled={!isQabAmountValid} className={`w-full mt-6 mb-2 h-16 shrink-0 rounded-2xl font-black uppercase tracking-widest text-xs text-white transition-all active:scale-95 flex items-center justify-center gap-2 ${!isQabAmountValid ? "bg-slate-300 opacity-50 cursor-not-allowed" : `${qabActiveBg} ${qabActiveShadow} hover:-translate-y-1`}`}>Continue <ArrowRight size={18} /></button>
-                  </>
-                ) : (
-                  <div className="flex flex-col h-full animate-fade-in relative">
-                    <div className="space-y-4 flex-1 pb-6">
-                      <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Name</label><input type="text" value={entryName} onChange={(e) => setEntryName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
-                      {currentRecentCategories.length > 0 && (
-                        <div className="-mx-1">
-                          <label className={`block text-[9px] font-bold uppercase tracking-widest ml-5 mb-2 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Recent Categories</label>
-                          <div className="flex gap-2 overflow-x-auto hide-scrollbar px-1 pb-1">
-                            {currentRecentCategories.map(cat => (
-                              <button key={cat} onClick={() => setEntryCategory(cat)} className={`shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold border transition-colors ${entryCategory === cat ? `${qabActiveBg} text-white shadow-md border-transparent` : isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-600"}`}>{cat}</button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      <div className="relative cursor-pointer" onClick={() => setIsCategorySelectorOpen(true)}><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Category</label><div className={`w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}><span>{entryCategory || "Select..."}</span><ArrowDown size={14} className={isDarkMode ? "text-slate-400" : "text-slate-500"} /></div></div>
-                      {drawerTab === "bills" && (
-                        <>
-                          <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Due Date</label><input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white [color-scheme:dark]" : "bg-white border-slate-200 text-slate-900"}`} /></div>
-                          <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
-                            <div className="flex items-center justify-between">
-                              <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Recurring Bill</span>
-                              <button onClick={() => { triggerHaptic(20); setEntryIsRecurring(!entryIsRecurring); }} className={`w-12 h-6 rounded-full transition-colors relative ${entryIsRecurring ? "bg-[#1877F2]" : "bg-slate-300 dark:bg-slate-700"}`}><div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${entryIsRecurring ? "translate-x-7" : "translate-x-1"}`}></div></button>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Installment Plan</span>
-                              <button onClick={() => { triggerHaptic(20); setEntryIsInstallment(!entryIsInstallment); }} className={`w-12 h-6 rounded-full transition-colors relative ${entryIsInstallment ? "bg-[#1877F2]" : "bg-slate-300 dark:bg-slate-700"}`}><div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${entryIsInstallment ? "translate-x-7" : "translate-x-1"}`}></div></button>
-                            </div>
-                            {entryIsInstallment && (
-                              <div className="grid grid-cols-2 gap-3 animate-fade-in mt-2">
-                                <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Total Amount</label><input type="text" inputMode="decimal" pattern="[0-9.-]*" value={entryTotalAmount} onChange={(e) => setEntryTotalAmount(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
-                                <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Already Paid</label><input type="text" inputMode="decimal" pattern="[0-9.-]*" value={entryPaidAmount} onChange={(e) => setEntryPaidAmount(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
-                              </div>
-                            )}
-                          </div>
-                        </>
-                      )}
-                      {(drawerTab === "income" || drawerTab === "transactions") && (
-                        <div className="relative">
-                          <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account</label>
-                          <select value={entryAccount} onChange={(e) => setEntryAccount(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
-                            <option value="" disabled>{drawerTab === "income" ? "Which account does this deposit go into?" : "Which account paid for this activity?"}</option>
-                            {accounts.map((a) => (<option key={a.id} value={a.id} className={isDarkMode ? "bg-[#1E293B] text-white" : "bg-white text-slate-900"}>{a.name}</option>))}
-                          </select>
-                        </div>
-                      )}
-                      <div className="relative cursor-pointer" onClick={() => setIsIconSelectorOpen(true)}>
-                        <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Icon</label>
-                        <div className={`w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}><span className="text-xl leading-none">{entryIcon || "🧾"}</span><ArrowDown size={14} className={isDarkMode ? "text-slate-400" : "text-slate-500"} /></div>
+                    {(drawerTab === "income" || drawerTab === "transactions") && (
+                      <div className="relative">
+                        <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account</label>
+                        <select value={entryAccount} onChange={(e) => setEntryAccount(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
+                          <option value="" disabled>{drawerTab === "income" ? "Which account does this deposit go into?" : "Which account paid for this activity?"}</option>
+                          {accounts.map((a) => (<option key={a.id} value={a.id} className={isDarkMode ? "bg-[#1E293B] text-white" : "bg-white text-slate-900"}>{a.name}</option>))}
+                        </select>
                       </div>
+                    )}
+                    <div className="relative cursor-pointer" onClick={() => setIsIconSelectorOpen(true)}>
+                      <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Icon</label>
+                      <div className={`w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}><span className="text-xl leading-none">{entryIcon || "🧾"}</span><ArrowDown size={14} className={isDarkMode ? "text-slate-400" : "text-slate-500"} /></div>
                     </div>
-                    <button onClick={handleConfirmAction} disabled={!canSubmitQab} className={`w-full mt-4 h-16 shrink-0 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${!canSubmitQab ? "bg-slate-300 text-slate-500 cursor-not-allowed opacity-60 shadow-none" : `active:scale-95 ${qabActiveBg} ${qabActiveShadow} hover:-translate-y-1`}`}>Confirm & Save <CheckCircle2 size={18} /></button>
-                    {isCategorySelectorOpen && (
-                       <div className={`absolute inset-0 z-[140] flex flex-col ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
-                          <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
-                            <h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Category</h3><button onClick={() => setIsCategorySelectorOpen(false)} className={closeButtonClass}><X size={18}/></button>
-                          </div>
-                          <div className={`flex-1 overflow-y-auto p-4 space-y-6 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : "pb-20"}`}>
-                             {categoriesToRender.map(group => (
-                                 <div key={group.group}><p className="text-[10px] font-black uppercase text-slate-400 mb-3">{group.group}</p><div className="grid grid-cols-1 gap-2">{group.items.map(item => (<button key={item} onClick={() => { setEntryCategory(item); setIsCategorySelectorOpen(false); }} className={`w-full p-4 text-left rounded-xl text-xs font-bold border transition-colors ${entryCategory === item ? `${qabActiveBg} text-white shadow-md border-transparent` : isDarkMode ? "bg-slate-800 border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>{item}</button>))}</div></div>
-                             ))}
-                          </div>
-                       </div>
-                    )}
-                    {isIconSelectorOpen && !isEditingEntry && (
-                       <div className={`absolute inset-0 z-[150] flex flex-col ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
-                          <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}><h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Icon</h3><button onClick={() => setIsIconSelectorOpen(false)} className={closeButtonClass}><X size={18}/></button></div>
-                          <div className={`flex-1 overflow-y-auto p-4 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : "pb-20"}`}>
-                             <div className="grid grid-cols-6 lg:grid-cols-8 gap-3">{categoryEmojis.map(emoji => (<button key={emoji} onClick={() => { setEntryIcon(emoji); setIsIconSelectorOpen(false); }} className={`w-12 h-12 flex items-center justify-center rounded-xl text-2xl border transition-all active:scale-90 ${entryIcon === emoji ? `${qabActiveBg} border-transparent shadow-md` : isDarkMode ? "bg-slate-800 border-slate-700 hover:bg-slate-700" : "bg-slate-50 border-slate-200 hover:bg-slate-100"}`}>{emoji}</button>))}</div>
-                          </div>
-                       </div>
-                    )}
                   </div>
-                )}
-              </div>
+                  <button onClick={handleConfirmAction} disabled={!canSubmitQab} className={`w-full mt-4 h-16 shrink-0 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${!canSubmitQab ? "bg-slate-300 text-slate-500 cursor-not-allowed opacity-60 shadow-none" : `active:scale-95 ${qabActiveBg} ${qabActiveShadow} hover:-translate-y-1`}`}>Confirm & Save <CheckCircle2 size={18} /></button>
+                  {isCategorySelectorOpen && (
+                     <div className={`absolute inset-0 z-[140] flex flex-col ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
+                        <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
+                          <h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Category</h3><button onClick={() => setIsCategorySelectorOpen(false)} className={closeButtonClass}><X size={18}/></button>
+                        </div>
+                        <div className={`flex-1 overflow-y-auto p-4 space-y-6 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : "pb-20"}`}>
+                           {categoriesToRender.map(group => (
+                               <div key={group.group}><p className="text-[10px] font-black uppercase text-slate-400 mb-3">{group.group}</p><div className="grid grid-cols-1 gap-2">{group.items.map(item => (<button key={item} onClick={() => { setEntryCategory(item); setIsCategorySelectorOpen(false); }} className={`w-full p-4 text-left rounded-xl text-xs font-bold border transition-colors ${entryCategory === item ? `${qabActiveBg} text-white shadow-md border-transparent` : isDarkMode ? "bg-slate-800 border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>{item}</button>))}</div></div>
+                           ))}
+                        </div>
+                     </div>
+                  )}
+                  {isIconSelectorOpen && !isEditingEntry && (
+                     <div className={`absolute inset-0 z-[150] flex flex-col ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
+                        <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}><h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Icon</h3><button onClick={() => setIsIconSelectorOpen(false)} className={closeButtonClass}><X size={18}/></button></div>
+                        <div className={`flex-1 overflow-y-auto p-4 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : "pb-20"}`}>
+                           <div className="grid grid-cols-6 lg:grid-cols-8 gap-3">{categoryEmojis.map(emoji => (<button key={emoji} onClick={() => { setEntryIcon(emoji); setIsIconSelectorOpen(false); }} className={`w-12 h-12 flex items-center justify-center rounded-xl text-2xl border transition-all active:scale-90 ${entryIcon === emoji ? `${qabActiveBg} border-transparent shadow-md` : isDarkMode ? "bg-slate-800 border-slate-700 hover:bg-slate-700" : "bg-slate-50 border-slate-200 hover:bg-slate-100"}`}>{emoji}</button>))}</div>
+                        </div>
+                     </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}

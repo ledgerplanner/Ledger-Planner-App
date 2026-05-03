@@ -130,12 +130,12 @@ export default function App() {
   const sessionMonth = useRef(new Date().getMonth());
   const [needsRefresh, setNeedsRefresh] = useState(false);
 
-  // === NEW: GLOBAL ACTION MODAL ENGINE ===
-  const [globalActionConfig, setGlobalActionConfig] = useState({ isOpen: false, title: "", message: "", confirmText: "Confirm", isDanger: true, action: null });
+  // === UPGRADED: GLOBAL ACTION MODAL ENGINE (Alert-Only Support) ===
+  const [globalActionConfig, setGlobalActionConfig] = useState({ isOpen: false, title: "", message: "", confirmText: "Confirm", isDanger: true, isAlertOnly: false, action: null });
 
-  const openGlobalAction = (title, message, confirmText, isDanger, action) => {
-    triggerWarning();
-    setGlobalActionConfig({ isOpen: true, title, message, confirmText, isDanger, action });
+  const openGlobalAction = (title, message, confirmText, isDanger, action, isAlertOnly = false) => {
+    if (isDanger) triggerWarning(); else triggerHaptic(50);
+    setGlobalActionConfig({ isOpen: true, title, message, confirmText, isDanger, isAlertOnly, action });
   };
 
   const [recentBillCategories, setRecentBillCategories] = useState(() => {
@@ -351,7 +351,6 @@ export default function App() {
     catch (error) { setAuthError("Google Sign-In failed."); setIsAuthLoading(false); }
   };
 
-  // === UPGRADED: LOGOUT ===
   const handleLogout = async () => { 
     openGlobalAction("Log Out", "Are you sure you want to log out of your session?", "Log Out", true, async () => {
       if (isDemoMode) { window.location.href = "https://ledgerplanner.com"; return; }
@@ -379,11 +378,12 @@ export default function App() {
         firstName={firstName} setFirstName={setFirstName} 
         isLoginMode={isLoginMode} setIsLoginMode={setIsLoginMode} 
         handleAuthSubmit={handleAuthSubmit} handleGoogleLogin={handleGoogleLogin} 
-        authError={authError} isAuthLoading={isAuthLoading} 
+        authError={authError} setAuthError={setAuthError} isAuthLoading={isAuthLoading} 
       />
     );
   }
 
+  // === UPGRADED: NATIVE ALERTS REPLACED WITH SECURE MODAL ===
   const enablePushNotifications = async () => {
     try {
       const permission = await Notification.requestPermission();
@@ -393,10 +393,10 @@ export default function App() {
         if (currentToken) {
           const userId = auth.currentUser?.uid;
           if (userId) await setDoc(doc(db, "users", userId), { fcmToken: currentToken }, { merge: true });
-          alert("Push Notifications Enabled! Vault secured.");
+          openGlobalAction("Secure Vault", "Push Notifications Enabled! Your vault is fully secured.", "Got It", false, () => setGlobalActionConfig(prev => ({...prev, isOpen: false})), true);
         }
       } else {
-        alert("You denied notifications. You will only see alerts inside the app.");
+        openGlobalAction("Alerts Localized", "You denied notifications. You will only see alerts securely inside the app.", "Understood", false, () => setGlobalActionConfig(prev => ({...prev, isOpen: false})), true);
       }
     } catch (error) {
       console.error("An error occurred while retrieving token. ", error);
@@ -466,10 +466,13 @@ export default function App() {
     await Promise.all(batchPromises);
   };
 
-  // === UPGRADED: MANUAL ROLLOVER ===
+  // === UPGRADED: MANUAL ROLLOVER MODAL OVERRIDE ===
   const handleRolloverMonth = async () => {
     openGlobalAction("Force Rollover", "SYSTEM OVERRIDE: Are you sure you want to force a manual month rollover?", "Force Sync", true, async () => {
-      if (isDemoMode) { alert("Rollover is disabled in Demo Mode."); setGlobalActionConfig(prev => ({ ...prev, isOpen: false })); return; }
+      if (isDemoMode) { 
+        openGlobalAction("Demo Mode", "Rollover overrides are disabled in Demo Mode.", "Understood", false, () => setGlobalActionConfig(prev => ({...prev, isOpen: false})), true); 
+        return; 
+      }
       
       await executeRolloverCore();
       
@@ -485,10 +488,14 @@ export default function App() {
     });
   };
 
-  // === UPGRADED: FACTORY RESET ===
+  // === UPGRADED: FACTORY RESET MODAL OVERRIDE ===
   const handleFactoryReset = async () => {
     if (resetConfirm !== "RESET") return;
-    if (isDemoMode) { alert("Factory reset is disabled in Demo Mode."); setResetConfirm(""); setIsSettingsOpen(false); return; }
+    if (isDemoMode) { 
+        setResetConfirm(""); setIsSettingsOpen(false); 
+        openGlobalAction("Demo Mode", "Factory reset is disabled in Demo Mode.", "Understood", false, () => setGlobalActionConfig(prev => ({...prev, isOpen: false})), true); 
+        return; 
+    }
     
     openGlobalAction("Wipe Vault", "FINAL WARNING: This will permanently delete all your accounts, bills, transactions, and tasks. Proceed?", "Destroy", true, async () => {
       try {
@@ -509,12 +516,13 @@ export default function App() {
         setTodos([]);
         setPaydayConfig({ frequency: "Weekly", "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } });
 
-        setResetConfirm(""); setIsSettingsOpen(false); setGlobalActionConfig(prev => ({ ...prev, isOpen: false })); triggerVictory(); alert("Vault wiped. Welcome to a clean slate.");
+        setResetConfirm(""); setIsSettingsOpen(false); 
+        openGlobalAction("Vault Wiped", "All data has been permanently destroyed. Welcome to a clean slate.", "Start Fresh", false, () => setGlobalActionConfig(prev => ({...prev, isOpen: false})), true); 
+        triggerVictory(); 
       } catch (e) { console.error("Factory reset failed", e); }
     });
   };
 
-  // === UPGRADED: CLEAR TODOS ===
   const clearCompletedTodos = async () => {
     const completed = todos.filter(t => t.isCompleted);
     if (completed.length === 0) return;
@@ -689,7 +697,6 @@ export default function App() {
     triggerVictory(); setSelectedAccount(null);
   };
 
-  // === UPGRADED: DELETE ACCOUNT ===
   const deleteAccount = async () => {
     if (!selectedAccount) return;
     
@@ -997,6 +1004,18 @@ export default function App() {
   const qabParsedInput = parseFloat(inputValue);
   const isQabAmountValid = !isNaN(qabParsedInput) && (drawerTab === "bills" ? qabParsedInput >= 0 : qabParsedInput > 0);
 
+  // === UPGRADED: FORM VALIDATION ENGINE ===
+  const isQabFormValid = () => {
+    const hasName = entryName.trim() !== "";
+    const hasCategory = entryCategory.trim() !== "";
+    if (drawerTab === "bills") {
+      return hasName && hasCategory && entryDate !== "";
+    } else {
+      return hasName && hasCategory && entryAccount !== "";
+    }
+  };
+  const canSubmitQab = isQabFormValid();
+
   const categoriesToRender = drawerTab === 'income' ? modernCategories.filter(g => g.group === "Income & Wealth") : modernCategories;
   const currentRecentCategories = drawerTab === "bills" ? recentBillCategories : recentActivityCategories;
 
@@ -1100,7 +1119,7 @@ export default function App() {
                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2"><CreditCard size={14}/> Subscription</h4>
                    <div className={`p-4 rounded-2xl border flex items-center justify-between ${isDarkMode ? "bg-[#0F172A] border-slate-600" : "bg-slate-50 border-slate-200"}`}>
                     <div><p className={`font-black text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Ledger Planner Pro</p><div className="flex items-center gap-1 mt-0.5"><div className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse"></div><p className="text-[10px] font-bold text-[#10B981] uppercase tracking-widest">Active</p></div></div>
-                    <button onClick={() => alert("Subscription portal connecting...")} className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-colors ${isDarkMode ? "bg-slate-800 border-slate-600 text-white hover:bg-slate-700" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100 shadow-sm"}`}>Manage</button>
+                    <button onClick={() => openGlobalAction("Subscription", "Connecting to the secure subscription portal...", "Close", false, () => setGlobalActionConfig(prev => ({...prev, isOpen: false})), true)} className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-colors ${isDarkMode ? "bg-slate-800 border-slate-600 text-white hover:bg-slate-700" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100 shadow-sm"}`}>Manage</button>
                   </div>
                 </div>
 
@@ -1250,7 +1269,7 @@ export default function App() {
                 <div className="relative mt-2"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Type</label><select value={newAccType} onChange={(e) => setNewAccType(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}><option>Checking</option><option>Savings</option><option>Credit Card</option><option>Cash</option><option>401k / Retirement</option></select></div>
                 <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Details</label><input type="text" placeholder={newAccType} value={newAccDesc} onChange={(e) => setNewAccDesc(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white placeholder-slate-600" : "bg-white border-slate-200 text-slate-900 placeholder-slate-300"}`} /></div>
 
-                <button onClick={handleAddAccount} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2">Save Account <CheckCircle2 size={16} /></button>
+                <button onClick={handleAddAccount} disabled={!newAccName.trim() || isNaN(parseFloat(newAccBalance))} className={`w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${!newAccName.trim() || isNaN(parseFloat(newAccBalance)) ? "bg-slate-300 opacity-50 cursor-not-allowed" : "bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] active:scale-95"}`}>Save Account <CheckCircle2 size={16} /></button>
               </div>
             </div>
           </div>
@@ -1334,7 +1353,7 @@ export default function App() {
                     className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white placeholder-slate-600" : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400"}`} 
                   />
                 </div>
-                <button onClick={updateAccountBalance} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><Save size={16} /> Save Changes</button>
+                <button onClick={updateAccountBalance} disabled={isNaN(parseFloat(editAccountBalance))} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${isNaN(parseFloat(editAccountBalance)) ? "bg-slate-300 opacity-50 cursor-not-allowed" : "bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] active:scale-95"}`}><Save size={16} /> Save Changes</button>
                 <button onClick={deleteAccount} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-red-500 shadow-[0_8px_16px_rgba(239,68,68,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><Trash2 size={16}/> Delete Account</button>
               </div>
             </div>
@@ -1579,7 +1598,7 @@ export default function App() {
                         <div className={`w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}><span className="text-xl leading-none">{entryIcon || "🧾"}</span><ArrowDown size={14} className={isDarkMode ? "text-slate-400" : "text-slate-500"} /></div>
                       </div>
                     </div>
-                    <button onClick={handleConfirmAction} className={`w-full mt-4 h-16 shrink-0 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-transform active:scale-95 flex items-center justify-center gap-2 ${qabActiveBg} ${qabActiveShadow}`}>Confirm & Save <CheckCircle2 size={18} /></button>
+                    <button onClick={handleConfirmAction} disabled={!canSubmitQab} className={`w-full mt-4 h-16 shrink-0 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${!canSubmitQab ? "bg-slate-300 text-slate-500 cursor-not-allowed opacity-60 shadow-none" : `active:scale-95 ${qabActiveBg} ${qabActiveShadow} hover:-translate-y-1`}`}>Confirm & Save <CheckCircle2 size={18} /></button>
                     {isCategorySelectorOpen && (
                        <div className={`absolute inset-0 z-[140] flex flex-col ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
                           <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
@@ -1630,20 +1649,22 @@ export default function App() {
           </div>
         )}
 
-        {/* === NEW: GLOBAL ACTION MODAL === */}
+        {/* === UPGRADED: GLOBAL ACTION MODAL (Alert Only Support) === */}
         {globalActionConfig.isOpen && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
              <div className={`w-full max-w-sm p-6 rounded-3xl shadow-2xl ${isDarkMode ? "bg-[#1E293B] border border-slate-700" : "bg-white"}`}>
                 <h3 className={`text-xl font-black mb-2 flex items-center gap-2 ${globalActionConfig.isDanger ? "text-red-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>
-                   {globalActionConfig.isDanger && <AlertCircle size={20} />} {globalActionConfig.title}
+                   {globalActionConfig.isDanger ? <AlertCircle size={20} /> : <CheckCircle2 size={20} className="text-[#1877F2]" />} {globalActionConfig.title}
                 </h3>
                 <p className={`text-sm mb-6 font-bold ${isDarkMode ? "text-slate-300" : "text-slate-500"}`}>{globalActionConfig.message}</p>
                 
                 <div className="flex gap-3">
-                   <button onClick={() => setGlobalActionConfig({ ...globalActionConfig, isOpen: false })} className={`flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 ${isDarkMode ? "bg-slate-800 text-slate-300 hover:bg-slate-700" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
-                      Cancel
-                   </button>
-                   <button onClick={() => { if(globalActionConfig.action) globalActionConfig.action(); }} className={`flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-white transition-all active:scale-95 shadow-lg ${globalActionConfig.isDanger ? "bg-red-500 hover:bg-red-600 shadow-[0_8px_16px_rgba(239,68,68,0.3)]" : "bg-[#1877F2] hover:bg-blue-600 shadow-[0_8px_16px_rgba(24,119,242,0.3)]"}`}>
+                   {!globalActionConfig.isAlertOnly && (
+                       <button onClick={() => setGlobalActionConfig({ ...globalActionConfig, isOpen: false })} className={`flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 ${isDarkMode ? "bg-slate-800 text-slate-300 hover:bg-slate-700" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
+                          Cancel
+                       </button>
+                   )}
+                   <button onClick={() => { if(globalActionConfig.action) { globalActionConfig.action(); } else { setGlobalActionConfig({ ...globalActionConfig, isOpen: false }); } }} className={`flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-white transition-all active:scale-95 shadow-lg ${globalActionConfig.isDanger ? "bg-red-500 hover:bg-red-600 shadow-[0_8px_16px_rgba(239,68,68,0.3)]" : "bg-[#1877F2] hover:bg-blue-600 shadow-[0_8px_16px_rgba(24,119,242,0.3)]"}`}>
                       {globalActionConfig.confirmText}
                    </button>
                 </div>

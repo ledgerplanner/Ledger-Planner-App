@@ -6,7 +6,7 @@ import { db, auth } from "../firebase";
 export default function Todo({
   userName, todos, newTodoText, setNewTodoText,
   newTodoPriority, setNewTodoPriority, newTodoType, setNewTodoType,
-  isDarkMode, handleAddTodo, toggleTodoStatus, renderHeroShell, clearCompletedTodos
+  isDarkMode, handleAddTodo, toggleTodoStatus, renderHeroShell, clearCompletedTodos, openGlobalAction
 }) {
   const [activeModalTodo, setActiveModalTodo] = useState(null);
   
@@ -32,15 +32,32 @@ export default function Todo({
 
   const triggerHaptic = () => { if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) window.navigator.vibrate(50); };
 
-  // Surgical Delete Function
-  const handleDeleteTask = async () => {
+  // Surgical Delete Function (Upgraded to Premium Modal)
+  const handleDeleteTask = () => {
     if (!auth.currentUser || !activeModalTodo) return;
-    if (window.confirm("Delete this task permanently?")) {
-      await deleteDoc(doc(db, "users", auth.currentUser.uid, "todos", activeModalTodo.id));
-      triggerHaptic();
-      setActiveModalTodo(null);
-      setIsEditingTask(false);
-    }
+    
+    openGlobalAction(
+      "Delete Task", 
+      "Are you sure you want to permanently delete this task?", 
+      "Delete", 
+      true, // isDanger = true (Red Button)
+      async () => {
+        try {
+          await deleteDoc(doc(db, "users", auth.currentUser.uid, "todos", activeModalTodo.id));
+          triggerHaptic();
+          setActiveModalTodo(null);
+          setIsEditingTask(false);
+          
+          // Failsafe to auto-close the global modal since Todo.js doesn't have direct access to setGlobalActionConfig
+          setTimeout(() => {
+            const cancelBtns = Array.from(document.querySelectorAll('button')).filter(btn => btn.textContent.trim().toUpperCase() === "CANCEL");
+            if (cancelBtns.length > 0) cancelBtns[0].click();
+          }, 50);
+        } catch (error) {
+          console.error("Error deleting task:", error);
+        }
+      }
+    );
   };
 
   // 🔥 NEW: Surgical Edit Function

@@ -127,7 +127,7 @@ export default function Dashboard({
           <div className={`w-1.5 h-1.5 rounded-full ${safeToSpend < 0 ? "bg-red-500" : "bg-emerald-500 animate-pulse"}`}></div>
           <span className="text-[9px] font-black uppercase tracking-wider">{userName.toUpperCase()}'S BALANCE</span>
         </div>
-        <p className={`text-3xl min-[360px]:text-4xl font-black tracking-tighter mb-3 ${safeToSpend < 0 ? "text-red-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>
+        <p className={`text-3xl min-[360px]:text-4xl font-black tracking-tighter mb-3 ${safeToSpend < 0 ? "text-red-500" : safeToSpend > 0 ? "text-[#10B981]" : (isDarkMode ? "text-white" : "text-slate-900")}`}>
           {safeToSpend < 0 ? "-" : ""}${Math.abs(safeToSpend).toLocaleString("en-US", { minimumFractionDigits: 2 })}
         </p>
         

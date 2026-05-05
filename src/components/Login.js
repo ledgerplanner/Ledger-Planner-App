@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Mail, Lock, User, Loader2, AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, Loader2, AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import { auth } from "../firebase";
 import { sendPasswordResetEmail } from "firebase/auth";
 
@@ -15,8 +15,6 @@ export default function Login({
   setEmail,
   password,
   setPassword,
-  firstName,
-  setFirstName,
   isDemoMode = false
 }) {
   const [resetEmailSent, setResetEmailSent] = useState(false);
@@ -106,7 +104,7 @@ export default function Login({
       {/* === LOGIN FORM PANEL (RIGHT) === */}
       <div className={`w-full lg:w-1/2 h-full flex flex-col relative transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
         
-        {/* ENVIRONMENT BADGE (Detached from scrolling container to fix scrollbar clipping) */}
+        {/* ENVIRONMENT BADGE */}
         <div className="absolute top-6 right-6 z-50">
           <div className={`px-3 py-1.5 rounded-full flex items-center gap-2 text-[10px] font-black uppercase tracking-widest border shadow-sm transition-colors ${
             isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-600"
@@ -116,11 +114,11 @@ export default function Login({
           </div>
         </div>
 
-        {/* SCROLLING FORM CONTAINER */}
-        <div className="w-full max-w-md mx-auto h-full relative flex flex-col px-8 pt-24 pb-8 overflow-y-auto hide-scrollbar">
+        {/* FORM CONTAINER (Scrollbar classes removed, relies on natural flex centering) */}
+        <div className="w-full max-w-md mx-auto h-full flex flex-col justify-center px-8 py-8 relative">
           
           {/* LOGO & HEADER */}
-          <div className="flex flex-col items-center mb-10">
+          <div className="flex flex-col items-center mb-8">
             <div className="lg:hidden w-20 h-20 rounded-full flex items-center justify-center mb-4 shadow-xl border-4 border-white overflow-hidden bg-white">
               <img src="/login-logo.png" alt="Ledger Planner Logo" className="w-full h-full object-cover" />
             </div>
@@ -134,7 +132,7 @@ export default function Login({
           </div>
 
           {/* AUTH FORM */}
-          <form onSubmit={handleAuthSubmit} className="space-y-4 flex-1 flex flex-col">
+          <form onSubmit={handleAuthSubmit} className="space-y-4 flex flex-col">
             
             {/* DYNAMIC ALERT BANNERS */}
             {authError && (
@@ -148,24 +146,6 @@ export default function Login({
               </div>
             )}
 
-            {/* FIRST NAME */}
-            {!isLoginMode && (
-              <div className="space-y-1.5 animate-fade-in">
-                <label className={`text-[10px] font-black uppercase tracking-wider pl-1 transition-colors ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>First Name</label>
-                <div className="relative">
-                  <input 
-                    type="text" 
-                    required={!isLoginMode} 
-                    value={firstName} 
-                    onChange={(e) => setFirstName(e.target.value)} 
-                    className={inputStyles} 
-                    placeholder="Your Name" 
-                  />
-                  <User className={`absolute left-4 top-1/2 -translate-y-1/2 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`} size={20} />
-                </div>
-              </div>
-            )}
-            
             {/* EMAIL */}
             <div className="space-y-1.5">
               <label className={`text-[10px] font-black uppercase tracking-wider pl-1 transition-colors ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Email</label>
@@ -220,9 +200,9 @@ export default function Login({
             {/* SUBMIT BUTTON */}
             <button 
               type="submit" 
-              disabled={!email || !password || (!isLoginMode && !firstName)} 
+              disabled={!email || !password} 
               className={`w-full mt-4 py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
-                !email || !password || (!isLoginMode && !firstName) 
+                !email || !password 
                   ? isDarkMode ? "bg-slate-800 text-slate-500 cursor-not-allowed" : "bg-slate-200 text-slate-400 cursor-not-allowed" 
                   : "bg-[#1877F2] text-white shadow-[0_8px_20px_rgba(24,119,242,0.3)] hover:-translate-y-0.5 active:scale-95"
               }`}
@@ -236,7 +216,7 @@ export default function Login({
                 {isLoginMode ? "Don't have an account? " : "Already have an account? "}
                 <button 
                   type="button" 
-                  onClick={() => { setIsLoginMode(!isLoginMode); setAuthError(""); setFirstName(""); setResetEmailSent(false); }} 
+                  onClick={() => { setIsLoginMode(!isLoginMode); setAuthError(""); setResetEmailSent(false); }} 
                   className="font-black text-[#1877F2] hover:underline"
                 >
                   {isLoginMode ? "Create one" : "Log in"}
@@ -272,9 +252,14 @@ export default function Login({
 
             {/* === THE ESCAPE HATCH FOOTER (Sign Up Only) === */}
             {!isLoginMode && (
-              <div className="mt-auto pt-6 text-center space-x-2 text-[11px] font-black uppercase tracking-widest">
+              <div className="pt-4 flex items-center justify-center gap-4 text-[11px] font-black uppercase tracking-widest">
                 <span className={`transition-colors ${isDarkMode ? "text-white" : "text-slate-900"}`}>Not ready yet?</span>
-                <a href="https://demo.ledgerplanner.com" className="text-[#1877F2] hover:underline transition-all">Try Demo</a>
+                <a 
+                  href="https://demo.ledgerplanner.com" 
+                  className="text-[#1877F2] border-2 border-[#1877F2] px-4 py-2 rounded-lg hover:bg-[#1877F2] hover:text-white transition-all active:scale-95"
+                >
+                  Try Demo
+                </a>
               </div>
             )}
 

@@ -17,7 +17,7 @@ export default function Login({
   setPassword,
   firstName,
   setFirstName,
-  isDemoMode = false // Injected prop for the environment badge
+  isDemoMode = false
 }) {
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
@@ -36,7 +36,7 @@ export default function Login({
     };
     
     checkTimeForTheme();
-    const timer = setInterval(checkTimeForTheme, 60000); // Check every minute
+    const timer = setInterval(checkTimeForTheme, 60000);
     return () => clearInterval(timer);
   }, []);
 
@@ -84,7 +84,6 @@ export default function Login({
       
       {/* === DESKTOP SPLIT-SCREEN: BRANDING PANEL (LEFT) === */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-[#1877F2] overflow-hidden items-center justify-center shadow-[inset_0_0_100px_rgba(0,0,0,0.2)]">
-        {/* Abstract Background Elements */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-[#0F172A] opacity-90"></div>
         <div className="absolute -top-32 -left-32 w-96 h-96 bg-white opacity-10 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-black opacity-30 rounded-full blur-3xl"></div>
@@ -107,7 +106,7 @@ export default function Login({
       {/* === LOGIN FORM PANEL (RIGHT) === */}
       <div className={`w-full lg:w-1/2 h-full flex flex-col relative transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
         
-        {/* ENVIRONMENT BADGE */}
+        {/* ENVIRONMENT BADGE (Detached from scrolling container to fix scrollbar clipping) */}
         <div className="absolute top-6 right-6 z-50">
           <div className={`px-3 py-1.5 rounded-full flex items-center gap-2 text-[10px] font-black uppercase tracking-widest border shadow-sm transition-colors ${
             isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-600"
@@ -117,9 +116,10 @@ export default function Login({
           </div>
         </div>
 
-        <div className="w-full max-w-md mx-auto h-full relative flex flex-col px-8 pt-20 pb-8 overflow-y-auto hide-scrollbar">
+        {/* SCROLLING FORM CONTAINER */}
+        <div className="w-full max-w-md mx-auto h-full relative flex flex-col px-8 pt-24 pb-8 overflow-y-auto hide-scrollbar">
           
-          {/* LOGO & HEADER (Mobile-centric, subdued on desktop) */}
+          {/* LOGO & HEADER */}
           <div className="flex flex-col items-center mb-10">
             <div className="lg:hidden w-20 h-20 rounded-full flex items-center justify-center mb-4 shadow-xl border-4 border-white overflow-hidden bg-white">
               <img src="/login-logo.png" alt="Ledger Planner Logo" className="w-full h-full object-cover" />
@@ -270,13 +270,13 @@ export default function Login({
               Continue with Google
             </button>
 
-            {/* === THE ESCAPE HATCH FOOTER === */}
-            <div className="mt-auto pt-6 text-center space-x-3 text-[11px] font-black uppercase tracking-widest">
-              <span className={`transition-colors ${isDarkMode ? "text-slate-600" : "text-slate-400"}`}>Not ready yet?</span>
-              <a href="https://demo.ledgerplanner.com" className="text-[#F97316] hover:underline transition-all">Try Demo</a>
-              <span className={`transition-colors ${isDarkMode ? "text-slate-700" : "text-slate-300"}`}>|</span>
-              <a href="https://ledgerplanner.com" className="text-[#1877F2] hover:underline transition-all">Learn More</a>
-            </div>
+            {/* === THE ESCAPE HATCH FOOTER (Sign Up Only) === */}
+            {!isLoginMode && (
+              <div className="mt-auto pt-6 text-center space-x-2 text-[11px] font-black uppercase tracking-widest">
+                <span className={`transition-colors ${isDarkMode ? "text-white" : "text-slate-900"}`}>Not ready yet?</span>
+                <a href="https://demo.ledgerplanner.com" className="text-[#1877F2] hover:underline transition-all">Try Demo</a>
+              </div>
+            )}
 
           </form>
         </div>

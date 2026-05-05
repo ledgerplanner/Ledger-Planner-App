@@ -87,12 +87,12 @@ export default function Login({
         <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-black opacity-30 rounded-full blur-3xl"></div>
         
         <div className="relative z-10 p-12 text-center text-white max-w-lg">
-          <div className="w-24 h-24 mx-auto rounded-3xl flex items-center justify-center mb-8 shadow-2xl border border-white/20 overflow-hidden bg-white/10 backdrop-blur-md">
-            <img src="/login-logo.png" alt="Ledger Planner" className="w-16 h-16 object-cover rounded-full shadow-inner" />
+          <div className="w-32 h-32 mx-auto rounded-3xl flex items-center justify-center mb-8 shadow-2xl border border-white/20 overflow-hidden bg-white/10 backdrop-blur-md transition-all">
+            <img src="/login-logo.png" alt="Ledger Planner" className="w-20 h-20 object-cover rounded-full shadow-inner" />
           </div>
-          <h2 className="text-4xl font-black mb-6 tracking-tighter leading-tight">Stop guessing.<br/>Start planning.</h2>
+          <h2 className="text-4xl font-black mb-6 tracking-tighter leading-tight">Simplify. Track. Plan.</h2>
           <p className="text-blue-100 text-lg font-medium leading-relaxed mb-8">
-            The master engine for your personal finances. Track spending, automate bills, and gain total control over your wealth.
+            Ditch the messy spreadsheets. Ledger Planner is the premium, ad-free vault that automates your paydays, routes your bills, and secures your peace of mind.
           </p>
           <div className="flex items-center justify-center gap-6 text-sm font-bold text-blue-200 uppercase tracking-widest">
              <span className="flex items-center gap-2"><CheckCircle2 size={16} className="text-[#10B981]"/> Secure Vault</span>
@@ -114,7 +114,7 @@ export default function Login({
           </div>
         </div>
 
-        {/* FORM CONTAINER (Scrollbar classes removed, relies on natural flex centering) */}
+        {/* FORM CONTAINER */}
         <div className="w-full max-w-md mx-auto h-full flex flex-col justify-center px-8 py-8 relative">
           
           {/* LOGO & HEADER */}

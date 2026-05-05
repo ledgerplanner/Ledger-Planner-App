@@ -133,7 +133,7 @@ export default function Todo({
           }
         `}
       >
-        <div className="flex items-center gap-4 truncate">
+        <div className="flex items-center gap-4 truncate flex-1 pr-2">
           <button 
             onClick={(e) => { e.stopPropagation(); toggleTodoStatus(task.id); }}
             className={`shrink-0 transition-colors 
@@ -146,7 +146,7 @@ export default function Todo({
             {task.isCompleted ? <CheckCircle2 size={24} /> : <Circle size={24} />}
           </button>
           
-          <div className="truncate pr-4">
+          <div className="truncate">
             <p className={`font-bold text-sm truncate transition-all ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
               {task.text}
             </p>
@@ -156,6 +156,18 @@ export default function Todo({
             </div>
           </div>
         </div>
+        
+        <button 
+          onClick={(e) => { 
+              e.stopPropagation(); 
+              setActiveModalTodo(task);
+              setIsEditingTask(true);
+              setEditTaskData({ text: task.text, priority: task.priority, type: task.type }); 
+          }} 
+          className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
+        >
+           <Edit2 size={16} strokeWidth={2.5} />
+        </button>
       </div>
     );
   };

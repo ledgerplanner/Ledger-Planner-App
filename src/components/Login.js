@@ -91,12 +91,17 @@ export default function Login({
             <img src="/login-logo.png" alt="Ledger Planner" className="w-20 h-20 object-cover rounded-full shadow-inner" />
           </div>
           <h2 className="text-4xl font-black mb-6 tracking-tighter leading-tight">Simplify. Track. Plan.</h2>
-          <p className="text-blue-100 text-lg font-medium leading-relaxed mb-8">
+          
+          {/* UPGRADED PARAGRAPH TEXT */}
+          <p className="text-white text-xl font-medium leading-relaxed mb-8">
             Ditch the messy spreadsheets. Ledger Planner is the premium, ad-free vault that automates your paydays, routes your bills, and secures your peace of mind.
           </p>
+          
+          {/* THE RULE OF THREE: TRUST BADGES */}
           <div className="flex items-center justify-center gap-6 text-sm font-bold text-blue-200 uppercase tracking-widest">
              <span className="flex items-center gap-2"><CheckCircle2 size={16} className="text-[#10B981]"/> Secure Vault</span>
              <span className="flex items-center gap-2"><CheckCircle2 size={16} className="text-[#10B981]"/> 256-bit Encrypted</span>
+             <span className="flex items-center gap-2"><CheckCircle2 size={16} className="text-[#10B981]"/> 100% Ad-Free</span>
           </div>
         </div>
       </div>

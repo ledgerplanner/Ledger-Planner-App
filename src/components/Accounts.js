@@ -95,7 +95,7 @@ export default function Accounts({
       <div className="flex justify-between items-end mb-6">
         <div>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Net Worth • <span className={`${isNetWorthNegative ? "text-red-500" : "text-[#1877F2]"}`}>{activeDataPoint.label} {activeDataPoint.year}</span></p>
-          <p className={`text-5xl font-black tracking-tighter transition-all duration-300 ${isNetWorthNegative ? "text-red-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>
+          <p className={`text-5xl font-black tracking-tighter transition-all duration-300 ${isNetWorthNegative ? "text-red-500" : activeDataPoint.val > 0 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
             {isNetWorthNegative ? "-" : ""}${Math.abs(activeDataPoint.val).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
         </div>
@@ -117,7 +117,7 @@ export default function Accounts({
           return (
             <div key={i} onClick={() => setActiveChartNode(i)} className="flex flex-col items-center justify-end h-full flex-1 cursor-pointer group">
               <div className="w-full relative flex justify-center h-full items-end">
-                <div className={`w-full max-w-[32px] rounded-t-xl transition-all duration-500 ease-out ${barBgClass}`} style={{ height: `${heightPct}%`, minHeight: "8px" }}></div>
+                <div className={`w-full max-w-[32px] rounded-t-xl transition-all duration-500 ease-out ${barBgClass}`} style={{ height: `${heightPct}%`, minHeight: Math.abs(item.val) > 0 ? "12px" : "4px" }}></div>
               </div>
               <span className={`text-[9px] font-black mt-3 uppercase tracking-wider transition-colors duration-300 ${isActive ? (isItemNegative ? "text-red-500" : "text-[#1877F2]") : "text-slate-400"}`}>{item.label}</span>
             </div>

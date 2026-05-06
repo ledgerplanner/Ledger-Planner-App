@@ -104,14 +104,21 @@ export default function Accounts({
         {historyData.map((item, i) => {
           const heightPct = (Math.abs(item.val) / maxChartVal) * 100;
           const isActive = activeChartNode === i;
-          const isItemNegative = item.val < 0;
           
-          // FIX 3: Replaced dark mode "bg-slate-800" with a highly visible "bg-slate-700"
-          let barBgClass = isDarkMode ? "bg-slate-700 group-hover:bg-slate-600" : "bg-slate-100 group-hover:bg-slate-200";
+          // === TRAFFIC LIGHT LOGIC ENGINE ===
+          const isItemZero = item.val === 0;
+          const isItemPositive = item.val > 0;
+          const isItemNegative = item.val < 0;
+
+          let barBgClass = "";
           if (isActive) {
-            barBgClass = isItemNegative ? "bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.4)]" : "bg-[#1877F2] shadow-[0_0_15px_rgba(24,119,242,0.4)]";
-          } else if (isItemNegative) {
-            barBgClass = isDarkMode ? "bg-red-900/30 group-hover:bg-red-900/50" : "bg-red-50 group-hover:bg-red-100";
+            if (isItemZero) barBgClass = isDarkMode ? "bg-slate-500 shadow-[0_0_15px_rgba(100,116,139,0.4)]" : "bg-slate-300 shadow-[0_0_15px_rgba(203,213,225,0.6)]";
+            else if (isItemPositive) barBgClass = "bg-[#10B981] shadow-[0_0_15px_rgba(16,185,129,0.4)]";
+            else barBgClass = "bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.4)]";
+          } else {
+            if (isItemZero) barBgClass = isDarkMode ? "bg-slate-800 group-hover:bg-slate-700" : "bg-slate-100 group-hover:bg-slate-200";
+            else if (isItemPositive) barBgClass = isDarkMode ? "bg-emerald-900/30 group-hover:bg-emerald-900/50" : "bg-emerald-50 group-hover:bg-emerald-100";
+            else barBgClass = isDarkMode ? "bg-red-900/30 group-hover:bg-red-900/50" : "bg-red-50 group-hover:bg-red-100";
           }
 
           return (
@@ -119,7 +126,7 @@ export default function Accounts({
               <div className="w-full relative flex justify-center h-full items-end">
                 <div className={`w-full max-w-[32px] rounded-t-xl transition-all duration-500 ease-out ${barBgClass}`} style={{ height: `${heightPct}%`, minHeight: Math.abs(item.val) > 0 ? "12px" : "4px" }}></div>
               </div>
-              <span className={`text-[9px] font-black mt-3 uppercase tracking-wider transition-colors duration-300 ${isActive ? (isItemNegative ? "text-red-500" : "text-[#1877F2]") : "text-slate-400"}`}>{item.label}</span>
+              <span className={`text-[9px] font-black mt-3 uppercase tracking-wider transition-colors duration-300 ${isActive ? (isItemZero ? (isDarkMode ? "text-slate-300" : "text-slate-500") : isItemNegative ? "text-red-500" : "text-[#10B981]") : "text-slate-400"}`}>{item.label}</span>
             </div>
           );
         })}

@@ -303,7 +303,7 @@ export default function Bills({
                        <div className="flex-1 flex justify-center px-1">
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }} 
-                            className={`px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 ${isDarkMode ? "bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white" : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
+                            className={`px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 ${isDarkMode ? "bg-red-900/20 border-red-900/50 text-red-400 hover:bg-red-900/40 hover:text-red-300" : "bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:text-red-700"}`}
                           >
                              <RotateCcw size={14} strokeWidth={2} /> Revert
                           </button>

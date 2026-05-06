@@ -14,11 +14,20 @@ export default function Activity({
     return matchesSearch && matchesFilter;
   });
 
-  // === SURGICAL TIME-BUCKET ENGINE ===
+  // === SURGICAL TIME-BUCKET ENGINE (GHOST-PROOF) ===
   const groupedTransactions = useMemo(() => {
     const groups = {};
+    const today = new Date();
+    const currentYear = today.getFullYear();
+
     filteredTransactions.forEach(tx => {
-      const d = new Date(tx.rawDate || tx.date || new Date());
+      const d = new Date(tx.rawDate || tx.date || today);
+      
+      // 👻 ROOT-LEVEL GHOST INTERCEPTOR 👻
+      if (d.getFullYear() === 2001) {
+        d.setFullYear(currentYear);
+      }
+
       const monthYear = d.toLocaleString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
       
       if (!groups[monthYear]) {

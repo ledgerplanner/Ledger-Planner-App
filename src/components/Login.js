@@ -81,20 +81,21 @@ export default function Login({
     <div className={`h-screen w-full flex font-sans overflow-hidden transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
       
       {/* === DESKTOP SPLIT-SCREEN: BRANDING PANEL (LEFT) === */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-[#1877F2] overflow-hidden items-center justify-center shadow-[inset_0_0_100px_rgba(0,0,0,0.2)]">
+      <div className="hidden lg:flex lg:w-1/2 h-full relative bg-[#1877F2] overflow-hidden items-center justify-center shadow-[inset_0_0_100px_rgba(0,0,0,0.2)]">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-[#0F172A] opacity-90"></div>
         <div className="absolute -top-32 -left-32 w-96 h-96 bg-white opacity-10 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-black opacity-30 rounded-full blur-3xl"></div>
         
-        <div className="relative z-10 p-12 text-center text-white max-w-lg">
-          <div className="w-32 h-32 mx-auto rounded-3xl flex items-center justify-center mb-8 shadow-2xl border border-white/20 overflow-hidden bg-white/10 backdrop-blur-md transition-all">
+        <div className="relative z-10 p-12 text-center text-white flex flex-col items-center justify-center max-w-2xl">
+          <div className="w-32 h-32 rounded-3xl flex items-center justify-center mb-8 shadow-2xl border border-white/20 overflow-hidden bg-white/10 backdrop-blur-md transition-all">
             <img src="/login-logo.png" alt="Ledger Planner" className="w-20 h-20 object-cover rounded-full shadow-inner" />
           </div>
           <h2 className="text-4xl font-black mb-6 tracking-tighter leading-tight">Simplify. Track. Plan.</h2>
           
-          {/* UPGRADED PARAGRAPH TEXT */}
+          {/* UPGRADED PARAGRAPH TEXT (Forced 2 lines on desktop) */}
           <p className="text-white text-xl font-medium leading-relaxed mb-8">
-            Ditch the messy spreadsheets. Ledger Planner is the premium, ad-free vault that automates your paydays, routes your bills, and secures your peace of mind.
+            Ditch the messy spreadsheets. Ledger Planner is the premium, ad-free vault<br className="hidden lg:block" />
+            that automates your paydays, routes your bills, and secures your peace of mind.
           </p>
           
           {/* THE RULE OF THREE: TRUST BADGES */}
@@ -107,7 +108,7 @@ export default function Login({
       </div>
 
       {/* === LOGIN FORM PANEL (RIGHT) === */}
-      <div className={`w-full lg:w-1/2 h-full flex flex-col relative transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
+      <div className={`w-full lg:w-1/2 h-full flex items-center justify-center relative transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
         
         {/* ENVIRONMENT BADGE */}
         <div className="absolute top-6 right-6 z-50">
@@ -119,8 +120,8 @@ export default function Login({
           </div>
         </div>
 
-        {/* FORM CONTAINER */}
-        <div className="w-full max-w-md mx-auto h-full flex flex-col justify-center px-8 py-8 relative">
+        {/* FORM CONTAINER (Perfectly centered inside the right half) */}
+        <div className="w-full max-w-md px-8 flex flex-col relative">
           
           {/* LOGO & HEADER */}
           <div className="flex flex-col items-center mb-8">

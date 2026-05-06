@@ -1,10 +1,11 @@
-import React from "react";
-import { Search, Edit2 } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { Search, Edit2, ChevronUp, ChevronDown } from "lucide-react";
 
 export default function Activity({ 
   userName, transactions, activitySearch, setActivitySearch, 
   activityFilter, setActivityFilter, isDarkMode, setSelectedEntry, renderHeroShell 
 }) {
+  const [collapsedMonths, setCollapsedMonths] = useState({});
 
   // === SEARCH & FILTER ENGINE ===
   const filteredTransactions = transactions.filter(tx => {
@@ -12,6 +13,56 @@ export default function Activity({
     const matchesFilter = activityFilter === "All" || tx.type === activityFilter;
     return matchesSearch && matchesFilter;
   });
+
+  // === SURGICAL TIME-BUCKET ENGINE ===
+  // 1. Group the filtered transactions by "Month Year"
+  const groupedTransactions = useMemo(() => {
+    const groups = {};
+    filteredTransactions.forEach(tx => {
+      // Fallback to today if no date is found, though Master Engine should always have rawDate
+      const d = new Date(tx.rawDate || tx.date || new Date());
+      const monthYear = d.toLocaleString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
+      
+      if (!groups[monthYear]) {
+        groups[monthYear] = {
+          label: monthYear,
+          timestamp: d.getTime(), // Used for sorting the buckets
+          transactions: [],
+          inflow: 0,
+          outflow: 0
+        };
+      }
+      groups[monthYear].transactions.push(tx);
+      if (tx.type === "Income") groups[monthYear].inflow += Number(tx.amount) || 0;
+      if (tx.type === "Expense") groups[monthYear].outflow += Number(tx.amount) || 0;
+    });
+
+    // 2. Sort the buckets newest to oldest
+    return Object.values(groups).sort((a, b) => b.timestamp - a.timestamp);
+  }, [filteredTransactions]);
+
+  // === THE MAGIC SEARCH OVERRIDE & DEFAULT STATE ===
+  useEffect(() => {
+    const isSearching = activitySearch.trim() !== "" || activityFilter !== "All";
+    
+    if (isSearching) {
+      // If actively searching, FORCE OPEN all months that have results
+      setCollapsedMonths({});
+    } else {
+      // If default view, OPEN the first (newest) month, CLOSE everything else
+      if (groupedTransactions.length > 0) {
+        const defaultCollapsed = {};
+        groupedTransactions.forEach((group, index) => {
+          if (index !== 0) defaultCollapsed[group.label] = true;
+        });
+        setCollapsedMonths(defaultCollapsed);
+      }
+    }
+  }, [activitySearch, activityFilter, groupedTransactions.length]); // Intentionally not including groupedTransactions object to prevent loop
+
+  const toggleMonth = (monthLabel) => {
+    setCollapsedMonths(prev => ({ ...prev, [monthLabel]: !prev[monthLabel] }));
+  };
 
   // === CASH FLOW MATH (IN / OUT BAR) FOR HERO ===
   const totalIncome = transactions.filter(t => t.type === "Income").reduce((sum, t) => sum + t.amount, 0);
@@ -39,21 +90,19 @@ export default function Activity({
   const sortedCategories = Object.entries(categoriesMap).sort((a, b) => b[1] - a[1]);
   
   // THE FOUNDER'S "LUCKY 8" UPGRADE
-  // Cap at 8 distinct visual slices, group the rest into "Other"
   const topCategories = sortedCategories.slice(0, 8);
   const otherAmount = sortedCategories.slice(8).reduce((sum, [_, amt]) => sum + amt, 0);
   if (otherAmount > 0) topCategories.push(["Other", otherAmount]);
 
-  // Premium Expanded Color Palette (9 Colors Total for 8 + Other)
+  // Premium Expanded Color Palette
   const colors = isIncomeView 
-    ? ["#10B981", "#059669", "#34D399", "#6EE7B7", "#047857", "#064E3B", "#0D9488", "#14B8A6", "#94A3B8"] // Green & Teal shades for Income
-    : ["#1877F2", "#F59E0B", "#8B5CF6", "#EC4899", "#06B6D4", "#F43F5E", "#F97316", "#84CC16", "#64748B"]; // Vibrant mix for Expenses
+    ? ["#10B981", "#059669", "#34D399", "#6EE7B7", "#047857", "#064E3B", "#0D9488", "#14B8A6", "#94A3B8"] 
+    : ["#1877F2", "#F59E0B", "#8B5CF6", "#EC4899", "#06B6D4", "#F43F5E", "#F97316", "#84CC16", "#64748B"]; 
 
   let currentOffset = 0;
-  const radius = 42; // Expanded radius for massive ring size
+  const radius = 42; 
   const circumference = 2 * Math.PI * radius;
 
-  // 100% UN-CAPPED LEGEND: Maps every single category to a segment
   const chartSegments = topCategories.map(([name, amount], index) => {
     const percentage = totalTargetAmount > 0 ? amount / totalTargetAmount : 0;
     const strokeDasharray = `${percentage * circumference} ${circumference}`;
@@ -191,9 +240,6 @@ export default function Activity({
            </button>
         </div>
 
-        {/* ========================================================= */}
-        {/* THE GREAT DIVIDE (SIGNATURE SEPARATOR)                      */}
-        {/* ========================================================= */}
         <div className={`border-t ${isDarkMode ? "border-white" : "border-slate-200"}`}></div>
 
         {/* SEARCH BAR */}
@@ -207,57 +253,94 @@ export default function Activity({
           </div>
         </div>
 
-        {/* THE LEDGER VAULT (UNIVERSAL TWO-ROW ARCHITECTURE) */}
+        {/* ========================================================= */}
+        {/* 🔥 THE ARCHIVE ENGINE (MONTHLY COLLAPSIBLE BENTOS) 🔥     */}
+        {/* ========================================================= */}
         <div className="space-y-4">
-          <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
-            {filteredTransactions.length === 0 ? (
-              <div className="py-10 text-center text-slate-400 font-bold text-sm uppercase tracking-widest">No activities found.</div>
-            ) : (
-              <div className="space-y-3">
-                {filteredTransactions.map((tx) => (
-                  <div key={tx.id} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
+          {groupedTransactions.length === 0 ? (
+            <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
+               <div className="py-10 text-center text-slate-400 font-bold text-sm uppercase tracking-widest">No activities found.</div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {groupedTransactions.map((group) => {
+                const isCollapsed = collapsedMonths[group.label];
+
+                return (
+                  <div key={group.label} className="space-y-2">
                     
-                    {/* ROW 1: Identity & Edit Pencil */}
-                    <div className="flex items-start justify-between w-full mb-4">
-                      <div className="flex items-center gap-3 flex-1 cursor-pointer" onClick={() => setSelectedEntry(tx)}>
-                        <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
-                          {tx.icon}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={`font-bold text-sm break-words whitespace-normal leading-tight ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{tx.name}</p>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); setSelectedEntry(tx); }}
-                        className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
-                      >
-                        <Edit2 size={16} strokeWidth={2.5} />
-                      </button>
-                    </div>
-
-                    {/* ROW 2: Stacked Category/Date & Glowing Amount */}
-                    <div className={`mt-3 pt-3 border-t flex items-center justify-between gap-2 ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
-                      <div className="flex-1 min-w-0 flex flex-col">
-                        <span className={`text-[10px] font-black uppercase tracking-widest truncate leading-tight ${getTxCategoryColor(tx)}`}>
-                          {tx.category || "Uncategorized"}
-                        </span>
-                        <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest truncate leading-tight mt-0.5">
-                          {tx.date}
-                        </span>
-                      </div>
-                      
-                      <div className="shrink-0 flex justify-end">
-                        <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight whitespace-nowrap transition-colors ${getTxAmountClasses(tx, isDarkMode)}`}>
-                          {tx.type === "Income" ? "+" : "-"}${tx.amount.toFixed(2)}
-                        </div>
+                    {/* ACCORDION HEADER (WITH MACRO MATH) */}
+                    <div className="flex flex-col px-2 py-2 cursor-pointer transition-colors" onClick={() => toggleMonth(group.label)}>
+                      <div className="flex justify-between items-end w-full">
+                         <div className="flex items-center gap-2 mb-1">
+                            <h3 className={`text-sm font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{group.label}</h3>
+                            <div className="text-slate-500 mb-0.5">{isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}</div>
+                         </div>
+                         <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-500">
+                               +${group.inflow.toLocaleString("en-US", { minimumFractionDigits: 2 })} In
+                            </span>
+                            <span className={`text-[10px] ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>|</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-[#F97316]">
+                               -${group.outflow.toLocaleString("en-US", { minimumFractionDigits: 2 })} Out
+                            </span>
+                         </div>
                       </div>
                     </div>
 
+                    {/* ACCORDION BODY */}
+                    {!isCollapsed && (
+                      <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
+                        <div className="space-y-3">
+                          {group.transactions.map((tx) => (
+                            <div key={tx.id} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
+                              
+                              {/* ROW 1: Identity & Edit Pencil */}
+                              <div className="flex items-start justify-between w-full mb-4">
+                                <div className="flex items-center gap-3 flex-1 cursor-pointer" onClick={() => setSelectedEntry(tx)}>
+                                  <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                                    {tx.icon}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className={`font-bold text-sm break-words whitespace-normal leading-tight ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{tx.name}</p>
+                                  </div>
+                                </div>
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); setSelectedEntry(tx); }}
+                                  className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
+                                >
+                                  <Edit2 size={16} strokeWidth={2.5} />
+                                </button>
+                              </div>
+
+                              {/* ROW 2: Stacked Category/Date & Glowing Amount */}
+                              <div className={`mt-3 pt-3 border-t flex items-center justify-between gap-2 ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
+                                <div className="flex-1 min-w-0 flex flex-col">
+                                  <span className={`text-[10px] font-black uppercase tracking-widest truncate leading-tight ${getTxCategoryColor(tx)}`}>
+                                    {tx.category || "Uncategorized"}
+                                  </span>
+                                  <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest truncate leading-tight mt-0.5">
+                                    {tx.date}
+                                  </span>
+                                </div>
+                                
+                                <div className="shrink-0 flex justify-end">
+                                  <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight whitespace-nowrap transition-colors ${getTxAmountClasses(tx, isDarkMode)}`}>
+                                    {tx.type === "Income" ? "+" : "-"}${tx.amount.toFixed(2)}
+                                  </div>
+                                </div>
+                              </div>
+
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </main>
     </div>

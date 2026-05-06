@@ -86,17 +86,21 @@ export default function Login({
         <div className="absolute -top-32 -left-32 w-96 h-96 bg-white opacity-10 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-black opacity-30 rounded-full blur-3xl"></div>
         
-        <div className="relative z-10 p-12 text-center text-white flex flex-col items-center justify-center max-w-2xl">
+        <div className="relative z-10 p-12 text-center text-white flex flex-col items-center justify-center max-w-2xl w-full">
           <div className="w-32 h-32 rounded-3xl flex items-center justify-center mb-8 shadow-2xl border border-white/20 overflow-hidden bg-white/10 backdrop-blur-md transition-all">
             <img src="/login-logo.png" alt="Ledger Planner" className="w-20 h-20 object-cover rounded-full shadow-inner" />
           </div>
           <h2 className="text-4xl font-black mb-6 tracking-tighter leading-tight">Simplify. Track. Plan.</h2>
           
-          {/* UPGRADED PARAGRAPH TEXT (Forced 2 lines on desktop) */}
-          <p className="text-white text-xl font-medium leading-relaxed mb-8">
-            Ditch the messy spreadsheets. Ledger Planner is the premium, ad-free vault<br className="hidden lg:block" />
-            that automates your paydays, routes your bills, and secures your peace of mind.
-          </p>
+          {/* UPGRADED PARAGRAPH TEXT (Constrained width to force a balanced two-line wrap) */}
+          <div className="max-w-lg mx-auto">
+            <p className="text-white text-xl font-medium leading-relaxed mb-8">
+              Ditch the messy spreadsheets. Ledger Planner is the premium, ad-free vault that automates your paydays, routes your bills, and secures your peace of mind.
+            </p>
+          </div>
+
+          {/* SIGNATURE THIN WHITE LINE */}
+          <div className="w-3/4 max-w-sm h-px bg-white/30 mx-auto mb-8 rounded-full"></div>
           
           {/* THE RULE OF THREE: TRUST BADGES */}
           <div className="flex items-center justify-center gap-6 text-sm font-bold text-blue-200 uppercase tracking-widest">

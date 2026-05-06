@@ -15,18 +15,16 @@ export default function Activity({
   });
 
   // === SURGICAL TIME-BUCKET ENGINE ===
-  // 1. Group the filtered transactions by "Month Year"
   const groupedTransactions = useMemo(() => {
     const groups = {};
     filteredTransactions.forEach(tx => {
-      // Fallback to today if no date is found, though Master Engine should always have rawDate
       const d = new Date(tx.rawDate || tx.date || new Date());
       const monthYear = d.toLocaleString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
       
       if (!groups[monthYear]) {
         groups[monthYear] = {
           label: monthYear,
-          timestamp: d.getTime(), // Used for sorting the buckets
+          timestamp: d.getTime(), 
           transactions: [],
           inflow: 0,
           outflow: 0
@@ -37,7 +35,6 @@ export default function Activity({
       if (tx.type === "Expense") groups[monthYear].outflow += Number(tx.amount) || 0;
     });
 
-    // 2. Sort the buckets newest to oldest
     return Object.values(groups).sort((a, b) => b.timestamp - a.timestamp);
   }, [filteredTransactions]);
 
@@ -46,10 +43,8 @@ export default function Activity({
     const isSearching = activitySearch.trim() !== "" || activityFilter !== "All";
     
     if (isSearching) {
-      // If actively searching, FORCE OPEN all months that have results
       setCollapsedMonths({});
     } else {
-      // If default view, OPEN the first (newest) month, CLOSE everything else
       if (groupedTransactions.length > 0) {
         const defaultCollapsed = {};
         groupedTransactions.forEach((group, index) => {
@@ -58,10 +53,19 @@ export default function Activity({
         setCollapsedMonths(defaultCollapsed);
       }
     }
-  }, [activitySearch, activityFilter, groupedTransactions.length]); // Intentionally not including groupedTransactions object to prevent loop
+  }, [activitySearch, activityFilter, groupedTransactions.length]); 
 
   const toggleMonth = (monthLabel) => {
     setCollapsedMonths(prev => ({ ...prev, [monthLabel]: !prev[monthLabel] }));
+  };
+
+  // === THE 2001 GHOST INTERCEPTOR ===
+  const formatActivityDate = (dateStr, groupLabel) => {
+    if (!dateStr) return "TBD";
+    // Extract the true year from the "MAY 2026" header format
+    const groupYear = groupLabel.split(" ")[1] || new Date().getFullYear();
+    // Hunt down the 2001 glitch and seamlessly replace it
+    return dateStr.replace(/2001/g, groupYear);
   };
 
   // === CASH FLOW MATH (IN / OUT BAR) FOR HERO ===
@@ -79,22 +83,18 @@ export default function Activity({
 
   const totalTargetAmount = targetTransactions.reduce((sum, t) => sum + t.amount, 0);
 
-  // Group by TRUE CATEGORY
   const categoriesMap = targetTransactions.reduce((acc, t) => {
     const catName = t.category || "Uncategorized";
     acc[catName] = (acc[catName] || 0) + t.amount;
     return acc;
   }, {});
 
-  // Sort largest to smallest
   const sortedCategories = Object.entries(categoriesMap).sort((a, b) => b[1] - a[1]);
   
-  // THE FOUNDER'S "LUCKY 8" UPGRADE
   const topCategories = sortedCategories.slice(0, 8);
   const otherAmount = sortedCategories.slice(8).reduce((sum, [_, amt]) => sum + amt, 0);
   if (otherAmount > 0) topCategories.push(["Other", otherAmount]);
 
-  // Premium Expanded Color Palette
   const colors = isIncomeView 
     ? ["#10B981", "#059669", "#34D399", "#6EE7B7", "#047857", "#064E3B", "#0D9488", "#14B8A6", "#94A3B8"] 
     : ["#1877F2", "#F59E0B", "#8B5CF6", "#EC4899", "#06B6D4", "#F43F5E", "#F97316", "#84CC16", "#64748B"]; 
@@ -134,7 +134,6 @@ export default function Activity({
     return "text-[#F97316]";
   };
 
-  // === GRAPHIC HEADER (NET CASH & VELOCITY BAR) ===
   const graphicContent = (
     <div className="relative z-10 mb-2 w-full text-center px-4">
        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Net Cash Flow</p>
@@ -142,7 +141,6 @@ export default function Activity({
          {netCashFlow >= 0 ? "+" : "-"}${Math.abs(netCashFlow).toLocaleString("en-US", { minimumFractionDigits: 2 })}
        </p>
 
-       {/* THE IN / OUT VELOCITY BAR */}
        <div className={`w-full h-10 rounded-full flex overflow-hidden shadow-inner ${isDarkMode ? "bg-[#1E293B]" : "bg-slate-100"}`}>
           <div 
             className="h-full bg-[#10B981] flex items-center justify-start px-4 transition-all duration-1000" 
@@ -166,7 +164,6 @@ export default function Activity({
 
       <main className="px-6 space-y-6 mt-4">
 
-        {/* PREMIUM MASSIVE CATEGORY RING (ONLY SHOWS WHEN TOGGLED) */}
         {activityFilter !== "All" && totalTargetAmount > 0 && (
           <div className={`p-6 rounded-3xl border shadow-sm flex items-center gap-6 ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
             <div className="relative w-40 h-40 shrink-0">
@@ -188,7 +185,6 @@ export default function Activity({
               </div>
             </div>
             
-            {/* UNCAPPED LEGEND */}
             <div className="flex-1 space-y-3 max-h-40 overflow-y-auto hide-scrollbar pr-1">
               {chartSegments.map((seg, i) => (
                 <div key={i} className="flex flex-col">
@@ -210,7 +206,6 @@ export default function Activity({
           </div>
         )}
 
-        {/* TOGGLE CHIPS (Income / Expense) */}
         <div className="flex gap-3">
            <button 
              onClick={() => setActivityFilter(activityFilter === "Income" ? "All" : "Income")} 
@@ -242,7 +237,6 @@ export default function Activity({
 
         <div className={`border-t ${isDarkMode ? "border-white" : "border-slate-200"}`}></div>
 
-        {/* SEARCH BAR */}
         <div className="flex gap-2">
           <div className={`flex-1 flex items-center px-4 rounded-2xl border shadow-sm transition-colors ${isDarkMode ? "bg-[#1E293B] border-slate-800 text-white focus-within:border-slate-600" : "bg-white border-slate-100 text-slate-900 focus-within:border-[#1877F2]"}`}>
             <Search size={18} className="text-slate-400 shrink-0" />
@@ -253,9 +247,6 @@ export default function Activity({
           </div>
         </div>
 
-        {/* ========================================================= */}
-        {/* 🔥 THE ARCHIVE ENGINE (MONTHLY COLLAPSIBLE BENTOS) 🔥     */}
-        {/* ========================================================= */}
         <div className="space-y-4">
           {groupedTransactions.length === 0 ? (
             <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
@@ -269,7 +260,6 @@ export default function Activity({
                 return (
                   <div key={group.label} className="space-y-2">
                     
-                    {/* ACCORDION HEADER (WITH MACRO MATH) */}
                     <div className="flex flex-col px-2 py-2 cursor-pointer transition-colors" onClick={() => toggleMonth(group.label)}>
                       <div className="flex justify-between items-end w-full">
                          <div className="flex items-center gap-2 mb-1">
@@ -288,14 +278,12 @@ export default function Activity({
                       </div>
                     </div>
 
-                    {/* ACCORDION BODY */}
                     {!isCollapsed && (
                       <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
                         <div className="space-y-3">
                           {group.transactions.map((tx) => (
                             <div key={tx.id} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
                               
-                              {/* ROW 1: Identity & Edit Pencil */}
                               <div className="flex items-start justify-between w-full mb-4">
                                 <div className="flex items-center gap-3 flex-1 cursor-pointer" onClick={() => setSelectedEntry(tx)}>
                                   <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
@@ -313,14 +301,14 @@ export default function Activity({
                                 </button>
                               </div>
 
-                              {/* ROW 2: Stacked Category/Date & Glowing Amount */}
                               <div className={`mt-3 pt-3 border-t flex items-center justify-between gap-2 ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
                                 <div className="flex-1 min-w-0 flex flex-col">
                                   <span className={`text-[10px] font-black uppercase tracking-widest truncate leading-tight ${getTxCategoryColor(tx)}`}>
                                     {tx.category || "Uncategorized"}
                                   </span>
                                   <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest truncate leading-tight mt-0.5">
-                                    {tx.date}
+                                    {/* === THE GHOST INTERCEPTOR APPLIED HERE === */}
+                                    {formatActivityDate(tx.date, group.label)}
                                   </span>
                                 </div>
                                 

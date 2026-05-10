@@ -54,8 +54,8 @@ export default function Dashboard({
   // === STRICT LOCAL CALENDAR ENGINE ===
   const todayForMath = new Date();
   const currentMonthName = todayForMath.toLocaleString("en-US", { month: "long" });
-  const currentMonthIdx = todayForMath.getMonth(); // Strict Local Month
-  const currentYearIdx = todayForMath.getFullYear(); // Strict Local Year
+  const currentMonthIdx = todayForMath.getMonth(); 
+  const currentYearIdx = todayForMath.getFullYear(); 
 
   const totalIncomeBalance = accounts.reduce((sum, a) => sum + (Number(a?.balance) || 0), 0);
   
@@ -97,12 +97,13 @@ export default function Dashboard({
       return;
     }
 
+    // FIX: Only track unpaid bills. Paid bills have already left the real-world bank account.
     const unpaidTotal = groupBills.filter(b => !b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
-    const paidTotal = groupBills.filter(b => b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
 
     let income = 0;
     if (pd !== "Due Now") {
-      income = Math.max(0, (Number(pdSettings.income) || 0) - paidTotal);
+      // FIX: Add the full expected income. Do not deduct paid bills from it.
+      income = Number(pdSettings.income) || 0;
     }
 
     runningBalance = runningBalance + income - unpaidTotal;
@@ -187,16 +188,14 @@ export default function Dashboard({
             const groupBills = billsByPayday[pd] || [];
             if (pd !== "Due Now" && !pdSettings?.date) return null;
 
+            // FIX: Removed paid bills entirely from the horizontal card math.
             const unpaidBills = groupBills.filter(b => !b.isPaid);
-            const paidBills = groupBills.filter(b => b.isPaid);
             const unpaidCount = unpaidBills.length;
             const unpaidTotal = unpaidBills.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
-            const paidTotal = paidBills.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
 
             if (pd === "Due Now" && unpaidCount === 0) return null;
 
             const totalExpectedIncome = Number(pdSettings.income) || 0;
-            const remainingIncome = totalExpectedIncome - paidTotal;
             const expectedDateStr = pd === "Due Now" ? "ACTION REQ" : formatPaydayDateStr(pdSettings.date).toUpperCase();
 
             const waterfallBalance = hzBalances[pd];
@@ -224,7 +223,7 @@ export default function Dashboard({
                   ) : (
                     <div className="flex flex-col flex-1">
                       <span className="text-[7px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Expected Pay</span>
-                      <span className={`text-[10px] font-black ${isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>+${Math.max(0, remainingIncome).toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
+                      <span className={`text-[10px] font-black ${isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>+${totalExpectedIncome.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
                     </div>
                   )}
                   <div className="flex flex-col items-end shrink-0">
@@ -245,7 +244,7 @@ export default function Dashboard({
         <div className="space-y-4">
           {["Due Now", "Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].map((payday) => {
             const groupBills = billsByPayday[payday] || [];
-            const activeGroupBills = groupBills.filter(b => !b.isPaid); // Filter out paid bills for a Clean Slate view
+            const activeGroupBills = groupBills.filter(b => !b.isPaid); 
             const pdSettings = paydayConfig?.[payday] || {};
             const isDueNow = payday === "Due Now";
             

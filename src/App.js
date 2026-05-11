@@ -427,6 +427,14 @@ export default function App() {
     if (parts.length === 3) return new Date(parts[0], parts[1] - 1, parts[2]).toLocaleDateString("en-US", { month: "short", day: "numeric" });
     return dateString;
   };
+  
+  // === HELPER: Native Input Date Formatter ===
+  const formatDisplayDate = (dString) => {
+    if (!dString) return "";
+    const parts = dString.split('-');
+    if (parts.length === 3) return `${parts[1]}/${parts[2]}/${parts[0]}`;
+    return dString;
+  };
 
   const changeTab = (tabId) => { 
     triggerHaptic(20); 
@@ -1040,15 +1048,6 @@ export default function App() {
       onContextMenu={(e) => e.preventDefault()} 
       className={`h-screen w-full font-sans relative flex transition-colors duration-500 select-none [-webkit-touch-callout:none] ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}
     >
-      {/* 2.0 STRIKE: SIGNATURE BLUE CALENDAR ICON INJECTOR (HYPER-TARGETED) */}
-      <style>{`
-        .blue-calendar-icon::-webkit-calendar-picker-indicator {
-          filter: invert(36%) sepia(93%) saturate(2250%) hue-rotate(208deg) brightness(97%) contrast(96%) !important;
-          cursor: pointer !important;
-          opacity: 1 !important;
-        }
-      `}</style>
-
       <div className={`w-full h-full relative flex flex-col lg:flex-row transition-colors duration-500 overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
         
         {/* DESKTOP SIDEBAR */}
@@ -1111,8 +1110,8 @@ export default function App() {
                 <h3 className={`font-black uppercase tracking-widest flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}><Settings size={18} className="text-slate-400" /> Settings Vault</h3>
                 <button onClick={() => setIsSettingsOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
-              {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL */}
-              <div className={`p-6 overflow-y-auto space-y-6 flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+              {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL & MODAL CUTOFF FIX (lg:pb-6) */}
+              <div className={`p-6 overflow-y-auto space-y-6 flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
                 
                 {/* 1. Identity Engine */}
                 <div className={`p-5 rounded-3xl border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
@@ -1175,8 +1174,8 @@ export default function App() {
                 <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Command Center</h3>
                 <button onClick={() => setIsNotificationsOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
-              {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL */}
-              <div className={`p-6 overflow-y-auto space-y-4 flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+              {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL & MODAL CUTOFF FIX */}
+              <div className={`p-6 overflow-y-auto space-y-4 flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
                 {!isPushEnabled && !isDemoMode && (
                   <div className={`p-4 rounded-2xl border flex items-center justify-between shadow-sm ${isDarkMode ? "bg-[#10B981]/10 border-[#10B981]/20" : "bg-emerald-50 border-emerald-100"}`}>
                     <div className="flex items-center gap-3">
@@ -1217,8 +1216,8 @@ export default function App() {
                 <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Payday Routing</h3>
                 <button onClick={() => setIsPaydaySetupOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
-              {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL */}
-              <div className={`p-6 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+              {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL & MODAL CUTOFF FIX */}
+              <div className={`p-6 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
                 
                 <div className="mb-6">
                   <label className={`block text-[9px] font-bold uppercase tracking-widest mb-3 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Pay Frequency</label>
@@ -1243,9 +1242,14 @@ export default function App() {
                   <div key={pd} className={`p-4 rounded-2xl border ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-slate-50 border-slate-100"}`}>
                     <h4 className={`text-xs font-black uppercase tracking-widest mb-4 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>{pd}</h4>
                     <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className={`block text-[9px] font-bold uppercase mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Pay Date</label>
-                        <input type="date" value={editPaydayConfig?.[pd]?.date || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), date: e.target.value}})} className={`w-full p-3 rounded-xl border blue-calendar-icon ${isDarkMode ? "bg-slate-800 border-slate-700 text-white dark:[color-scheme:dark]" : "bg-white border-slate-200 text-slate-900"}`} />
+                      {/* 2.0 STRIKE: NATIVE CALENDAR OVERRIDE ENGINE */}
+                      <div className="relative">
+                        <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Pay Date</label>
+                        <div className={`relative w-full pt-6 pb-2 px-5 rounded-xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"}`}>
+                           <span className={`font-bold text-sm ${!editPaydayConfig?.[pd]?.date ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{editPaydayConfig?.[pd]?.date ? formatDisplayDate(editPaydayConfig?.[pd]?.date) : "mm/dd/yyyy"}</span>
+                           <CalendarIcon size={16} className="text-[#1877F2] shrink-0" />
+                           <input type="date" value={editPaydayConfig?.[pd]?.date || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), date: e.target.value}})} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                        </div>
                       </div>
                       {/* 2.0 STRIKE: LOCKED $ PREFIX */}
                       <div className="relative">
@@ -1289,7 +1293,7 @@ export default function App() {
                 <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Add Account</h3>
                 <button onClick={() => setIsAddAccountOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
-              <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+              <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
                 <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Name</label><input type="text" value={newAccName} onChange={(e) => setNewAccName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
                 
                 {/* 2.0 STRIKE: LOCKED $ PREFIX */}
@@ -1334,8 +1338,8 @@ export default function App() {
                 <h3 className={`font-black uppercase tracking-widest flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}><ArrowRightLeft size={16}/> Internal Transfer</h3>
                 <button onClick={() => setIsTransferOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
-              {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL */}
-              <div className={`p-6 flex flex-col overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+              {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL & MODAL CUTOFF FIX */}
+              <div className={`p-6 flex flex-col overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
                 <div className="flex items-center gap-2 mb-6">
                   <select value={transferFrom} onChange={(e) => setTransferFrom(e.target.value)} className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs border text-center transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}><option value="" disabled>From</option>{accounts.map(a => (<option key={a.id} value={a.id}>{a.name}</option>))}
                   </select>
@@ -1371,7 +1375,7 @@ export default function App() {
                 </div>
                 <button onClick={() => setSelectedAccount(null)} className={closeButtonClass}><X size={18} /></button>
               </div>
-              <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+              <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
                 {/* 2.0 STRIKE: LOCKED $ PREFIX */}
                 <div className="relative">
                   <label className={`absolute left-4 top-2 text-[9px] font-black uppercase tracking-widest z-10 ${isDarkMode ? "text-[#1877F2]" : "text-[#1877F2]"}`}>QUICK BALANCE UPDATE</label>
@@ -1427,7 +1431,7 @@ export default function App() {
                 <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Confirm Payment</h3>
                 <button onClick={() => setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false })} className={closeButtonClass}><X size={18} /></button>
               </div>
-              <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+              <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
                 <div className="relative">
                   <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Pay From Account</label>
                   <select value={paymentModalConfig.accountId} onChange={(e) => setPaymentModalConfig({ ...paymentModalConfig, accountId: e.target.value })} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
@@ -1467,8 +1471,8 @@ export default function App() {
                   <button onClick={closeEntryDrawer} className={closeButtonClass}><X size={18} /></button>
                 </div>
               </div>
-              {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL */}
-              <div className={`p-6 space-y-6 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+              {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL & MODAL CUTOFF FIX */}
+              <div className={`p-6 space-y-6 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
                 {!isEditingEntry ? (
                   <>
                     <div className="text-center">
@@ -1564,8 +1568,16 @@ export default function App() {
                       <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Category</label><select value={editEntryData.category || ""} onChange={(e) => setEditEntryData({...editEntryData, category: e.target.value})} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>{modernCategories.map(group => ( <optgroup key={group.group} label={group.group} className={isDarkMode ? "bg-[#1E293B] text-white" : "bg-white text-slate-900"}> {group.items.map(item => <option key={item} value={item}>{item}</option>)} </optgroup> ))}</select></div>
                       {selectedEntry.fullDate !== undefined && (
                         <>
-                          {/* 2.0 STRIKE: SIGNATURE BLUE CALENDAR ICON */}
-                          <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Due Date</label><input type="date" value={editEntryData.rawDate || ""} onChange={(e) => setEditEntryData({...editEntryData, rawDate: e.target.value})} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors blue-calendar-icon ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white [color-scheme:dark]" : "bg-white border-slate-200 text-slate-900"}`} /></div>
+                          {/* 2.0 STRIKE: NATIVE CALENDAR OVERRIDE ENGINE */}
+                          <div className="relative">
+                             <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Due Date</label>
+                             <div className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
+                               <span className={`font-bold text-base ${!editEntryData.rawDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{editEntryData.rawDate ? formatDisplayDate(editEntryData.rawDate) : "mm/dd/yyyy"}</span>
+                               <CalendarIcon size={18} className="text-[#1877F2] shrink-0" />
+                               <input type="date" value={editEntryData.rawDate || ""} onChange={(e) => setEditEntryData({...editEntryData, rawDate: e.target.value})} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                             </div>
+                          </div>
+                          
                           <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
                             <div className="flex items-center justify-between">
                               <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Recurring Bill</span>
@@ -1624,7 +1636,7 @@ export default function App() {
               {isIconSelectorOpen && isEditingEntry && (
                  <div className={`absolute inset-0 z-[150] flex flex-col ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
                     <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}><h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Icon</h3><button onClick={() => setIsIconSelectorOpen(false)} className={closeButtonClass}><X size={18}/></button></div>
-                    <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] p-4 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : "pb-20"}`}>
+                    <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] p-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : "pb-20 lg:pb-6"}`}>
                        <div className="grid grid-cols-6 lg:grid-cols-8 gap-3">{categoryEmojis.map(emoji => (<button key={emoji} onClick={() => { setEditEntryData({...editEntryData, icon: emoji}); setIsIconSelectorOpen(false); }} className={`w-12 h-12 flex items-center justify-center rounded-xl text-2xl border transition-all active:scale-90 ${editEntryData.icon === emoji ? `bg-[#1877F2] text-white border-transparent shadow-md` : isDarkMode ? "bg-slate-800 border-slate-700 hover:bg-slate-700" : "bg-slate-50 border-slate-200 hover:bg-slate-100"}`}>{emoji}</button>))}</div>
                     </div>
                  </div>
@@ -1641,15 +1653,19 @@ export default function App() {
                 <h3 className={`font-black uppercase tracking-widest text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Next Installment</h3>
                 <button onClick={() => setInstallmentPromptConfig({ isOpen: false, billId: null, nextDate: "" })} className={closeButtonClass}><X size={18}/></button>
               </div>
-              <div className={`p-6 space-y-6 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+              <div className={`p-6 space-y-6 ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
                 <div className="text-center">
                   <h2 className={`text-lg font-black mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Payment Logged!</h2>
                   <p className="text-xs font-bold text-slate-500">When is your next payment due?</p>
                 </div>
-                {/* 2.0 STRIKE: blue-calendar-icon CLASS APPLIED */}
+                {/* 2.0 STRIKE: NATIVE CALENDAR OVERRIDE ENGINE */}
                 <div className="relative">
-                   <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Next Due Date</label>
-                   <input type="date" value={installmentPromptConfig.nextDate} onChange={(e) => setInstallmentPromptConfig({...installmentPromptConfig, nextDate: e.target.value})} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors blue-calendar-icon ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white dark:[color-scheme:dark]" : "bg-white border-slate-200 text-slate-900"}`} />
+                   <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Next Due Date</label>
+                   <div className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
+                     <span className={`font-bold text-base ${!installmentPromptConfig.nextDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{installmentPromptConfig.nextDate ? formatDisplayDate(installmentPromptConfig.nextDate) : "mm/dd/yyyy"}</span>
+                     <CalendarIcon size={18} className="text-[#1877F2] shrink-0" />
+                     <input type="date" value={installmentPromptConfig.nextDate} onChange={(e) => setInstallmentPromptConfig({...installmentPromptConfig, nextDate: e.target.value})} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                   </div>
                 </div>
                 <button onClick={handleSaveNextInstallmentDate} disabled={!installmentPromptConfig.nextDate} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2 ${!installmentPromptConfig.nextDate ? "bg-slate-300 opacity-50 shadow-none cursor-not-allowed" : "bg-[#1877F2]"}`}><CalendarIcon size={16}/> Route to Payday</button>
               </div>
@@ -1670,11 +1686,11 @@ export default function App() {
                    <button onClick={closeQab} className={closeButtonClass}><X size={18} /></button>
                 </div>
                 
-                {/* 2.0 STRIKE: DESKTOP SCROLLBAR EXTERMINATED */}
-                <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] flex flex-col ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+                {/* 2.0 STRIKE: DESKTOP SCROLLBAR EXTERMINATED & MODAL CUTOFF FIX */}
+                <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] flex flex-col ${isDemoMode ? "pb-[140px] lg:pb-0" : ""}`}>
                   {qabStep === 1 ? (
                     /* 2.0 STRIKE: MIN-HEIGHT ADJUSTED FOR MOBILE */
-                    <div className="p-6 flex flex-col h-full min-h-[300px] lg:min-h-[400px]">
+                    <div className="p-6 flex flex-col h-full min-h-[300px] lg:min-h-[360px]">
                       {/* Tabs */}
                       <div className={`flex p-1.5 rounded-2xl mb-4 lg:mb-8 ${isDarkMode ? "bg-slate-800" : "bg-slate-100"}`}>
                         <button onClick={() => { setDrawerTab("bills"); setInputValue("0"); }} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${drawerTab === "bills" ? "bg-[#1877F2] text-white shadow-[0_4px_12px_rgba(24,119,242,0.3)] transform scale-100" : isDarkMode ? "text-slate-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>Bill</button>
@@ -1754,11 +1770,16 @@ export default function App() {
                       
                       {drawerTab === "bills" && (
                          <>
+                            {/* 2.0 STRIKE: NATIVE CALENDAR OVERRIDE ENGINE */}
                             <div className="relative">
-                               <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Due Date</label>
-                               {/* 2.0 STRIKE: SIGNATURE BLUE CALENDAR ICON */}
-                               <input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors blue-calendar-icon ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white [color-scheme:dark]" : "bg-white border-slate-200 text-slate-900"}`} />
+                               <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Due Date</label>
+                               <div className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
+                                 <span className={`font-bold text-base ${!entryDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{entryDate ? formatDisplayDate(entryDate) : "mm/dd/yyyy"}</span>
+                                 <CalendarIcon size={18} className="text-[#1877F2] shrink-0" />
+                                 <input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                               </div>
                             </div>
+
                             <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
                                <div className="flex items-center justify-between">
                                   <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Recurring Bill</span>
@@ -1816,8 +1837,8 @@ export default function App() {
                       <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
                          <h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Category</h3><button onClick={() => setIsCategorySelectorOpen(false)} className={closeButtonClass}><X size={18}/></button>
                       </div>
-                      {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL */}
-                      <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] p-4 space-y-6 pb-20`}>
+                      {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL & MODAL CUTOFF FIX */}
+                      <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] p-4 space-y-6 ${isDemoMode ? "pb-[140px] lg:pb-6" : "pb-20 lg:pb-6"}`}>
                          {categoriesToRender.map(group => (
                              <div key={group.group}>
                                <p className="text-[10px] font-black uppercase text-slate-400 mb-3">{group.group}</p>
@@ -1838,8 +1859,8 @@ export default function App() {
                       <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
                          <h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Icon</h3><button onClick={() => setIsIconSelectorOpen(false)} className={closeButtonClass}><X size={18}/></button>
                       </div>
-                      {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL */}
-                      <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] p-4 pb-20`}>
+                      {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL & MODAL CUTOFF FIX */}
+                      <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] p-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : "pb-20 lg:pb-6"}`}>
                          <div className="grid grid-cols-6 lg:grid-cols-8 gap-3">
                            {categoryEmojis.map(emoji => (
                              <button key={emoji} onClick={() => { setEntryIcon(emoji); setIsIconSelectorOpen(false); }} className={`w-12 h-12 flex items-center justify-center rounded-xl text-2xl border transition-all active:scale-90 ${entryIcon === emoji ? `${qabActiveBg} border-transparent shadow-md` : isDarkMode ? "bg-slate-800 border-slate-700 hover:bg-slate-700" : "bg-slate-50 border-slate-200 hover:bg-slate-100"}`}>{emoji}</button>

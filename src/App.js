@@ -138,6 +138,7 @@ export default function App() {
     setGlobalActionConfig({ isOpen: true, title, message, confirmText, isDanger, isAlertOnly, action });
   };
 
+  // === SURGICAL SPLIT: RECENT CATEGORY BANKS ===
   const [recentBillCategories, setRecentBillCategories] = useState(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem('lp_recent_bill_cat');
@@ -145,9 +146,16 @@ export default function App() {
     }
     return [];
   });
-  const [recentActivityCategories, setRecentActivityCategories] = useState(() => {
+  const [recentIncomeCategories, setRecentIncomeCategories] = useState(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem('lp_recent_act_cat');
+      const saved = localStorage.getItem('lp_recent_inc_cat');
+      if (saved) { try { return JSON.parse(saved); } catch (e) { return []; } }
+    }
+    return [];
+  });
+  const [recentExpenseCategories, setRecentExpenseCategories] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem('lp_recent_exp_cat');
       if (saved) { try { return JSON.parse(saved); } catch (e) { return []; } }
     }
     return [];
@@ -954,10 +962,14 @@ export default function App() {
         const updated = [entryCategory, ...recentBillCategories.filter(c => c !== entryCategory)].slice(0, 10);
         setRecentBillCategories(updated);
         if (typeof window !== 'undefined') localStorage.setItem('lp_recent_bill_cat', JSON.stringify(updated));
-      } else if (drawerTab === "income" || drawerTab === "transactions") {
-        const updated = [entryCategory, ...recentActivityCategories.filter(c => c !== entryCategory)].slice(0, 10);
-        setRecentActivityCategories(updated);
-        if (typeof window !== 'undefined') localStorage.setItem('lp_recent_act_cat', JSON.stringify(updated));
+      } else if (drawerTab === "income") {
+        const updated = [entryCategory, ...recentIncomeCategories.filter(c => c !== entryCategory)].slice(0, 10);
+        setRecentIncomeCategories(updated);
+        if (typeof window !== 'undefined') localStorage.setItem('lp_recent_inc_cat', JSON.stringify(updated));
+      } else if (drawerTab === "transactions") {
+        const updated = [entryCategory, ...recentExpenseCategories.filter(c => c !== entryCategory)].slice(0, 10);
+        setRecentExpenseCategories(updated);
+        if (typeof window !== 'undefined') localStorage.setItem('lp_recent_exp_cat', JSON.stringify(updated));
       }
     }
 
@@ -1013,7 +1025,7 @@ export default function App() {
   const canSubmitQab = isQabFormValid() && isQabAmountValid;
 
   const categoriesToRender = drawerTab === 'income' ? modernCategories.filter(g => g.group === "Income & Wealth") : modernCategories;
-  const currentRecentCategories = drawerTab === "bills" ? recentBillCategories : recentActivityCategories;
+  const currentRecentCategories = drawerTab === "bills" ? recentBillCategories : drawerTab === "income" ? recentIncomeCategories : recentExpenseCategories;
 
   const getEntryAmountColor = (entry) => {
     if (!entry) return "text-[#1877F2]";
@@ -1028,11 +1040,12 @@ export default function App() {
       onContextMenu={(e) => e.preventDefault()} 
       className={`h-screen w-full font-sans relative flex transition-colors duration-500 select-none [-webkit-touch-callout:none] ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}
     >
-      {/* 2.0 STRIKE: SIGNATURE BLUE CALENDAR ICON INJECTOR */}
+      {/* 2.0 STRIKE: SIGNATURE BLUE CALENDAR ICON INJECTOR (HYPER-TARGETED) */}
       <style>{`
         .blue-calendar-icon::-webkit-calendar-picker-indicator {
-          filter: invert(39%) sepia(87%) saturate(2135%) hue-rotate(204deg) brightness(97%) contrast(93%);
-          cursor: pointer;
+          filter: invert(36%) sepia(93%) saturate(2250%) hue-rotate(208deg) brightness(97%) contrast(96%) !important;
+          cursor: pointer !important;
+          opacity: 1 !important;
         }
       `}</style>
 
@@ -1098,7 +1111,8 @@ export default function App() {
                 <h3 className={`font-black uppercase tracking-widest flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}><Settings size={18} className="text-slate-400" /> Settings Vault</h3>
                 <button onClick={() => setIsSettingsOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
-              <div className={`p-6 overflow-y-auto space-y-6 flex-1 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+              {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL */}
+              <div className={`p-6 overflow-y-auto space-y-6 flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
                 
                 {/* 1. Identity Engine */}
                 <div className={`p-5 rounded-3xl border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
@@ -1161,7 +1175,8 @@ export default function App() {
                 <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Command Center</h3>
                 <button onClick={() => setIsNotificationsOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
-              <div className={`p-6 overflow-y-auto space-y-4 flex-1 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+              {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL */}
+              <div className={`p-6 overflow-y-auto space-y-4 flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
                 {!isPushEnabled && !isDemoMode && (
                   <div className={`p-4 rounded-2xl border flex items-center justify-between shadow-sm ${isDarkMode ? "bg-[#10B981]/10 border-[#10B981]/20" : "bg-emerald-50 border-emerald-100"}`}>
                     <div className="flex items-center gap-3">
@@ -1171,7 +1186,6 @@ export default function App() {
                     <button onClick={enablePushNotifications} className="px-4 py-2 bg-[#10B981] text-white text-[10px] font-black uppercase tracking-widest rounded-xl active:scale-95 transition-transform shadow-md">Enable</button>
                   </div>
                 )}
-                {/* UPGRADED: "All Systems Go" text visibility fix */}
                 {activeAlerts.length === 0 ? (
                   <div className="text-center py-10 opacity-60">
                     <CheckCircle2 size={40} className="mx-auto mb-4 text-[#10B981]" />
@@ -1203,7 +1217,8 @@ export default function App() {
                 <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Payday Routing</h3>
                 <button onClick={() => setIsPaydaySetupOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
-              <div className={`p-6 overflow-y-auto flex-1 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+              {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL */}
+              <div className={`p-6 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
                 
                 <div className="mb-6">
                   <label className={`block text-[9px] font-bold uppercase tracking-widest mb-3 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Pay Frequency</label>
@@ -1230,11 +1245,28 @@ export default function App() {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className={`block text-[9px] font-bold uppercase mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Pay Date</label>
-                        <input type="date" value={editPaydayConfig?.[pd]?.date || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), date: e.target.value}})} className={`w-full p-3 rounded-xl border ${isDarkMode ? "bg-slate-800 border-slate-700 text-white dark:[color-scheme:dark]" : "bg-white border-slate-200 text-slate-900"}`} />
+                        <input type="date" value={editPaydayConfig?.[pd]?.date || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), date: e.target.value}})} className={`w-full p-3 rounded-xl border blue-calendar-icon ${isDarkMode ? "bg-slate-800 border-slate-700 text-white dark:[color-scheme:dark]" : "bg-white border-slate-200 text-slate-900"}`} />
                       </div>
-                      <div>
+                      {/* 2.0 STRIKE: LOCKED $ PREFIX */}
+                      <div className="relative">
                         <label className={`block text-[9px] font-bold uppercase mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Income</label>
-                        <input type="text" inputMode="decimal" pattern="[0-9.-]*" placeholder="Income Amount" value={editPaydayConfig?.[pd]?.income || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), income: e.target.value}})} className={`w-full p-3 rounded-xl border ${isDarkMode ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500" : "bg-white border-slate-200 text-slate-900 placeholder-slate-400"}`} />
+                        <div className="relative w-full flex items-center">
+                          <span className={`absolute left-3.5 top-[13px] font-bold text-sm ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>$</span>
+                          <input 
+                            type="text" 
+                            inputMode="decimal" 
+                            pattern="[0-9.-]*" 
+                            placeholder="0.00" 
+                            value={editPaydayConfig?.[pd]?.income || ""} 
+                            onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), income: e.target.value}})} 
+                            onBlur={(e) => {
+                               if(e.target.value && !isNaN(parseFloat(e.target.value))) {
+                                  setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), income: parseFloat(e.target.value).toFixed(2)}});
+                               }
+                            }}
+                            className={`w-full p-3 pl-7 rounded-xl border ${isDarkMode ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500" : "bg-white border-slate-200 text-slate-900 placeholder-slate-400"}`} 
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1260,9 +1292,21 @@ export default function App() {
               <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
                 <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Name</label><input type="text" value={newAccName} onChange={(e) => setNewAccName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
                 
+                {/* 2.0 STRIKE: LOCKED $ PREFIX */}
                 <div className="relative">
-                  <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Current Balance</label>
-                  <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={newAccBalance} onChange={(e) => setNewAccBalance(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                  <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Current Balance</label>
+                  <div className="relative w-full flex items-center">
+                    <span className={`absolute left-5 top-[22px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
+                    <input 
+                      type="text" 
+                      inputMode="decimal" 
+                      pattern="[0-9.-]*" 
+                      value={newAccBalance} 
+                      onChange={(e) => setNewAccBalance(e.target.value)} 
+                      onBlur={() => { if(!isNaN(parseFloat(newAccBalance)) && newAccBalance !== "") setNewAccBalance(parseFloat(newAccBalance).toFixed(2)) }}
+                      className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} 
+                    />
+                  </div>
                   
                   <div className="flex items-center justify-between mt-3 ml-2 pr-2">
                     <span className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Negative Balance (Debt)</span>
@@ -1290,8 +1334,8 @@ export default function App() {
                 <h3 className={`font-black uppercase tracking-widest flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}><ArrowRightLeft size={16}/> Internal Transfer</h3>
                 <button onClick={() => setIsTransferOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
-              {/* Added hide-scrollbar here */}
-              <div className={`p-6 flex flex-col overflow-y-auto hide-scrollbar ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+              {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL */}
+              <div className={`p-6 flex flex-col overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
                 <div className="flex items-center gap-2 mb-6">
                   <select value={transferFrom} onChange={(e) => setTransferFrom(e.target.value)} className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs border text-center transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}><option value="" disabled>From</option>{accounts.map(a => (<option key={a.id} value={a.id}>{a.name}</option>))}
                   </select>
@@ -1328,6 +1372,7 @@ export default function App() {
                 <button onClick={() => setSelectedAccount(null)} className={closeButtonClass}><X size={18} /></button>
               </div>
               <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+                {/* 2.0 STRIKE: LOCKED $ PREFIX */}
                 <div className="relative">
                   <label className={`absolute left-4 top-2 text-[9px] font-black uppercase tracking-widest z-10 ${isDarkMode ? "text-[#1877F2]" : "text-[#1877F2]"}`}>QUICK BALANCE UPDATE</label>
                   <div className="relative w-full flex items-center">
@@ -1339,6 +1384,7 @@ export default function App() {
                       value={editAccountBalance} 
                       onChange={(e) => setEditAccountBalance(e.target.value)} 
                       onFocus={() => setEditAccountBalance(Math.abs(selectedAccount.balance || 0).toFixed(2))} 
+                      onBlur={() => { if(!isNaN(parseFloat(editAccountBalance)) && editAccountBalance !== "") setEditAccountBalance(parseFloat(editAccountBalance).toFixed(2)) }}
                       className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl font-bold text-lg border focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`} 
                     />
                   </div>
@@ -1417,11 +1463,12 @@ export default function App() {
                   <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{isEditingEntry ? "Edit Entry" : "Entry Details"}</h3>
                 </div>
                 <div className="flex items-center gap-2">
-                  {!isEditingEntry && (<button onClick={() => { setIsEditingEntry(true); setEditEntryData({ name: selectedEntry.name, amount: selectedEntry.amount, category: selectedEntry.category, icon: selectedEntry.icon, rawDate: selectedEntry.rawDate || "", isRecurring: selectedEntry.isRecurring || false, isInstallment: selectedEntry.isInstallment || false, totalAmount: selectedEntry.totalAmount || "", paidAmount: selectedEntry.paidAmount || "" }); }} className={closeButtonClass}><Edit2 size={16} /></button>)}
+                  {!isEditingEntry && (<button onClick={() => { setIsEditingEntry(true); setEditEntryData({ name: selectedEntry.name, amount: (selectedEntry.amount || 0).toFixed(2), category: selectedEntry.category, icon: selectedEntry.icon, rawDate: selectedEntry.rawDate || "", isRecurring: selectedEntry.isRecurring || false, isInstallment: selectedEntry.isInstallment || false, totalAmount: (selectedEntry.totalAmount || 0).toFixed(2) || "", paidAmount: (selectedEntry.paidAmount || 0).toFixed(2) || "" }); }} className={closeButtonClass}><Edit2 size={16} /></button>)}
                   <button onClick={closeEntryDrawer} className={closeButtonClass}><X size={18} /></button>
                 </div>
               </div>
-              <div className={`p-6 space-y-6 overflow-y-auto ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+              {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL */}
+              <div className={`p-6 space-y-6 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
                 {!isEditingEntry ? (
                   <>
                     <div className="text-center">
@@ -1489,7 +1536,24 @@ export default function App() {
                   <>
                     <div className="space-y-4">
                       <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Name</label><input type="text" value={editEntryData.name || ""} onChange={(e) => setEditEntryData({...editEntryData, name: e.target.value})} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
-                      <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Amount</label><input type="text" inputMode="decimal" pattern="[0-9.-]*" value={editEntryData.amount || ""} onChange={(e) => setEditEntryData({...editEntryData, amount: e.target.value})} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
+                      
+                      {/* 2.0 STRIKE: LOCKED $ PREFIX */}
+                      <div className="relative">
+                        <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Amount</label>
+                        <div className="relative w-full flex items-center">
+                          <span className={`absolute left-5 top-[22px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
+                          <input 
+                            type="text" 
+                            inputMode="decimal" 
+                            pattern="[0-9.-]*" 
+                            value={editEntryData.amount || ""} 
+                            onChange={(e) => setEditEntryData({...editEntryData, amount: e.target.value})} 
+                            onBlur={() => { if(!isNaN(parseFloat(editEntryData.amount)) && editEntryData.amount !== "") setEditEntryData({...editEntryData, amount: parseFloat(editEntryData.amount).toFixed(2)}) }}
+                            className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} 
+                          />
+                        </div>
+                      </div>
+
                       <div className="relative cursor-pointer" onClick={() => setIsIconSelectorOpen(true)}>
                         <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Icon</label>
                         <div className={`w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
@@ -1500,7 +1564,7 @@ export default function App() {
                       <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Category</label><select value={editEntryData.category || ""} onChange={(e) => setEditEntryData({...editEntryData, category: e.target.value})} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>{modernCategories.map(group => ( <optgroup key={group.group} label={group.group} className={isDarkMode ? "bg-[#1E293B] text-white" : "bg-white text-slate-900"}> {group.items.map(item => <option key={item} value={item}>{item}</option>)} </optgroup> ))}</select></div>
                       {selectedEntry.fullDate !== undefined && (
                         <>
-                          {/* 2.0 STRIKE: blue-calendar-icon CLASS APPLIED */}
+                          {/* 2.0 STRIKE: SIGNATURE BLUE CALENDAR ICON */}
                           <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Due Date</label><input type="date" value={editEntryData.rawDate || ""} onChange={(e) => setEditEntryData({...editEntryData, rawDate: e.target.value})} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors blue-calendar-icon ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white [color-scheme:dark]" : "bg-white border-slate-200 text-slate-900"}`} /></div>
                           <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
                             <div className="flex items-center justify-between">
@@ -1517,8 +1581,21 @@ export default function App() {
                             </div>
                             {editEntryData.isInstallment && (
                               <div className="grid grid-cols-2 gap-3 animate-fade-in mt-2">
-                                <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Total Amount</label><input type="text" inputMode="decimal" pattern="[0-9.-]*" value={editEntryData.totalAmount || ""} onChange={(e) => setEditEntryData({...editEntryData, totalAmount: e.target.value})} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
-                                <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Already Paid</label><input type="text" inputMode="decimal" pattern="[0-9.-]*" value={editEntryData.paidAmount || ""} onChange={(e) => setEditEntryData({...editEntryData, paidAmount: e.target.value})} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
+                                {/* 2.0 STRIKE: LOCKED $ PREFIX */}
+                                <div className="relative">
+                                  <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Total Amount</label>
+                                  <div className="relative w-full flex items-center">
+                                    <span className={`absolute left-4 top-[22px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
+                                    <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={editEntryData.totalAmount || ""} onChange={(e) => setEditEntryData({...editEntryData, totalAmount: e.target.value})} onBlur={() => { if(!isNaN(parseFloat(editEntryData.totalAmount)) && editEntryData.totalAmount !== "") setEditEntryData({...editEntryData, totalAmount: parseFloat(editEntryData.totalAmount).toFixed(2)}) }} className={`w-full pt-6 pb-2 pl-7 pr-4 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                                  </div>
+                                </div>
+                                <div className="relative">
+                                  <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Already Paid</label>
+                                  <div className="relative w-full flex items-center">
+                                    <span className={`absolute left-4 top-[22px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
+                                    <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={editEntryData.paidAmount || ""} onChange={(e) => setEditEntryData({...editEntryData, paidAmount: e.target.value})} onBlur={() => { if(!isNaN(parseFloat(editEntryData.paidAmount)) && editEntryData.paidAmount !== "") setEditEntryData({...editEntryData, paidAmount: parseFloat(editEntryData.paidAmount).toFixed(2)}) }} className={`w-full pt-6 pb-2 pl-7 pr-4 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                                  </div>
+                                </div>
                               </div>
                             )}
                           </div>
@@ -1547,7 +1624,7 @@ export default function App() {
               {isIconSelectorOpen && isEditingEntry && (
                  <div className={`absolute inset-0 z-[150] flex flex-col ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
                     <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}><h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Icon</h3><button onClick={() => setIsIconSelectorOpen(false)} className={closeButtonClass}><X size={18}/></button></div>
-                    <div className={`flex-1 overflow-y-auto p-4 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : "pb-20"}`}>
+                    <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] p-4 ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : "pb-20"}`}>
                        <div className="grid grid-cols-6 lg:grid-cols-8 gap-3">{categoryEmojis.map(emoji => (<button key={emoji} onClick={() => { setEditEntryData({...editEntryData, icon: emoji}); setIsIconSelectorOpen(false); }} className={`w-12 h-12 flex items-center justify-center rounded-xl text-2xl border transition-all active:scale-90 ${editEntryData.icon === emoji ? `bg-[#1877F2] text-white border-transparent shadow-md` : isDarkMode ? "bg-slate-800 border-slate-700 hover:bg-slate-700" : "bg-slate-50 border-slate-200 hover:bg-slate-100"}`}>{emoji}</button>))}</div>
                     </div>
                  </div>
@@ -1593,8 +1670,8 @@ export default function App() {
                    <button onClick={closeQab} className={closeButtonClass}><X size={18} /></button>
                 </div>
                 
-                {/* 2.0 STRIKE: DESKTOP SCROLLBAR EXTERMINATED (hide-scrollbar) */}
-                <div className={`flex-1 overflow-y-auto hide-scrollbar flex flex-col ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
+                {/* 2.0 STRIKE: DESKTOP SCROLLBAR EXTERMINATED */}
+                <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] flex flex-col ${isDemoMode ? "pb-[140px] lg:pb-[100px]" : ""}`}>
                   {qabStep === 1 ? (
                     /* 2.0 STRIKE: MIN-HEIGHT ADJUSTED FOR MOBILE */
                     <div className="p-6 flex flex-col h-full min-h-[300px] lg:min-h-[400px]">
@@ -1617,7 +1694,8 @@ export default function App() {
                         ))}
                       </div>
 
-                      <button onClick={() => { triggerHaptic(20); setQabStep(2); }} disabled={!isQabAmountValid} className={`w-full h-16 shrink-0 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${!isQabAmountValid ? "bg-slate-300 opacity-50 cursor-not-allowed shadow-none" : `active:scale-95 ${qabActiveBg} ${qabActiveShadow} hover:-translate-y-1`}`}>Next Step <ArrowRight size={18} /></button>
+                      {/* 2.0 STRIKE: AUTO-FORMATTING STEP 1 TO STEP 2 */}
+                      <button onClick={() => { triggerHaptic(20); setInputValue(parseFloat(inputValue).toFixed(2)); setQabStep(2); }} disabled={!isQabAmountValid} className={`w-full h-16 shrink-0 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${!isQabAmountValid ? "bg-slate-300 opacity-50 cursor-not-allowed shadow-none" : `active:scale-95 ${qabActiveBg} ${qabActiveShadow} hover:-translate-y-1`}`}>Next Step <ArrowRight size={18} /></button>
                     </div>
                   ) : (
                     <div className="p-6 space-y-4">
@@ -1627,10 +1705,21 @@ export default function App() {
                          <input type="text" value={entryName} onChange={(e) => setEntryName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                       </div>
                       
-                      {/* 2.0 STRIKE: EDITABLE AMOUNT FIELD */}
+                      {/* 2.0 STRIKE: EDITABLE AMOUNT FIELD WITH LOCKED $ */}
                       <div className="relative">
-                         <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Amount</label>
-                         <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={inputValue} onChange={(e) => setInputValue(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border font-bold text-base transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                         <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Amount</label>
+                         <div className="relative w-full flex items-center">
+                           <span className={`absolute left-5 top-[22px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
+                           <input 
+                             type="text" 
+                             inputMode="decimal" 
+                             pattern="[0-9.-]*" 
+                             value={inputValue} 
+                             onChange={(e) => setInputValue(e.target.value)} 
+                             onBlur={() => { if(!isNaN(parseFloat(inputValue)) && inputValue !== "") setInputValue(parseFloat(inputValue).toFixed(2)) }}
+                             className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl border font-bold text-base transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} 
+                           />
+                         </div>
                       </div>
                       
                       <div className="relative cursor-pointer" onClick={() => setIsIconSelectorOpen(true)}>
@@ -1641,11 +1730,11 @@ export default function App() {
                          </div>
                       </div>
 
-                      {/* 2.0 STRIKE: RECENT CATEGORIES RIBBON RESTORED */}
+                      {/* 2.0 STRIKE: SURGICAL SPLIT RECENT CATEGORIES RIBBON */}
                       {currentRecentCategories.length > 0 && (
                           <div className="mb-2 mt-2">
                               <label className={`block text-[9px] font-bold uppercase tracking-widest mb-2 px-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Recent Categories</label>
-                              <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
+                              <div className="flex gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] pb-2">
                                   {currentRecentCategories.map(cat => (
                                       <button key={cat} onClick={() => setEntryCategory(cat)} className={`px-4 py-2 shrink-0 rounded-xl text-[10px] font-bold whitespace-nowrap border transition-colors ${entryCategory === cat ? `${qabActiveBg} text-white border-transparent shadow-md` : isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-700"}`}>
                                           {cat}
@@ -1685,8 +1774,21 @@ export default function App() {
                                </div>
                                {entryIsInstallment && (
                                   <div className="grid grid-cols-2 gap-3 animate-fade-in mt-2">
-                                     <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Total Amount</label><input type="text" inputMode="decimal" pattern="[0-9.-]*" value={entryTotalAmount} onChange={(e) => setEntryTotalAmount(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
-                                     <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Already Paid</label><input type="text" inputMode="decimal" pattern="[0-9.-]*" value={entryPaidAmount} onChange={(e) => setEntryPaidAmount(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
+                                     {/* 2.0 STRIKE: LOCKED $ PREFIXES */}
+                                     <div className="relative">
+                                        <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Total Amount</label>
+                                        <div className="relative w-full flex items-center">
+                                           <span className={`absolute left-4 top-[22px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
+                                           <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={entryTotalAmount} onChange={(e) => setEntryTotalAmount(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(entryTotalAmount)) && entryTotalAmount !== "") setEntryTotalAmount(parseFloat(entryTotalAmount).toFixed(2)) }} className={`w-full pt-6 pb-2 pl-7 pr-4 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                                        </div>
+                                     </div>
+                                     <div className="relative">
+                                        <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Already Paid</label>
+                                        <div className="relative w-full flex items-center">
+                                           <span className={`absolute left-4 top-[22px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
+                                           <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={entryPaidAmount} onChange={(e) => setEntryPaidAmount(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(entryPaidAmount)) && entryPaidAmount !== "") setEntryPaidAmount(parseFloat(entryPaidAmount).toFixed(2)) }} className={`w-full pt-6 pb-2 pl-7 pr-4 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                                        </div>
+                                     </div>
                                   </div>
                                )}
                             </div>
@@ -1714,7 +1816,8 @@ export default function App() {
                       <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
                          <h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Category</h3><button onClick={() => setIsCategorySelectorOpen(false)} className={closeButtonClass}><X size={18}/></button>
                       </div>
-                      <div className={`flex-1 overflow-y-auto hide-scrollbar p-4 space-y-6 pb-20`}>
+                      {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL */}
+                      <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] p-4 space-y-6 pb-20`}>
                          {categoriesToRender.map(group => (
                              <div key={group.group}>
                                <p className="text-[10px] font-black uppercase text-slate-400 mb-3">{group.group}</p>
@@ -1735,7 +1838,8 @@ export default function App() {
                       <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
                          <h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Icon</h3><button onClick={() => setIsIconSelectorOpen(false)} className={closeButtonClass}><X size={18}/></button>
                       </div>
-                      <div className={`flex-1 overflow-y-auto hide-scrollbar p-4 pb-20`}>
+                      {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL */}
+                      <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] p-4 pb-20`}>
                          <div className="grid grid-cols-6 lg:grid-cols-8 gap-3">
                            {categoryEmojis.map(emoji => (
                              <button key={emoji} onClick={() => { setEntryIcon(emoji); setIsIconSelectorOpen(false); }} className={`w-12 h-12 flex items-center justify-center rounded-xl text-2xl border transition-all active:scale-90 ${entryIcon === emoji ? `${qabActiveBg} border-transparent shadow-md` : isDarkMode ? "bg-slate-800 border-slate-700 hover:bg-slate-700" : "bg-slate-50 border-slate-200 hover:bg-slate-100"}`}>{emoji}</button>

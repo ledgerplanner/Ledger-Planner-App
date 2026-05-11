@@ -76,13 +76,14 @@ export default function Bills({
           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Paid</span>
         </div>
       </div>
-      <div className="flex-1 pl-4 text-right">
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Monthly Progress</p>
-        <p className="text-4xl font-black tracking-tighter mb-4">
-          <span className={paidBillsAmount === 0 ? "text-red-500" : "text-[#10B981]"}>
+      
+      <div className="flex-1 pl-2 sm:pl-4 text-right">
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Bills Paid</p>
+        <p className="font-black tracking-tighter mb-4 leading-none sm:leading-tight">
+          <span className={`text-2xl min-[380px]:text-3xl sm:text-4xl block sm:inline ${paidBillsAmount === 0 ? "text-red-500" : "text-[#10B981]"}`}>
             ${paidBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
-          <span className="text-xl text-slate-400 opacity-60">
+          <span className="text-sm min-[380px]:text-base sm:text-xl text-slate-400 opacity-60 block sm:inline sm:ml-1 mt-1 sm:mt-0">
              / ${totalBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         </p>

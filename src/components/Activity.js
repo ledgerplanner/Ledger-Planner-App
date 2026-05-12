@@ -7,14 +7,12 @@ export default function Activity({
 }) {
   const [collapsedMonths, setCollapsedMonths] = useState({});
 
-  // === SEARCH & FILTER ENGINE ===
   const filteredTransactions = transactions.filter(tx => {
     const matchesSearch = tx.name.toLowerCase().includes(activitySearch.toLowerCase()) || (tx.category && tx.category.toLowerCase().includes(activitySearch.toLowerCase()));
     const matchesFilter = activityFilter === "All" || tx.type === activityFilter;
     return matchesSearch && matchesFilter;
   });
 
-  // === SURGICAL TIME-BUCKET ENGINE (GHOST-PROOF) ===
   const groupedTransactions = useMemo(() => {
     const groups = {};
     const today = new Date();
@@ -23,7 +21,6 @@ export default function Activity({
     filteredTransactions.forEach(tx => {
       const d = new Date(tx.rawDate || tx.date || today);
       
-      // 👻 ROOT-LEVEL GHOST INTERCEPTOR 👻
       if (d.getFullYear() === 2001) {
         d.setFullYear(currentYear);
       }
@@ -47,7 +44,6 @@ export default function Activity({
     return Object.values(groups).sort((a, b) => b.timestamp - a.timestamp);
   }, [filteredTransactions]);
 
-  // === THE MAGIC SEARCH OVERRIDE & DEFAULT STATE ===
   useEffect(() => {
     const isSearching = activitySearch.trim() !== "" || activityFilter !== "All";
     
@@ -68,23 +64,18 @@ export default function Activity({
     setCollapsedMonths(prev => ({ ...prev, [monthLabel]: !prev[monthLabel] }));
   };
 
-  // === THE 2001 GHOST INTERCEPTOR ===
   const formatActivityDate = (dateStr, groupLabel) => {
     if (!dateStr) return "TBD";
-    // Extract the true year from the "MAY 2026" header format
     const groupYear = groupLabel.split(" ")[1] || new Date().getFullYear();
-    // Hunt down the 2001 glitch and seamlessly replace it
     return dateStr.replace(/2001/g, groupYear);
   };
 
-  // === CASH FLOW MATH (IN / OUT BAR) FOR HERO ===
   const totalIncome = transactions.filter(t => t.type === "Income").reduce((sum, t) => sum + t.amount, 0);
   const totalExpense = transactions.filter(t => t.type === "Expense").reduce((sum, t) => sum + t.amount, 0);
   const netCashFlow = totalIncome - totalExpense;
   const totalVolume = totalIncome + totalExpense;
   const inPercentage = totalVolume > 0 ? (totalIncome / totalVolume) * 100 : 50;
 
-  // === DYNAMIC CATEGORY RING MATH (INCOME OR EXPENSE) ===
   const isIncomeView = activityFilter === "Income";
   const targetTransactions = isIncomeView 
     ? transactions.filter(t => t.type === "Income") 
@@ -120,7 +111,6 @@ export default function Activity({
     return { name, amount, percentage, strokeDasharray, strokeDashoffset, color: colors[index] };
   });
 
-  // === DYNAMIC STYLING HELPERS ===
   const getTxAmountClasses = (tx, isDark) => {
     if (tx.isBillPayment || tx.category === "Bill Payment") {
       return isDark 
@@ -269,17 +259,18 @@ export default function Activity({
                 return (
                   <div key={group.label} className="space-y-2">
                     
+                    {/* 2.0 STRIKE: Z-FOLD ULTRA-NARROW RESPONSIVE HEADER */}
                     <div className="flex flex-col px-2 py-2 cursor-pointer transition-colors" onClick={() => toggleMonth(group.label)}>
-                      <div className="flex justify-between items-end w-full">
-                         <div className="flex items-center gap-2 mb-1">
+                      <div className="flex justify-between items-start min-[360px]:items-end w-full gap-2">
+                         <div className="flex items-center gap-2 mb-1 shrink-0">
                             <h3 className={`text-sm font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{group.label}</h3>
                             <div className="text-slate-500 mb-0.5">{isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}</div>
                          </div>
-                         <div className="flex items-center gap-2">
+                         <div className="flex flex-col min-[360px]:flex-row min-[360px]:items-center items-end gap-0.5 min-[360px]:gap-2 shrink-0">
                             <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-500">
                                +${group.inflow.toLocaleString("en-US", { minimumFractionDigits: 2 })} In
                             </span>
-                            <span className={`text-[10px] ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>|</span>
+                            <span className={`hidden min-[360px]:inline text-[10px] ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>|</span>
                             <span className="text-[10px] font-bold uppercase tracking-widest text-[#F97316]">
                                -${group.outflow.toLocaleString("en-US", { minimumFractionDigits: 2 })} Out
                             </span>
@@ -316,7 +307,6 @@ export default function Activity({
                                     {tx.category || "Uncategorized"}
                                   </span>
                                   <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest truncate leading-tight mt-0.5">
-                                    {/* === THE GHOST INTERCEPTOR APPLIED HERE === */}
                                     {formatActivityDate(tx.date, group.label)}
                                   </span>
                                 </div>

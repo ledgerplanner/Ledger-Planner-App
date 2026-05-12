@@ -401,10 +401,10 @@ export default function App() {
         if (currentToken) {
           const userId = auth.currentUser?.uid;
           if (userId) await setDoc(doc(db, "users", userId), { fcmToken: currentToken }, { merge: true });
-          alert("Push Notifications Enabled! Vault secured.");
+          openGlobalAction("Notifications Enabled", "Push Notifications Enabled! Vault secured.", "Close", false, () => setGlobalActionConfig(prev => ({...prev, isOpen: false})), true);
         }
       } else {
-        alert("You denied notifications. You will only see alerts inside the app.");
+        openGlobalAction("Notifications Denied", "You denied notifications. You will only see alerts inside the app.", "Close", true, () => setGlobalActionConfig(prev => ({...prev, isOpen: false})), true);
       }
     } catch (error) {
       console.error("An error occurred while retrieving token. ", error);
@@ -485,7 +485,10 @@ export default function App() {
   // === UPGRADED: MANUAL ROLLOVER ===
   const handleRolloverMonth = async () => {
     openGlobalAction("Force Rollover", "SYSTEM OVERRIDE: Are you sure you want to force a manual month rollover?", "Force Sync", true, async () => {
-      if (isDemoMode) { alert("Rollover is disabled in Demo Mode."); setGlobalActionConfig(prev => ({ ...prev, isOpen: false })); return; }
+      if (isDemoMode) { 
+          openGlobalAction("Demo Mode Locked", "Rollover is disabled while exploring the Demo Vault.", "Close", false, () => setGlobalActionConfig(prev => ({...prev, isOpen: false})), true);
+          return; 
+      }
       
       await executeRolloverCore();
       
@@ -504,7 +507,12 @@ export default function App() {
   // === UPGRADED: FACTORY RESET ===
   const handleFactoryReset = async () => {
     if (resetConfirm !== "RESET") return;
-    if (isDemoMode) { alert("Factory reset is disabled in Demo Mode."); setResetConfirm(""); setIsSettingsOpen(false); return; }
+    
+    // 2.0 STRIKE: Replace alert with sleek modal in Demo Mode
+    if (isDemoMode) { 
+       openGlobalAction("Demo Mode Locked", "Factory reset is disabled while exploring the Demo Vault.", "Close", false, () => setGlobalActionConfig(prev => ({...prev, isOpen: false})), true);
+       setResetConfirm(""); setIsSettingsOpen(false); return; 
+    }
     
     openGlobalAction("Wipe Vault", "FINAL WARNING: This will permanently delete all your accounts, bills, transactions, and tasks. Proceed?", "Destroy", true, async () => {
       try {
@@ -525,7 +533,10 @@ export default function App() {
         setTodos([]);
         setPaydayConfig({ frequency: "Weekly", "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } });
 
-        setResetConfirm(""); setIsSettingsOpen(false); setGlobalActionConfig(prev => ({ ...prev, isOpen: false })); triggerVictory(); alert("Vault wiped. Welcome to a clean slate.");
+        setResetConfirm(""); setIsSettingsOpen(false); triggerVictory(); 
+        
+        // 2.0 STRIKE: The Success Modal Overlay instead of default alert
+        openGlobalAction("Wipe Complete", "Vault wiped. Welcome to a clean slate.", "Close", false, () => setGlobalActionConfig(prev => ({...prev, isOpen: false})), true);
       } catch (e) { console.error("Factory reset failed", e); }
     });
   };
@@ -1020,7 +1031,6 @@ export default function App() {
   const qabParsedInput = parseFloat(inputValue);
   const isQabAmountValid = !isNaN(qabParsedInput) && (drawerTab === "bills" ? qabParsedInput >= 0 : qabParsedInput > 0);
 
-  // === UPGRADED: FORM VALIDATION ENGINE ===
   const isQabFormValid = () => {
     const hasName = entryName.trim() !== "";
     const hasCategory = entryCategory.trim() !== "";
@@ -1081,8 +1091,6 @@ export default function App() {
             {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} isDemoMode={isDemoMode} />}
             {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} paydayConfig={paydayConfig} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} handleRolloverMonth={handleRolloverMonth} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} />}
             {activeTab === "activity" && <Activity userName={userName} transactions={transactions} activitySearch={activitySearch} setActivitySearch={setActivitySearch} activityFilter={activityFilter} setActivityFilter={setActivityFilter} isDarkMode={isDarkMode} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} />}
-            
-            {/* INJECTED openGlobalAction PIPELINE */}
             {activeTab === "todo" && <Todo userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} newTodoType={newTodoType} setNewTodoType={setNewTodoType} isDarkMode={isDarkMode} handleAddTodo={async (e) => { e.preventDefault(); if(!newTodoText.trim()) return; if (isDemoMode) { setTodos([{ id: `todo_demo_${Date.now()}`, text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false }, ...todos]); } else { await addDoc(collection(db, "users", user.uid, "todos"), { text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() }); } triggerVictory(); setNewTodoText(""); setNewTodoPriority(3); }} toggleTodoStatus={async (id) => { triggerHaptic(50); const todo = todos.find(t => t.id === id); if (isDemoMode) { setTodos(todos.map(t => t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)); } else { await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); } }} setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} clearCompletedTodos={clearCompletedTodos} openGlobalAction={openGlobalAction} />}
           </div>
 
@@ -1090,7 +1098,6 @@ export default function App() {
             <button onClick={() => { triggerHaptic(20); setIsQabOpen(true); }} className={`w-14 h-14 rounded-full flex items-center justify-center text-white bg-[#1877F2] shadow-[0_12px_24px_rgba(24,119,242,0.4)] border-4 ${isDarkMode ? "border-[#0F172A]" : "border-white"}`}><Plus size={28} /></button>
           </div>
 
-          {/* 🔥 PREMIUM NAVIGATION BAR (INK BLACK / CENTERED) 🔥 */}
           <div className={`lg:hidden fixed ${isDemoMode ? "bottom-[120px]" : "bottom-0"} left-0 w-full backdrop-blur-md border-t px-2 h-[88px] pb-4 pt-2 flex justify-between items-center z-[100] ${isDarkMode ? "bg-[#1E293B]/95 border-slate-800" : "bg-white/95 border-slate-100"}`}>
             {[{ id: "home", icon: Home, label: "Home" }, { id: "accounts", icon: Wallet, label: "Accounts" }, { id: "bills", icon: CalendarIcon, label: "Bills" }, { id: "activity", icon: CreditCard, label: "Activity" }, { id: "todo", icon: CheckSquare, label: "To-Do" }].map((tab) => (
               <button key={tab.id} onClick={() => changeTab(tab.id)} className="flex-1 flex flex-col items-center justify-center gap-1 group h-full">
@@ -1110,10 +1117,8 @@ export default function App() {
                 <h3 className={`font-black uppercase tracking-widest flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}><Settings size={18} className="text-slate-400" /> Settings Vault</h3>
                 <button onClick={() => setIsSettingsOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
-              {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL & MODAL CUTOFF FIX (lg:pb-6) */}
               <div className={`p-6 overflow-y-auto space-y-6 flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
                 
-                {/* 1. Identity Engine */}
                 <div className={`p-5 rounded-3xl border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
                   <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2"><User size={14}/> Identity Engine</h4>
                   <div className="relative mb-4">
@@ -1123,17 +1128,14 @@ export default function App() {
                   <button onClick={handleUpdateIdentity} disabled={!(editName || "").trim() || editName === userName} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 ${(!(editName || "").trim() || editName === userName) ? "bg-slate-300 text-slate-500 cursor-not-allowed" : "bg-[#1877F2] text-white shadow-[0_8px_16px_rgba(24,119,242,0.3)]"}`}>Update Identity</button>
                 </div>
                 
-                {/* 2. Signature Line */}
                 <div className={`border-t ${isDarkMode ? "border-white" : "border-slate-200"}`}></div>
 
-                {/* 3. Contact Support */}
                 <div className={`p-5 rounded-3xl border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
                   <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2"><HelpCircle size={14}/> Contact Support</h4>
                   <p className={`text-xs font-bold mb-4 leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Found a glitch in the matrix or need a new feature? Contact support below.</p>
                   <a href="mailto:support@ledgerplanner.com" className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 border transition-all active:scale-95 ${isDarkMode ? "bg-slate-800 border-slate-600 text-white hover:bg-slate-700" : "bg-slate-50 border-slate-200 text-slate-900 hover:bg-slate-100"}`}>REPORT BUG / REQUEST FEATURE</a>
                 </div>
 
-                {/* 4. Subscription */}
                 <div className={`p-5 rounded-3xl border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2"><CreditCard size={14}/> Subscription</h4>
                    <div className={`p-4 rounded-2xl border flex items-center justify-between ${isDarkMode ? "bg-[#0F172A] border-slate-600" : "bg-slate-50 border-slate-200"}`}>
@@ -1142,7 +1144,6 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* 5. System Override (Manual Rollover) */}
                 <div className={`p-5 rounded-3xl border shadow-sm mt-6 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
                   <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2"><RefreshCw size={14}/> System Override</h4>
                   <p className={`text-xs font-bold mb-4 leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>The Master Engine auto-rolls your month. If you need to force a manual rollover, use the override below.</p>
@@ -1151,7 +1152,7 @@ export default function App() {
                   </button>
                 </div>
                 
-                {/* 6. Danger Zone */}
+                {/* 2.0 STRIKE: FACTORY RESET MODAL ENGINE INTEGRATION */}
                 <div className={`p-5 rounded-3xl border shadow-sm mt-6 ${isDarkMode ? "bg-red-900/10 border-red-900/30" : "bg-red-50/50 border-red-100"}`}>
                   <h4 className="text-[10px] font-black uppercase tracking-widest text-red-500/70 mb-4 flex items-center gap-2"><AlertCircle size={14}/> Danger Zone</h4>
                   <div className="mb-4">
@@ -1174,7 +1175,6 @@ export default function App() {
                 <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Command Center</h3>
                 <button onClick={() => setIsNotificationsOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
-              {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL & MODAL CUTOFF FIX */}
               <div className={`p-6 overflow-y-auto space-y-4 flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
                 {!isPushEnabled && !isDemoMode && (
                   <div className={`p-4 rounded-2xl border flex items-center justify-between shadow-sm ${isDarkMode ? "bg-[#10B981]/10 border-[#10B981]/20" : "bg-emerald-50 border-emerald-100"}`}>
@@ -1216,7 +1216,6 @@ export default function App() {
                 <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Payday Routing</h3>
                 <button onClick={() => setIsPaydaySetupOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
-              {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL & MODAL CUTOFF FIX */}
               <div className={`p-6 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
                 
                 <div className="mb-6">
@@ -1242,7 +1241,6 @@ export default function App() {
                   <div key={pd} className={`p-4 rounded-2xl border ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-slate-50 border-slate-100"}`}>
                     <h4 className={`text-xs font-black uppercase tracking-widest mb-4 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>{pd}</h4>
                     <div className="grid grid-cols-2 gap-4">
-                      {/* 2.0 STRIKE: NATIVE CALENDAR OVERRIDE ENGINE */}
                       <div className="relative">
                         <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Pay Date</label>
                         <div className={`relative w-full pt-6 pb-2 px-5 rounded-xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"}`}>
@@ -1251,7 +1249,6 @@ export default function App() {
                            <input type="date" value={editPaydayConfig?.[pd]?.date || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), date: e.target.value}})} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                         </div>
                       </div>
-                      {/* 2.0 STRIKE: LOCKED $ PREFIX */}
                       <div className="relative">
                         <label className={`block text-[9px] font-bold uppercase mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Income</label>
                         <div className="relative w-full flex items-center">
@@ -1296,7 +1293,6 @@ export default function App() {
               <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
                 <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Name</label><input type="text" value={newAccName} onChange={(e) => setNewAccName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
                 
-                {/* 2.0 STRIKE: LOCKED $ PREFIX */}
                 <div className="relative">
                   <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Current Balance</label>
                   <div className="relative w-full flex items-center">
@@ -1329,7 +1325,7 @@ export default function App() {
           </div>
         )}
 
-        {/* === 2.0 STRIKE: TRANSFER DRAWER SCROLLBAR === */}
+        {/* === 2.0 STRIKE: TRANSFER DRAWER SQUEEZE === */}
         {isTransferOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsTransferOpen(false)}></div>
@@ -1338,9 +1334,8 @@ export default function App() {
                 <h3 className={`font-black uppercase tracking-widest flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}><ArrowRightLeft size={16}/> Internal Transfer</h3>
                 <button onClick={() => setIsTransferOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
-              {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL & MODAL CUTOFF FIX */}
-              <div className={`p-6 flex flex-col overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
-                <div className="flex items-center gap-2 mb-6">
+              <div className={`p-6 lg:p-5 lg:pb-4 flex flex-col overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDemoMode ? "pb-[140px]" : ""}`}>
+                <div className="flex items-center gap-2 mb-6 lg:mb-4">
                   <select value={transferFrom} onChange={(e) => setTransferFrom(e.target.value)} className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs border text-center transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}><option value="" disabled>From</option>{accounts.map(a => (<option key={a.id} value={a.id}>{a.name}</option>))}
                   </select>
                   <ArrowRight size={16} className={isDarkMode ? "text-slate-500" : "text-slate-400"} />
@@ -1348,17 +1343,17 @@ export default function App() {
                   </select>
                 </div>
                 
-                <div className="text-center relative flex justify-center items-center mb-6">
+                <div className="text-center relative flex justify-center items-center mb-6 lg:mb-3">
                   <span className="text-6xl font-extrabold tracking-tighter text-[#10B981]">${transferAmount}</span>
                   <button onClick={() => { triggerHaptic(15); setTransferAmount(transferAmount.slice(0, -1) || "0"); }} className={`absolute right-4 p-3 rounded-full text-2xl lg:text-4xl active:scale-90 transition-transform touch-manipulation text-[#10B981] opacity-70 hover:opacity-100`}>⌫</button>
                 </div>
 
-                <div className="grid grid-cols-4 gap-3 mt-auto">
+                <div className="grid grid-cols-4 gap-3 lg:gap-2 mt-auto">
                   {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", ".", "0", "=", "+"].map((btn) => {
-                    return ( <button key={btn} onClick={() => handleTransferNumpad(btn)} className={`w-full h-14 rounded-2xl text-2xl font-bold flex items-center justify-center transition-all border active:scale-95 touch-manipulation ${isDarkMode ? "bg-slate-800 border-slate-700 text-white active:bg-slate-700" : "bg-slate-100 border-slate-200 text-slate-900 active:bg-slate-200"}`}> {btn} </button> );
+                    return ( <button key={btn} onClick={() => handleTransferNumpad(btn)} className={`w-full h-14 lg:h-12 rounded-2xl text-2xl font-bold flex items-center justify-center transition-all border active:scale-95 touch-manipulation ${isDarkMode ? "bg-slate-800 border-slate-700 text-white active:bg-slate-700" : "bg-slate-100 border-slate-200 text-slate-900 active:bg-slate-200"}`}> {btn} </button> );
                   })}
                 </div>
-                <button onClick={executeTransfer} disabled={parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo} className={`w-full mt-6 h-16 shrink-0 rounded-2xl font-black uppercase tracking-widest text-sm text-white shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2 ${parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo ? "bg-slate-300 opacity-50 shadow-none cursor-not-allowed" : "bg-[#1877F2]"}`}>Execute Transfer <ArrowRight size={18} /></button>
+                <button onClick={executeTransfer} disabled={parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo} className={`w-full mt-6 lg:mt-3 h-16 lg:h-12 shrink-0 rounded-2xl font-black uppercase tracking-widest text-sm text-white shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2 ${parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo ? "bg-slate-300 opacity-50 shadow-none cursor-not-allowed" : "bg-[#1877F2]"}`}>Execute Transfer <ArrowRight size={18} /></button>
               </div>
             </div>
           </div>
@@ -1376,7 +1371,6 @@ export default function App() {
                 <button onClick={() => setSelectedAccount(null)} className={closeButtonClass}><X size={18} /></button>
               </div>
               <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
-                {/* 2.0 STRIKE: LOCKED $ PREFIX */}
                 <div className="relative">
                   <label className={`absolute left-4 top-2 text-[9px] font-black uppercase tracking-widest z-10 ${isDarkMode ? "text-[#1877F2]" : "text-[#1877F2]"}`}>QUICK BALANCE UPDATE</label>
                   <div className="relative w-full flex items-center">
@@ -1471,7 +1465,6 @@ export default function App() {
                   <button onClick={closeEntryDrawer} className={closeButtonClass}><X size={18} /></button>
                 </div>
               </div>
-              {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL & MODAL CUTOFF FIX */}
               <div className={`p-6 space-y-6 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
                 {!isEditingEntry ? (
                   <>
@@ -1541,7 +1534,6 @@ export default function App() {
                     <div className="space-y-4">
                       <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Name</label><input type="text" value={editEntryData.name || ""} onChange={(e) => setEditEntryData({...editEntryData, name: e.target.value})} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
                       
-                      {/* 2.0 STRIKE: LOCKED $ PREFIX */}
                       <div className="relative">
                         <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Amount</label>
                         <div className="relative w-full flex items-center">
@@ -1568,7 +1560,6 @@ export default function App() {
                       <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Category</label><select value={editEntryData.category || ""} onChange={(e) => setEditEntryData({...editEntryData, category: e.target.value})} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>{modernCategories.map(group => ( <optgroup key={group.group} label={group.group} className={isDarkMode ? "bg-[#1E293B] text-white" : "bg-white text-slate-900"}> {group.items.map(item => <option key={item} value={item}>{item}</option>)} </optgroup> ))}</select></div>
                       {selectedEntry.fullDate !== undefined && (
                         <>
-                          {/* 2.0 STRIKE: NATIVE CALENDAR OVERRIDE ENGINE */}
                           <div className="relative">
                              <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Due Date</label>
                              <div className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
@@ -1593,7 +1584,6 @@ export default function App() {
                             </div>
                             {editEntryData.isInstallment && (
                               <div className="grid grid-cols-2 gap-3 animate-fade-in mt-2">
-                                {/* 2.0 STRIKE: LOCKED $ PREFIX */}
                                 <div className="relative">
                                   <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Total Amount</label>
                                   <div className="relative w-full flex items-center">
@@ -1632,7 +1622,6 @@ export default function App() {
                 )}
               </div>
               
-              {/* EDIT ENTRY: ICON SELECTOR OVERLAY */}
               {isIconSelectorOpen && isEditingEntry && (
                  <div className={`absolute inset-0 z-[150] flex flex-col ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
                     <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}><h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Icon</h3><button onClick={() => setIsIconSelectorOpen(false)} className={closeButtonClass}><X size={18}/></button></div>
@@ -1658,7 +1647,6 @@ export default function App() {
                   <h2 className={`text-lg font-black mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Payment Logged!</h2>
                   <p className="text-xs font-bold text-slate-500">When is your next payment due?</p>
                 </div>
-                {/* 2.0 STRIKE: NATIVE CALENDAR OVERRIDE ENGINE */}
                 <div className="relative">
                    <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Next Due Date</label>
                    <div className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
@@ -1677,55 +1665,47 @@ export default function App() {
         {isQabOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={closeQab}></div>
-            {/* 2.0 STRIKE: MOBILE HEIGHT SQUEEZE APPLIED (h-auto max-h-[95vh]) */}
             <div className={`w-full lg:max-w-md h-auto max-h-[95vh] lg:max-h-[95vh] rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
                 
-                {/* Header */}
                 <div className={`p-6 border-b flex justify-between items-center shrink-0 ${isDarkMode ? "border-slate-800" : "border-slate-100"}`}>
                    <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{qabActiveLabel}</h3>
                    <button onClick={closeQab} className={closeButtonClass}><X size={18} /></button>
                 </div>
                 
-                {/* 2.0 STRIKE: DESKTOP SCROLLBAR EXTERMINATED & MODAL CUTOFF FIX */}
+                {/* 2.0 STRIKE: QAB MICRO-SQUEEZE APPLIED HERE */}
                 <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] flex flex-col ${isDemoMode ? "pb-[140px] lg:pb-0" : ""}`}>
                   {qabStep === 1 ? (
-                    /* 2.0 STRIKE: MIN-HEIGHT ADJUSTED FOR MOBILE */
-                    <div className="p-6 flex flex-col h-full min-h-[300px] lg:min-h-[360px]">
-                      {/* Tabs */}
-                      <div className={`flex p-1.5 rounded-2xl mb-4 lg:mb-8 ${isDarkMode ? "bg-slate-800" : "bg-slate-100"}`}>
+                    <div className="p-6 lg:p-5 flex flex-col h-full min-h-[300px] lg:min-h-[360px]">
+                      <div className={`flex p-1.5 rounded-2xl mb-4 lg:mb-3 ${isDarkMode ? "bg-slate-800" : "bg-slate-100"}`}>
                         <button onClick={() => { setDrawerTab("bills"); setInputValue("0"); }} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${drawerTab === "bills" ? "bg-[#1877F2] text-white shadow-[0_4px_12px_rgba(24,119,242,0.3)] transform scale-100" : isDarkMode ? "text-slate-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>Bill</button>
                         <button onClick={() => { setDrawerTab("transactions"); setInputValue("0"); }} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${drawerTab === "transactions" ? "bg-[#F97316] text-white shadow-[0_4px_12px_rgba(249,115,22,0.3)] transform scale-100" : isDarkMode ? "text-slate-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>Expense</button>
                         <button onClick={() => { setDrawerTab("income"); setInputValue("0"); }} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${drawerTab === "income" ? "bg-[#10B981] text-white shadow-[0_4px_12px_rgba(16,185,129,0.3)] transform scale-100" : isDarkMode ? "text-slate-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>Income</button>
                       </div>
 
-                      {/* 2.0 STRIKE: MOBILE MARGIN SQUEEZE (mt-4 lg:mt-auto) */}
-                      <div className="text-center relative flex justify-center items-center mb-4 lg:mb-8 mt-4 lg:mt-auto">
+                      <div className="text-center relative flex justify-center items-center mb-4 lg:mb-3 mt-4 lg:mt-auto">
                         <span className={`text-6xl font-extrabold tracking-tighter ${qabActiveText}`}>${inputValue}</span>
                         <button onClick={() => { triggerHaptic(15); setInputValue(inputValue.slice(0, -1) || "0"); }} className={`absolute right-4 p-3 rounded-full text-2xl lg:text-4xl active:scale-90 transition-transform touch-manipulation ${qabActiveText} opacity-70 hover:opacity-100`}>⌫</button>
                       </div>
 
-                      <div className="grid grid-cols-4 gap-3 mt-auto mb-6">
+                      <div className="grid grid-cols-4 gap-3 lg:gap-2 mt-auto mb-6 lg:mb-3">
                         {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", ".", "0", "=", "+"].map((btn) => (
-                          <button key={btn} onClick={() => handleNumpad(btn)} className={`w-full h-14 rounded-2xl text-2xl font-bold flex items-center justify-center transition-all border active:scale-95 touch-manipulation ${isDarkMode ? "bg-slate-800 border-slate-700 text-white active:bg-slate-700" : "bg-slate-100 border-slate-200 text-slate-900 active:bg-slate-200"}`}>{btn}</button>
+                          <button key={btn} onClick={() => handleNumpad(btn)} className={`w-full h-14 lg:h-10 rounded-2xl text-2xl font-bold flex items-center justify-center transition-all border active:scale-95 touch-manipulation ${isDarkMode ? "bg-slate-800 border-slate-700 text-white active:bg-slate-700" : "bg-slate-100 border-slate-200 text-slate-900 active:bg-slate-200"}`}>{btn}</button>
                         ))}
                       </div>
 
-                      {/* 2.0 STRIKE: AUTO-FORMATTING STEP 1 TO STEP 2 */}
-                      <button onClick={() => { triggerHaptic(20); setInputValue(parseFloat(inputValue).toFixed(2)); setQabStep(2); }} disabled={!isQabAmountValid} className={`w-full h-16 shrink-0 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${!isQabAmountValid ? "bg-slate-300 opacity-50 cursor-not-allowed shadow-none" : `active:scale-95 ${qabActiveBg} ${qabActiveShadow} hover:-translate-y-1`}`}>Next Step <ArrowRight size={18} /></button>
+                      <button onClick={() => { triggerHaptic(20); setInputValue(parseFloat(inputValue).toFixed(2)); setQabStep(2); }} disabled={!isQabAmountValid} className={`w-full h-16 lg:h-12 shrink-0 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${!isQabAmountValid ? "bg-slate-300 opacity-50 cursor-not-allowed shadow-none" : `active:scale-95 ${qabActiveBg} ${qabActiveShadow} hover:-translate-y-1`}`}>Next Step <ArrowRight size={18} /></button>
                     </div>
                   ) : (
-                    <div className="p-6 space-y-4">
-                      {/* QAB Step 2 Form */}
+                    <div className="p-6 lg:p-5 space-y-4 lg:space-y-2">
                       <div className="relative">
                          <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Name</label>
-                         <input type="text" value={entryName} onChange={(e) => setEntryName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                         <input type="text" value={entryName} onChange={(e) => setEntryName(e.target.value)} className={`w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                       </div>
                       
-                      {/* 2.0 STRIKE: EDITABLE AMOUNT FIELD WITH LOCKED $ */}
                       <div className="relative">
                          <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Amount</label>
                          <div className="relative w-full flex items-center">
-                           <span className={`absolute left-5 top-[22px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
+                           <span className={`absolute left-5 top-[22px] lg:top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
                            <input 
                              type="text" 
                              inputMode="decimal" 
@@ -1733,23 +1713,22 @@ export default function App() {
                              value={inputValue} 
                              onChange={(e) => setInputValue(e.target.value)} 
                              onBlur={() => { if(!isNaN(parseFloat(inputValue)) && inputValue !== "") setInputValue(parseFloat(inputValue).toFixed(2)) }}
-                             className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl border font-bold text-base transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} 
+                             className={`w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 pl-9 pr-5 rounded-2xl border font-bold text-base transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} 
                            />
                          </div>
                       </div>
                       
                       <div className="relative cursor-pointer" onClick={() => setIsIconSelectorOpen(true)}>
                          <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Icon</label>
-                         <div className={`w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
+                         <div className={`w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
                             <span className="text-xl leading-none">{entryIcon}</span>
                             <ArrowDown size={14} className={isDarkMode ? "text-slate-400" : "text-slate-500"} />
                          </div>
                       </div>
 
-                      {/* 2.0 STRIKE: SURGICAL SPLIT RECENT CATEGORIES RIBBON */}
                       {currentRecentCategories.length > 0 && (
                           <div className="mb-2 mt-2">
-                              <label className={`block text-[9px] font-bold uppercase tracking-widest mb-2 px-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Recent Categories</label>
+                              <label className={`block text-[9px] font-bold uppercase tracking-widest mb-1 px-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Recent Categories</label>
                               <div className="flex gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] pb-2">
                                   {currentRecentCategories.map(cat => (
                                       <button key={cat} onClick={() => setEntryCategory(cat)} className={`px-4 py-2 shrink-0 rounded-xl text-[10px] font-bold whitespace-nowrap border transition-colors ${entryCategory === cat ? `${qabActiveBg} text-white border-transparent shadow-md` : isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-700"}`}>
@@ -1762,7 +1741,7 @@ export default function App() {
                       
                       <div className="relative">
                          <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Category</label>
-                         <select value={entryCategory} onChange={(e) => setEntryCategory(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
+                         <select value={entryCategory} onChange={(e) => setEntryCategory(e.target.value)} className={`w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
                             <option value="" disabled>Select Category</option>
                             {categoriesToRender.map(group => ( <optgroup key={group.group} label={group.group} className={isDarkMode ? "bg-[#1E293B] text-white" : "bg-white text-slate-900"}> {group.items.map(item => <option key={item} value={item}>{item}</option>)} </optgroup> ))}
                          </select>
@@ -1770,17 +1749,16 @@ export default function App() {
                       
                       {drawerTab === "bills" && (
                          <>
-                            {/* 2.0 STRIKE: NATIVE CALENDAR OVERRIDE ENGINE */}
                             <div className="relative">
                                <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Due Date</label>
-                               <div className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
+                               <div className={`relative w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
                                  <span className={`font-bold text-base ${!entryDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{entryDate ? formatDisplayDate(entryDate) : "mm/dd/yyyy"}</span>
                                  <CalendarIcon size={18} className="text-[#1877F2] shrink-0" />
                                  <input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                                </div>
                             </div>
 
-                            <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+                            <div className="space-y-4 lg:space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                                <div className="flex items-center justify-between">
                                   <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Recurring Bill</span>
                                   <button onClick={() => { triggerHaptic(20); setEntryIsRecurring(!entryIsRecurring); }} className={`w-12 h-6 rounded-full transition-colors relative ${entryIsRecurring ? qabActiveBg : "bg-slate-300 dark:bg-slate-700"}`}>
@@ -1795,19 +1773,18 @@ export default function App() {
                                </div>
                                {entryIsInstallment && (
                                   <div className="grid grid-cols-2 gap-3 animate-fade-in mt-2">
-                                     {/* 2.0 STRIKE: LOCKED $ PREFIXES */}
                                      <div className="relative">
                                         <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Total Amount</label>
                                         <div className="relative w-full flex items-center">
-                                           <span className={`absolute left-4 top-[22px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
-                                           <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={entryTotalAmount} onChange={(e) => setEntryTotalAmount(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(entryTotalAmount)) && entryTotalAmount !== "") setEntryTotalAmount(parseFloat(entryTotalAmount).toFixed(2)) }} className={`w-full pt-6 pb-2 pl-7 pr-4 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                                           <span className={`absolute left-4 top-[22px] lg:top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
+                                           <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={entryTotalAmount} onChange={(e) => setEntryTotalAmount(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(entryTotalAmount)) && entryTotalAmount !== "") setEntryTotalAmount(parseFloat(entryTotalAmount).toFixed(2)) }} className={`w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 pl-7 pr-4 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                                         </div>
                                      </div>
                                      <div className="relative">
                                         <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Already Paid</label>
                                         <div className="relative w-full flex items-center">
-                                           <span className={`absolute left-4 top-[22px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
-                                           <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={entryPaidAmount} onChange={(e) => setEntryPaidAmount(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(entryPaidAmount)) && entryPaidAmount !== "") setEntryPaidAmount(parseFloat(entryPaidAmount).toFixed(2)) }} className={`w-full pt-6 pb-2 pl-7 pr-4 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                                           <span className={`absolute left-4 top-[22px] lg:top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
+                                           <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={entryPaidAmount} onChange={(e) => setEntryPaidAmount(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(entryPaidAmount)) && entryPaidAmount !== "") setEntryPaidAmount(parseFloat(entryPaidAmount).toFixed(2)) }} className={`w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 pl-7 pr-4 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                                         </div>
                                      </div>
                                   </div>
@@ -1819,25 +1796,23 @@ export default function App() {
                       {(drawerTab === "income" || drawerTab === "transactions") && (
                          <div className="relative">
                             <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account</label>
-                            <select value={entryAccount} onChange={(e) => setEntryAccount(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
+                            <select value={entryAccount} onChange={(e) => setEntryAccount(e.target.value)} className={`w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
                                <option value="" disabled>{drawerTab === "income" ? "Which account does this deposit go into?" : "Which account paid for this activity?"}</option>
                                {accounts.map((a) => (<option key={a.id} value={a.id} className={isDarkMode ? "bg-[#1E293B] text-white" : "bg-white text-slate-900"}>{a.name}</option>))}
                             </select>
                          </div>
                       )}
                       
-                      <button onClick={handleConfirmAction} disabled={!canSubmitQab} className={`w-full mt-4 h-16 shrink-0 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${!canSubmitQab ? "bg-slate-300 text-slate-500 cursor-not-allowed opacity-60 shadow-none" : `active:scale-95 ${qabActiveBg} ${qabActiveShadow} hover:-translate-y-1`}`}>Confirm & Save <CheckCircle2 size={18} /></button>
+                      <button onClick={handleConfirmAction} disabled={!canSubmitQab} className={`w-full mt-4 lg:mt-2 h-16 lg:h-12 shrink-0 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${!canSubmitQab ? "bg-slate-300 text-slate-500 cursor-not-allowed opacity-60 shadow-none" : `active:scale-95 ${qabActiveBg} ${qabActiveShadow} hover:-translate-y-1`}`}>Confirm & Save <CheckCircle2 size={18} /></button>
                     </div>
                   )}
                 </div>
                 
-                {/* QAB Overlay: CATEGORY */}
                 {isCategorySelectorOpen && (
                    <div className={`absolute inset-0 z-[140] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
                       <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
                          <h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Category</h3><button onClick={() => setIsCategorySelectorOpen(false)} className={closeButtonClass}><X size={18}/></button>
                       </div>
-                      {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL & MODAL CUTOFF FIX */}
                       <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] p-4 space-y-6 ${isDemoMode ? "pb-[140px] lg:pb-6" : "pb-20 lg:pb-6"}`}>
                          {categoriesToRender.map(group => (
                              <div key={group.group}>
@@ -1853,13 +1828,11 @@ export default function App() {
                    </div>
                 )}
                 
-                {/* QAB Overlay: ICON */}
                 {isIconSelectorOpen && !isEditingEntry && (
                    <div className={`absolute inset-0 z-[150] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
                       <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
                          <h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Icon</h3><button onClick={() => setIsIconSelectorOpen(false)} className={closeButtonClass}><X size={18}/></button>
                       </div>
-                      {/* 2.0 STRIKE: UNBREAKABLE SCROLLBAR REMOVAL & MODAL CUTOFF FIX */}
                       <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] p-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : "pb-20 lg:pb-6"}`}>
                          <div className="grid grid-cols-6 lg:grid-cols-8 gap-3">
                            {categoryEmojis.map(emoji => (

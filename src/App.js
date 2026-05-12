@@ -1275,36 +1275,40 @@ export default function App() {
                   ["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"]).map((pd) => (
                   <div key={pd} className={`p-4 rounded-2xl border ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-slate-50 border-slate-100"}`}>
                     <h4 className={`text-xs font-black uppercase tracking-widest mb-4 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>{pd}</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="relative">
-                        <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Pay Date</label>
-                        <div className={`relative w-full pt-6 pb-2 px-5 rounded-xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"}`}>
-                           <span className={`font-bold text-sm ${!editPaydayConfig?.[pd]?.date ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{editPaydayConfig?.[pd]?.date ? formatDisplayDate(editPaydayConfig?.[pd]?.date) : "mm/dd/yyyy"}</span>
-                           <CalendarIcon size={16} className="text-[#1877F2] shrink-0" />
-                           <input type="date" value={editPaydayConfig?.[pd]?.date || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), date: e.target.value}})} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                        </div>
+                    
+                    {/* 2.0 STRIKE: PAYDAY SETUP ALIGNMENT FIX */}
+                    <div className="grid grid-cols-2 gap-2 min-[360px]:gap-3">
+                      <div className={`relative w-full h-[54px] rounded-xl border flex flex-col justify-end pb-1.5 px-3 transition-colors ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"}`}>
+                         <label className={`absolute top-2 left-0 w-full text-center text-[8px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Pay Date</label>
+                         <div className="flex items-center justify-between w-full relative z-10">
+                            <span className={`font-bold text-sm text-left truncate flex-1 ${!editPaydayConfig?.[pd]?.date ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{editPaydayConfig?.[pd]?.date ? formatDisplayDate(editPaydayConfig?.[pd]?.date) : "mm/dd/yy"}</span>
+                            <CalendarIcon size={16} className="text-[#1877F2] shrink-0 ml-1" />
+                         </div>
+                         <input type="date" value={editPaydayConfig?.[pd]?.date || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), date: e.target.value}})} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" />
                       </div>
-                      <div className="relative">
-                        <label className={`block text-[9px] font-bold uppercase mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Income</label>
-                        <div className="relative w-full flex items-center">
-                          <span className={`absolute left-3.5 top-[13px] font-bold text-sm ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>$</span>
-                          <input 
-                            type="text" 
-                            inputMode="decimal" 
-                            pattern="[0-9.-]*" 
-                            placeholder="0.00" 
-                            value={editPaydayConfig?.[pd]?.income || ""} 
-                            onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), income: e.target.value}})} 
-                            onBlur={(e) => {
-                               if(e.target.value && !isNaN(parseFloat(e.target.value))) {
-                                  setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), income: parseFloat(e.target.value).toFixed(2)}});
-                               }
-                            }}
-                            className={`w-full p-3 pl-7 rounded-xl border ${isDarkMode ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500" : "bg-white border-slate-200 text-slate-900 placeholder-slate-400"}`} 
-                          />
+                      
+                      <div className="relative w-full h-[54px]">
+                        <label className={`absolute top-2 left-0 w-full text-center z-10 text-[8px] font-black uppercase tracking-widest pointer-events-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Income</label>
+                        <div className="absolute inset-0 flex items-end pb-1.5 px-3 pointer-events-none z-10">
+                          <span className={`font-bold text-sm mr-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>$</span>
                         </div>
+                        <input 
+                          type="text" 
+                          inputMode="decimal" 
+                          pattern="[0-9.-]*" 
+                          placeholder="0.00" 
+                          value={editPaydayConfig?.[pd]?.income || ""} 
+                          onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), income: e.target.value}})} 
+                          onBlur={(e) => {
+                             if(e.target.value && !isNaN(parseFloat(e.target.value))) {
+                                setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), income: parseFloat(e.target.value).toFixed(2)}});
+                             }
+                          }}
+                          className={`absolute inset-0 w-full h-full pt-4 pl-6 pr-3 rounded-xl border font-bold text-sm transition-colors ${isDarkMode ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500" : "bg-white border-slate-200 text-slate-900 placeholder-slate-400"}`} 
+                        />
                       </div>
                     </div>
+
                   </div>
                 ))}
                 </div>

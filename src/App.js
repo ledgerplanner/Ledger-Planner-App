@@ -585,18 +585,24 @@ export default function App() {
     setPaymentModalConfig({ isOpen: true, billId: id, accountId: accounts.find(a => a.type === "Checking" || a.type === "Cash")?.id || (accounts[0]?.id || ""), isPayInFull: false }); 
   };
 
+  // === UPGRADED: RETROACTIVE DELTA ENGINE ===
   const handleSaveEntryEdit = async () => {
     if (!selectedEntry) return;
     const colName = selectedEntry.fullDate !== undefined ? "bills" : "transactions";
+    const isTransaction = colName === "transactions";
     
+    const newAmount = parseFloat(editEntryData.amount) || 0;
+    const oldAmount = parseFloat(selectedEntry.amount) || 0;
+    const amountDelta = newAmount - oldAmount;
+
     const updatePayload = { 
       name: editEntryData.name || selectedEntry.name || "Unnamed", 
-      amount: parseFloat(editEntryData.amount) || 0, 
+      amount: newAmount, 
       category: editEntryData.category || selectedEntry.category || "Other", 
       icon: editEntryData.icon || selectedEntry.icon || "🧾" 
     };
     
-    if (selectedEntry.fullDate !== undefined) {
+    if (!isTransaction) {
         if (editEntryData.rawDate && editEntryData.rawDate !== selectedEntry.rawDate) {
             const dateObj = new Date(editEntryData.rawDate);
             updatePayload.rawDate = editEntryData.rawDate;
@@ -621,10 +627,26 @@ export default function App() {
     }
     
     if (isDemoMode) {
-      if (colName === "bills") { setBills(bills.map(b => b.id === selectedEntry.id ? { ...b, ...updatePayload } : b)); } 
-      else { setTransactions(transactions.map(t => t.id === selectedEntry.id ? { ...t, ...updatePayload } : t)); }
+      if (colName === "bills") { 
+        setBills(bills.map(b => b.id === selectedEntry.id ? { ...b, ...updatePayload } : b)); 
+      } else { 
+        setTransactions(transactions.map(t => t.id === selectedEntry.id ? { ...t, ...updatePayload } : t)); 
+        if (selectedEntry.accountId && amountDelta !== 0) {
+           const isIncome = selectedEntry.type === "Income";
+           const balanceChange = isIncome ? amountDelta : -amountDelta;
+           setAccounts(accounts.map(a => a.id === selectedEntry.accountId ? { ...a, balance: (a.balance || 0) + balanceChange } : a));
+        }
+      }
     } else {
       await updateDoc(doc(db, "users", user.uid, colName, selectedEntry.id), updatePayload);
+      if (isTransaction && selectedEntry.accountId && amountDelta !== 0) {
+         const targetAcc = accounts.find(a => a.id === selectedEntry.accountId);
+         if (targetAcc) {
+           const isIncome = selectedEntry.type === "Income";
+           const balanceChange = isIncome ? amountDelta : -amountDelta;
+           await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: (targetAcc.balance || 0) + balanceChange });
+         }
+      }
     }
     
     setSelectedEntry({ ...selectedEntry, ...updatePayload });
@@ -1058,6 +1080,19 @@ export default function App() {
       onContextMenu={(e) => e.preventDefault()} 
       className={`h-screen w-full font-sans relative flex transition-colors duration-500 select-none [-webkit-touch-callout:none] ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}
     >
+      {/* 2.0 STRIKE: DESKTOP WEBKIT CALENDAR OVERRIDE */}
+      <style>{`
+        input[type="date"]::-webkit-calendar-picker-indicator {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          opacity: 0;
+          cursor: pointer;
+        }
+      `}</style>
+      
       <div className={`w-full h-full relative flex flex-col lg:flex-row transition-colors duration-500 overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
         
         {/* DESKTOP SIDEBAR */}
@@ -1325,7 +1360,6 @@ export default function App() {
           </div>
         )}
 
-        {/* === 2.0 STRIKE: TRANSFER DRAWER SQUEEZE === */}
         {isTransferOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsTransferOpen(false)}></div>
@@ -1461,7 +1495,7 @@ export default function App() {
                   <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{isEditingEntry ? "Edit Entry" : "Entry Details"}</h3>
                 </div>
                 <div className="flex items-center gap-2">
-                  {!isEditingEntry && (<button onClick={() => { setIsEditingEntry(true); setEditEntryData({ name: selectedEntry.name, amount: (selectedEntry.amount || 0).toFixed(2), category: selectedEntry.category, icon: selectedEntry.icon, rawDate: selectedEntry.rawDate || "", isRecurring: selectedEntry.isRecurring || false, isInstallment: selectedEntry.isInstallment || false, totalAmount: (selectedEntry.totalAmount || 0).toFixed(2) || "", paidAmount: (selectedEntry.paidAmount || 0).toFixed(2) || "" }); }} className={closeButtonClass}><Edit2 size={16} /></button>)}
+                  {!isEditingEntry && (<button onClick={() => { setIsEditingEntry(true); setEditEntryData({ name: selectedEntry.name, amount: (selectedEntry.amount || 0).toFixed(2), category: selectedEntry.category, icon: selectedEntry.icon, rawDate: selectedEntry.rawDate || "", isRecurring: selectedEntry.isRecurring || false, isInstallment: selectedEntry.isInstallment || false, totalAmount: (selectedEntry.totalAmount || 0).toFixed(2) || "", paidAmount: (selectedEntry.paidAmount || 0).toFixed(2) || "", accountId: selectedEntry.accountId || "" }); }} className={closeButtonClass}><Edit2 size={16} /></button>)}
                   <button onClick={closeEntryDrawer} className={closeButtonClass}><X size={18} /></button>
                 </div>
               </div>
@@ -1558,6 +1592,7 @@ export default function App() {
                         </div>
                       </div>
                       <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Category</label><select value={editEntryData.category || ""} onChange={(e) => setEditEntryData({...editEntryData, category: e.target.value})} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>{modernCategories.map(group => ( <optgroup key={group.group} label={group.group} className={isDarkMode ? "bg-[#1E293B] text-white" : "bg-white text-slate-900"}> {group.items.map(item => <option key={item} value={item}>{item}</option>)} </optgroup> ))}</select></div>
+                      
                       {selectedEntry.fullDate !== undefined && (
                         <>
                           <div className="relative">
@@ -1603,19 +1638,16 @@ export default function App() {
                           </div>
                         </>
                       )}
-                      {(drawerTab === "income" || drawerTab === "transactions") && (
-                        <div className="relative">
-                          <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account</label>
-                          <select value={entryAccount} onChange={(e) => setEntryAccount(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
-                            <option value="" disabled>{drawerTab === "income" ? "Which account does this deposit go into?" : "Which account paid for this activity?"}</option>
-                            {accounts.map((a) => (<option key={a.id} value={a.id} className={isDarkMode ? "bg-[#1E293B] text-white" : "bg-white text-slate-900"}>{a.name}</option>))}
-                          </select>
-                        </div>
+                      
+                      {selectedEntry.fullDate === undefined && (
+                         <div className="relative">
+                            <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account</label>
+                            <select disabled value={editEntryData.accountId || ""} onChange={(e) => setEditEntryData({...editEntryData, accountId: e.target.value})} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors opacity-70 cursor-not-allowed ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
+                               <option value="" disabled>Which account paid for this activity?</option>
+                               {accounts.map((a) => (<option key={a.id} value={a.id} className={isDarkMode ? "bg-[#1E293B] text-white" : "bg-white text-slate-900"}>{a.name}</option>))}
+                            </select>
+                         </div>
                       )}
-                      <div className="relative cursor-pointer" onClick={() => setIsIconSelectorOpen(true)}>
-                        <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Icon</label>
-                        <div className={`w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}><span className="text-xl leading-none">{editEntryData.icon || "🧾"}</span><ArrowDown size={14} className={isDarkMode ? "text-slate-400" : "text-slate-500"} /></div>
-                      </div>
                     </div>
                     <button onClick={handleSaveEntryEdit} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><Save size={16} /> Save Changes</button>
                   </>
@@ -1672,7 +1704,6 @@ export default function App() {
                    <button onClick={closeQab} className={closeButtonClass}><X size={18} /></button>
                 </div>
                 
-                {/* 2.0 STRIKE: QAB MICRO-SQUEEZE APPLIED HERE */}
                 <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] flex flex-col ${isDemoMode ? "pb-[140px] lg:pb-0" : ""}`}>
                   {qabStep === 1 ? (
                     <div className="p-6 lg:p-5 flex flex-col h-full min-h-[300px] lg:min-h-[360px]">

@@ -1287,25 +1287,25 @@ export default function App() {
                          <input type="date" value={editPaydayConfig?.[pd]?.date || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), date: e.target.value}})} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" />
                       </div>
                       
-                      <div className="relative w-full h-[54px]">
+                      <div className={`relative w-full h-[54px] rounded-xl border flex flex-col justify-end pb-1.5 px-3 transition-colors focus-within:border-[#1877F2] ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"}`}>
                         <label className={`absolute top-2 left-0 w-full text-center z-10 text-[8px] font-black uppercase tracking-widest pointer-events-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Income</label>
-                        <div className="absolute inset-0 flex items-end pb-1.5 px-3 pointer-events-none z-10">
-                          <span className={`font-bold text-sm mr-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>$</span>
+                        <div className="flex items-center justify-center w-full relative z-10">
+                          <span className={`font-bold text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
+                          <input 
+                            type="text" 
+                            inputMode="decimal" 
+                            pattern="[0-9.-]*" 
+                            placeholder="0.00" 
+                            value={editPaydayConfig?.[pd]?.income || ""} 
+                            onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), income: e.target.value}})} 
+                            onBlur={(e) => {
+                               if(e.target.value && !isNaN(parseFloat(e.target.value))) {
+                                  setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), income: parseFloat(e.target.value).toFixed(2)}});
+                               }
+                            }}
+                            className={`bg-transparent outline-none font-bold text-sm w-[76px] ml-1 ${isDarkMode ? "text-white placeholder-slate-500" : "text-slate-900 placeholder-slate-400"}`} 
+                          />
                         </div>
-                        <input 
-                          type="text" 
-                          inputMode="decimal" 
-                          pattern="[0-9.-]*" 
-                          placeholder="0.00" 
-                          value={editPaydayConfig?.[pd]?.income || ""} 
-                          onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), income: e.target.value}})} 
-                          onBlur={(e) => {
-                             if(e.target.value && !isNaN(parseFloat(e.target.value))) {
-                                setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), income: parseFloat(e.target.value).toFixed(2)}});
-                             }
-                          }}
-                          className={`absolute inset-0 w-full h-full pt-4 pl-6 pr-3 rounded-xl border font-bold text-sm transition-colors ${isDarkMode ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500" : "bg-white border-slate-200 text-slate-900 placeholder-slate-400"}`} 
-                        />
                       </div>
                     </div>
 

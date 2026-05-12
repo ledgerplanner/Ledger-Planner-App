@@ -13,7 +13,6 @@ export default function Bills({
   collapsedPaydays,
   toggleCollapse
 }) {
-  // === SURGICAL OCTAGON SORTING ENGINE ===
   const sortBillsSurgically = (billList) => {
     return [...billList].sort((a, b) => {
       if (a.isOverdue && !b.isOverdue) return -1;
@@ -26,13 +25,11 @@ export default function Bills({
     });
   };
 
-  // === MACRO MATH ENGINE ===
   const totalBillsAmount = bills.reduce((sum, b) => sum + (b.amount || 0), 0);
   const paidBills = bills.filter((b) => b.isPaid).sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate));
   const paidBillsAmount = paidBills.reduce((sum, b) => sum + (b.amount || 0), 0);
   const progressPercentage = totalBillsAmount === 0 ? 0 : Math.max(0, Math.min((paidBillsAmount / totalBillsAmount) * 100, 100));
 
-  // === PAYDAY ACCORDION ENGINE ===
   const frequency = paydayConfig?.frequency || "Weekly";
   const paydaySlots = {
       "Weekly": ["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"],
@@ -57,7 +54,6 @@ export default function Bills({
     }
   });
 
-  // === GRAPHIC HEADER (HORIZONTAL REVERT + COLOR LOGIC) ===
   const graphicContent = (
     <div className="flex items-center justify-between relative z-10 mb-6 w-full">
       <div className="relative w-40 h-40 flex-shrink-0">
@@ -104,9 +100,6 @@ export default function Bills({
 
       <main className="px-6 space-y-8 mt-2">
         
-        {/* ========================================================= */}
-        {/* 🔥 UNPAID BILLS (ACCORDION & 3-LEVEL BENTO ARCHITECTURE) 🔥 */}
-        {/* ========================================================= */}
         <div className="space-y-4">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Unpaid Bills</h3>
           
@@ -121,7 +114,6 @@ export default function Bills({
               {paydaysToRender.map((payday) => {
                 const groupBills = billsByPayday[payday] || [];
                 
-                // Hide Due Now and Unscheduled if they are empty, but always show active paydays.
                 if (groupBills.length === 0 && (payday === "Due Now" || payday === "Unscheduled")) return null;
 
                 const isDueNow = payday === "Due Now";
@@ -165,7 +157,6 @@ export default function Bills({
                         ) : (
                           <div className="space-y-3">
                             {sortedBills.map((bill) => {
-                              // FIX 4: Decouple Strictly Overdue from Due Now
                               const isStrictlyOverdue = bill.isOverdue;
                               const isDueToday = bill.payday === "Due Now";
                               const isUrgent = isStrictlyOverdue || isDueToday;
@@ -223,14 +214,14 @@ export default function Bills({
                                      </div>
                                   </div>
 
-                                  {/* LEVEL 3: Installment Bar */}
+                                  {/* LEVEL 3: Installment Plan (2.0 STRIKE: TYPOGRAPHY BOOST) */}
                                   {bill.isInstallment && !bill.isPaid && (
                                     <div className="mt-5 pt-3 border-t border-slate-200 w-full animate-fade-in">
                                       <div className="flex justify-between items-end mb-2 px-1">
-                                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">
+                                        <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
                                           Installment Plan
                                         </span>
-                                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">
+                                        <span className="text-xs sm:text-sm font-black text-slate-600 dark:text-slate-300">
                                           ${(Number(bill.paidAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} / ${(Number(bill.totalAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </span>
                                       </div>
@@ -254,16 +245,10 @@ export default function Bills({
           )}
         </div>
 
-        {/* ========================================================= */}
-        {/* THE GREAT DIVIDE (SIGNATURE SEPARATOR - HARDCODED WHITE)  */}
-        {/* ========================================================= */}
         {paidBills.length > 0 && unpaidBills.length > 0 && (
           <div className="mx-2 mt-8 mb-2 border-t border-slate-200"></div>
         )}
 
-        {/* ========================================================= */}
-        {/* 🔥 PAID & SETTLED (UPGRADED TO 3-LEVEL BENTO ARCHITECTURE) 🔥 */}
-        {/* ========================================================= */}
         {paidBills.length > 0 && (
           <div className="space-y-4 mt-6">
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Paid & Settled</h3>
@@ -315,12 +300,12 @@ export default function Bills({
                        </div>
                     </div>
                     
-                    {/* LEVEL 3: Installment Plan */}
+                    {/* LEVEL 3: Installment Plan (2.0 STRIKE: TYPOGRAPHY BOOST) */}
                     {bill.isInstallment && (
                       <div className="mt-5 pt-3 border-t border-slate-200 w-full">
                         <div className="flex justify-between items-end mb-2 px-1">
-                          <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">Installment Plan</span>
-                          <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">
+                          <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Installment Plan</span>
+                          <span className="text-xs sm:text-sm font-black text-slate-600 dark:text-slate-300">
                             ${(Number(bill.paidAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} / ${(Number(bill.totalAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                           </span>
                         </div>

@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Circle, CheckCircle2, ChevronUp, ChevronDown, Settings2, List, AlertCircle, RefreshCw, Zap, Calendar as CalendarIcon, Edit2 } from "lucide-react";
-import { getToken } from "firebase/messaging";
-import { doc, setDoc } from "firebase/firestore";
-import { auth, db, messaging } from "../firebase";
 
 export default function Dashboard({
   userName = "Founder",
@@ -51,7 +48,6 @@ export default function Dashboard({
   if (currentHour >= 17 && currentHour < 22) { greetingStr = `Evening, ${userName}`; }
   if (currentHour >= 22 || currentHour < 5) { greetingStr = `Up late, ${userName}?`; }
 
-  // === STRICT LOCAL CALENDAR ENGINE ===
   const todayForMath = new Date();
   const currentMonthName = todayForMath.toLocaleString("en-US", { month: "long" });
   const currentMonthIdx = todayForMath.getMonth(); 
@@ -59,7 +55,6 @@ export default function Dashboard({
 
   const totalIncomeBalance = accounts.reduce((sum, a) => sum + (Number(a?.balance) || 0), 0);
   
-  // RESTORED: Pure global net for all unpaid bills across all months
   const unpaidBillsAmount = bills.filter((b) => !b?.isPaid).reduce((sum, b) => sum + (Number(b?.amount) || 0), 0);
   
   const safeToSpend = totalIncomeBalance < 0 
@@ -84,7 +79,6 @@ export default function Dashboard({
   
   const hzPaydays = ["Due Now", ...allowedPaydays];
 
-  // === WATERFALL ENGINE (CUMULATIVE MATH) ===
   let runningBalance = totalIncomeBalance;
   const hzBalances = {};
 
@@ -97,12 +91,10 @@ export default function Dashboard({
       return;
     }
 
-    // FIX: Only track unpaid bills. Paid bills have already left the real-world bank account.
     const unpaidTotal = groupBills.filter(b => !b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
 
     let income = 0;
     if (pd !== "Due Now") {
-      // FIX: Add the full expected income. Do not deduct paid bills from it.
       income = Number(pdSettings.income) || 0;
     }
 
@@ -150,7 +142,6 @@ export default function Dashboard({
     </div>
   );
 
-  // === LOCAL MONTH MATH ENGINE (BOTTOM COMPONENT) ===
   const currentMonthBillsTotal = bills.reduce((sum, bill) => {
     if (bill.isPaid) return sum;
 
@@ -188,7 +179,6 @@ export default function Dashboard({
             const groupBills = billsByPayday[pd] || [];
             if (pd !== "Due Now" && !pdSettings?.date) return null;
 
-            // FIX: Removed paid bills entirely from the horizontal card math.
             const unpaidBills = groupBills.filter(b => !b.isPaid);
             const unpaidCount = unpaidBills.length;
             const unpaidTotal = unpaidBills.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
@@ -325,9 +315,15 @@ export default function Dashboard({
                                </div>
                             </div>
 
+                            {/* 2.0 STRIKE: DASHBOARD INSTALLMENT TYPOGRAPHY BOOST */}
                             {bill?.isInstallment && (
                                 <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/50">
-                                    <div className="flex justify-between mb-1.5"><span className="text-[9px] font-bold uppercase text-slate-400">Installment Plan</span><span className="text-[9px] font-black text-slate-500">${(Number(bill?.paidAmount) || 0).toFixed(2)} / ${(Number(bill?.totalAmount) || 0).toFixed(2)}</span></div>
+                                    <div className="flex justify-between items-end mb-2">
+                                        <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Installment Plan</span>
+                                        <span className="text-xs sm:text-sm font-black text-slate-600 dark:text-slate-300">
+                                            ${(Number(bill?.paidAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} / ${(Number(bill?.totalAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        </span>
+                                    </div>
                                     <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-900" : "bg-slate-100"}`}>
                                         <div className="h-full bg-[#1877F2] transition-all duration-1000" style={{ width: `${Math.min(((Number(bill?.paidAmount) || 0) / (Number(bill?.totalAmount) || 1)) * 100, 100)}%` }}></div>
                                     </div>
@@ -344,7 +340,6 @@ export default function Dashboard({
           })}
         </div>
 
-        {/* === MONTHLY SUMMARY ANCHOR === */}
         <div className={`mt-6 py-4 px-5 rounded-[1.5rem] border shadow-sm flex flex-col items-center justify-center gap-2 ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
            <span className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Total Bills for {currentMonthName}</span>
            <div className={`px-3 py-1.5 rounded-[8px] border font-black text-lg tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"}`}>

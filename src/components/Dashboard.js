@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Circle, CheckCircle2, ChevronUp, ChevronDown, Settings2, List, AlertCircle, RefreshCw, Zap, Calendar as CalendarIcon, Edit2 } from "lucide-react";
+import { Circle, CheckCircle2, ChevronUp, ChevronDown, Settings2, List, AlertCircle, RefreshCw, Zap, Calendar as CalendarIcon, Edit2, Clock } from "lucide-react";
 
 export default function Dashboard({
   userName = "Founder",
@@ -21,14 +21,19 @@ export default function Dashboard({
   hasConsumedAMBriefing,
   setHasConsumedAMBriefing,
   hasConsumedPMBriefing,
-  setHasConsumedPMBriefing
+  setHasConsumedPMBriefing,
+  isEntrepreneurMode = false // Dynamic pivot prop for Variable Income
 }) {
   const [isPushEnabled, setIsPushEnabled] = useState(false);
+  const [displaySafeToSpend, setDisplaySafeToSpend] = useState(0);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
       setIsPushEnabled(Notification.permission === "granted");
     }
+    // Trigger Cascade Reveal
+    setTimeout(() => setIsLoaded(true), 50);
   }, []);
 
   const sortBillsSurgically = (billList) => {
@@ -55,13 +60,49 @@ export default function Dashboard({
 
   const totalIncomeBalance = accounts.reduce((sum, a) => sum + (Number(a?.balance) || 0), 0);
   
-  const unpaidBillsAmount = bills.filter((b) => !b?.isPaid).reduce((sum, b) => sum + (Number(b?.amount) || 0), 0);
+  // ⏳ TIME-BOXED MATH ENGINE (The "False Red" Fix)
+  // Strictly filter liabilities to the current active month + overdue items
+  const timeBoxedUnpaidBills = bills.filter((b) => {
+    if (b.isPaid) return false;
+    if (b.isOverdue || b.payday === "Due Now") return true;
+    
+    if (b.rawDate) {
+      const parts = b.rawDate.split("-");
+      if (parts.length === 3) {
+        const bMonth = parseInt(parts[1], 10) - 1;
+        const bYear = parseInt(parts[0], 10);
+        return bMonth === currentMonthIdx && bYear === currentYearIdx;
+      }
+    }
+    return false;
+  }).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
   
+  // 🛡️ THE "SAFE TO SPEND" ANCHOR
   const safeToSpend = totalIncomeBalance < 0 
-    ? -(Math.abs(unpaidBillsAmount) - Math.abs(totalIncomeBalance))
-    : totalIncomeBalance - unpaidBillsAmount;
+    ? -(Math.abs(timeBoxedUnpaidBills) - Math.abs(totalIncomeBalance))
+    : totalIncomeBalance - timeBoxedUnpaidBills;
 
-  const debtRatio = totalIncomeBalance > 0 ? Math.max(0, Math.min((unpaidBillsAmount / totalIncomeBalance) * 100, 100)) : (unpaidBillsAmount > 0 ? 100 : 0);
+  // 🎰 ODOMETER ROLL-UP ANIMATION
+  useEffect(() => {
+    let startTimestamp = null;
+    const duration = 800; // 0.8 seconds
+
+    const step = (timestamp) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      
+      // Easing function for fluid deceleration
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+      setDisplaySafeToSpend(easeOutQuart * safeToSpend);
+      
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      }
+    };
+    window.requestAnimationFrame(step);
+  }, [safeToSpend]);
+
+  const debtRatio = totalIncomeBalance > 0 ? Math.max(0, Math.min((timeBoxedUnpaidBills / totalIncomeBalance) * 100, 100)) : (timeBoxedUnpaidBills > 0 ? 100 : 0);
   
   const strokeDasharray = 251.2;
   const strokeDashoffset = strokeDasharray - (strokeDasharray * debtRatio) / 100;
@@ -102,11 +143,32 @@ export default function Dashboard({
     hzBalances[pd] = runningBalance;
   });
 
+  // ⏱️ NEXT PAYDAY COUNTDOWN CALCULATION
+  let daysUntilNextPayday = null;
+  let nextPaydayLabel = "";
+  
+  for (const pd of allowedPaydays) {
+    const pdDateStr = paydayConfig?.[pd]?.date;
+    if (pdDateStr) {
+      const pdDate = new Date(pdDateStr);
+      const diffTime = pdDate - todayForMath;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays >= 0) {
+        daysUntilNextPayday = diffDays;
+        nextPaydayLabel = pdDate.toLocaleDateString("en-US", { weekday: 'long' });
+        break;
+      }
+    }
+  }
+
+  // 🌊 BREATHING GRADIENT + 🛗 CASCADE REVEAL
   const graphicContent = (
-    <div className="flex items-center justify-between relative z-10 mb-6 w-full">
-      <div className="relative w-36 h-36 flex-shrink-0">
+    <div className={`flex items-center justify-between relative z-10 mb-6 w-full p-4 rounded-3xl transition-all duration-1000 ${isDarkMode ? "bg-gradient-to-br from-slate-900 via-[#0F172A] to-blue-900/10" : "bg-gradient-to-br from-blue-50/50 via-slate-50 to-emerald-50/30"} ${isLoaded ? "opacity-100" : "opacity-0 translate-y-4"}`}>
+      
+      <div className={`relative w-36 h-36 flex-shrink-0 transition-all duration-700 delay-100 transform ${isLoaded ? "scale-100 opacity-100" : "scale-90 opacity-0"}`}>
         <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "#334155" : "#F1F5F9"} strokeWidth="12" />
+          <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "#334155" : "#E2E8F0"} strokeWidth="12" />
           <circle cx="50" cy="50" r="40" fill="transparent" stroke={safeToSpend < 0 ? "#EF4444" : "#3B82F6"} strokeWidth="12" strokeLinecap="round" strokeDasharray={strokeDasharray} strokeDashoffset={strokeDashoffset} className="transition-all duration-1000 ease-out" />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -116,63 +178,49 @@ export default function Dashboard({
       </div>
       
       <div className="flex-1 pl-4 flex flex-col items-end">
-        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border mb-2 ${isDarkMode ? "bg-slate-800 text-slate-300 border-slate-700" : "bg-slate-50 border-slate-100 text-slate-500"}`}>
+        {/* Cascade Step 1: Label */}
+        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border mb-2 transition-all duration-700 delay-200 ${isLoaded ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4"} ${isDarkMode ? "bg-slate-800 text-slate-300 border-slate-700" : "bg-white border-slate-200 text-slate-500 shadow-sm"}`}>
           <div className={`w-1.5 h-1.5 rounded-full ${safeToSpend < 0 ? "bg-red-500" : "bg-emerald-500 animate-pulse"}`}></div>
-          <span className="text-[9px] font-black uppercase tracking-wider">{userName.toUpperCase()}'S BALANCE</span>
+          <span className="text-[9px] font-black uppercase tracking-wider">SAFE TO SPEND</span>
         </div>
-        <p className={`text-3xl min-[360px]:text-4xl font-black tracking-tighter mb-3 ${safeToSpend < 0 ? "text-red-500" : safeToSpend > 0 ? "text-[#10B981]" : (isDarkMode ? "text-white" : "text-slate-900")}`}>
-          {safeToSpend < 0 ? "-" : ""}${Math.abs(safeToSpend).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+        
+        {/* Cascade Step 2: Odometer Value */}
+        <p className={`text-3xl min-[360px]:text-4xl font-black tracking-tighter mb-2 transition-all duration-700 delay-300 ${isLoaded ? "opacity-100" : "opacity-0"} ${safeToSpend < 0 ? "text-red-500" : safeToSpend > 0 ? "text-[#10B981]" : (isDarkMode ? "text-white" : "text-slate-900")}`}>
+          {safeToSpend < 0 ? "-" : ""}${Math.abs(displaySafeToSpend).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </p>
         
-        <div className="flex flex-col items-end gap-1.5 w-full">
-           <div className="flex justify-between items-center w-full max-w-[160px]">
-              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Total Income</span>
-              <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${totalIncomeBalance < 0 ? (isDarkMode ? "bg-red-900/30 text-red-400 border-red-900/50" : "bg-red-50 text-red-600 border-red-100") : (isDarkMode ? "bg-emerald-900/30 text-emerald-400 border-emerald-900/50" : "bg-emerald-50 text-emerald-600 border-emerald-100")}`}>
-                {totalIncomeBalance < 0 ? "-" : ""}${Math.abs(totalIncomeBalance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-              </span>
-           </div>
-           <div className="flex justify-between items-center w-full max-w-[160px]">
-              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Unpaid Bills</span>
-              <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${isDarkMode ? "bg-blue-900/30 text-[#1877F2] border-blue-900/50" : "bg-blue-50 text-[#1877F2] border-blue-100"}`}>
-                ${unpaidBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-              </span>
-           </div>
-        </div>
+        {/* Cascade Step 3: Next Payday Lifeline */}
+        {daysUntilNextPayday !== null && (
+          <div className={`flex items-center gap-1 mt-1 transition-all duration-700 delay-500 ${isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
+            <Clock size={12} className={isDarkMode ? "text-slate-500" : "text-slate-400"} />
+            <span className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+              {isEntrepreneurMode ? "Next Revenue:" : "Next Payday:"} {nextPaydayLabel} <span className="text-[#1877F2]">({daysUntilNextPayday === 0 ? "Today" : `${daysUntilNextPayday} Days`})</span>
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
-
-  const currentMonthBillsTotal = bills.reduce((sum, bill) => {
-    if (bill.isPaid) return sum;
-
-    let include = false;
-    if (bill.rawDate) {
-      const parts = bill.rawDate.split("-");
-      if (parts.length === 3) {
-        const bMonth = parseInt(parts[1], 10) - 1;
-        const bYear = parseInt(parts[0], 10);
-        if (bMonth === currentMonthIdx && bYear === currentYearIdx) {
-          include = true;
-        }
-      }
-    }
-    if (bill.isOverdue) {
-      include = true;
-    }
-    return include ? sum + (Number(bill.amount) || 0) : sum;
-  }, 0);
 
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
       {renderHeroShell(greetingStr, graphicContent)}
 
       <div className="flex justify-center px-6 mb-5 -mt-2">
+         {/* DYNAMIC PIVOT: Variable Income / Entrepreneur Mode Button Text */}
          <button onClick={() => setIsPaydaySetupOpen(true)} className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border shadow-sm transition-all active:scale-95 ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#1877F2]" : "bg-white border-slate-200 text-[#1877F2]"}`}>
-            <Settings2 size={18} strokeWidth={2.5} /> Set Your Pay Dates & Amounts
+            <Settings2 size={18} strokeWidth={2.5} /> 
+            {isEntrepreneurMode ? "Set Monthly Revenue Target" : "Set Your Pay Dates & Amounts"}
          </button>
       </div>
 
       <div className="w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-6">
+        {/* DYNAMIC HEADER: Pay Schedule */}
+        <div className="flex items-center gap-2 mb-3 pl-2">
+            <CalendarIcon size={14} className="text-[#1877F2]" />
+            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">{currentMonthName}'s {isEntrepreneurMode ? "Checkpoints" : "Pay Schedule"}</h3>
+        </div>
+
         <div className="flex gap-4 pr-6 pb-2 min-h-[170px]">
           {hzPaydays.map((pd) => {
             const pdSettings = paydayConfig?.[pd] || {};
@@ -191,12 +239,15 @@ export default function Dashboard({
             const waterfallBalance = hzBalances[pd];
             const isDeficit = waterfallBalance < 0;
             const subLabelStr = pd === "Due Now" ? "AVAILABLE NOW" : "AVAILABLE THIS WEEK";
+            
+            // DYNAMIC PIVOT: Rename Payday 1 to Week 1 for Entrepreneurs
+            const pdDisplayLabel = isEntrepreneurMode ? pd.replace("Payday", "Week") : pd;
 
             return (
               <div key={`hz-${pd}`} onClick={() => { if(collapsedPaydays[pd]) toggleCollapse(pd); document.getElementById(`vert-${pd}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} className={`shrink-0 w-52 p-5 rounded-[1.75rem] border cursor-pointer active:scale-95 transition-all shadow-md flex flex-col justify-between h-40 ${pd === "Due Now" ? (isDarkMode ? "bg-red-900/10 border-red-900/40" : "bg-red-50 border-red-100") : (isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100")}`}>
                 
                 <div className="flex justify-between items-center w-full">
-                  <h4 className={`text-[10px] font-black uppercase tracking-widest ${pd === "Due Now" ? "text-red-500" : "text-slate-400"}`}>{pd}</h4>
+                  <h4 className={`text-[10px] font-black uppercase tracking-widest ${pd === "Due Now" ? "text-red-500" : "text-slate-400"}`}>{pdDisplayLabel}</h4>
                   <span className={`text-[9px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>{expectedDateStr}</span>
                 </div>
 
@@ -212,7 +263,7 @@ export default function Dashboard({
                     <div className="flex flex-col flex-1"></div> 
                   ) : (
                     <div className="flex flex-col flex-1">
-                      <span className="text-[7px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Expected Pay</span>
+                      <span className="text-[7px] font-black uppercase text-slate-400 tracking-widest mb-0.5">{isEntrepreneurMode ? "Target Rev" : "Expected Pay"}</span>
                       <span className={`text-[10px] font-black ${isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>+${totalExpectedIncome.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
                     </div>
                   )}
@@ -228,7 +279,7 @@ export default function Dashboard({
         </div>
       </div>
 
-      <div className="mx-6 mb-6 border-t border-slate-200"></div>
+      <div className="mx-6 mb-6 border-t border-slate-200 dark:border-slate-800"></div>
 
       <main className="px-6 space-y-4">
         <div className="space-y-4">
@@ -245,13 +296,15 @@ export default function Dashboard({
             const checkTotal = activeGroupBills.reduce((sum, b) => sum + (Number(b?.amount) || 0), 0);
             const expectedDateStr = isDueNow ? "Currently Due" : formatPaydayDateStr(pdSettings.date);
             const sortedBills = sortBillsSurgically(activeGroupBills);
+            
+            const listDisplayLabel = isEntrepreneurMode && !isDueNow ? payday.replace("Payday", "Week") : payday;
 
             return (
               <div key={payday} id={`vert-${payday}`} className="space-y-2 scroll-mt-24">
                 <div className="flex flex-col px-3 py-3 cursor-pointer" onClick={() => toggleCollapse(payday)}>
                   <div className="flex items-center justify-between w-full mb-1">
                      <div className="flex items-center gap-2">
-                       <h3 className={`text-sm font-black uppercase tracking-widest ${isDueNow ? "text-red-500" : isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{payday}</h3>
+                       <h3 className={`text-sm font-black uppercase tracking-widest ${isDueNow ? "text-red-500" : isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{listDisplayLabel}</h3>
                        <div className="text-slate-400">{isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}</div>
                      </div>
                      <span className={`text-sm font-black ${isDueNow ? "text-red-500" : "text-[#1877F2]"}`}>${checkTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
@@ -315,7 +368,7 @@ export default function Dashboard({
                                </div>
                             </div>
 
-                            {/* 2.0 STRIKE: DASHBOARD INSTALLMENT TYPOGRAPHY BOOST */}
+                            {/* INSTALLMENT TYPOGRAPHY BOOST */}
                             {bill?.isInstallment && (
                                 <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/50">
                                     <div className="flex justify-between items-end mb-2">
@@ -340,14 +393,7 @@ export default function Dashboard({
           })}
         </div>
 
-        <div className={`mt-6 py-4 px-5 rounded-[1.5rem] border shadow-sm flex flex-col items-center justify-center gap-2 ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
-           <span className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Total Bills for {currentMonthName}</span>
-           <div className={`px-3 py-1.5 rounded-[8px] border font-black text-lg tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"}`}>
-              ${currentMonthBillsTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-           </div>
-        </div>
-
-        <div className="space-y-4 pt-4 border-t border-slate-200 mt-8">
+        <div className="space-y-4 pt-4 border-t border-slate-200 mt-8 dark:border-slate-800">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Recent Activity</h3>
           <div className={`rounded-[2rem] p-4 border ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
             {transactions.length === 0 ? ( <p className="text-center py-8 font-bold text-slate-400">No activity yet.</p> ) : (

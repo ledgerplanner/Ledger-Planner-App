@@ -31,12 +31,10 @@ export default function Dashboard({
     }
   }, []);
 
-  // ⏱️ FIX: THE TIMEZONE TRAP (Surgical Local Date Parsing)
   const parseLocalDate = (dateStr) => {
     if (!dateStr) return 0;
     const parts = dateStr.split("-");
     if (parts.length === 3) {
-      // Month is 0-indexed in JS, explicitly force local time math
       return new Date(parts[0], parseInt(parts[1], 10) - 1, parts[2]).getTime();
     }
     return new Date(dateStr).getTime();
@@ -111,7 +109,6 @@ export default function Dashboard({
     hzBalances[pd] = runningBalance;
   });
 
-  // ⏱️ CALCULATE V2 HERO NEXT PAYDAY (Timezone Safe)
   const todayParts = [todayForMath.getFullYear(), todayForMath.getMonth(), todayForMath.getDate()];
   const todayMidnightMillis = new Date(todayParts[0], todayParts[1], todayParts[2]).getTime();
   
@@ -134,39 +131,40 @@ export default function Dashboard({
 
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-6 w-full">
-      {/* 🏷️ FIX: DYNAMIC SNAPSHOT LABEL */}
       <div className="w-full flex justify-center mb-5">
         <span className={`text-[10px] font-black uppercase tracking-widest opacity-80 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
           {currentMonthName}'s Monthly Snapshot
         </span>
       </div>
 
-      {/* 👑 FIX: V2 HERO RESTORED & OPTIMIZED */}
-      <div className={`p-6 rounded-[2rem] border shadow-xl flex items-center justify-between w-full ${isDarkMode ? "bg-slate-800/90 border-slate-700" : "bg-[#0F172A] border-slate-800 text-white"}`}>
+      {/* 👑 TRUE GLASSMORPHISM HERO */}
+      <div className={`p-6 rounded-[2rem] border shadow-[0_8px_30px_rgba(0,0,0,0.06)] flex items-center justify-between w-full transition-all duration-500 ${isDarkMode ? "bg-slate-800/40 backdrop-blur-xl border-slate-700/50" : "bg-white/40 backdrop-blur-xl border-white/60"}`}>
+        
         <div className="relative w-28 h-28 flex-shrink-0">
           <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "#334155" : "#334155"} strokeWidth="12" />
+            <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "rgba(51, 65, 85, 0.5)" : "rgba(255, 255, 255, 0.6)"} strokeWidth="12" />
             <circle cx="50" cy="50" r="40" fill="transparent" stroke={safeToSpend < 0 ? "#EF4444" : "#3B82F6"} strokeWidth="12" strokeLinecap="round" strokeDasharray={strokeDasharray} strokeDashoffset={strokeDashoffset} className="transition-all duration-1000 ease-out" />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">Debt Load</span>
+            <span className={`text-[8px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Debt Load</span>
             <span className={`text-xl font-black ${safeToSpend < 0 ? "text-red-500" : "text-[#1877F2]"}`}>{Math.round(debtRatio)}%</span>
           </div>
         </div>
         
-        {/* 📱 FIX: FOLD SCREEN SQUASH (min-w-0 added to parent, whitespace-nowrap applied strategically) */}
-        <div className="flex-1 pl-4 flex flex-col items-end min-w-0">
-          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border mb-2 whitespace-nowrap bg-slate-800/80 border-slate-700 text-slate-300`}>
+        {/* 📱 FLUID TYPOGRAPHY (NO ELLIPSES) */}
+        <div className="flex-1 pl-4 flex flex-col items-end">
+          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border mb-2 shadow-sm ${isDarkMode ? "bg-slate-800/80 border-slate-700 text-slate-300" : "bg-white/80 border-white text-slate-600"}`}>
             <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${safeToSpend < 0 ? "bg-red-500" : "bg-emerald-500 animate-pulse"}`}></div>
-            <span className="text-[9px] font-black uppercase tracking-wider truncate">SAFE TO SPEND</span>
+            <span className="text-[9px] font-black uppercase tracking-wider">SAFE TO SPEND</span>
           </div>
-          <p className={`text-3xl min-[360px]:text-4xl font-black tracking-tighter mb-3 truncate w-full text-right ${safeToSpend < 0 ? "text-red-500" : "text-[#10B981]"}`}>
+          
+          <p className={`text-2xl min-[360px]:text-3xl min-[400px]:text-4xl font-black tracking-tighter mb-3 w-full text-right break-words leading-none ${safeToSpend < 0 ? "text-red-500" : "text-[#10B981]"}`}>
             {safeToSpend < 0 ? "-" : ""}${Math.abs(safeToSpend).toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </p>
           
           {nextPaydayDayName && (
-            <div className="flex flex-col items-end gap-1 w-full min-w-0">
-               <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap truncate w-full text-right">
+            <div className="flex flex-col items-end gap-1 w-full mt-1">
+               <span className={`text-[9px] font-black uppercase tracking-widest text-right leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
                  NEXT PAYDAY: {nextPaydayDayName} <span className="text-[#1877F2]">({daysUntilNext} {daysUntilNext === 1 ? "DAY" : "DAYS"})</span>
                </span>
             </div>
@@ -194,15 +192,14 @@ export default function Dashboard({
   }, 0);
 
   return (
-    // 🎨 FIX: VISUAL DEPTH (Master Background Layer with subtle gradient)
+    // 🎨 MASTER GRADIENT LAYER
     <div className={`animate-fade-in pb-32 transition-colors duration-500 min-h-screen relative overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-gradient-to-b from-slate-50 via-[#F8FAFC] to-blue-50/40"}`}>
       
-      {/* 🎨 FIX: THE GLOW ORB (Ambient light injection) */}
+      {/* 🎨 VOLUMETRIC GLOW ORB */}
       {!isDarkMode && (
-        <div className="absolute top-0 right-0 w-96 h-96 bg-[#1877F2]/15 blur-3xl rounded-full pointer-events-none -translate-y-1/2 translate-x-1/4"></div>
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#1877F2]/10 blur-[80px] rounded-full pointer-events-none -translate-y-1/3 translate-x-1/4"></div>
       )}
 
-      {/* KEEPING HERO SHELL WRAPPER INTACT */}
       <div className="relative z-10">
         {renderHeroShell(greetingStr, graphicContent)}
       </div>
@@ -273,7 +270,6 @@ export default function Dashboard({
 
       <main className="px-6 space-y-4 relative z-10">
         
-        {/* 📏 FIX: TYPOGRAPHY & PLACEMENT UNIFORMITY */}
         <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2 mb-4">
           {currentMonthName}'s Pay Schedule
         </h3>
@@ -386,7 +382,6 @@ export default function Dashboard({
           })}
         </div>
 
-        {/* 🗂️ FIX: THE COMPONENT RESTORE (Total Bills Summary Card) */}
         <div className={`mt-6 py-4 px-5 rounded-[1.5rem] border flex flex-col items-center justify-center gap-2 transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-800 shadow-sm" : "bg-white/80 backdrop-blur-md border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]"}`}>
            <span className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Total Bills for {currentMonthName}</span>
            <div className={`px-3 py-1.5 rounded-[8px] border font-black text-lg tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"}`}>

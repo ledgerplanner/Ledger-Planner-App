@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Circle, CheckCircle2, ChevronUp, ChevronDown, Settings2, List, AlertCircle, RefreshCw, Zap, Calendar as CalendarIcon, Edit2, Clock } from "lucide-react";
+import { Circle, CheckCircle2, ChevronUp, ChevronDown, Settings2, List, AlertCircle, RefreshCw, Zap, Calendar as CalendarIcon, Edit2 } from "lucide-react";
 
 export default function Dashboard({
   userName = "Founder",
@@ -21,20 +21,26 @@ export default function Dashboard({
   hasConsumedAMBriefing,
   setHasConsumedAMBriefing,
   hasConsumedPMBriefing,
-  setHasConsumedPMBriefing,
-  isEntrepreneurMode = false // Dynamic pivot prop for Variable Income
+  setHasConsumedPMBriefing
 }) {
   const [isPushEnabled, setIsPushEnabled] = useState(false);
-  const [displaySafeToSpend, setDisplaySafeToSpend] = useState(0);
-  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
       setIsPushEnabled(Notification.permission === "granted");
     }
-    // Trigger Cascade Reveal
-    setTimeout(() => setIsLoaded(true), 50);
   }, []);
+
+  // FIX 2: THE TIMEZONE TRAP (Surgical Local Date Parsing)
+  const parseLocalDate = (dateStr) => {
+    if (!dateStr) return 0;
+    const parts = dateStr.split("-");
+    if (parts.length === 3) {
+      // Month is 0-indexed in JS, explicitly force local time math
+      return new Date(parts[0], parseInt(parts[1], 10) - 1, parts[2]).getTime();
+    }
+    return new Date(dateStr).getTime();
+  };
 
   const sortBillsSurgically = (billList) => {
     return [...billList].sort((a, b) => {
@@ -42,7 +48,7 @@ export default function Dashboard({
       if (!a.isOverdue && b.isOverdue) return 1;
       if (a.payday === "Due Now" && b.payday !== "Due Now") return -1;
       if (a.payday !== "Due Now" && b.payday === "Due Now") return 1;
-      return new Date(a.rawDate || 0) - new Date(b.rawDate || 0);
+      return parseLocalDate(a.rawDate) - parseLocalDate(b.rawDate);
     });
   };
 
@@ -60,49 +66,13 @@ export default function Dashboard({
 
   const totalIncomeBalance = accounts.reduce((sum, a) => sum + (Number(a?.balance) || 0), 0);
   
-  // ⏳ TIME-BOXED MATH ENGINE (The "False Red" Fix)
-  // Strictly filter liabilities to the current active month + overdue items
-  const timeBoxedUnpaidBills = bills.filter((b) => {
-    if (b.isPaid) return false;
-    if (b.isOverdue || b.payday === "Due Now") return true;
-    
-    if (b.rawDate) {
-      const parts = b.rawDate.split("-");
-      if (parts.length === 3) {
-        const bMonth = parseInt(parts[1], 10) - 1;
-        const bYear = parseInt(parts[0], 10);
-        return bMonth === currentMonthIdx && bYear === currentYearIdx;
-      }
-    }
-    return false;
-  }).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+  const unpaidBillsAmount = bills.filter((b) => !b?.isPaid).reduce((sum, b) => sum + (Number(b?.amount) || 0), 0);
   
-  // 🛡️ THE "SAFE TO SPEND" ANCHOR
   const safeToSpend = totalIncomeBalance < 0 
-    ? -(Math.abs(timeBoxedUnpaidBills) - Math.abs(totalIncomeBalance))
-    : totalIncomeBalance - timeBoxedUnpaidBills;
+    ? -(Math.abs(unpaidBillsAmount) - Math.abs(totalIncomeBalance))
+    : totalIncomeBalance - unpaidBillsAmount;
 
-  // 🎰 ODOMETER ROLL-UP ANIMATION
-  useEffect(() => {
-    let startTimestamp = null;
-    const duration = 800; // 0.8 seconds
-
-    const step = (timestamp) => {
-      if (!startTimestamp) startTimestamp = timestamp;
-      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-      
-      // Easing function for fluid deceleration
-      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-      setDisplaySafeToSpend(easeOutQuart * safeToSpend);
-      
-      if (progress < 1) {
-        window.requestAnimationFrame(step);
-      }
-    };
-    window.requestAnimationFrame(step);
-  }, [safeToSpend]);
-
-  const debtRatio = totalIncomeBalance > 0 ? Math.max(0, Math.min((timeBoxedUnpaidBills / totalIncomeBalance) * 100, 100)) : (timeBoxedUnpaidBills > 0 ? 100 : 0);
+  const debtRatio = totalIncomeBalance > 0 ? Math.max(0, Math.min((unpaidBillsAmount / totalIncomeBalance) * 100, 100)) : (unpaidBillsAmount > 0 ? 100 : 0);
   
   const strokeDasharray = 251.2;
   const strokeDashoffset = strokeDasharray - (strokeDasharray * debtRatio) / 100;
@@ -143,84 +113,97 @@ export default function Dashboard({
     hzBalances[pd] = runningBalance;
   });
 
-  // ⏱️ NEXT PAYDAY COUNTDOWN CALCULATION
-  let daysUntilNextPayday = null;
-  let nextPaydayLabel = "";
-  
-  for (const pd of allowedPaydays) {
-    const pdDateStr = paydayConfig?.[pd]?.date;
-    if (pdDateStr) {
-      const pdDate = new Date(pdDateStr);
-      const diffTime = pdDate - todayForMath;
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      if (diffDays >= 0) {
-        daysUntilNextPayday = diffDays;
-        nextPaydayLabel = pdDate.toLocaleDateString("en-US", { weekday: 'long' });
-        break;
-      }
-    }
-  }
-
-  // 🌊 BREATHING GRADIENT + 🛗 CASCADE REVEAL
   const graphicContent = (
-    <div className={`flex items-center justify-between relative z-10 mb-6 w-full p-4 rounded-3xl transition-all duration-1000 ${isDarkMode ? "bg-gradient-to-br from-slate-900 via-[#0F172A] to-blue-900/10" : "bg-gradient-to-br from-blue-50/50 via-slate-50 to-emerald-50/30"} ${isLoaded ? "opacity-100" : "opacity-0 translate-y-4"}`}>
-      
-      <div className={`relative w-36 h-36 flex-shrink-0 transition-all duration-700 delay-100 transform ${isLoaded ? "scale-100 opacity-100" : "scale-90 opacity-0"}`}>
-        <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "#334155" : "#E2E8F0"} strokeWidth="12" />
-          <circle cx="50" cy="50" r="40" fill="transparent" stroke={safeToSpend < 0 ? "#EF4444" : "#3B82F6"} strokeWidth="12" strokeLinecap="round" strokeDasharray={strokeDasharray} strokeDashoffset={strokeDashoffset} className="transition-all duration-1000 ease-out" />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Debt Load</span>
-          <span className={`text-2xl font-black ${safeToSpend < 0 ? "text-red-500" : "text-[#1877F2]"}`}>{Math.round(debtRatio)}%</span>
-        </div>
+    <div className="flex flex-col relative z-10 mb-6 w-full">
+      {/* FIX 6: THE SNAPSHOT LABEL */}
+      <div className="w-full flex justify-center mb-5">
+        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 opacity-80">
+          {currentMonthName}'s Monthly Snapshot
+        </span>
       </div>
-      
-      <div className="flex-1 pl-4 flex flex-col items-end">
-        {/* Cascade Step 1: Label */}
-        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border mb-2 transition-all duration-700 delay-200 ${isLoaded ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4"} ${isDarkMode ? "bg-slate-800 text-slate-300 border-slate-700" : "bg-white border-slate-200 text-slate-500 shadow-sm"}`}>
-          <div className={`w-1.5 h-1.5 rounded-full ${safeToSpend < 0 ? "bg-red-500" : "bg-emerald-500 animate-pulse"}`}></div>
-          <span className="text-[9px] font-black uppercase tracking-wider">SAFE TO SPEND</span>
+
+      <div className="flex items-center justify-between w-full">
+        <div className="relative w-36 h-36 flex-shrink-0">
+          <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "#334155" : "#F1F5F9"} strokeWidth="12" />
+            <circle cx="50" cy="50" r="40" fill="transparent" stroke={safeToSpend < 0 ? "#EF4444" : "#3B82F6"} strokeWidth="12" strokeLinecap="round" strokeDasharray={strokeDasharray} strokeDashoffset={strokeDashoffset} className="transition-all duration-1000 ease-out" />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Debt Load</span>
+            <span className={`text-2xl font-black ${safeToSpend < 0 ? "text-red-500" : "text-[#1877F2]"}`}>{Math.round(debtRatio)}%</span>
+          </div>
         </div>
         
-        {/* Cascade Step 2: Odometer Value */}
-        <p className={`text-3xl min-[360px]:text-4xl font-black tracking-tighter mb-2 transition-all duration-700 delay-300 ${isLoaded ? "opacity-100" : "opacity-0"} ${safeToSpend < 0 ? "text-red-500" : safeToSpend > 0 ? "text-[#10B981]" : (isDarkMode ? "text-white" : "text-slate-900")}`}>
-          {safeToSpend < 0 ? "-" : ""}${Math.abs(displaySafeToSpend).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-        </p>
-        
-        {/* Cascade Step 3: Next Payday Lifeline */}
-        {daysUntilNextPayday !== null && (
-          <div className={`flex items-center gap-1 mt-1 transition-all duration-700 delay-500 ${isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
-            <Clock size={12} className={isDarkMode ? "text-slate-500" : "text-slate-400"} />
-            <span className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-              {isEntrepreneurMode ? "Next Revenue:" : "Next Payday:"} {nextPaydayLabel} <span className="text-[#1877F2]">({daysUntilNextPayday === 0 ? "Today" : `${daysUntilNextPayday} Days`})</span>
-            </span>
+        {/* FIX 1: FOLD SCREEN SQUASH (min-w-0 added to parent, whitespace-nowrap applied strategically) */}
+        <div className="flex-1 pl-4 flex flex-col items-end min-w-0">
+          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border mb-2 whitespace-nowrap ${isDarkMode ? "bg-slate-800 text-slate-300 border-slate-700" : "bg-white border-white/60 shadow-sm text-slate-500"}`}>
+            <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${safeToSpend < 0 ? "bg-red-500" : "bg-emerald-500 animate-pulse"}`}></div>
+            <span className="text-[9px] font-black uppercase tracking-wider truncate">{userName.toUpperCase()}'S BALANCE</span>
           </div>
-        )}
+          <p className={`text-3xl min-[360px]:text-4xl font-black tracking-tighter mb-3 truncate w-full text-right ${safeToSpend < 0 ? "text-red-500" : safeToSpend > 0 ? "text-[#10B981]" : (isDarkMode ? "text-white" : "text-slate-900")}`}>
+            {safeToSpend < 0 ? "-" : ""}${Math.abs(safeToSpend).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+          </p>
+          
+          <div className="flex flex-col items-end gap-1.5 w-full">
+             <div className="flex justify-between items-center w-full max-w-[160px] whitespace-nowrap">
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 truncate pr-2">Total Income</span>
+                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border shrink-0 ${totalIncomeBalance < 0 ? (isDarkMode ? "bg-red-900/30 text-red-400 border-red-900/50" : "bg-red-50 text-red-600 border-red-100") : (isDarkMode ? "bg-emerald-900/30 text-emerald-400 border-emerald-900/50" : "bg-emerald-50 text-emerald-600 border-emerald-100")}`}>
+                  {totalIncomeBalance < 0 ? "-" : ""}${Math.abs(totalIncomeBalance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                </span>
+             </div>
+             <div className="flex justify-between items-center w-full max-w-[160px] whitespace-nowrap">
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 truncate pr-2">Unpaid Bills</span>
+                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border shrink-0 ${isDarkMode ? "bg-blue-900/30 text-[#1877F2] border-blue-900/50" : "bg-blue-50 text-[#1877F2] border-blue-100"}`}>
+                  ${unpaidBillsAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                </span>
+             </div>
+          </div>
+        </div>
       </div>
     </div>
   );
 
-  return (
-    <div className={`animate-fade-in pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
-      {renderHeroShell(greetingStr, graphicContent)}
+  const currentMonthBillsTotal = bills.reduce((sum, bill) => {
+    if (bill.isPaid) return sum;
 
-      <div className="flex justify-center px-6 mb-5 -mt-2">
-         {/* DYNAMIC PIVOT: Variable Income / Entrepreneur Mode Button Text */}
-         <button onClick={() => setIsPaydaySetupOpen(true)} className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border shadow-sm transition-all active:scale-95 ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#1877F2]" : "bg-white border-slate-200 text-[#1877F2]"}`}>
-            <Settings2 size={18} strokeWidth={2.5} /> 
-            {isEntrepreneurMode ? "Set Monthly Revenue Target" : "Set Your Pay Dates & Amounts"}
+    let include = false;
+    if (bill.rawDate) {
+      const parts = bill.rawDate.split("-");
+      if (parts.length === 3) {
+        const bMonth = parseInt(parts[1], 10) - 1;
+        const bYear = parseInt(parts[0], 10);
+        if (bMonth === currentMonthIdx && bYear === currentYearIdx) {
+          include = true;
+        }
+      }
+    }
+    if (bill.isOverdue) {
+      include = true;
+    }
+    return include ? sum + (Number(bill.amount) || 0) : sum;
+  }, 0);
+
+  return (
+    // FIX 5: VISUAL DEPTH (Master Background Layer)
+    <div className={`animate-fade-in pb-32 transition-colors duration-500 min-h-screen relative overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-gradient-to-b from-slate-50 via-[#F8FAFC] to-blue-50/40"}`}>
+      
+      {/* FIX 5: THE GLOW ORB (Ambient light injection) */}
+      {!isDarkMode && (
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#1877F2]/15 blur-3xl rounded-full pointer-events-none -translate-y-1/2 translate-x-1/4"></div>
+      )}
+
+      {/* KEEPING HERO SHELL WRAPPER INTACT */}
+      <div className="relative z-10">
+        {renderHeroShell(greetingStr, graphicContent)}
+      </div>
+
+      <div className="flex justify-center px-6 mb-5 -mt-2 relative z-10">
+         <button onClick={() => setIsPaydaySetupOpen(true)} className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border transition-all active:scale-95 ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#1877F2] shadow-sm" : "bg-white/80 backdrop-blur-md border-white/60 text-[#1877F2] shadow-[0_4px_20px_rgba(0,0,0,0.03)]"}`}>
+            <Settings2 size={18} strokeWidth={2.5} /> Set Your Pay Dates & Amounts
          </button>
       </div>
 
-      <div className="w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-6">
-        {/* DYNAMIC HEADER: Pay Schedule */}
-        <div className="flex items-center gap-2 mb-3 pl-2">
-            <CalendarIcon size={14} className="text-[#1877F2]" />
-            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">{currentMonthName}'s {isEntrepreneurMode ? "Checkpoints" : "Pay Schedule"}</h3>
-        </div>
-
+      <div className="w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-6 relative z-10">
         <div className="flex gap-4 pr-6 pb-2 min-h-[170px]">
           {hzPaydays.map((pd) => {
             const pdSettings = paydayConfig?.[pd] || {};
@@ -239,31 +222,28 @@ export default function Dashboard({
             const waterfallBalance = hzBalances[pd];
             const isDeficit = waterfallBalance < 0;
             const subLabelStr = pd === "Due Now" ? "AVAILABLE NOW" : "AVAILABLE THIS WEEK";
-            
-            // DYNAMIC PIVOT: Rename Payday 1 to Week 1 for Entrepreneurs
-            const pdDisplayLabel = isEntrepreneurMode ? pd.replace("Payday", "Week") : pd;
 
             return (
-              <div key={`hz-${pd}`} onClick={() => { if(collapsedPaydays[pd]) toggleCollapse(pd); document.getElementById(`vert-${pd}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} className={`shrink-0 w-52 p-5 rounded-[1.75rem] border cursor-pointer active:scale-95 transition-all shadow-md flex flex-col justify-between h-40 ${pd === "Due Now" ? (isDarkMode ? "bg-red-900/10 border-red-900/40" : "bg-red-50 border-red-100") : (isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100")}`}>
+              <div key={`hz-${pd}`} onClick={() => { if(collapsedPaydays[pd]) toggleCollapse(pd); document.getElementById(`vert-${pd}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} className={`shrink-0 w-52 p-5 rounded-[1.75rem] border cursor-pointer active:scale-95 transition-all flex flex-col justify-between h-40 ${pd === "Due Now" ? (isDarkMode ? "bg-red-900/10 border-red-900/40 shadow-md" : "bg-red-50 border-red-100 shadow-[0_4px_20px_rgba(239,68,68,0.1)]") : (isDarkMode ? "bg-[#1E293B] border-slate-700 shadow-md" : "bg-white/90 backdrop-blur-sm border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]")}`}>
                 
                 <div className="flex justify-between items-center w-full">
-                  <h4 className={`text-[10px] font-black uppercase tracking-widest ${pd === "Due Now" ? "text-red-500" : "text-slate-400"}`}>{pdDisplayLabel}</h4>
+                  <h4 className={`text-[10px] font-black uppercase tracking-widest ${pd === "Due Now" ? "text-red-500" : "text-slate-400"}`}>{pd}</h4>
                   <span className={`text-[9px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>{expectedDateStr}</span>
                 </div>
 
                 <div className="text-center py-2">
-                   <p className={`text-2xl font-black tracking-tighter ${isDeficit ? "text-red-500" : "text-[#10B981]"}`}>
-                     {isDeficit ? "-" : ""}${Math.abs(waterfallBalance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                   </p>
-                   <span className="text-[8px] font-black uppercase tracking-[0.15em] text-slate-400 opacity-60">{subLabelStr}</span>
+                  <p className={`text-2xl font-black tracking-tighter ${isDeficit ? "text-red-500" : "text-[#10B981]"}`}>
+                    {isDeficit ? "-" : ""}${Math.abs(waterfallBalance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                  </p>
+                  <span className="text-[8px] font-black uppercase tracking-[0.15em] text-slate-400 opacity-60">{subLabelStr}</span>
                 </div>
 
-                <div className="flex justify-between items-end w-full pt-3 border-t border-dashed border-slate-700/30">
+                <div className={`flex justify-between items-end w-full pt-3 border-t border-dashed ${isDarkMode ? "border-slate-700/30" : "border-slate-200"}`}>
                   {pd === "Due Now" ? (
                     <div className="flex flex-col flex-1"></div> 
                   ) : (
                     <div className="flex flex-col flex-1">
-                      <span className="text-[7px] font-black uppercase text-slate-400 tracking-widest mb-0.5">{isEntrepreneurMode ? "Target Rev" : "Expected Pay"}</span>
+                      <span className="text-[7px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Expected Pay</span>
                       <span className={`text-[10px] font-black ${isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>+${totalExpectedIncome.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
                     </div>
                   )}
@@ -279,9 +259,15 @@ export default function Dashboard({
         </div>
       </div>
 
-      <div className="mx-6 mb-6 border-t border-slate-200 dark:border-slate-800"></div>
+      <div className={`mx-6 mb-6 border-t relative z-10 ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}></div>
 
-      <main className="px-6 space-y-4">
+      <main className="px-6 space-y-4 relative z-10">
+        
+        {/* FIX 3: TYPOGRAPHY & PLACEMENT UNIFORMITY */}
+        <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2 mb-4">
+          {currentMonthName}'s Pay Schedule
+        </h3>
+
         <div className="space-y-4">
           {["Due Now", "Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].map((payday) => {
             const groupBills = billsByPayday[payday] || [];
@@ -296,15 +282,13 @@ export default function Dashboard({
             const checkTotal = activeGroupBills.reduce((sum, b) => sum + (Number(b?.amount) || 0), 0);
             const expectedDateStr = isDueNow ? "Currently Due" : formatPaydayDateStr(pdSettings.date);
             const sortedBills = sortBillsSurgically(activeGroupBills);
-            
-            const listDisplayLabel = isEntrepreneurMode && !isDueNow ? payday.replace("Payday", "Week") : payday;
 
             return (
               <div key={payday} id={`vert-${payday}`} className="space-y-2 scroll-mt-24">
                 <div className="flex flex-col px-3 py-3 cursor-pointer" onClick={() => toggleCollapse(payday)}>
                   <div className="flex items-center justify-between w-full mb-1">
                      <div className="flex items-center gap-2">
-                       <h3 className={`text-sm font-black uppercase tracking-widest ${isDueNow ? "text-red-500" : isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{listDisplayLabel}</h3>
+                       <h3 className={`text-sm font-black uppercase tracking-widest ${isDueNow ? "text-red-500" : isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{payday}</h3>
                        <div className="text-slate-400">{isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}</div>
                      </div>
                      <span className={`text-sm font-black ${isDueNow ? "text-red-500" : "text-[#1877F2]"}`}>${checkTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
@@ -316,16 +300,16 @@ export default function Dashboard({
                 </div>
 
                 {!isCollapsed && (
-                  <div className={`rounded-[2rem] p-4 border ${isDueNow ? (isDarkMode ? "bg-red-900/10 border-red-900/30" : "bg-red-50/30 border-red-100") : (isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50")}`}>
+                  <div className={`rounded-[2rem] p-4 border transition-all ${isDueNow ? (isDarkMode ? "bg-red-900/10 border-red-900/30" : "bg-red-50/30 border-red-100") : (isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white/80 backdrop-blur-md border-white/60 shadow-sm")}`}>
                     <div className="space-y-3">
                       {sortedBills.length === 0 ? (
                         <p className="text-center py-4 text-xs font-bold text-slate-400">All caught up!</p>
                       ) : (
                         sortedBills.map((bill) => (
-                          <div key={bill?.id} className={`flex flex-col p-4 rounded-2xl border shadow-sm ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-100"}`}>
+                          <div key={bill?.id} className={`flex flex-col p-4 rounded-2xl border shadow-sm transition-colors ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
                             
                             <div className="flex items-start justify-between w-full mb-4">
-                               <div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => setSelectedEntry(bill)}>
+                               <div className="flex items-center gap-3 cursor-pointer flex-1 min-w-0" onClick={() => setSelectedEntry(bill)}>
                                   <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
                                      {bill?.icon || "🧾"}
                                   </div>
@@ -368,9 +352,8 @@ export default function Dashboard({
                                </div>
                             </div>
 
-                            {/* INSTALLMENT TYPOGRAPHY BOOST */}
                             {bill?.isInstallment && (
-                                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/50">
+                                <div className={`mt-4 pt-3 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
                                     <div className="flex justify-between items-end mb-2">
                                         <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Installment Plan</span>
                                         <span className="text-xs sm:text-sm font-black text-slate-600 dark:text-slate-300">
@@ -393,9 +376,17 @@ export default function Dashboard({
           })}
         </div>
 
-        <div className="space-y-4 pt-4 border-t border-slate-200 mt-8 dark:border-slate-800">
+        {/* FIX 4: THE COMPONENT RESTORE (Total Bills Summary Card) */}
+        <div className={`mt-6 py-4 px-5 rounded-[1.5rem] border flex flex-col items-center justify-center gap-2 transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-800 shadow-sm" : "bg-white/80 backdrop-blur-md border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]"}`}>
+           <span className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Total Bills for {currentMonthName}</span>
+           <div className={`px-3 py-1.5 rounded-[8px] border font-black text-lg tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"}`}>
+              ${currentMonthBillsTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+           </div>
+        </div>
+
+        <div className={`space-y-4 pt-4 border-t mt-8 ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}>
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Recent Activity</h3>
-          <div className={`rounded-[2rem] p-4 border ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
+          <div className={`rounded-[2rem] p-4 border transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white/80 backdrop-blur-md border-white/60 shadow-sm"}`}>
             {transactions.length === 0 ? ( <p className="text-center py-8 font-bold text-slate-400">No activity yet.</p> ) : (
               <div className="space-y-3">
                 {transactions.slice(0, 5).map((tx) => {
@@ -460,7 +451,7 @@ export default function Dashboard({
                   );
                 })}
                 
-                <button onClick={() => changeTab("activity")} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] flex items-center justify-center gap-2 transition-all active:scale-95">
+                <button onClick={() => changeTab("activity")} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] flex items-center justify-center gap-2 transition-all active:scale-95 hover:-translate-y-0.5">
                   <List size={16} /> See All Recent Activity
                 </button>
               </div>

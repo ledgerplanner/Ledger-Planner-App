@@ -92,11 +92,11 @@ export default function Accounts({
   
   useEffect(() => {
     setActiveChartNode(historyData.length - 1);
-  }, [timeframe]);
+  }, [timeframe, historyData.length]);
 
   const maxChartVal = Math.max(...historyData.map((d) => Math.abs(d.val)), 1);
   const activeDataPoint = historyData[activeChartNode] || historyData[historyData.length - 1];
-  const isNetWorthNegative = activeDataPoint.val < 0;
+  const isNetWorthNegative = activeDataPoint?.val < 0;
 
   const createSpline = (data, maxVal) => {
     if (data.length < 2) return "";
@@ -120,9 +120,9 @@ export default function Accounts({
     <div className="relative z-10 mb-2">
       <div className="flex justify-between items-end mb-4">
         <div>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Net Worth • <span className={`${isNetWorthNegative ? "text-red-500" : "text-[#1877F2]"}`}>{activeDataPoint.label} {activeDataPoint.year}</span></p>
-          <p className={`text-5xl font-black tracking-tighter transition-all duration-300 ${isNetWorthNegative ? "text-red-500" : activeDataPoint.val > 0 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
-            {isNetWorthNegative ? "-" : ""}${Math.abs(activeDataPoint.val).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Net Worth • <span className={`${isNetWorthNegative ? "text-red-500" : "text-[#1877F2]"}`}>{activeDataPoint?.label} {activeDataPoint?.year}</span></p>
+          <p className={`text-5xl font-black tracking-tighter transition-all duration-300 ${isNetWorthNegative ? "text-red-500" : activeDataPoint?.val > 0 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
+            {isNetWorthNegative ? "-" : ""}${Math.abs(activeDataPoint?.val || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
         </div>
       </div>
@@ -305,15 +305,17 @@ export default function Accounts({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
-          <button onClick={() => setIsTransferOpen(true)} className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#1877F2] text-white shadow-blue-900/20" : "bg-[#1877F2] text-white shadow-blue-500/30"}`}>
-            <ArrowRightLeft size={18} /> Transfer
-          </button>
-          <button onClick={() => setIsAddAccountOpen(true)} className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#10B981] text-white shadow-emerald-900/20" : "bg-[#10B981] text-white shadow-emerald-500/30"}`}>
-            <PlusCircle size={18} /> Account
-          </button>
+        <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <button onClick={() => setIsAddAccountOpen(true)} className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#10B981] text-white shadow-emerald-900/20" : "bg-[#10B981] text-white shadow-emerald-500/30"}`}>
+              <PlusCircle size={18} /> Add Account
+            </button>
+            <button onClick={() => setIsTransferOpen(true)} className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#1877F2] text-white shadow-blue-900/20" : "bg-[#1877F2] text-white shadow-blue-500/30"}`}>
+              <ArrowRightLeft size={18} /> Transfer
+            </button>
+          </div>
           <button onClick={() => setIsAddGoalOpen && setIsAddGoalOpen(true)} className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-orange-500 text-white shadow-orange-900/20" : "bg-[#F97316] text-white shadow-orange-500/30"}`}>
-            <Target size={18} /> Goal
+            <Target size={18} /> Add Goal
           </button>
         </div>
 

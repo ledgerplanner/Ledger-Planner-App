@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   Home, Wallet, Calendar as CalendarIcon, CreditCard, CheckSquare,
   Bell, Moon, Sun, X, Plus, ArrowRight, CheckCircle2, Trash2, ArrowDown, AlertCircle, Edit2, LogOut, RefreshCw, Save, ArrowRightLeft, Settings, Zap, User, HelpCircle,
-  PlayCircle, ChevronUp, ChevronDown, ShieldCheck, TrendingUp
+  PlayCircle, ChevronUp, ChevronDown, ShieldCheck, TrendingUp, Target
 } from "lucide-react";
 
 // === FIREBASE INITIALIZATION ===
@@ -90,6 +90,12 @@ export default function App() {
   const [newAccType, setNewAccType] = useState("Checking");
   const [newAccDesc, setNewAccDesc] = useState("");
   const [newAccIsNegative, setNewAccIsNegative] = useState(false);
+
+  const [isAddGoalOpen, setIsAddGoalOpen] = useState(false);
+  const [newGoalName, setNewGoalName] = useState("");
+  const [newGoalFundingAccount, setNewGoalFundingAccount] = useState("");
+  const [newGoalAmount, setNewGoalAmount] = useState("");
+  const [newGoalDate, setNewGoalDate] = useState("");
 
   const [activitySearch, setActivitySearch] = useState("");
   const [activityFilter, setActivityFilter] = useState("All");
@@ -675,6 +681,37 @@ export default function App() {
     triggerVictory(); setIsAddAccountOpen(false); setNewAccName(""); setNewAccBalance(""); setNewAccDesc(""); setNewAccType("Checking"); setNewAccIsNegative(false);
   };
 
+  const handleAddGoal = async () => {
+    const targetBal = parseFloat(newGoalAmount);
+    if (!newGoalName.trim() || isNaN(targetBal) || targetBal <= 0) return;
+
+    const newGoal = {
+      name: newGoalName,
+      type: "Goal",
+      description: "Savings Goal",
+      balance: 0,
+      targetAmount: targetBal,
+      targetDate: newGoalDate,
+      fundingAccountId: newGoalFundingAccount,
+      icon: "🎯",
+      isGoal: true,
+      isArchived: false
+    };
+
+    if (isDemoMode) {
+      setAccounts([...accounts, { id: `goal_demo_${Date.now()}`, ...newGoal }]);
+    } else {
+      await addDoc(collection(db, "users", user.uid, "accounts"), newGoal);
+    }
+
+    triggerVictory();
+    setIsAddGoalOpen(false);
+    setNewGoalName("");
+    setNewGoalAmount("");
+    setNewGoalDate("");
+    setNewGoalFundingAccount("");
+  };
+
   const handleTransferNumpad = (btn) => {
     triggerHaptic(15);
     if (btn === "=") {
@@ -1123,7 +1160,7 @@ export default function App() {
         <div className="flex-1 flex flex-col relative h-full overflow-hidden">
           <div className={`flex-1 overflow-y-auto hide-scrollbar lg:pb-0 ${isDemoMode ? "pb-[220px]" : "pb-28"}`} ref={scrollRef} onScroll={handleScroll}>
             {activeTab === "home" && <Dashboard userName={userName} accounts={accounts} bills={dynamicBills} transactions={transactions} paydayConfig={paydayConfig} setEditPaydayConfig={setEditPaydayConfig} setIsPaydaySetupOpen={handleOpenPaydaySetup} setIsNotificationsOpen={setIsNotificationsOpen} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} isDarkMode={isDarkMode} formatPaydayDateStr={formatPaydayDateStr} renderHeroShell={renderHeroShell} changeTab={changeTab} hasConsumedAMBriefing={hasConsumedAMBriefing} setHasConsumedAMBriefing={setHasConsumedAMBriefing} hasConsumedPMBriefing={hasConsumedPMBriefing} setHasConsumedPMBriefing={setHasConsumedPMBriefing} />}
-            {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} isDemoMode={isDemoMode} />}
+            {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setIsAddGoalOpen={setIsAddGoalOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} isDemoMode={isDemoMode} triggerCelebration={triggerVictory} />}
             {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} paydayConfig={paydayConfig} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} handleRolloverMonth={handleRolloverMonth} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} />}
             {activeTab === "activity" && <Activity userName={userName} transactions={transactions} activitySearch={activitySearch} setActivitySearch={setActivitySearch} activityFilter={activityFilter} setActivityFilter={setActivityFilter} isDarkMode={isDarkMode} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} />}
             {activeTab === "todo" && <Todo userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} newTodoType={newTodoType} setNewTodoType={setNewTodoType} isDarkMode={isDarkMode} handleAddTodo={async (e) => { e.preventDefault(); if(!newTodoText.trim()) return; if (isDemoMode) { setTodos([{ id: `todo_demo_${Date.now()}`, text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false }, ...todos]); } else { await addDoc(collection(db, "users", user.uid, "todos"), { text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() }); } triggerVictory(); setNewTodoText(""); setNewTodoPriority(3); }} toggleTodoStatus={async (id) => { triggerHaptic(50); const todo = todos.find(t => t.id === id); if (isDemoMode) { setTodos(todos.map(t => t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)); } else { await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); } }} setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} clearCompletedTodos={clearCompletedTodos} openGlobalAction={openGlobalAction} />}
@@ -1364,6 +1401,52 @@ export default function App() {
           </div>
         )}
 
+        {/* GOAL CREATION DRAWER */}
+        {isAddGoalOpen && (
+          <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsAddGoalOpen(false)}></div>
+            <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+              <div className="p-6 border-b flex justify-between items-center">
+                <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Create a Savings Goal</h3>
+                <button onClick={() => setIsAddGoalOpen(false)} className={closeButtonClass}><X size={18} /></button>
+              </div>
+              <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
+                <div className="relative">
+                  <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Goal Name</label>
+                  <input type="text" value={newGoalName} onChange={(e) => setNewGoalName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors focus:border-[#F97316] outline-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                </div>
+
+                <div className="relative">
+                  <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Transfer from which account?</label>
+                  <select value={newGoalFundingAccount} onChange={(e) => setNewGoalFundingAccount(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors focus:border-[#F97316] outline-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
+                    <option value="" disabled>Select Account</option>
+                    {accounts.filter(a => !a.isGoal).map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                  </select>
+                </div>
+
+                <div className="relative">
+                  <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Goal Amount</label>
+                  <div className="relative w-full flex items-center">
+                    <span className={`absolute left-5 top-[22px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
+                    <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={newGoalAmount} onChange={(e) => setNewGoalAmount(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(newGoalAmount)) && newGoalAmount !== "") setNewGoalAmount(parseFloat(newGoalAmount).toFixed(2)) }} className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl border transition-colors focus:border-[#F97316] outline-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                  </div>
+                </div>
+
+                <div className="relative">
+                   <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Goal Date</label>
+                   <div className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors focus-within:border-[#F97316] ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
+                     <span className={`font-bold text-base ${!newGoalDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{newGoalDate ? formatDisplayDate(newGoalDate) : "mm/dd/yyyy"}</span>
+                     <CalendarIcon size={18} className="text-[#F97316] shrink-0" />
+                     <input type="date" value={newGoalDate} onChange={(e) => setNewGoalDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                   </div>
+                </div>
+
+                <button onClick={handleAddGoal} disabled={!newGoalName.trim() || isNaN(parseFloat(newGoalAmount)) || parseFloat(newGoalAmount) <= 0} className={`w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${!newGoalName.trim() || isNaN(parseFloat(newGoalAmount)) || parseFloat(newGoalAmount) <= 0 ? "bg-slate-300 opacity-50 cursor-not-allowed" : "bg-[#F97316] shadow-[0_8px_16px_rgba(249,115,22,0.3)] active:scale-95"}`}>Lock In Goal <Target size={16} /></button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {isTransferOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsTransferOpen(false)}></div>
@@ -1397,14 +1480,14 @@ export default function App() {
           </div>
         )}
 
-        {selectedAccount && !isAddAccountOpen && !isTransferOpen && (
+        {selectedAccount && !isAddAccountOpen && !isTransferOpen && !isAddGoalOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedAccount(null)}></div>
             <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
               <div className="p-6 border-b flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg bg-slate-100">{selectedAccount.icon}</div>
-                  <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Edit Account</h3>
+                  <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{selectedAccount.isGoal ? "Edit Goal" : "Edit Account"}</h3>
                 </div>
                 <button onClick={() => setSelectedAccount(null)} className={closeButtonClass}><X size={18} /></button>
               </div>
@@ -1434,7 +1517,7 @@ export default function App() {
                 </div>
 
                 <div className="relative mt-2">
-                  <label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest text-slate-400 z-10">Account Details</label>
+                  <label className="absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest text-slate-400 z-10">{selectedAccount.isGoal ? "Goal Details" : "Account Details"}</label>
                   <input 
                     type="text" 
                     placeholder={selectedAccount.type}
@@ -1444,7 +1527,7 @@ export default function App() {
                   />
                 </div>
                 <button onClick={updateAccountBalance} disabled={isNaN(parseFloat(editAccountBalance))} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${isNaN(parseFloat(editAccountBalance)) ? "bg-slate-300 opacity-50 cursor-not-allowed" : "bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] active:scale-95"}`}><Save size={16} /> Save Changes</button>
-                <button onClick={deleteAccount} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-red-500 shadow-[0_8px_16px_rgba(239,68,68,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><Trash2 size={16}/> Delete Account</button>
+                <button onClick={deleteAccount} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-red-500 shadow-[0_8px_16px_rgba(239,68,68,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><Trash2 size={16}/> {selectedAccount.isGoal ? "Delete Goal" : "Delete Account"}</button>
               </div>
             </div>
           </div>

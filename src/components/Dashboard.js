@@ -152,7 +152,7 @@ export default function Dashboard({
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-6 w-full">
       {/* 👑 PREMIUM GRADIENT HERO */}
-      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-slate-800 from-75% to-blue-900/60 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-white from-75% to-blue-100 border-white/80 border-t-white shadow-[0_12px_40px_rgba(24,119,242,0.15)]"}`}>
+      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-100 via-white via-25% to-white border-white/80 border-t-white shadow-[inset_0_2px_4px_rgba(255,255,255,0.8),0_12px_40px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.05)]"}`}>
         
         <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
           <span className={`text-[10px] font-black uppercase tracking-widest opacity-80 ${isDarkMode ? "text-white" : "text-slate-900"}`}>

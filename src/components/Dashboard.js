@@ -24,8 +24,10 @@ export default function Dashboard({
   setHasConsumedPMBriefing
 }) {
   const [isPushEnabled, setIsPushEnabled] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     if (typeof window !== "undefined" && "Notification" in window) {
       setIsPushEnabled(Notification.permission === "granted");
     }
@@ -63,16 +65,34 @@ export default function Dashboard({
   const currentYearIdx = todayForMath.getFullYear(); 
 
   const totalIncomeBalance = accounts.reduce((sum, a) => sum + (Number(a?.balance) || 0), 0);
-  const unpaidBillsAmount = bills.filter((b) => !b?.isPaid).reduce((sum, b) => sum + (Number(b?.amount) || 0), 0);
+  
+  // Scoped strictly to current month + active overdue
+  const scopedUnpaidBillsAmount = bills.reduce((sum, bill) => {
+    if (bill.isPaid) return sum;
+    let include = false;
+    if (bill.isOverdue || bill.payday === "Due Now") {
+      include = true;
+    } else if (bill.rawDate) {
+      const parts = bill.rawDate.split("-");
+      if (parts.length === 3) {
+        const bMonth = parseInt(parts[1], 10) - 1;
+        const bYear = parseInt(parts[0], 10);
+        if (bMonth === currentMonthIdx && bYear === currentYearIdx) {
+          include = true;
+        }
+      }
+    }
+    return include ? sum + (Number(bill.amount) || 0) : sum;
+  }, 0);
   
   const safeToSpend = totalIncomeBalance < 0 
-    ? -(Math.abs(unpaidBillsAmount) - Math.abs(totalIncomeBalance))
-    : totalIncomeBalance - unpaidBillsAmount;
+    ? -(Math.abs(scopedUnpaidBillsAmount) - Math.abs(totalIncomeBalance))
+    : totalIncomeBalance - scopedUnpaidBillsAmount;
 
-  const debtRatio = totalIncomeBalance > 0 ? Math.max(0, Math.min((unpaidBillsAmount / totalIncomeBalance) * 100, 100)) : (unpaidBillsAmount > 0 ? 100 : 0);
+  const debtRatio = totalIncomeBalance > 0 ? Math.max(0, Math.min((scopedUnpaidBillsAmount / totalIncomeBalance) * 100, 100)) : (scopedUnpaidBillsAmount > 0 ? 100 : 0);
   
   const strokeDasharray = 251.2;
-  const strokeDashoffset = strokeDasharray - (strokeDasharray * debtRatio) / 100;
+  const targetDashoffset = strokeDasharray - (strokeDasharray * debtRatio) / 100;
 
   const billsByPayday = {};
   ["Due Now", "Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].forEach((pd) => { billsByPayday[pd] = []; });
@@ -131,28 +151,28 @@ export default function Dashboard({
 
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-6 w-full">
-      <div className="w-full flex justify-center mb-5">
-        <span className={`text-[10px] font-black uppercase tracking-widest opacity-80 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-          {currentMonthName}'s Monthly Snapshot
-        </span>
-      </div>
-
-      {/* 👑 TRUE GLASSMORPHISM HERO */}
-      <div className={`p-6 rounded-[2rem] border shadow-[0_8px_30px_rgba(0,0,0,0.06)] flex items-center justify-between w-full transition-all duration-500 ${isDarkMode ? "bg-slate-800/40 backdrop-blur-xl border-slate-700/50" : "bg-white/40 backdrop-blur-xl border-white/60"}`}>
+      {/* 👑 PREMIUM GRADIENT HERO */}
+      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-slate-800 via-slate-800/90 to-blue-900/40 border-slate-700/50 shadow-[0_8px_30px_rgba(0,0,0,0.2)]" : "bg-gradient-to-br from-white via-blue-50/50 to-blue-100/50 border-white/80 shadow-[0_12px_40px_rgba(24,119,242,0.15)]"}`}>
+        
+        <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
+          <span className={`text-[10px] font-black uppercase tracking-widest opacity-80 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+            {currentMonthName}'s Monthly Snapshot
+          </span>
+        </div>
         
         <div className="relative w-28 h-28 flex-shrink-0">
           <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
             <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "rgba(51, 65, 85, 0.5)" : "rgba(255, 255, 255, 0.6)"} strokeWidth="12" />
-            <circle cx="50" cy="50" r="40" fill="transparent" stroke={safeToSpend < 0 ? "#EF4444" : "#3B82F6"} strokeWidth="12" strokeLinecap="round" strokeDasharray={strokeDasharray} strokeDashoffset={strokeDashoffset} className="transition-all duration-1000 ease-out" />
+            <circle cx="50" cy="50" r="40" fill="transparent" stroke={safeToSpend < 0 ? "#EF4444" : "#3B82F6"} strokeWidth="12" strokeLinecap="round" strokeDasharray={strokeDasharray} strokeDashoffset={isMounted ? targetDashoffset : strokeDasharray} className="transition-all duration-1000 delay-150 ease-out" />
           </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className={`absolute inset-0 flex flex-col items-center justify-center transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
             <span className={`text-[8px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Debt Load</span>
             <span className={`text-xl font-black ${safeToSpend < 0 ? "text-red-500" : "text-[#1877F2]"}`}>{Math.round(debtRatio)}%</span>
           </div>
         </div>
         
         {/* 📱 FLUID TYPOGRAPHY (NO ELLIPSES) */}
-        <div className="flex-1 pl-4 flex flex-col items-end">
+        <div className={`flex-1 pl-4 flex flex-col items-end transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
           <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border mb-2 shadow-sm ${isDarkMode ? "bg-slate-800/80 border-slate-700 text-slate-300" : "bg-white/80 border-white text-slate-600"}`}>
             <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${safeToSpend < 0 ? "bg-red-500" : "bg-emerald-500 animate-pulse"}`}></div>
             <span className="text-[9px] font-black uppercase tracking-wider">SAFE TO SPEND</span>
@@ -165,7 +185,7 @@ export default function Dashboard({
           {nextPaydayDayName && (
             <div className="flex flex-col items-end gap-1 w-full mt-1">
                <span className={`text-[9px] font-black uppercase tracking-widest text-right leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                 NEXT PAYDAY: {nextPaydayDayName} <span className="text-[#1877F2]">({daysUntilNext} {daysUntilNext === 1 ? "DAY" : "DAYS"})</span>
+                 NEXT PAYDAY: {nextPaydayDayName} <span className="text-[#1877F2]">(IN {daysUntilNext} {daysUntilNext === 1 ? "DAY" : "DAYS"})</span>
                </span>
             </div>
           )}
@@ -193,7 +213,7 @@ export default function Dashboard({
 
   return (
     // 🎨 MASTER GRADIENT LAYER
-    <div className={`animate-fade-in pb-32 transition-colors duration-500 min-h-screen relative overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-gradient-to-b from-slate-50 via-[#F8FAFC] to-blue-50/40"}`}>
+    <div className={`pb-32 transition-colors duration-500 min-h-screen relative overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-gradient-to-b from-slate-50 via-[#F8FAFC] to-blue-50/40"}`}>
       
       {/* 🎨 VOLUMETRIC GLOW ORB */}
       {!isDarkMode && (

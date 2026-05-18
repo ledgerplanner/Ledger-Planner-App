@@ -1,40 +1,39 @@
-import React, { useState } from "react";
-import { ArrowRightLeft, PlusCircle, Edit2 } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { ArrowRightLeft, PlusCircle, Edit2, Target, CheckCircle2 } from "lucide-react";
 
 export default function Accounts({
   userName,
-  accounts,
-  transactions,
+  accounts = [],
+  transactions = [],
   isDarkMode,
   setIsTransferOpen,
   setIsAddAccountOpen,
+  setIsAddGoalOpen,
   setSelectedAccount,
   setEditAccountBalance,
   renderHeroShell,
-  isDemoMode
+  isDemoMode,
+  triggerCelebration
 }) {
   const [activeChartNode, setActiveChartNode] = useState(5);
+  const [timeframe, setTimeframe] = useState("6M");
 
-  // === DYNAMIC TIME-MACHINE CHART ENGINE (Precision & Zero-Rule Unlocked) ===
+  const liquidAccounts = accounts.filter(a => !a.isGoal);
+  const goalAccounts = accounts.filter(a => a.isGoal);
+
   const netWorth = accounts.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
   
   const today = new Date();
   
-  // Find Account Inception Date (to enforce the Zero-Rule and kill the 2001 Ghost)
   let inceptionDate = today;
   if (transactions && transactions.length > 0) {
     const validDates = transactions
       .map(tx => {
           if (!tx.rawDate && !tx.date) return null;
-          
           let parsedDate = new Date(tx.rawDate || tx.date);
-          
-          // THE 2001 GHOST INTERCEPTOR
-          // If the mobile browser panicked and assigned the year 2001, forcefully correct it.
           if (parsedDate.getFullYear() === 2001) {
               parsedDate.setFullYear(today.getFullYear());
           }
-
           return parsedDate;
       })
       .filter(d => d && !isNaN(d.getTime())); 
@@ -44,10 +43,16 @@ export default function Accounts({
     }
   }
 
+  let monthsToGenerate = 6;
+  if (timeframe === "1M") monthsToGenerate = 2;
+  if (timeframe === "3M") monthsToGenerate = 3;
+  if (timeframe === "6M") monthsToGenerate = 6;
+  if (timeframe === "YTD") monthsToGenerate = today.getMonth() + 1;
+
   const historyData = [];
   let currentCalcNW = netWorth;
 
-  for(let i=0; i<6; i++) {
+  for(let i = 0; i < monthsToGenerate; i++) {
     const targetDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
     const monthName = targetDate.toLocaleString('default', { month: 'short' });
     const tMonth = targetDate.getMonth();
@@ -64,7 +69,7 @@ export default function Accounts({
           const monthAhead = historyData[0]; 
           const txsInMonthAhead = transactions.filter(tx => {
               let d = new Date(tx.rawDate || tx.date || today);
-              if (d.getFullYear() === 2001) d.setFullYear(today.getFullYear()); // Ghost interceptor
+              if (d.getFullYear() === 2001) d.setFullYear(today.getFullYear()); 
               
               return d.getMonth() === monthAhead.month && d.getFullYear() === monthAhead.year;
           });
@@ -75,7 +80,6 @@ export default function Accounts({
           
           currentCalcNW -= netCashFlowMonthAhead;
 
-          // ZERO-RULE: If the month predates the user's true first transaction, force $0.00
           let displayVal = currentCalcNW;
           if (tYear < inceptionDate.getFullYear() || (tYear === inceptionDate.getFullYear() && tMonth < inceptionDate.getMonth())) {
               displayVal = 0;
@@ -86,13 +90,35 @@ export default function Accounts({
     }
   }
   
+  useEffect(() => {
+    setActiveChartNode(historyData.length - 1);
+  }, [timeframe]);
+
   const maxChartVal = Math.max(...historyData.map((d) => Math.abs(d.val)), 1);
-  const activeDataPoint = historyData[activeChartNode];
+  const activeDataPoint = historyData[activeChartNode] || historyData[historyData.length - 1];
   const isNetWorthNegative = activeDataPoint.val < 0;
+
+  const createSpline = (data, maxVal) => {
+    if (data.length < 2) return "";
+    let path = "";
+    data.forEach((d, i) => {
+       const x = (i / (data.length - 1)) * 100;
+       const y = 100 - ((Math.abs(d.val) / (maxVal || 1)) * 100);
+       if (i === 0) {
+         path += `M ${x} ${y} `;
+       } else {
+         const prevX = ((i - 1) / (data.length - 1)) * 100;
+         const prevY = 100 - ((Math.abs(data[i-1].val) / (maxVal || 1)) * 100);
+         const cpX = prevX + (x - prevX) / 2;
+         path += `C ${cpX} ${prevY}, ${cpX} ${y}, ${x} ${y} `;
+       }
+    });
+    return path;
+  };
 
   const graphicContent = (
     <div className="relative z-10 mb-2">
-      <div className="flex justify-between items-end mb-6">
+      <div className="flex justify-between items-end mb-4">
         <div>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Net Worth • <span className={`${isNetWorthNegative ? "text-red-500" : "text-[#1877F2]"}`}>{activeDataPoint.label} {activeDataPoint.year}</span></p>
           <p className={`text-5xl font-black tracking-tighter transition-all duration-300 ${isNetWorthNegative ? "text-red-500" : activeDataPoint.val > 0 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
@@ -100,12 +126,28 @@ export default function Accounts({
           </p>
         </div>
       </div>
-      <div className="flex items-end justify-between h-28 gap-2 border-b border-dashed border-slate-200 dark:border-slate-700 pb-2">
+
+      <div className="flex gap-2 mb-4">
+        {["1M", "3M", "6M", "YTD"].map((tf) => (
+          <button
+            key={tf}
+            onClick={() => setTimeframe(tf)}
+            className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${timeframe === tf ? (isDarkMode ? "bg-slate-700 text-white" : "bg-slate-800 text-white") : (isDarkMode ? "bg-slate-800/50 text-slate-500 hover:text-slate-300" : "bg-white/60 text-slate-400 hover:text-slate-600 border border-slate-200")}`}
+          >
+            {tf}
+          </button>
+        ))}
+      </div>
+
+      <div className="relative flex items-end justify-between h-28 gap-2 border-b border-dashed border-slate-200 dark:border-slate-700 pb-2">
+        <svg className="absolute inset-0 w-full h-full pointer-events-none drop-shadow-md z-20" preserveAspectRatio="none" viewBox="0 0 100 100">
+          <path d={createSpline(historyData, maxChartVal)} fill="none" stroke={isDarkMode ? "rgba(56, 189, 248, 0.8)" : "rgba(14, 165, 233, 0.6)"} strokeWidth="3" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+
         {historyData.map((item, i) => {
           const heightPct = (Math.abs(item.val) / maxChartVal) * 100;
           const isActive = activeChartNode === i;
           
-          // === TRAFFIC LIGHT LOGIC ENGINE ===
           const isItemZero = item.val === 0;
           const isItemPositive = item.val > 0;
           const isItemNegative = item.val < 0;
@@ -117,12 +159,12 @@ export default function Accounts({
             else barBgClass = "bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.4)]";
           } else {
             if (isItemZero) barBgClass = isDarkMode ? "bg-slate-800 group-hover:bg-slate-700" : "bg-slate-100 group-hover:bg-slate-200";
-            else if (isItemPositive) barBgClass = isDarkMode ? "bg-emerald-900/30 group-hover:bg-emerald-900/50" : "bg-emerald-50 group-hover:bg-emerald-100";
-            else barBgClass = isDarkMode ? "bg-red-900/30 group-hover:bg-red-900/50" : "bg-red-50 group-hover:bg-red-100";
+            else if (isItemPositive) barBgClass = isDarkMode ? "bg-emerald-900/20 group-hover:bg-emerald-900/40 opacity-50" : "bg-emerald-50 group-hover:bg-emerald-100 opacity-60";
+            else barBgClass = isDarkMode ? "bg-red-900/20 group-hover:bg-red-900/40 opacity-50" : "bg-red-50 group-hover:bg-red-100 opacity-60";
           }
 
           return (
-            <div key={i} onClick={() => setActiveChartNode(i)} className="flex flex-col items-center justify-end h-full flex-1 cursor-pointer group">
+            <div key={i} onClick={() => setActiveChartNode(i)} className="flex flex-col items-center justify-end h-full flex-1 cursor-pointer group relative z-10">
               <div className="w-full relative flex justify-center h-full items-end">
                 <div className={`w-full max-w-[32px] rounded-t-xl transition-all duration-500 ease-out ${barBgClass}`} style={{ height: `${heightPct}%`, minHeight: Math.abs(item.val) > 0 ? "12px" : "4px" }}></div>
               </div>
@@ -137,25 +179,21 @@ export default function Accounts({
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
       {renderHeroShell(`${userName}'s Accounts`, graphicContent)}
-      <main className="px-6 space-y-6 mt-4">
+      <main className="px-6 space-y-8 mt-4">
         
-        {/* ========================================== */}
-        {/* 🔥 STANDARD LIQUID ACCOUNTS (BENTO BOX) 🔥 */}
-        {/* ========================================== */}
         <div className="space-y-4">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">All Accounts</h3>
           <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
-            {accounts.length === 0 ? (
-                <p className="text-center text-xs font-bold text-slate-400 py-6">No accounts added.</p>
+            {liquidAccounts.length === 0 ? (
+                <p className="text-center text-xs font-bold text-slate-400 py-6">No liquid accounts added.</p>
             ) : (
                 <div className="space-y-3">
-                {accounts.map((acc) => {
+                {liquidAccounts.map((acc) => {
                     const isNegative = acc.balance < 0;
                     const isPositive = acc.balance > 0;
                     return (
                     <div key={acc.id} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
                         
-                        {/* ROW 1: Identity & Scroll-Protector Pencil */}
                         <div className="flex items-start justify-between w-full mb-4">
                            <div className="flex items-center gap-3 flex-1">
                               <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
@@ -173,7 +211,6 @@ export default function Accounts({
                            </button>
                         </div>
 
-                        {/* ROW 2: Description & Shrunken Amount Pill */}
                         <div className="flex items-center justify-between gap-2">
                            <div className="flex flex-col shrink-0">
                               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
@@ -199,18 +236,84 @@ export default function Accounts({
           </div>
         </div>
 
-        {/* ========================================================= */}
-        {/* THE GREAT DIVIDE (SIGNATURE SEPARATOR)                      */}
-        {/* ========================================================= */}
-        <div className={`border-t ${isDarkMode ? "border-white" : "border-slate-200"}`}></div>
+        <div className={`border-t ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}></div>
 
-        {/* COMMAND GRID */}
-        <div className="grid grid-cols-2 gap-3">
-          <button onClick={() => setIsTransferOpen(true)} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#1877F2] text-white shadow-blue-900/20" : "bg-[#1877F2] text-white shadow-blue-500/30"}`}>
-            <ArrowRightLeft size={20} /> Transfer
+        <div className="space-y-4">
+          <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">My Goals</h3>
+          <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
+            {goalAccounts.length === 0 ? (
+                <p className="text-center text-xs font-bold text-slate-400 py-6">No goals actively tracked.</p>
+            ) : (
+                <div className="space-y-4">
+                {goalAccounts.map((goal) => {
+                    const targetAmt = Number(goal.targetAmount) || 1;
+                    const balanceAmt = Number(goal.balance) || 0;
+                    const isComplete = balanceAmt >= targetAmt;
+                    const progressPct = Math.min((balanceAmt / targetAmt) * 100, 100);
+
+                    return (
+                    <div key={goal.id} className={`flex flex-col p-5 rounded-[1.5rem] border shadow-sm transition-all ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
+                        
+                        <div className="flex items-start justify-between w-full mb-5">
+                           <div className="flex items-center gap-3 flex-1">
+                              <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                                  {goal.icon || "🎯"}
+                              </div>
+                              <div className="flex flex-col">
+                                <p className={`font-black text-base truncate leading-tight mb-1 ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
+                                    {goal.name}
+                                </p>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Target: ${targetAmt.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
+                              </div>
+                           </div>
+                           <button 
+                             onClick={(e) => { e.stopPropagation(); setSelectedAccount(goal); setEditAccountBalance(goal.balance.toString()); }}
+                             className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
+                           >
+                              <Edit2 size={16} strokeWidth={2.5} />
+                           </button>
+                        </div>
+
+                        <div className="flex items-end justify-between gap-2 mb-3">
+                           <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Current Balance</span>
+                           <span className={`text-xl font-black tracking-tighter ${isComplete ? "text-[#EAB308]" : isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>
+                               ${balanceAmt.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                           </span>
+                        </div>
+
+                        <div className={`w-full h-2.5 rounded-full overflow-hidden border mb-4 ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-slate-100 border-slate-200"}`}>
+                            <div className={`h-full transition-all duration-1000 ${isComplete ? "bg-gradient-to-r from-yellow-500 to-yellow-300 shadow-[0_0_10px_rgba(234,179,8,0.5)]" : "bg-[#1877F2]"}`} style={{ width: `${progressPct}%` }}></div>
+                        </div>
+
+                        {isComplete && (
+                          <button 
+                            onClick={() => {
+                              if (typeof triggerCelebration === 'function') triggerCelebration();
+                              if (typeof setIsTransferOpen === 'function') setIsTransferOpen({ from: goal.id });
+                            }}
+                            className="w-full py-3 rounded-xl font-black text-[10px] uppercase tracking-widest text-white bg-gradient-to-r from-yellow-500 to-yellow-600 shadow-[0_4px_15px_rgba(234,179,8,0.3)] flex items-center justify-center gap-2 transition-all active:scale-95 mt-2"
+                          >
+                            <CheckCircle2 size={16} strokeWidth={3} /> Cash Out Goal
+                          </button>
+                        )}
+
+                    </div>
+                    );
+                })}
+                </div>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          <button onClick={() => setIsTransferOpen(true)} className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#1877F2] text-white shadow-blue-900/20" : "bg-[#1877F2] text-white shadow-blue-500/30"}`}>
+            <ArrowRightLeft size={18} /> Transfer
           </button>
-          <button onClick={() => setIsAddAccountOpen(true)} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#10B981] text-white shadow-emerald-900/20" : "bg-[#10B981] text-white shadow-emerald-500/30"}`}>
-            <PlusCircle size={20} /> Add Account
+          <button onClick={() => setIsAddAccountOpen(true)} className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#10B981] text-white shadow-emerald-900/20" : "bg-[#10B981] text-white shadow-emerald-500/30"}`}>
+            <PlusCircle size={18} /> Account
+          </button>
+          <button onClick={() => setIsAddGoalOpen && setIsAddGoalOpen(true)} className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-orange-500 text-white shadow-orange-900/20" : "bg-[#F97316] text-white shadow-orange-500/30"}`}>
+            <Target size={18} /> Goal
           </button>
         </div>
 

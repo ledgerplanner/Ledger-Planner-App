@@ -215,11 +215,6 @@ export default function Dashboard({
     // 🎨 MASTER GRADIENT LAYER
     <div className={`pb-32 transition-colors duration-500 min-h-screen relative overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-gradient-to-b from-slate-50 via-[#F8FAFC] to-blue-50/40"}`}>
       
-      {/* 🎨 VOLUMETRIC GLOW ORB */}
-      {!isDarkMode && (
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#1877F2]/10 blur-[80px] rounded-full pointer-events-none -translate-y-1/3 translate-x-1/4"></div>
-      )}
-
       <div className="relative z-10">
         {renderHeroShell(greetingStr, graphicContent)}
       </div>

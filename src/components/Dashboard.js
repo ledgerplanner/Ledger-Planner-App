@@ -152,7 +152,7 @@ export default function Dashboard({
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-6 w-full">
       {/* 👑 PREMIUM GRADIENT HERO */}
-      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-slate-800 via-slate-800/90 to-blue-900/40 border-slate-700/50 shadow-[0_8px_30px_rgba(0,0,0,0.2)]" : "bg-gradient-to-br from-white via-blue-50/50 to-blue-100/50 border-white/80 shadow-[0_12px_40px_rgba(24,119,242,0.15)]"}`}>
+      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-slate-800 from-75% to-blue-900/60 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-white from-75% to-blue-100 border-white/80 border-t-white shadow-[0_12px_40px_rgba(24,119,242,0.15)]"}`}>
         
         <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
           <span className={`text-[10px] font-black uppercase tracking-widest opacity-80 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
@@ -183,7 +183,7 @@ export default function Dashboard({
           </p>
           
           {nextPaydayDayName && (
-            <div className="flex flex-col items-end gap-1 w-full mt-1">
+            <div className={`flex flex-col items-end gap-1 w-full mt-1 transform transition-all duration-700 delay-500 ease-out ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"}`}>
                <span className={`text-[9px] font-black uppercase tracking-widest text-right leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
                  NEXT PAYDAY: {nextPaydayDayName} <span className="text-[#1877F2]">(IN {daysUntilNext} {daysUntilNext === 1 ? "DAY" : "DAYS"})</span>
                </span>

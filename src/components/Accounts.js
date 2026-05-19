@@ -117,8 +117,8 @@ export default function Accounts({
   };
 
   const graphicContent = (
-    <div className="relative z-10 mb-2">
-      <div className="flex justify-between items-end mb-4">
+    <div className="relative z-10 mb-2 animate-fade-in">
+      <div className="flex justify-between items-end mb-4 animate-slide-up" style={{ animationDelay: '100ms' }}>
         <div>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Net Worth • <span className={`${isNetWorthNegative ? "text-red-500" : "text-[#1877F2]"}`}>{activeDataPoint?.label} {activeDataPoint?.year}</span></p>
           <p className={`text-5xl font-black tracking-tighter transition-all duration-300 ${isNetWorthNegative ? "text-red-500" : activeDataPoint?.val > 0 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
@@ -127,21 +127,21 @@ export default function Accounts({
         </div>
       </div>
 
-      <div className="flex gap-2 mb-4">
+      <div className="flex gap-2 mb-4 animate-slide-up" style={{ animationDelay: '200ms' }}>
         {["1M", "3M", "6M", "YTD"].map((tf) => (
           <button
             key={tf}
             onClick={() => setTimeframe(tf)}
-            className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${timeframe === tf ? (isDarkMode ? "bg-slate-700 text-white" : "bg-slate-800 text-white") : (isDarkMode ? "bg-slate-800/50 text-slate-500 hover:text-slate-300" : "bg-white/60 text-slate-400 hover:text-slate-600 border border-slate-200")}`}
+            className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${timeframe === tf ? "bg-[#1877F2] text-white shadow-[0_4px_12px_rgba(24,119,242,0.3)]" : (isDarkMode ? "bg-slate-800/50 text-slate-500 hover:text-slate-300" : "bg-white/60 text-slate-400 hover:text-slate-600 border border-slate-200")}`}
           >
             {tf}
           </button>
         ))}
       </div>
 
-      <div className="relative flex items-end justify-between h-28 gap-2 border-b border-dashed border-slate-200 dark:border-slate-700 pb-2">
+      <div className="relative flex items-end justify-between h-28 gap-2 border-b border-dashed border-slate-200 dark:border-slate-700 pb-2 animate-slide-up" style={{ animationDelay: '300ms' }}>
         <svg className="absolute inset-0 w-full h-full pointer-events-none drop-shadow-md z-20" preserveAspectRatio="none" viewBox="0 0 100 100">
-          <path d={createSpline(historyData, maxChartVal)} fill="none" stroke={isDarkMode ? "rgba(56, 189, 248, 0.8)" : "rgba(14, 165, 233, 0.6)"} strokeWidth="3" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={createSpline(historyData, maxChartVal)} fill="none" stroke="rgba(24, 119, 242, 0.8)" strokeWidth="3" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
 
         {historyData.map((item, i) => {
@@ -251,6 +251,9 @@ export default function Accounts({
                     const isComplete = balanceAmt >= targetAmt;
                     const progressPct = Math.min((balanceAmt / targetAmt) * 100, 100);
 
+                    // Re-use logic for positive glow (Emerald)
+                    const isPositive = balanceAmt > 0;
+
                     return (
                     <div key={goal.id} className={`flex flex-col p-5 rounded-[1.5rem] border shadow-sm transition-all ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
                         
@@ -276,14 +279,20 @@ export default function Accounts({
 
                         <div className="flex items-end justify-between gap-2 mb-3">
                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Current Balance</span>
-                           <span className={`text-xl font-black tracking-tighter ${isComplete ? "text-[#EAB308]" : isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>
+                           <span className={`text-xl font-black tracking-tighter ${isComplete ? "text-[#EAB308] drop-shadow-[0_0_12px_rgba(234,179,8,0.7)]" : isPositive ? (isDarkMode ? "text-emerald-400 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]" : "text-emerald-600 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]") : isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>
                                ${balanceAmt.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                            </span>
                         </div>
 
-                        <div className={`w-full h-2.5 rounded-full overflow-hidden border mb-4 ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-slate-100 border-slate-200"}`}>
+                        <div className={`w-full h-2.5 rounded-full overflow-hidden border mb-2 ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-slate-100 border-slate-200"}`}>
                             <div className={`h-full transition-all duration-1000 ${isComplete ? "bg-gradient-to-r from-yellow-500 to-yellow-300 shadow-[0_0_10px_rgba(234,179,8,0.5)]" : "bg-[#1877F2]"}`} style={{ width: `${progressPct}%` }}></div>
                         </div>
+
+                        {goal.targetDate && (
+                           <div className="flex justify-start mb-4">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Target Goal Date: {new Date(goal.targetDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}</span>
+                           </div>
+                        )}
 
                         {isComplete && (
                           <button 

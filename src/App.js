@@ -932,11 +932,11 @@ export default function App() {
             {(!isPushEnabled || activeAlerts.length > 0) && <span className={`absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-[1.5px] ${isDarkMode ? "border-[#1E293B]" : "border-white"}`}></span>}
           </button>
         </div>
-        <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center z-20 origin-top -top-5 lg:hidden relative">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-[#1877F2]/30 blur-xl rounded-full -z-10 pointer-events-none"></div>
+        <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center z-20 origin-top -top-5 lg:hidden">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-[#1877F2]/20 blur-xl rounded-full -z-10 pointer-events-none"></div>
           <img src="/login-logo.png" alt="Ledger Planner" className={`relative z-10 w-16 h-16 rounded-full shadow-[0_12px_24px_rgba(24,119,242,0.3)] object-cover border-[3px] transition-colors ${isDarkMode ? "border-slate-800" : "border-white"}`} />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 relative z-30">
           <button onClick={() => { setEditName(userName || ""); setIsSettingsOpen(true); }} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm lg:hidden ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
             <Settings size={18} />
           </button>

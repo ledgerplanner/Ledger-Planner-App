@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ArrowRightLeft, PlusCircle, Edit2, Target, CheckCircle2 } from "lucide-react";
+import { ArrowRightLeft, PlusCircle, Edit2, Target, CheckCircle2, Calendar as CalendarIcon, ArrowDown, X } from "lucide-react";
 
 export default function Accounts({
   userName,
@@ -17,6 +17,15 @@ export default function Accounts({
 }) {
   const [activeChartNode, setActiveChartNode] = useState(5);
   const [timeframe, setTimeframe] = useState("6M");
+  
+  // Animation Triggers
+  const [showContent, setShowContent] = useState(false);
+  const [showChart, setShowChart] = useState(false);
+
+  // QAB Icon Selector State (for Goal Drawer)
+  const [isIconSelectorOpen, setIsIconSelectorOpen] = useState(false);
+  const [selectedGoalIcon, setSelectedGoalIcon] = useState("🎯");
+  const categoryEmojis = ["🎯", "🏖️", "🚗", "🏠", "💍", "🎓", "👶", "🐶", "🏥", "🛡️", "💰", "🚀", "📱", "💻", "🎮", "✈️", "🏍️", "🎸", "🚲", "⛵"];
 
   const liquidAccounts = accounts.filter(a => !a.isGoal);
   const goalAccounts = accounts.filter(a => a.isGoal);
@@ -94,6 +103,13 @@ export default function Accounts({
     setActiveChartNode(historyData.length - 1);
   }, [timeframe, historyData.length]);
 
+  // Entrance Animation Sequence
+  useEffect(() => {
+    const t1 = setTimeout(() => setShowContent(true), 100);
+    const t2 = setTimeout(() => setShowChart(true), 300);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
+
   const maxChartVal = Math.max(...historyData.map((d) => Math.abs(d.val)), 1);
   const activeDataPoint = historyData[activeChartNode] || historyData[historyData.length - 1];
   const isNetWorthNegative = activeDataPoint?.val < 0;
@@ -116,18 +132,20 @@ export default function Accounts({
     return path;
   };
 
+  const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
+
   const graphicContent = (
-    <div className="relative z-10 mb-2 animate-fade-in">
-      <div className="flex justify-between items-end mb-4 animate-slide-up" style={{ animationDelay: '100ms' }}>
+    <div className="relative z-10 mb-2">
+      <div className={`flex justify-between items-end mb-4 transform transition-all duration-700 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
         <div>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Net Worth • <span className={`${isNetWorthNegative ? "text-red-500" : "text-[#1877F2]"}`}>{activeDataPoint?.label} {activeDataPoint?.year}</span></p>
-          <p className={`text-5xl font-black tracking-tighter transition-all duration-300 ${isNetWorthNegative ? "text-red-500" : activeDataPoint?.val > 0 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
+          <p className={`text-5xl font-black tracking-tighter transition-colors duration-300 ${isNetWorthNegative ? "text-red-500" : activeDataPoint?.val > 0 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
             {isNetWorthNegative ? "-" : ""}${Math.abs(activeDataPoint?.val || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
         </div>
       </div>
 
-      <div className="flex gap-2 mb-4 animate-slide-up" style={{ animationDelay: '200ms' }}>
+      <div className={`flex gap-2 mb-4 transform transition-all duration-700 delay-100 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
         {["1M", "3M", "6M", "YTD"].map((tf) => (
           <button
             key={tf}
@@ -139,9 +157,9 @@ export default function Accounts({
         ))}
       </div>
 
-      <div className="relative flex items-end justify-between h-28 gap-2 border-b border-dashed border-slate-200 dark:border-slate-700 pb-2 animate-slide-up" style={{ animationDelay: '300ms' }}>
+      <div className={`relative flex items-end justify-between h-28 gap-2 border-b border-dashed border-slate-200 dark:border-slate-700 pb-2 transform transition-all duration-1000 ease-out origin-bottom ${showChart ? "opacity-100 scale-y-100" : "opacity-0 scale-y-95"}`}>
         <svg className="absolute inset-0 w-full h-full pointer-events-none drop-shadow-md z-20" preserveAspectRatio="none" viewBox="0 0 100 100">
-          <path d={createSpline(historyData, maxChartVal)} fill="none" stroke="rgba(24, 119, 242, 0.8)" strokeWidth="3" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={createSpline(historyData, maxChartVal)} fill="none" stroke="#1877F2" strokeWidth="3" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
 
         {historyData.map((item, i) => {
@@ -177,7 +195,7 @@ export default function Accounts({
   );
 
   return (
-    <div className={`animate-fade-in pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
+    <div className={`pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
       {renderHeroShell(`${userName}'s Accounts`, graphicContent)}
       <main className="px-6 space-y-8 mt-4">
         
@@ -250,9 +268,9 @@ export default function Accounts({
                     const balanceAmt = Number(goal.balance) || 0;
                     const isComplete = balanceAmt >= targetAmt;
                     const progressPct = Math.min((balanceAmt / targetAmt) * 100, 100);
-
-                    // Re-use logic for positive glow (Emerald)
+                    
                     const isPositive = balanceAmt > 0;
+                    const isNegative = balanceAmt < 0;
 
                     return (
                     <div key={goal.id} className={`flex flex-col p-5 rounded-[1.5rem] border shadow-sm transition-all ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
@@ -277,11 +295,19 @@ export default function Accounts({
                            </button>
                         </div>
 
-                        <div className="flex items-end justify-between gap-2 mb-3">
+                        <div className="flex items-center justify-between gap-2 mb-3">
                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Current Balance</span>
-                           <span className={`text-xl font-black tracking-tighter ${isComplete ? "text-[#EAB308] drop-shadow-[0_0_12px_rgba(234,179,8,0.7)]" : isPositive ? (isDarkMode ? "text-emerald-400 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]" : "text-emerald-600 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]") : isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>
+                           <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 transition-colors whitespace-nowrap ${
+                               isComplete
+                                   ? isDarkMode ? "bg-yellow-900/30 text-yellow-400 border-yellow-900/50 drop-shadow-[0_0_12px_rgba(234,179,8,0.7)]" : "bg-yellow-50 text-yellow-600 border-yellow-200 drop-shadow-[0_0_12px_rgba(234,179,8,0.7)]"
+                                   : isNegative 
+                                   ? isDarkMode ? "bg-red-900/30 text-red-400 border-red-900/50 drop-shadow-[0_0_12px_rgba(239,68,68,0.7)]" : "bg-red-50 text-red-600 border-red-200 drop-shadow-[0_0_12px_rgba(239,68,68,0.7)]"
+                                   : isPositive 
+                                   ? isDarkMode ? "bg-emerald-900/30 text-emerald-400 border-emerald-900/50 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]" : "bg-emerald-50 text-emerald-600 border-emerald-200 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]"
+                                   : isDarkMode ? "bg-slate-800 text-slate-400 border-slate-700" : "bg-slate-100 text-slate-500 border-slate-200"
+                           }`}>
                                ${balanceAmt.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                           </span>
+                           </div>
                         </div>
 
                         <div className={`w-full h-2.5 rounded-full overflow-hidden border mb-2 ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-slate-100 border-slate-200"}`}>
@@ -289,8 +315,8 @@ export default function Accounts({
                         </div>
 
                         {goal.targetDate && (
-                           <div className="flex justify-start mb-4">
-                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Target Goal Date: {new Date(goal.targetDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}</span>
+                           <div className="flex justify-center items-center mt-2 mb-2 w-full">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Target Goal Date: {new Date(goal.targetDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}</span>
                            </div>
                         )}
 
@@ -329,6 +355,32 @@ export default function Accounts({
         </div>
 
       </main>
+
+      {/* Embedded Icon Selector Modal for Goal Drawer */}
+      {isIconSelectorOpen && (
+         <div className={`absolute inset-0 z-[150] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
+            <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
+               <h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Icon</h3>
+               <button onClick={() => setIsIconSelectorOpen(false)} className={closeButtonClass}><X size={18}/></button>
+            </div>
+            <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] p-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : "pb-20 lg:pb-6"}`}>
+               <div className="grid grid-cols-6 lg:grid-cols-8 gap-3">
+                 {categoryEmojis.map(emoji => (
+                   <button 
+                      key={emoji} 
+                      onClick={() => { 
+                          setSelectedGoalIcon(emoji); 
+                          setIsIconSelectorOpen(false); 
+                      }} 
+                      className={`w-12 h-12 flex items-center justify-center rounded-xl text-2xl border transition-all active:scale-90 ${selectedGoalIcon === emoji ? `bg-[#F97316] text-white border-transparent shadow-md` : isDarkMode ? "bg-slate-800 border-slate-700 hover:bg-slate-700" : "bg-slate-50 border-slate-200 hover:bg-slate-100"}`}
+                    >
+                      {emoji}
+                   </button>
+                 ))}
+               </div>
+            </div>
+         </div>
+      )}
     </div>
   );
 }

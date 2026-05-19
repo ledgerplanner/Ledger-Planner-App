@@ -295,7 +295,7 @@ export default function Accounts({
                            </button>
                         </div>
 
-                        <div className="flex items-center justify-between gap-2 mb-3">
+                        <div className="flex items-end justify-between gap-2 mb-3">
                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Current Balance</span>
                            <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 transition-colors whitespace-nowrap ${
                                isComplete

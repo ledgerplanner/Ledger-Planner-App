@@ -1616,7 +1616,8 @@ export default function App() {
               </div>
             </div>
           </div>
-        );})()}
+        );
+})()}
         {selectedEntry && !selectedAccount && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={closeEntryDrawer}></div>

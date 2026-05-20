@@ -1612,13 +1612,12 @@ export default function App() {
                   </div>
                 )}
                 <button onClick={confirmPaymentRoute} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#10B981] shadow-[0_8px_16px_rgba(16,185,129,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><CheckCircle2 size={16}/> Complete Payment {paymentModalConfig.isPayInFull ?
-                  `($${remainingBal.toFixed(2)})` : (activeBill ? `($${(activeBill.amount || 0).toFixed(2)})` : '')}</button>
-              </div>
-            </div>
-          </div>
-        );
-})()}
-        {selectedEntry && !selectedAccount && (
+                              `($${remainingBal.toFixed(2)})` : (activeBill ? `($${(activeBill.amount || 0).toFixed(2)})` : '')}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}        {selectedEntry && !selectedAccount && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={closeEntryDrawer}></div>
             <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col max-h-[95vh] transition-colors duration-500 ${isDarkMode ?

@@ -151,8 +151,8 @@ export default function Dashboard({
 
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-6 w-full">
-      {/* 👑 PREMIUM GRADIENT HERO */}
-      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-100 via-white via-25% to-white border-white/80 border-t-white shadow-[inset_0_2px_4px_rgba(255,255,255,0.8),0_12px_40px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.05)]"}`}>
+      {/* 👑 PREMIUM EVOLVED 3D FLOATING HERO CARD */}
+      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-slate-50/90 border-slate-200/50 border-t-white/80 shadow-[0_2px_4px_rgba(0,0,0,0.02),0_20px_40px_rgba(24,119,242,0.06)]"}`}>
         
         <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
           <span className={`text-[10px] font-black uppercase tracking-widest opacity-80 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
@@ -162,7 +162,7 @@ export default function Dashboard({
         
         <div className="relative w-28 h-28 flex-shrink-0">
           <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "rgba(51, 65, 85, 0.5)" : "rgba(255, 255, 255, 0.6)"} strokeWidth="12" />
+            <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "rgba(51, 65, 85, 0.5)" : "rgba(226, 232, 240, 0.8)"} strokeWidth="12" />
             <circle cx="50" cy="50" r="40" fill="transparent" stroke={safeToSpend < 0 ? "#EF4444" : "#3B82F6"} strokeWidth="12" strokeLinecap="round" strokeDasharray={strokeDasharray} strokeDashoffset={isMounted ? targetDashoffset : strokeDasharray} className="transition-all duration-1000 delay-150 ease-out" />
           </svg>
           <div className={`absolute inset-0 flex flex-col items-center justify-center transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
@@ -173,7 +173,7 @@ export default function Dashboard({
         
         {/* 📱 FLUID TYPOGRAPHY (NO ELLIPSES) */}
         <div className={`flex-1 pl-4 flex flex-col items-end transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
-          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border mb-2 shadow-sm ${isDarkMode ? "bg-slate-800/80 border-slate-700 text-slate-300" : "bg-white/80 border-white text-slate-600"}`}>
+          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border mb-2 shadow-sm ${isDarkMode ? "bg-slate-800/80 border-slate-700 text-slate-300" : "bg-white/80 border-slate-200/60 text-slate-600"}`}>
             <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${safeToSpend < 0 ? "bg-red-500" : "bg-emerald-500 animate-pulse"}`}></div>
             <span className="text-[9px] font-black uppercase tracking-wider">SAFE TO SPEND</span>
           </div>
@@ -354,7 +354,7 @@ export default function Dashboard({
                                   <span className={`text-xs font-bold ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
                                      {bill?.fullDate || "TBD"}
                                   </span>
-                               </div>
+                                </div>
                                
                                <div className="flex-1 flex justify-center px-1">
                                   {!bill?.isPaid ? (
@@ -366,11 +366,11 @@ export default function Dashboard({
                                   ) : (
                                       <div className="px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0"><CheckCircle2 size={14} /> Paid</div>
                                   )}
-                               </div>
-
+                                animate-pulse</div>
+                               
                                <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 text-[#1877F2] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] whitespace-nowrap`}>
                                   ${(Number(bill?.amount) || 0).toFixed(2)}
-                               </div>
+                                </div>
                             </div>
 
                             {bill?.isInstallment && (
@@ -396,89 +396,90 @@ export default function Dashboard({
             );
           })}
         </div>
+      </div>
 
-        <div className={`mt-6 py-4 px-5 rounded-[1.5rem] border flex flex-col items-center justify-center gap-2 transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-800 shadow-sm" : "bg-white/80 backdrop-blur-md border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]"}`}>
-           <span className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Total Bills for {currentMonthName}</span>
-           <div className={`px-3 py-1.5 rounded-[8px] border font-black text-lg tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"}`}>
-              ${currentMonthBillsTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-           </div>
-        </div>
+      <div className={`mt-6 py-4 px-5 rounded-[1.5rem] border flex flex-col items-center justify-center gap-2 transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-800 shadow-sm" : "bg-white/80 backdrop-blur-md border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]"}`}>
+         <span className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Total Bills for {currentMonthName}</span>
+         <div className={`px-3 py-1.5 rounded-[8px] border font-black text-lg tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"}`}>
+            ${currentMonthBillsTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+         </div>
+      </div>
 
-        <div className={`space-y-4 pt-4 border-t mt-8 ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}>
-          <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Recent Activity</h3>
-          <div className={`rounded-[2rem] p-4 border transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white/80 backdrop-blur-md border-white/60 shadow-sm"}`}>
-            {transactions.length === 0 ? ( <p className="text-center py-8 font-bold text-slate-400">No activity yet.</p> ) : (
-              <div className="space-y-3">
-                {transactions.slice(0, 5).map((tx) => {
-                  const isBillTx = tx?.isBillPayment || tx?.type === "Bill" || (tx?.category && tx?.category.toLowerCase().includes("bill"));
-                  let txColorStr = "";
-                  let txBgBorderStr = "";
-                  let txShadowStr = "";
-                  let txPrefix = "";
+      <div className={`space-y-4 pt-4 border-t mt-8 ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}>
+        <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Recent Activity</h3>
+        <div className={`rounded-[2rem] p-4 border transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white/80 backdrop-blur-md border-white/60 shadow-sm"}`}>
+          {transactions.length === 0 ? ( <p className="text-center py-8 font-bold text-slate-400">No activity yet.</p> ) : (
+            <div className="space-y-3">
+              {transactions.slice(0, 5).map((tx) => {
+                const isBillTx = tx?.isBillPayment || tx?.type === "Bill" || (tx?.category && tx?.category.toLowerCase().includes("bill"));
+                let txColorStr = "";
+                let txBgBorderStr = "";
+                let txShadowStr = "";
+                let txPrefix = "";
 
-                  if (tx?.type === "Income") {
-                      txColorStr = "text-emerald-500";
-                      txBgBorderStr = isDarkMode ? "bg-emerald-900/20 border-emerald-500/30" : "bg-emerald-50 border-emerald-200";
-                      txShadowStr = "drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]";
-                      txPrefix = "+";
-                  } else if (isBillTx) {
-                      txColorStr = "text-[#1877F2]";
-                      txBgBorderStr = isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200";
-                      txShadowStr = "drop-shadow-[0_0_12px_rgba(24,119,242,0.7)]";
-                      txPrefix = "-";
-                  } else {
-                      txColorStr = "text-orange-500";
-                      txBgBorderStr = isDarkMode ? "bg-orange-900/20 border-orange-500/30" : "bg-orange-50 border-orange-200";
-                      txShadowStr = "drop-shadow-[0_0_12px_rgba(249,115,22,0.7)]";
-                      txPrefix = "-";
-                  }
+                if (tx?.type === "Income") {
+                    txColorStr = "text-emerald-500";
+                    txBgBorderStr = isDarkMode ? "bg-emerald-900/20 border-emerald-500/30" : "bg-emerald-50 border-emerald-200";
+                    txShadowStr = "drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]";
+                    txPrefix = "+";
+                } else if (isBillTx) {
+                    txColorStr = "text-[#1877F2]";
+                    txBgBorderStr = isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200";
+                    txShadowStr = "drop-shadow-[0_0_12px_rgba(24,119,242,0.7)]";
+                    txPrefix = "-";
+                } else {
+                    txColorStr = "text-orange-500";
+                    txBgBorderStr = isDarkMode ? "bg-orange-900/20 border-orange-500/30" : "bg-orange-50 border-orange-200";
+                    txShadowStr = "drop-shadow-[0_0_12px_rgba(249,115,22,0.7)]";
+                    txPrefix = "-";
+                }
 
-                  return (
-                    <div key={tx?.id} className={`flex flex-col p-4 rounded-[1.5rem] border transition-all ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50 shadow-sm"}`}>
-                      
-                      <div className="flex items-start justify-between w-full mb-3 gap-2">
-                         <div className="flex items-start gap-3 flex-1 min-w-0">
-                            <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
-                               {tx?.icon || "💳"}
-                            </div>
-                            <div className="flex flex-col flex-1 min-w-0 pt-1">
-                               <p className={`font-black text-base leading-tight break-words whitespace-normal ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                                  {tx?.name || "Transaction"}
-                               </p>
-                            </div>
-                         </div>
-                         <button 
-                           onClick={(e) => { e.stopPropagation(); setSelectedEntry(tx); }} 
-                           className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
-                         >
-                            <Edit2 size={16} strokeWidth={2.5} />
-                         </button>
-                      </div>
-
-                      <div className={`w-full border-t mb-3 ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}></div>
-
-                      <div className="flex items-center justify-between gap-2 w-full">
-                         <div className="flex flex-col flex-1 min-w-0 pr-2">
-                            <span className={`text-[9px] font-black uppercase tracking-widest truncate w-full ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{tx?.category || "General"}</span>
-                            <span className={`text-[10px] font-semibold uppercase tracking-widest mt-0.5 truncate w-full ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>{tx?.date || "Recent"}</span>
-                         </div>
-                         <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 ${txColorStr} ${txBgBorderStr} ${txShadowStr} whitespace-nowrap`}>
-                            {txPrefix}${(Number(tx?.amount) || 0).toFixed(2)}
-                         </div>
-                      </div>
-
+                return (
+                  <div key={tx?.id} className={`flex flex-col p-4 rounded-[1.5rem] border transition-all ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50 shadow-sm"}`}>
+                    
+                    <div className="flex items-start justify-between w-full mb-3 gap-2">
+                       <div className="flex items-start gap-3 flex-1 min-w-0">
+                          <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                             {tx?.icon || "💳"}
+                          </div>
+                          <div className="flex flex-col flex-1 min-w-0 pt-1">
+                             <p className={`font-black text-base leading-tight break-words whitespace-normal ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                                {tx?.name || "Transaction"}
+                             </p>
+                          </div>
+                       </div>
+                       <button 
+                         onClick={(e) => { e.stopPropagation(); setSelectedEntry(tx); }} 
+                         className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
+                       >
+                          <Edit2 size={16} strokeWidth={2.5} />
+                       </button>
                     </div>
-                  );
-                })}
-                
-                <button onClick={() => changeTab("activity")} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] flex items-center justify-center gap-2 transition-all active:scale-95 hover:-translate-y-0.5">
-                  <List size={16} /> See All Recent Activity
-                </button>
-              </div>
-            )}
-          </div>
+
+                    <div className={`w-full border-t mb-3 ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}></div>
+
+                    <div className="flex items-center justify-between gap-2 w-full">
+                       <div className="flex flex-col flex-1 min-w-0 pr-2">
+                          <span className={`text-[9px] font-black uppercase tracking-widest truncate w-full ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{tx?.category || "General"}</span>
+                          <span className={`text-[10px] font-semibold uppercase tracking-widest mt-0.5 truncate w-full ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>{tx?.date || "Recent"}</span>
+                       </div>
+                       <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 ${txColorStr} ${txBgBorderStr} ${txShadowStr} whitespace-nowrap`}>
+                          {txPrefix}${(Number(tx?.amount) || 0).toFixed(2)}
+                       </div>
+                    </div>
+
+                  </div>
+                );
+              })}
+              
+              <button onClick={() => changeTab("activity")} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] flex items-center justify-center gap-2 transition-all active:scale-95 hover:-translate-y-0.5">
+                <List size={16} /> See All Recent Activity
+              </button>
+            </div>
+          )}
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
+  </div>
   );
 }

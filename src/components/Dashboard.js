@@ -151,8 +151,8 @@ export default function Dashboard({
 
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-6 w-full">
-      {/* 👑 PREMIUM EVOLVED 3D FLOATING HERO CARD */}
-      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-white via-slate-50/90 to-slate-100/60 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_4px_12px_rgba(0,0,0,0.02),0_15px_35px_rgba(24,119,242,0.12)]"}`}>
+      {/* 👑 PREMIUM GRADIENT HERO */}
+      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-100 via-white via-25% to-white border-white/80 border-t-white shadow-[inset_0_2px_4px_rgba(255,255,255,0.8),0_12px_24px_rgba(24,119,242,0.3),0_4px_12px_rgba(0,0,0,0.05)]"}`}>
         
         <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
           <span className={`text-[10px] font-black uppercase tracking-widest opacity-80 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
@@ -162,7 +162,7 @@ export default function Dashboard({
         
         <div className="relative w-28 h-28 flex-shrink-0">
           <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "rgba(51, 65, 85, 0.5)" : "rgba(226, 232, 240, 0.9)"} strokeWidth="12" />
+            <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "rgba(51, 65, 85, 0.5)" : "rgba(255, 255, 255, 0.6)"} strokeWidth="12" />
             <circle cx="50" cy="50" r="40" fill="transparent" stroke={safeToSpend < 0 ? "#EF4444" : "#3B82F6"} strokeWidth="12" strokeLinecap="round" strokeDasharray={strokeDasharray} strokeDashoffset={isMounted ? targetDashoffset : strokeDasharray} className="transition-all duration-1000 delay-150 ease-out" />
           </svg>
           <div className={`absolute inset-0 flex flex-col items-center justify-center transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
@@ -173,7 +173,7 @@ export default function Dashboard({
         
         {/* 📱 FLUID TYPOGRAPHY (NO ELLIPSES) */}
         <div className={`flex-1 pl-4 flex flex-col items-end transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
-          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border mb-2 shadow-sm ${isDarkMode ? "bg-slate-800/80 border-slate-700 text-slate-300" : "bg-white/80 border-slate-200/60 text-slate-600"}`}>
+          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border mb-2 shadow-sm ${isDarkMode ? "bg-slate-800/80 border-slate-700 text-slate-300" : "bg-white/80 border-white text-slate-600"}`}>
             <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${safeToSpend < 0 ? "bg-red-500" : "bg-emerald-500 animate-pulse"}`}></div>
             <span className="text-[9px] font-black uppercase tracking-wider">SAFE TO SPEND</span>
           </div>
@@ -366,7 +366,7 @@ export default function Dashboard({
                                   ) : (
                                       <div className="px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0"><CheckCircle2 size={14} /> Paid</div>
                                   )}
-                                </div>
+                               </div>
                                
                                <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 text-[#1877F2] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] whitespace-nowrap`}>
                                   ${(Number(bill?.amount) || 0).toFixed(2)}

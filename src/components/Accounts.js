@@ -175,17 +175,19 @@ export default function Accounts({
               animation: drawTrendLine 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
             }
           `}</style>
-          <path 
-            key={timeframe}
-            d={createSpline(historyData, maxChartVal)} 
-            fill="none" 
-            stroke="#1877F2" 
-            strokeWidth="3" 
-            vectorEffect="non-scaling-stroke" 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
-            className="animate-trend-line"
-          />
+          {showChart && (
+            <path 
+              key={timeframe}
+              d={createSpline(historyData, maxChartVal)} 
+              fill="none" 
+              stroke="#1877F2" 
+              strokeWidth="3" 
+              vectorEffect="non-scaling-stroke" 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              className="animate-trend-line"
+            />
+          )}
         </svg>
 
         {historyData.map((item, i) => {

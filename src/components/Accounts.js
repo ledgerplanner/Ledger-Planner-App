@@ -21,7 +21,6 @@ export default function Accounts({
   // Animation Triggers
   const [showContent, setShowContent] = useState(false);
   const [showChart, setShowChart] = useState(false);
-  const [animateLine, setAnimateLine] = useState(false);
 
   // QAB Icon Selector State (for Goal Drawer)
   const [isIconSelectorOpen, setIsIconSelectorOpen] = useState(false);
@@ -111,15 +110,6 @@ export default function Accounts({
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
-  // Timeframe Change Watcher to Reset and Re-trigger Line Animation
-  useEffect(() => {
-    setAnimateLine(false);
-    const lineTimer = setTimeout(() => {
-      setAnimateLine(true);
-    }, 25);
-    return () => clearTimeout(lineTimer);
-  }, [timeframe]);
-
   const maxChartVal = Math.max(...historyData.map((d) => Math.abs(d.val)), 1);
   const activeDataPoint = historyData[activeChartNode] || historyData[historyData.length - 1];
   const isNetWorthNegative = activeDataPoint?.val < 0;
@@ -174,6 +164,17 @@ export default function Accounts({
       {/* 📊 CHART CANVAS CONTAINER (LEFT ON BASE CANVAS LAYER) */}
       <div className={`relative flex items-end justify-between h-28 gap-2 border-b border-dashed border-slate-200 dark:border-slate-700 pb-2 mt-4 transform transition-all duration-1000 ease-out origin-bottom ${showChart ? "opacity-100 scale-y-100" : "opacity-0 scale-y-95"}`}>
         <svg className="absolute inset-0 w-full h-full pointer-events-none drop-shadow-md z-20" preserveAspectRatio="none" viewBox="0 0 100 100">
+          <style>{`
+            @keyframes drawTrendLine {
+              from { stroke-dashoffset: 1000; }
+              to { stroke-dashoffset: 0; }
+            }
+            .animate-trend-line {
+              stroke-dasharray: 1000;
+              stroke-dashoffset: 1000;
+              animation: drawTrendLine 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            }
+          `}</style>
           <path 
             key={timeframe}
             d={createSpline(historyData, maxChartVal)} 
@@ -183,11 +184,7 @@ export default function Accounts({
             vectorEffect="non-scaling-stroke" 
             strokeLinecap="round" 
             strokeLinejoin="round" 
-            style={{
-              strokeDasharray: 1000,
-              strokeDashoffset: (showChart && animateLine) ? 0 : 1000,
-              transition: "stroke-dashoffset 1.2s ease-in-out"
-            }}
+            className="animate-trend-line"
           />
         </svg>
 

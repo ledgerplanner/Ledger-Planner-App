@@ -337,7 +337,7 @@ export default function Dashboard({
                                   <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                                      {bill?.name || "Unnamed"}
                                   </p>
-                               </div>
+                                </div>
                                <button 
                                  onClick={(e) => { e.stopPropagation(); setSelectedEntry(bill); }} 
                                  className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
@@ -366,7 +366,7 @@ export default function Dashboard({
                                   ) : (
                                       <div className="px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0"><CheckCircle2 size={14} /> Paid</div>
                                   )}
-                                animate-pulse</div>
+                               </div>
                                
                                <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 text-[#1877F2] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] whitespace-nowrap`}>
                                   ${(Number(bill?.amount) || 0).toFixed(2)}
@@ -396,90 +396,89 @@ export default function Dashboard({
             );
           })}
         </div>
-      </div>
 
-      <div className={`mt-6 py-4 px-5 rounded-[1.5rem] border flex flex-col items-center justify-center gap-2 transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-800 shadow-sm" : "bg-white/80 backdrop-blur-md border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]"}`}>
-         <span className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Total Bills for {currentMonthName}</span>
-         <div className={`px-3 py-1.5 rounded-[8px] border font-black text-lg tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"}`}>
-            ${currentMonthBillsTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-         </div>
-      </div>
+        <div className={`mt-6 py-4 px-5 rounded-[1.5rem] border flex flex-col items-center justify-center gap-2 transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-800 shadow-sm" : "bg-white/80 backdrop-blur-md border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]"}`}>
+           <span className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Total Bills for {currentMonthName}</span>
+           <div className={`px-3 py-1.5 rounded-[8px] border font-black text-lg tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"}`}>
+              ${currentMonthBillsTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+           </div>
+        </div>
 
-      <div className={`space-y-4 pt-4 border-t mt-8 ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}>
-        <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Recent Activity</h3>
-        <div className={`rounded-[2rem] p-4 border transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white/80 backdrop-blur-md border-white/60 shadow-sm"}`}>
-          {transactions.length === 0 ? ( <p className="text-center py-8 font-bold text-slate-400">No activity yet.</p> ) : (
-            <div className="space-y-3">
-              {transactions.slice(0, 5).map((tx) => {
-                const isBillTx = tx?.isBillPayment || tx?.type === "Bill" || (tx?.category && tx?.category.toLowerCase().includes("bill"));
-                let txColorStr = "";
-                let txBgBorderStr = "";
-                let txShadowStr = "";
-                let txPrefix = "";
+        <div className={`space-y-4 pt-4 border-t mt-8 ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}>
+          <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Recent Activity</h3>
+          <div className={`rounded-[2rem] p-4 border transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white/80 backdrop-blur-md border-white/60 shadow-sm"}`}>
+            {transactions.length === 0 ? ( <p className="text-center py-8 font-bold text-slate-400">No activity yet.</p> ) : (
+              <div className="space-y-3">
+                {transactions.slice(0, 5).map((tx) => {
+                  const isBillTx = tx?.isBillPayment || tx?.type === "Bill" || (tx?.category && tx?.category.toLowerCase().includes("bill"));
+                  let txColorStr = "";
+                  let txBgBorderStr = "";
+                  let txShadowStr = "";
+                  let txPrefix = "";
 
-                if (tx?.type === "Income") {
-                    txColorStr = "text-emerald-500";
-                    txBgBorderStr = isDarkMode ? "bg-emerald-900/20 border-emerald-500/30" : "bg-emerald-50 border-emerald-200";
-                    txShadowStr = "drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]";
-                    txPrefix = "+";
-                } else if (isBillTx) {
-                    txColorStr = "text-[#1877F2]";
-                    txBgBorderStr = isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200";
-                    txShadowStr = "drop-shadow-[0_0_12px_rgba(24,119,242,0.7)]";
-                    txPrefix = "-";
-                } else {
-                    txColorStr = "text-orange-500";
-                    txBgBorderStr = isDarkMode ? "bg-orange-900/20 border-orange-500/30" : "bg-orange-50 border-orange-200";
-                    txShadowStr = "drop-shadow-[0_0_12px_rgba(249,115,22,0.7)]";
-                    txPrefix = "-";
-                }
+                  if (tx?.type === "Income") {
+                      txColorStr = "text-emerald-500";
+                      txBgBorderStr = isDarkMode ? "bg-emerald-900/20 border-emerald-500/30" : "bg-emerald-50 border-emerald-200";
+                      txShadowStr = "drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]";
+                      txPrefix = "+";
+                  } else if (isBillTx) {
+                      txColorStr = "text-[#1877F2]";
+                      txBgBorderStr = isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200";
+                      txShadowStr = "drop-shadow-[0_0_12px_rgba(24,119,242,0.7)]";
+                      txPrefix = "-";
+                  } else {
+                      txColorStr = "text-orange-500";
+                      txBgBorderStr = isDarkMode ? "bg-orange-900/20 border-orange-500/30" : "bg-orange-50 border-orange-200";
+                      txShadowStr = "drop-shadow-[0_0_12px_rgba(249,115,22,0.7)]";
+                      txPrefix = "-";
+                  }
 
-                return (
-                  <div key={tx?.id} className={`flex flex-col p-4 rounded-[1.5rem] border transition-all ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50 shadow-sm"}`}>
-                    
-                    <div className="flex items-start justify-between w-full mb-3 gap-2">
-                       <div className="flex items-start gap-3 flex-1 min-w-0">
-                          <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
-                             {tx?.icon || "💳"}
-                          </div>
-                          <div className="flex flex-col flex-1 min-w-0 pt-1">
-                             <p className={`font-black text-base leading-tight break-words whitespace-normal ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                                {tx?.name || "Transaction"}
-                             </p>
-                          </div>
-                       </div>
-                       <button 
-                         onClick={(e) => { e.stopPropagation(); setSelectedEntry(tx); }} 
-                         className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
-                       >
-                          <Edit2 size={16} strokeWidth={2.5} />
-                       </button>
-                    </div>
+                  return (
+                    <div key={tx?.id} className={`flex flex-col p-4 rounded-[1.5rem] border transition-all ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50 shadow-sm"}`}>
+                      
+                      <div className="flex items-start justify-between w-full mb-3 gap-2">
+                         <div className="flex items-start gap-3 flex-1 min-w-0">
+                            <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                               {tx?.icon || "💳"}
+                            </div>
+                            <div className="flex flex-col flex-1 min-w-0 pt-1">
+                               <p className={`font-black text-base leading-tight break-words whitespace-normal ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                                  {tx?.name || "Transaction"}
+                               </p>
+                            </div>
+                         </div>
+                         <button 
+                           onClick={(e) => { e.stopPropagation(); setSelectedEntry(tx); }} 
+                           className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
+                         >
+                            <Edit2 size={16} strokeWidth={2.5} />
+                         </button>
+                      </div>
 
-                    <div className={`w-full border-t mb-3 ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}></div>
+                      <div className={`w-full border-t mb-3 ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}></div>
 
-                    <div className="flex items-center justify-between gap-2 w-full">
-                       <div className="flex flex-col flex-1 min-w-0 pr-2">
+                      <div className="flex items-center justify-between gap-2 w-full">
+                         <div className="flex flex-col flex-1 min-w-0 pr-2">
                           <span className={`text-[9px] font-black uppercase tracking-widest truncate w-full ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{tx?.category || "General"}</span>
                           <span className={`text-[10px] font-semibold uppercase tracking-widest mt-0.5 truncate w-full ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>{tx?.date || "Recent"}</span>
-                       </div>
-                       <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 ${txColorStr} ${txBgBorderStr} ${txShadowStr} whitespace-nowrap`}>
-                          {txPrefix}${(Number(tx?.amount) || 0).toFixed(2)}
-                       </div>
-                    </div>
+                         </div>
+                         <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 ${txColorStr} ${txBgBorderStr} ${txShadowStr} whitespace-nowrap`}>
+                            {txPrefix}${(Number(tx?.amount) || 0).toFixed(2)}
+                         </div>
+                      </div>
 
-                  </div>
-                );
-              })}
-              
-              <button onClick={() => changeTab("activity")} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] flex items-center justify-center gap-2 transition-all active:scale-95 hover:-translate-y-0.5">
-                <List size={16} /> See All Recent Activity
-              </button>
-            </div>
-          )}
+                    </div>
+                  );
+                })}
+                
+                <button onClick={() => changeTab("activity")} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] flex items-center justify-center gap-2 transition-all active:scale-95 hover:-translate-y-0.5">
+                  <List size={16} /> See All Recent Activity
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </main>
-  </div>
+      </main>
+    </div>
   );
 }

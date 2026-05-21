@@ -135,31 +135,50 @@ export default function Accounts({
   const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
 
   const graphicContent = (
-    <div className="relative z-10 mb-2">
-      <div className={`flex justify-between items-end mb-4 transform transition-all duration-700 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-        <div>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Net Worth • <span className={`${isNetWorthNegative ? "text-red-500" : "text-[#1877F2]"}`}>{activeDataPoint?.label} {activeDataPoint?.year}</span></p>
-          <p className={`text-5xl font-black tracking-tighter transition-colors duration-300 ${isNetWorthNegative ? "text-red-500" : activeDataPoint?.val > 0 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
-            {isNetWorthNegative ? "-" : ""}${Math.abs(activeDataPoint?.val || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </p>
+    <div className="flex flex-col relative z-10 mb-2 w-full">
+      {/* 👑 MASTER FLOATING NET WORTH SUMMARY CARD */}
+      <div className={`relative p-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-white via-slate-50/90 to-slate-100/60 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.3),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
+        
+        <div className={`flex justify-between items-end mb-4 transform transition-all duration-700 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest mb-1 text-slate-400">Net Worth • <span className={`${isNetWorthNegative ? "text-red-500" : "text-[#1877F2]"}`}>{activeDataPoint?.label} {activeDataPoint?.year}</span></p>
+            <p className={`text-4xl font-black tracking-tighter transition-colors duration-300 ${isNetWorthNegative ? "text-red-500" : activeDataPoint?.val > 0 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
+              {isNetWorthNegative ? "-" : ""}${Math.abs(activeDataPoint?.val || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+          </div>
+        </div>
+
+        <div className={`flex gap-2 transform transition-all duration-700 delay-100 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+          {["1M", "3M", "6M", "YTD"].map((tf) => (
+            <button
+              key={tf}
+              onClick={() => setTimeframe(tf)}
+              className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${timeframe === tf ? "bg-[#1877F2] text-white shadow-[0_4px_12px_rgba(24,119,242,0.3)]" : (isDarkMode ? "bg-slate-800/50 text-slate-500 hover:text-slate-300" : "bg-white/80 text-slate-400 hover:text-slate-600 border border-slate-200")}`}
+            >
+              {tf}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className={`flex gap-2 mb-4 transform transition-all duration-700 delay-100 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-        {["1M", "3M", "6M", "YTD"].map((tf) => (
-          <button
-            key={tf}
-            onClick={() => setTimeframe(tf)}
-            className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${timeframe === tf ? "bg-[#1877F2] text-white shadow-[0_4px_12px_rgba(24,119,242,0.3)]" : (isDarkMode ? "bg-slate-800/50 text-slate-500 hover:text-slate-300" : "bg-white/60 text-slate-400 hover:text-slate-600 border border-slate-200")}`}
-          >
-            {tf}
-          </button>
-        ))}
-      </div>
-
-      <div className={`relative flex items-end justify-between h-28 gap-2 border-b border-dashed border-slate-200 dark:border-slate-700 pb-2 transform transition-all duration-1000 ease-out origin-bottom ${showChart ? "opacity-100 scale-y-100" : "opacity-0 scale-y-95"}`}>
+      {/* 📊 CHART CANVAS CONTAINER (LEFT ON BASE CANVAS LAYER) */}
+      <div className={`relative flex items-end justify-between h-28 gap-2 border-b border-dashed border-slate-200 dark:border-slate-700 pb-2 mt-4 transform transition-all duration-1000 ease-out origin-bottom ${showChart ? "opacity-100 scale-y-100" : "opacity-0 scale-y-95"}`}>
         <svg className="absolute inset-0 w-full h-full pointer-events-none drop-shadow-md z-20" preserveAspectRatio="none" viewBox="0 0 100 100">
-          <path d={createSpline(historyData, maxChartVal)} fill="none" stroke="#1877F2" strokeWidth="3" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
+          <path 
+            key={timeframe}
+            d={createSpline(historyData, maxChartVal)} 
+            fill="none" 
+            stroke="#1877F2" 
+            strokeWidth="3" 
+            vectorEffect="non-scaling-stroke" 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            style={{
+              strokeDasharray: 1000,
+              strokeDashoffset: showChart ? 0 : 1000,
+              transition: "stroke-dashoffset 1.2s ease-in-out"
+            }}
+          />
         </svg>
 
         {historyData.map((item, i) => {
@@ -311,7 +330,7 @@ export default function Accounts({
                         </div>
 
                         <div className={`w-full h-2.5 rounded-full overflow-hidden border mb-2 ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-slate-100 border-slate-200"}`}>
-                            <div className={`h-full transition-all duration-1000 ${isComplete ? "bg-gradient-to-r from-yellow-500 to-yellow-300 shadow-[0_0_10px_rgba(234,179,8,0.5)]" : "bg-[#1877F2]"}`} style={{ width: `${progressPct}%` }}></div>
+                             <div className={`h-full transition-all duration-1000 ${isComplete ? "bg-gradient-to-r from-yellow-500 to-yellow-300 shadow-[0_0_10px_rgba(234,179,8,0.5)]" : "bg-[#1877F2]"}`} style={{ width: `${progressPct}%` }}></div>
                         </div>
 
                         {goal.targetDate && (

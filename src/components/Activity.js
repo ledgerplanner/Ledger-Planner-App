@@ -1,333 +1,185 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { Search, Edit2, ChevronUp, ChevronDown } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { ArrowUpCircle, ArrowDownCircle, Filter, Edit2, List, Calendar, Search } from "lucide-react";
 
-export default function Activity({ 
-  userName, transactions, activitySearch, setActivitySearch, 
-  activityFilter, setActivityFilter, isDarkMode, setSelectedEntry, renderHeroShell 
+export default function Activity({
+  userName = "Founder",
+  transactions = [],
+  isDarkMode,
+  renderHeroShell,
+  setSelectedEntry,
+  changeTab
 }) {
-  const [collapsedMonths, setCollapsedMonths] = useState({});
-
-  const filteredTransactions = transactions.filter(tx => {
-    const matchesSearch = tx.name.toLowerCase().includes(activitySearch.toLowerCase()) || (tx.category && tx.category.toLowerCase().includes(activitySearch.toLowerCase()));
-    const matchesFilter = activityFilter === "All" || tx.type === activityFilter;
-    return matchesSearch && matchesFilter;
-  });
-
-  const groupedTransactions = useMemo(() => {
-    const groups = {};
-    const today = new Date();
-    const currentYear = today.getFullYear();
-
-    filteredTransactions.forEach(tx => {
-      const d = new Date(tx.rawDate || tx.date || today);
-      
-      if (d.getFullYear() === 2001) {
-        d.setFullYear(currentYear);
-      }
-
-      const monthYear = d.toLocaleString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
-      
-      if (!groups[monthYear]) {
-        groups[monthYear] = {
-          label: monthYear,
-          timestamp: d.getTime(), 
-          transactions: [],
-          inflow: 0,
-          outflow: 0
-        };
-      }
-      groups[monthYear].transactions.push(tx);
-      if (tx.type === "Income") groups[monthYear].inflow += Number(tx.amount) || 0;
-      if (tx.type === "Expense") groups[monthYear].outflow += Number(tx.amount) || 0;
-    });
-
-    return Object.values(groups).sort((a, b) => b.timestamp - a.timestamp);
-  }, [filteredTransactions]);
+  const [isMounted, setIsMounted] = useState(false);
+  const [activeFilter, setActiveFilter] = useState("All");
 
   useEffect(() => {
-    const isSearching = activitySearch.trim() !== "" || activityFilter !== "All";
-    
-    if (isSearching) {
-      setCollapsedMonths({});
-    } else {
-      if (groupedTransactions.length > 0) {
-        const defaultCollapsed = {};
-        groupedTransactions.forEach((group, index) => {
-          if (index !== 0) defaultCollapsed[group.label] = true;
-        });
-        setCollapsedMonths(defaultCollapsed);
-      }
-    }
-  }, [activitySearch, activityFilter, groupedTransactions.length]); 
+    setIsMounted(true);
+  }, []);
 
-  const toggleMonth = (monthLabel) => {
-    setCollapsedMonths(prev => ({ ...prev, [monthLabel]: !prev[monthLabel] }));
-  };
+  // Structural Financial Calculations
+  const totalIncome = transactions
+    .filter((tx) => tx?.type === "Income")
+    .reduce((sum, tx) => sum + (Number(tx?.amount) || 0), 0);
 
-  const formatActivityDate = (dateStr, groupLabel) => {
-    if (!dateStr) return "TBD";
-    const groupYear = groupLabel.split(" ")[1] || new Date().getFullYear();
-    return dateStr.replace(/2001/g, groupYear);
-  };
+  const totalExpense = transactions
+    .filter((tx) => tx?.type !== "Income")
+    .reduce((sum, tx) => sum + (Number(tx?.amount) || 0), 0);
 
-  const totalIncome = transactions.filter(t => t.type === "Income").reduce((sum, t) => sum + t.amount, 0);
-  const totalExpense = transactions.filter(t => t.type === "Expense").reduce((sum, t) => sum + t.amount, 0);
   const netCashFlow = totalIncome - totalExpense;
+  const isNetNegative = netCashFlow < 0;
+
   const totalVolume = totalIncome + totalExpense;
-  const inPercentage = totalVolume > 0 ? (totalIncome / totalVolume) * 100 : 50;
+  const incomeRatio = totalVolume === 0 ? 50 : (totalIncome / totalVolume) * 100;
 
-  const isIncomeView = activityFilter === "Income";
-  const targetTransactions = isIncomeView 
-    ? transactions.filter(t => t.type === "Income") 
-    : transactions.filter(t => t.type === "Expense"); 
-
-  const totalTargetAmount = targetTransactions.reduce((sum, t) => sum + t.amount, 0);
-
-  const categoriesMap = targetTransactions.reduce((acc, t) => {
-    const catName = t.category || "Uncategorized";
-    acc[catName] = (acc[catName] || 0) + t.amount;
-    return acc;
-  }, {});
-
-  const sortedCategories = Object.entries(categoriesMap).sort((a, b) => b[1] - a[1]);
-  
-  const topCategories = sortedCategories.slice(0, 8);
-  const otherAmount = sortedCategories.slice(8).reduce((sum, [_, amt]) => sum + amt, 0);
-  if (otherAmount > 0) topCategories.push(["Other", otherAmount]);
-
-  const colors = isIncomeView 
-    ? ["#10B981", "#059669", "#34D399", "#6EE7B7", "#047857", "#064E3B", "#0D9488", "#14B8A6", "#94A3B8"] 
-    : ["#1877F2", "#F59E0B", "#8B5CF6", "#EC4899", "#06B6D4", "#F43F5E", "#F97316", "#84CC16", "#64748B"]; 
-
-  let currentOffset = 0;
-  const radius = 42; 
-  const circumference = 2 * Math.PI * radius;
-
-  const chartSegments = topCategories.map(([name, amount], index) => {
-    const percentage = totalTargetAmount > 0 ? amount / totalTargetAmount : 0;
-    const strokeDasharray = `${percentage * circumference} ${circumference}`;
-    const strokeDashoffset = -currentOffset;
-    currentOffset += percentage * circumference;
-    return { name, amount, percentage, strokeDasharray, strokeDashoffset, color: colors[index] };
-  });
-
-  const getTxAmountClasses = (tx, isDark) => {
-    if (tx.isBillPayment || tx.category === "Bill Payment") {
-      return isDark 
-        ? "bg-[#1877F2]/20 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)]" 
-        : "bg-blue-50 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)]";
-    }
-    if (tx.type === "Income") {
-      return isDark 
-        ? "bg-emerald-900/30 text-emerald-400 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]" 
-        : "bg-emerald-50 text-emerald-600 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]";
-    }
-    return isDark 
-      ? "bg-orange-900/30 text-orange-400 drop-shadow-[0_0_12px_rgba(249,115,22,0.7)]" 
-      : "bg-orange-50 text-orange-600 drop-shadow-[0_0_12px_rgba(249,115,22,0.7)]";
-  };
-
-  const getTxCategoryColor = (tx) => {
-    if (tx.isBillPayment || tx.category === "Bill Payment") return "text-[#1877F2]";
-    if (tx.type === "Income") return "text-[#10B981]";
-    return "text-[#F97316]";
-  };
+  // Transaction Sorting & Filtering Logic
+  const filteredTransactions = transactions
+    .filter((tx) => {
+      if (activeFilter === "Income") return tx?.type === "Income";
+      if (activeFilter === "Expense") return tx?.type !== "Income";
+      return true;
+    })
+    .sort((a, b) => new Date(b?.date || b?.rawDate) - new Date(a?.date || a?.rawDate));
 
   const graphicContent = (
-    <div className="relative z-10 mb-2 w-full text-center px-4">
-       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Net Cash Flow</p>
-       <p className={`text-5xl font-black tracking-tighter transition-all duration-300 mb-6 ${netCashFlow >= 0 ? "text-[#10B981]" : "text-red-500"}`}>
-         {netCashFlow >= 0 ? "+" : "-"}${Math.abs(netCashFlow).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-       </p>
+    <div className="flex flex-col relative z-10 mb-2 w-full">
+      {/* 👑 MASTER FLOATING CASH FLOW SUMMARY CARD */}
+      <div className={`relative p-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-white via-slate-50/90 to-slate-100/60 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.3),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
+        
+        {/* IDENTITY AND VALUES */}
+        <div className={`flex justify-between items-start w-full transform transition-all duration-700 delay-100 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest mb-1 text-slate-400">Net Cash Flow • <span className={isNetNegative ? "text-red-500" : "text-[#1877F2]"}>Active Month</span></p>
+            <p className={`text-4xl font-black tracking-tighter transition-colors duration-300 ${isNetNegative ? "text-red-500" : netCashFlow > 0 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
+              {isNetNegative ? "-" : ""}${Math.abs(netCashFlow).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+          </div>
+          
+          <div className="text-right">
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border shadow-sm text-[9px] font-black uppercase tracking-wider ${isDarkMode ? "bg-slate-800/80 border-slate-700 text-slate-300" : "bg-white/80 border-slate-200/60 text-slate-600"}`}>
+              <div className={`w-1.5 h-1.5 rounded-full ${isNetNegative ? "bg-red-500 animate-pulse" : "bg-emerald-500 animate-pulse"}`}></div>
+              {isNetNegative ? "Deficit" : "Surplus"}
+            </span>
+          </div>
+        </div>
 
-       <div className={`w-full h-10 rounded-full flex overflow-hidden shadow-inner ${isDarkMode ? "bg-[#1E293B]" : "bg-slate-100"}`}>
-          <div 
-            className="h-full bg-[#10B981] flex items-center justify-start px-4 transition-all duration-1000" 
-            style={{ width: `${inPercentage}%` }}
-          >
-             {inPercentage > 15 && <span className="text-[10px] font-black text-white uppercase tracking-widest">IN</span>}
+        {/* 📊 HORIZONTAL COMPARATIVE LEDGER GRAPHIC */}
+        <div className={`w-full mt-5 transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+          <div className={`w-full h-2.5 rounded-full overflow-hidden border relative flex ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-slate-100 border-slate-200"}`}>
+            <div 
+              className="h-full bg-[#10B981] transition-all duration-1000 ease-out shrink-0" 
+              style={{ width: isMounted ? `${incomeRatio}%` : "0%" }}
+            />
+            <div 
+              className="h-full bg-orange-500 dark:bg-orange-600 transition-all duration-1000 ease-out shrink-0" 
+              style={{ width: isMounted ? `${100 - incomeRatio}%` : "0%" }}
+            />
           </div>
-          <div 
-            className="h-full bg-[#F97316] flex items-center justify-end px-4 transition-all duration-1000" 
-            style={{ width: `${100 - inPercentage}%` }}
-          >
-             {(100 - inPercentage) > 15 && <span className="text-[10px] font-black text-white uppercase tracking-widest">OUT</span>}
+          
+          <div className="flex justify-between items-center mt-2.5 px-0.5 text-[9px] font-black uppercase tracking-widest text-slate-400">
+            <span className="flex items-center gap-1 text-emerald-500"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500"/> In: ${totalIncome.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+            <span className="flex items-center gap-1 text-orange-500"><div className="w-1.5 h-1.5 rounded-full bg-orange-500"/> Out: ${totalExpense.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
           </div>
-       </div>
+        </div>
+      </div>
     </div>
   );
 
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
-      {renderHeroShell(`${userName}'s Activities`, graphicContent)}
-
-      <main className="px-6 space-y-6 mt-4">
-
-        {activityFilter !== "All" && totalTargetAmount > 0 && (
-          <div className={`p-6 rounded-3xl border shadow-sm flex items-center gap-6 ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
-            <div className="relative w-40 h-40 shrink-0">
-              <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90 drop-shadow-2xl">
-                <circle cx="50" cy="50" r={radius} fill="transparent" stroke={isDarkMode ? "#334155" : "#F1F5F9"} strokeWidth="12" />
-                {chartSegments.map((seg, i) => (
-                  <circle
-                    key={i} cx="50" cy="50" r={radius} fill="transparent"
-                    stroke={seg.color} strokeWidth="12"
-                    strokeDasharray={seg.strokeDasharray} strokeDashoffset={seg.strokeDashoffset}
-                    strokeLinecap="round" className="transition-all duration-1000 ease-out"
-                  />
-                ))}
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                    {isIncomeView ? "Inflow" : "Outflow"}
-                 </span>
-              </div>
-            </div>
-            
-            <div className="flex-1 space-y-3 max-h-40 overflow-y-auto hide-scrollbar pr-1">
-              {chartSegments.map((seg, i) => (
-                <div key={i} className="flex flex-col">
-                  <div className="flex items-center justify-between mb-0.5">
-                    <div className="flex items-center gap-2 truncate pr-2">
-                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: seg.color }}></div>
-                      <span className={`text-[10px] font-bold uppercase truncate ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
-                        {seg.name}
-                      </span>
-                    </div>
-                    <span className={`text-[10px] font-bold ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
-                      {Math.round(seg.percentage * 100)}%
-                    </span>
-                  </div>
-                  <span className={`text-xs font-black ${isDarkMode ? "text-white" : "text-slate-900"}`}>${seg.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="flex gap-3">
-           <button 
-             onClick={() => setActivityFilter(activityFilter === "Income" ? "All" : "Income")} 
-             className={`flex-1 flex flex-col items-center justify-center py-3 rounded-2xl transition-all ${
-               activityFilter === "Income" 
-                 ? "bg-[#10B981] text-white shadow-[0_8px_20px_rgba(16,185,129,0.3)] transform -translate-y-0.5" 
-                 : isDarkMode ? "bg-[#1E293B] text-slate-400 border border-slate-800" : "bg-white text-slate-400 border border-slate-100"
-             }`}
-           >
-             <span className="font-black text-xs uppercase tracking-widest">Income</span>
-             {activityFilter === "Income" && (
-               <span className="text-[9px] font-bold mt-1 tracking-wider opacity-90">Tap again to view all</span>
-             )}
-           </button>
-           <button 
-             onClick={() => setActivityFilter(activityFilter === "Expense" ? "All" : "Expense")} 
-             className={`flex-1 flex flex-col items-center justify-center py-3 rounded-2xl transition-all ${
-               activityFilter === "Expense" 
-                 ? "bg-[#F97316] text-white shadow-[0_8px_20px_rgba(249,115,22,0.3)] transform -translate-y-0.5" 
-                 : isDarkMode ? "bg-[#1E293B] text-slate-400 border border-slate-800" : "bg-white text-slate-400 border border-slate-100"
-             }`}
-           >
-             <span className="font-black text-xs uppercase tracking-widest">Expenses</span>
-             {activityFilter === "Expense" && (
-               <span className="text-[9px] font-bold mt-1 tracking-wider opacity-90">Tap again to view all</span>
-             )}
-           </button>
+      {renderHeroShell(`${userName}'s Ledger`, graphicContent)}
+      
+      <main className="px-6 space-y-6 mt-4 relative z-10">
+        {/* TIMEFRAME & SEGMENTATION FILTERS */}
+        <div className="flex gap-2 pb-1 overflow-x-auto hide-scrollbar w-full">
+          {["All", "Income", "Expense"].map((type) => (
+            <button
+              key={type}
+              onClick={() => setActiveFilter(type)}
+              className={`px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap active:scale-95 ${activeFilter === type ? "bg-[#1877F2] text-white shadow-[0_4px_12px_rgba(24,119,242,0.3)]" : (isDarkMode ? "bg-slate-800/60 text-slate-400 hover:text-slate-200" : "bg-white text-slate-400 hover:text-slate-600 border border-slate-200")}`}
+            >
+              {type} Log
+            </button>
+          ))}
         </div>
 
-        <div className={`border-t ${isDarkMode ? "border-white" : "border-slate-200"}`}></div>
-
-        <div className="flex gap-2">
-          <div className={`flex-1 flex items-center px-4 rounded-2xl border shadow-sm transition-colors ${isDarkMode ? "bg-[#1E293B] border-slate-800 text-white focus-within:border-slate-600" : "bg-white border-slate-100 text-slate-900 focus-within:border-[#1877F2]"}`}>
-            <Search size={18} className="text-slate-400 shrink-0" />
-            <input 
-              type="text" placeholder="Search transactions..." value={activitySearch} onChange={(e) => setActivitySearch(e.target.value)}
-              className="w-full py-4 px-3 bg-transparent text-sm font-bold outline-none placeholder-slate-400"
-            />
-          </div>
-        </div>
-
+        {/* TRANSACTION STREAM PANEL */}
         <div className="space-y-4">
-          {groupedTransactions.length === 0 ? (
-            <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
-               <div className="py-10 text-center text-slate-400 font-bold text-sm uppercase tracking-widest">No activities found.</div>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {groupedTransactions.map((group) => {
-                const isCollapsed = collapsedMonths[group.label];
+          <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2 flex items-center justify-between">
+            <span>Recent Actions ({filteredTransactions.length})</span>
+          </h3>
 
-                return (
-                  <div key={group.label} className="space-y-2">
-                    
-                    {/* 2.0 STRIKE: Z-FOLD ULTRA-NARROW RESPONSIVE HEADER */}
-                    <div className="flex flex-col px-2 py-2 cursor-pointer transition-colors" onClick={() => toggleMonth(group.label)}>
-                      <div className="flex justify-between items-start min-[360px]:items-end w-full gap-2">
-                         <div className="flex items-center gap-2 mb-1 shrink-0">
-                            <h3 className={`text-sm font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{group.label}</h3>
-                            <div className="text-slate-500 mb-0.5">{isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}</div>
-                         </div>
-                         <div className="flex flex-col min-[360px]:flex-row min-[360px]:items-center items-end gap-0.5 min-[360px]:gap-2 shrink-0">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-500">
-                               +${group.inflow.toLocaleString("en-US", { minimumFractionDigits: 2 })} In
-                            </span>
-                            <span className={`hidden min-[360px]:inline text-[10px] ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>|</span>
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-[#F97316]">
-                               -${group.outflow.toLocaleString("en-US", { minimumFractionDigits: 2 })} Out
-                            </span>
-                         </div>
+          <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
+            {filteredTransactions.length === 0 ? (
+              <p className="text-center text-xs font-bold text-slate-400 py-12">No matching ledger statements found.</p>
+            ) : (
+              <div className="space-y-3">
+                {filteredTransactions.map((tx) => {
+                  const isIncome = tx?.type === "Income";
+                  const isBillPayment = tx?.isBillPayment || tx?.type === "Bill" || (tx?.category && tx?.category.toLowerCase().includes("bill"));
+                  
+                  let txColorStr = "";
+                  let txBgBorderStr = "";
+                  let txShadowStr = "";
+                  let txPrefix = "";
+
+                  if (isIncome) {
+                    txColorStr = "text-emerald-500";
+                    txBgBorderStr = isDarkMode ? "bg-emerald-900/20 border-emerald-500/30" : "bg-emerald-50 border-emerald-200";
+                    txShadowStr = "drop-shadow-[0_0_12px_rgba(16,185,129,0.5)]";
+                    txPrefix = "+";
+                  } else if (isBillPayment) {
+                    txColorStr = "text-[#1877F2]";
+                    txBgBorderStr = isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200";
+                    txShadowStr = "drop-shadow-[0_0_12px_rgba(24,119,242,0.5)]";
+                    txPrefix = "-";
+                  } else {
+                    txColorStr = "text-orange-500";
+                    txBgBorderStr = isDarkMode ? "bg-orange-900/20 border-orange-500/30" : "bg-orange-50 border-orange-200";
+                    txShadowStr = "drop-shadow-[0_0_12px_rgba(249,115,22,0.5)]";
+                    txPrefix = "-";
+                  }
+
+                  return (
+                    <div key={tx?.id} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all hover:-translate-y-0.5 ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
+                      
+                      <div className="flex items-start justify-between w-full mb-3 gap-2">
+                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                          <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                            {tx?.icon || "💳"}
+                          </div>
+                          <div className="flex flex-col flex-1 min-w-0 pt-1">
+                            <p className={`font-black text-base leading-tight break-words whitespace-normal ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                              {tx?.name || "Transaction Entry"}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setSelectedEntry(tx); }} 
+                          className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
+                        >
+                          <Edit2 size={16} strokeWidth={2.5} />
+                        </button>
                       </div>
-                    </div>
 
-                    {!isCollapsed && (
-                      <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
-                        <div className="space-y-3">
-                          {group.transactions.map((tx) => (
-                            <div key={tx.id} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
-                              
-                              <div className="flex items-start justify-between w-full mb-4">
-                                <div className="flex items-center gap-3 flex-1 cursor-pointer" onClick={() => setSelectedEntry(tx)}>
-                                  <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
-                                    {tx.icon}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className={`font-bold text-sm break-words whitespace-normal leading-tight ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{tx.name}</p>
-                                  </div>
-                                </div>
-                                <button 
-                                  onClick={(e) => { e.stopPropagation(); setSelectedEntry(tx); }}
-                                  className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
-                                >
-                                  <Edit2 size={16} strokeWidth={2.5} />
-                                </button>
-                              </div>
+                      <div className={`w-full border-t mb-3 ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}></div>
 
-                              <div className={`mt-3 pt-3 border-t flex items-center justify-between gap-2 ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
-                                <div className="flex-1 min-w-0 flex flex-col">
-                                  <span className={`text-[10px] font-black uppercase tracking-widest truncate leading-tight ${getTxCategoryColor(tx)}`}>
-                                    {tx.category || "Uncategorized"}
-                                  </span>
-                                  <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest truncate leading-tight mt-0.5">
-                                    {formatActivityDate(tx.date, group.label)}
-                                  </span>
-                                </div>
-                                
-                                <div className="shrink-0 flex justify-end">
-                                  <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight whitespace-nowrap transition-colors ${getTxAmountClasses(tx, isDarkMode)}`}>
-                                    {tx.type === "Income" ? "+" : "-"}${tx.amount.toFixed(2)}
-                                  </div>
-                                </div>
-                              </div>
-
-                            </div>
-                          ))}
+                      <div className="flex items-center justify-between gap-2 w-full">
+                        <div className="flex flex-col flex-1 min-w-0 pr-2">
+                          <span className={`text-[9px] font-black uppercase tracking-widest truncate w-full ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{tx?.category || "General"}</span>
+                          <span className={`text-[10px] font-semibold uppercase tracking-widest mt-0.5 truncate w-full ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>{tx?.date || "Recent Swipes"}</span>
+                        </div>
+                        <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 ${txColorStr} ${txBgBorderStr} ${txShadowStr} whitespace-nowrap`}>
+                          {txPrefix}${Math.abs(Number(tx?.amount) || 0).toFixed(2)}
                         </div>
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </div>

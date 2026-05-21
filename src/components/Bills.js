@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { CheckCircle2, RefreshCw, ChevronUp, ChevronDown, RotateCcw, Edit2 } from "lucide-react";
 
 export default function Bills({
@@ -13,6 +13,12 @@ export default function Bills({
   collapsedPaydays,
   toggleCollapse
 }) {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const sortBillsSurgically = (billList) => {
     return [...billList].sort((a, b) => {
       if (a.isOverdue && !b.isOverdue) return -1;
@@ -56,7 +62,7 @@ export default function Bills({
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
       {/* 👑 MASTER FLOATING PROGRESS SUMMARY CARD */}
-      <div className={`relative p-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-white via-slate-50/90 to-slate-100/60 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.3),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
+      <div className={`relative p-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-white via-slate-50/90 to-slate-100/60 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.3),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
         
         {/* PROGRESS RING */}
         <div className="relative w-28 h-28 flex-shrink-0">
@@ -68,16 +74,16 @@ export default function Bills({
               </linearGradient>
             </defs>
             <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "#1E293B" : "rgba(226, 232, 240, 0.9)"} strokeWidth="12" />
-            <circle cx="50" cy="50" r="40" fill="transparent" stroke="url(#billGlow)" strokeWidth="12" strokeLinecap="round" strokeDasharray={251.2} strokeDashoffset={251.2 - (251.2 * progressPercentage) / 100} className="transition-all duration-1000 ease-out" />
+            <circle cx="50" cy="50" r="40" fill="transparent" stroke="url(#billGlow)" strokeWidth="12" strokeLinecap="round" strokeDasharray={251.2} strokeDashoffset={isMounted ? (251.2 - (251.2 * progressPercentage) / 100) : 251.2} className="transition-all duration-1000 ease-out" />
           </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className={`absolute inset-0 flex flex-col items-center justify-center transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
             <span className={`text-xl font-black ${isDarkMode ? "text-white" : "text-slate-900"}`}>{Math.round(progressPercentage)}%</span>
             <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">Paid</span>
           </div>
         </div>
 
-        {/* DATA METRICS CONTAINER */}
-        <div className="flex-1 pl-4 text-right">
+        {/* DATA METRICS CONTAINER (BOTTOM TO TOP DRIFT) */}
+        <div className={`flex-1 pl-4 text-right transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           <p className="text-[10px] font-black uppercase tracking-widest mb-1 text-slate-400">Total Bills Paid</p>
           <p className="font-black tracking-tighter mb-0 leading-none sm:leading-tight">
             <span className={`text-2xl min-[380px]:text-3xl sm:text-4xl block sm:inline ${paidBillsAmount === 0 ? "text-red-500" : "text-[#10B981]"}`}>

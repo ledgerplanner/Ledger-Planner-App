@@ -21,6 +21,7 @@ export default function Accounts({
   // Animation Triggers
   const [showContent, setShowContent] = useState(false);
   const [showChart, setShowChart] = useState(false);
+  const [animateLine, setAnimateLine] = useState(false);
 
   // QAB Icon Selector State (for Goal Drawer)
   const [isIconSelectorOpen, setIsIconSelectorOpen] = useState(false);
@@ -110,6 +111,15 @@ export default function Accounts({
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
+  // Timeframe Change Watcher to Reset and Re-trigger Line Animation
+  useEffect(() => {
+    setAnimateLine(false);
+    const lineTimer = setTimeout(() => {
+      setAnimateLine(true);
+    }, 25);
+    return () => clearTimeout(lineTimer);
+  }, [timeframe]);
+
   const maxChartVal = Math.max(...historyData.map((d) => Math.abs(d.val)), 1);
   const activeDataPoint = historyData[activeChartNode] || historyData[historyData.length - 1];
   const isNetWorthNegative = activeDataPoint?.val < 0;
@@ -175,7 +185,7 @@ export default function Accounts({
             strokeLinejoin="round" 
             style={{
               strokeDasharray: 1000,
-              strokeDashoffset: showChart ? 0 : 1000,
+              strokeDashoffset: (showChart && animateLine) ? 0 : 1000,
               transition: "stroke-dashoffset 1.2s ease-in-out"
             }}
           />

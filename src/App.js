@@ -107,8 +107,11 @@ export default function App() {
   const [editName, setEditName] = useState("");
   const [resetConfirm, setResetConfirm] = useState("");
   const [openManualId, setOpenManualId] = useState(null);
+  
+  // === NEW: COMMAND CENTER BRIEFINGS ENGINE STATES ===
   const [hasConsumedAMBriefing, setHasConsumedAMBriefing] = useState(false);
   const [hasConsumedPMBriefing, setHasConsumedPMBriefing] = useState(false);
+
   const [isQabOpen, setIsQabOpen] = useState(false);
   const [qabStep, setQabStep] = useState(1);
   const [drawerTab, setDrawerTab] = useState("bills");
@@ -161,9 +164,9 @@ export default function App() {
   });
   const categoryEmojis = ["💵", "💲", "🤑", "💰", "🏦", "💹", "₿", "💎", "💳", "🧾", "📋", "💼", "🏠", "🏢", "🔑", "🛋️", "🧹", "💧", "⚡", "📶", "📡", "☁️", "📺", "🎬", "🍿", "🎵", "🎧", "🚗", "🚲", "🚂", "✈️", "⛽", "🛠️", "🅿️", "🎫", "🚕", "🚇", "🛒", "🛍️", "📦", "👕", "👗", "👟", "💅", "💄", "💈", "🕶️", "💍", "🍔", "🍕", "🌮", "🍣", "🥗", "🍳", "☕", "🍦", "🍻", "🍹", "🍷", "🏥", "💊", "🦷", "👓", "🧘", "🏋️", "🐾", "🐶", "🎁", "🎉", "🎟️", "🎮", "🕹️", "📱", "💻", "⌚", "🤖", "🚀", "🌴", "🎓", "🏪", "🎯", "🏖️", "👶", "🛡️", "🏍️", "🎸", "⛵"];
 
-  // === CATEGORY EXPANSION (7 NEW CATEGORIES INJECTED) ===
+  // === CATEGORY EXPANSION (CHANGE #5: "My Goals" INJECTED INTO INCOME & WEALTH) ===
   const modernCategories = [
-    { group: "Income & Wealth", items: ["Primary Salary", "Side Hustle / Gig", "Tips / Cash", "Investments / Crypto", "Transfers (Venmo/Zelle)", "Refunds & Adjustments", "Cash App", "PayDay Loans", "Unemployment", "Retirement / 401k", "Benefits"] },
+    { group: "Income & Wealth", items: ["Primary Salary", "Side Hustle / Gig", "Tips / Cash", "Investments / Crypto", "Transfers (Venmo/Zelle)", "Refunds & Adjustments", "Cash App", "PayDay Loans", "Unemployment", "Retirement / 401k", "Benefits", "My Goals"] },
     { group: "Housing & Utilities", items: ["Rent / Mortgage", "Electric / Gas", "Water / Trash", "Internet / Wi-Fi", "Home Goods / Maintenance", "Cell Phone"] },
     { group: "Transit & Travel", items: ["Gas / Fuel", "Rideshare (Uber/Lyft)", "Public Transit", "Auto Loan / Maintenance", "Parking / Tolls", "Airplane / Flights", "Hotel / Lodging", "Taxi / Car Rental"] },
     { group: "Food & Drink", items: ["Groceries", "Dining Out", "Delivery (DoorDash/Eats)", "Coffee / Tea", "Bars / Nightlife", "Convenient Store", "Fast Food", "Gas Station"] },
@@ -271,7 +274,6 @@ export default function App() {
     };
     checkAutoRollover();
   }, [isMounted, isDemoMode, user, bills.length, hasCheckedRollover]);
-
   useEffect(() => {
     const timer = setInterval(() => {
       const now = new Date();
@@ -419,7 +421,6 @@ export default function App() {
     return dateString;
   };
 
-  // === HELPER: Native Input Date Formatter ===
   const formatDisplayDate = (dString) => {
     if (!dString) return "";
     const parts = dString.split('-');
@@ -470,37 +471,30 @@ export default function App() {
     await Promise.all(batchPromises);
   };
 
-  // === UPGRADED: MANUAL ROLLOVER ===
   const handleRolloverMonth = async () => {
     openGlobalAction("Force Rollover", "SYSTEM OVERRIDE: Are you sure you want to force a manual month rollover?", "Force Sync", true, async () => {
       if (isDemoMode) {
         openGlobalAction("Demo Mode Locked", "Rollover is disabled while exploring the Demo Vault.", "Close", false, () => setGlobalActionConfig(prev => ({...prev, isOpen: false})), true);
         return;
       }
-
       await executeRolloverCore();
-
       if (!isDemoMode && user) {
         const today = new Date();
         const currentMonthKey = `${today.getUTCFullYear()}-${today.getUTCMonth() + 1}`;
         await setDoc(doc(db, "users", user.uid, "settings", "system"), { lastActiveMonth: currentMonthKey }, { merge: true });
       }
-
       triggerVictory();
       setIsSettingsOpen(false);
       setGlobalActionConfig(prev => ({ ...prev, isOpen: false }));
     });
   };
 
-  // === UPGRADED: FACTORY RESET ===
   const handleFactoryReset = async () => {
     if (resetConfirm !== "RESET") return;
-
     if (isDemoMode) {
       openGlobalAction("Demo Mode Locked", "Factory reset is disabled while exploring the Demo Vault.", "Close", false, () => setGlobalActionConfig(prev => ({...prev, isOpen: false})), true);
       setResetConfirm(""); setIsSettingsOpen(false); return;
     }
-
     openGlobalAction("Wipe Vault", "FINAL WARNING: This will permanently delete all your accounts, bills, transactions, and tasks. Proceed?", "Destroy", true, async () => {
       try {
         const collectionsToClear = ["accounts", "bills", "transactions", "todos"];
@@ -510,7 +504,6 @@ export default function App() {
           const promises = snap.docs.map(d => deleteDoc(doc(db, "users", user.uid, colName, d.id)));
           await Promise.all(promises);
         }
-
         await deleteDoc(doc(db, "users", user.uid, "settings", "paydayConfig"));
         await deleteDoc(doc(db, "users", user.uid, "settings", "system"));
         setAccounts([]);
@@ -519,17 +512,14 @@ export default function App() {
         setTodos([]);
         setPaydayConfig({ frequency: "Weekly", "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } });
         setResetConfirm(""); setIsSettingsOpen(false); triggerVictory();
-
         openGlobalAction("Wipe Complete", "Vault wiped. Welcome to a clean slate.", "Close", false, () => setGlobalActionConfig(prev => ({...prev, isOpen: false})), true);
       } catch (e) { console.error("Factory reset failed", e); }
     });
   };
 
-  // === UPGRADED: CLEAR TODOS ===
   const clearCompletedTodos = async () => {
     const completed = todos.filter(t => t.isCompleted);
     if (completed.length === 0) return;
-
     openGlobalAction("Clear Tasks", "Delete all completed tasks from the board?", "Delete", true, async () => {
       if (isDemoMode) {
          setTodos(todos.filter(t => !t.isCompleted));
@@ -545,10 +535,10 @@ export default function App() {
 
   const handleBillClick = async (id) => {
     const bill = bills.find(b => b.id === id);
+    const targetAcc = accounts.find(a => a.id === refundAccountId);
     if (!bill || bill.isPaid) {
       if (bill && bill.isPaid) {
         const refundAccountId = bill.paidFromAccountId;
-        const targetAcc = accounts.find(a => a.id === refundAccountId);
         let newPaidAmount = bill.paidAmount || 0;
         if (bill.isInstallment) newPaidAmount = (bill.paidAmount || 0) - (bill.amount || 0);
 
@@ -565,11 +555,9 @@ export default function App() {
       }
       return;
     }
-
     setPaymentModalConfig({ isOpen: true, billId: id, accountId: accounts.find(a => a.type === "Checking" || a.type === "Cash")?.id || (accounts[0]?.id || ""), isPayInFull: false });
   };
-
-  // === UPGRADED: RETROACTIVE DELTA ENGINE ===
+// === RETROACTIVE DELTA ENGINE ===
   const handleSaveEntryEdit = async () => {
     if (!selectedEntry) return;
     const colName = selectedEntry.fullDate !== undefined ? "bills" : "transactions";
@@ -660,9 +648,10 @@ export default function App() {
     triggerVictory(); setIsAddAccountOpen(false); setNewAccName(""); setNewAccBalance(""); setNewAccDesc(""); setNewAccType("Checking"); setNewAccIsNegative(false);
   };
 
+  // === CHANGE #2 & #3: REORDERED INPUTS AND REMOVED FUNDING SOURCE DROPDOWN ===
   const handleAddGoal = async () => {
     const targetBal = parseFloat(newGoalAmount);
-    if (!newGoalName.trim() || isNaN(targetBal) || targetBal <= 0 || !newGoalFundingAccount || !newGoalDate || !newGoalIcon) return;
+    if (!newGoalName.trim() || isNaN(targetBal) || targetBal <= 0 || !newGoalDate || !newGoalIcon) return;
     const newGoal = {
       name: newGoalName,
       type: "Goal",
@@ -670,7 +659,6 @@ export default function App() {
       balance: 0,
       targetAmount: targetBal,
       targetDate: newGoalDate,
-      fundingAccountId: newGoalFundingAccount,
       icon: newGoalIcon,
       isGoal: true,
       isArchived: false
@@ -685,7 +673,6 @@ export default function App() {
     setNewGoalName("");
     setNewGoalAmount("");
     setNewGoalDate("");
-    setNewGoalFundingAccount("");
     setNewGoalIcon("🎯");
   };
 
@@ -895,49 +882,65 @@ export default function App() {
   };
   const activeAlerts = generateAlerts();
   const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
-  const renderHeroShell = (title, graphicContent) => (
-    <header className={`px-6 pt-12 pb-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden mb-8 z-30 rounded-b-[3rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
-      <div className="flex justify-between items-center mb-6 relative z-30 h-10">
-        <div className="flex items-center gap-2">
-          <button onClick={() => { setIsDarkMode(!isDarkMode); setManualThemeOverride(true); triggerHaptic(20); }} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ?
-            "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
-            {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
-          <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ?
-            "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
-            <Bell size={18} />
-            {(!isPushEnabled || activeAlerts.length > 0) && <span className={`absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-[1.5px] ${isDarkMode ? "border-[#1E293B]" : "border-white"}`}></span>}
-          </button>
-        </div>
-        <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center z-20 origin-top -top-5 lg:hidden">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-[#1877F2]/20 blur-xl rounded-full -z-10 pointer-events-none"></div>
-          <img src="/login-logo.png" alt="Ledger Planner" className={`relative z-10 w-16 h-16 rounded-full shadow-[0_12px_24px_rgba(24,119,242,0.3)] object-cover border-[3px] transition-colors ${isDarkMode ? "border-slate-800" : "border-white"}`} />
-        </div>
-        <div className="flex items-center gap-2 relative z-30">
-          <button onClick={() => { setEditName(userName || ""); setIsSettingsOpen(true); }} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm lg:hidden ${isDarkMode ?
-            "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
-            <Settings size={18} />
-          </button>
-          <button onClick={handleLogout} className={`h-10 px-3.5 rounded-full flex items-center justify-center gap-2 border transition-colors shadow-sm lg:hidden ${isDarkMode ?
-            "bg-slate-800 border-slate-700 text-red-400 hover:bg-red-900/30" : "bg-white border-slate-100 text-red-500 hover:bg-red-50"}`}>
-            <LogOut size={14} strokeWidth={2.5} />
-            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">{isDemoMode ? "Exit" : "Logout"}</span>
-          </button>
-        </div>
-      </div>
-      <div className="relative z-10 flex justify-center px-1 mb-6">
-        <h2 title={title || "Overview"} className={`text-3xl font-black tracking-tight leading-tight truncate max-w-full ${isDarkMode ? "text-white" : "text-slate-900"}`}>{title || "Overview"}</h2>
-      </div>
+  
+  // === CHANGE #1 & #6: UPGRADED RENDER HERO SHELL + UNIVERSALLY PULSING NOTIFICATION DOTS ===
+  const renderHeroShell = (title, graphicContent) => {
+    const hasOverdueOrDueNow = dynamicBills.some(b => !b.isPaid && (b.isOverdue || b.payday === "Due Now"));
+    const hours = new Date().getHours();
+    const isAM = hours >= 5 && hours < 12;
+    const isUnconsumedBriefing = isAM ? !hasConsumedAMBriefing : !hasConsumedPMBriefing;
 
-      <div className="relative z-10 w-full h-auto opacity-100">{graphicContent}</div>
+    return (
+      <header className={`px-6 pt-12 pb-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden mb-8 z-30 rounded-b-[3rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
+        <div className="flex justify-between items-center mb-6 relative z-30 h-10">
+          <div className="flex items-center gap-2">
+            <button onClick={() => { setIsDarkMode(!isDarkMode); setManualThemeOverride(true); triggerHaptic(20); }} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ?
+              "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
+              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+            <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ?
+              "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
+              <Bell size={18} />
+              {(hasOverdueOrDueNow || isUnconsumedBriefing || !isPushEnabled) && (
+                <span className={`absolute top-0 right-0 w-2.5 h-2.5 rounded-full border-[1.5px] animate-pulse ${
+                  hasOverdueOrDueNow 
+                    ? "bg-red-500 border-red-500" 
+                    : isUnconsumedBriefing 
+                    ? "bg-[#1877F2] border-[#1877F2]" 
+                    : "bg-red-500 border-red-500"
+                } ${isDarkMode ? "border-t-transparent border-l-transparent" : "border-white"}`}></span>
+              )}
+            </button>
+          </div>
+          <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center z-20 origin-top -top-5 lg:hidden">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-[#1877F2]/20 blur-xl rounded-full -z-10 pointer-events-none"></div>
+            <img src="/login-logo.png" alt="Ledger Planner" className={`relative z-10 w-16 h-16 rounded-full shadow-[0_12px_24px_rgba(24,119,242,0.3)] object-cover border-[3px] transition-colors ${isDarkMode ? "border-slate-800" : "border-white"}`} />
+          </div>
+          <div className="flex items-center gap-2 relative z-30">
+            <button onClick={() => { setEditName(userName || ""); setIsSettingsOpen(true); }} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm lg:hidden ${isDarkMode ?
+              "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
+              <Settings size={18} />
+            </button>
+            <button onClick={handleLogout} className={`h-10 px-3.5 rounded-full flex items-center justify-center gap-2 border transition-colors shadow-sm lg:hidden ${isDarkMode ?
+              "bg-slate-800 border-slate-700 text-red-400 hover:bg-red-900/30" : "bg-white border-slate-100 text-red-500 hover:bg-red-50"}`}>
+              <LogOut size={14} strokeWidth={2.5} />
+              <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">{isDemoMode ? "Exit" : "Logout"}</span>
+            </button>
+          </div>
+        </div>
+        <div className="relative z-10 flex justify-center px-1 mb-6">
+          <h2 title={title || "Overview"} className={`text-3xl font-black tracking-tight leading-tight truncate max-w-full ${isDarkMode ? "text-white" : "text-slate-900"}`}>{title || "Overview"}</h2>
+        </div>
 
-      <div className={`relative z-10 pt-4 border-t flex justify-center items-center ${isDarkMode ? "border-slate-800" : "border-slate-50"}`}>
-        <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{heroDateTimeStr}</span>
-      </div>
-    </header>
-  );
+        <div className="relative z-10 w-full h-auto opacity-100">{graphicContent}</div>
 
-  const confirmPaymentRoute = async () => {
+        <div className={`relative z-10 pt-4 border-t flex justify-center items-center ${isDarkMode ? "border-slate-800" : "border-slate-50"}`}>
+          <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{heroDateTimeStr}</span>
+        </div>
+      </header>
+    );
+  };
+const confirmPaymentRoute = async () => {
     const bill = bills.find(b => b.id === paymentModalConfig.billId);
     const targetAcc = accounts.find(a => a.id === paymentModalConfig.accountId);
     if (!bill || !targetAcc) return;
@@ -997,7 +1000,8 @@ export default function App() {
     }
     triggerVictory(); setInstallmentPromptConfig({ isOpen: false, billId: null, nextDate: "" });
   };
-const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0"); setEntryName(""); setEntryDate(""); setEntryIcon("🧾"); setEntryCategory(""); setEntryAccount(""); setEntryIsRecurring(false); setEntryIsInstallment(false); setEntryTotalAmount(""); setEntryPaidAmount(""); setIsCategorySelectorOpen(false); setIsIconSelectorOpen(false); };
+
+  const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0"); setEntryName(""); setEntryDate(""); setEntryIcon("🧾"); setEntryCategory(""); setEntryAccount(""); setEntryIsRecurring(false); setEntryIsInstallment(false); setEntryTotalAmount(""); setEntryPaidAmount(""); setIsCategorySelectorOpen(false); setIsIconSelectorOpen(false); };
   
   const handleNumpad = (btn) => {
     triggerHaptic(15);
@@ -1091,7 +1095,6 @@ const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0");
       onContextMenu={(e) => e.preventDefault()} 
       className={`h-screen w-full font-sans relative flex transition-colors duration-500 select-none [-webkit-touch-callout:none] ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}
     >
-      {/* 2.0 STRIKE: DESKTOP WEBKIT CALENDAR OVERRIDE */}
       <style>{`
         input[type="date"]::-webkit-calendar-picker-indicator {
           position: absolute;
@@ -1106,13 +1109,15 @@ const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0");
       
       <div className={`w-full h-full relative flex flex-col lg:flex-row transition-colors duration-500 overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
         
-        {/* DESKTOP SIDEBAR */}
-        <div className={`hidden lg:flex w-[280px] flex-col border-r z-40 p-6 transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-100"}`}>
-          <div className="flex items-center gap-4 mb-10 mt-4">
+        {/* === CHANGE #1: UPGRADED SIDEBAR WITH SCROLLABLE INTERNAL MENUS === */}
+        <div className={`hidden lg:flex w-[280px] flex-col border-r z-40 p-6 transition-colors duration-500 shrink-0 ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-100"}`}>
+          <div className="flex items-center gap-4 mb-8 mt-4 shrink-0">
             <img src="/login-logo.png" alt="Ledger Planner" className={`w-12 h-12 rounded-full object-cover border-[2px] transition-colors ${isDarkMode ? "border-slate-700" : "border-slate-100"}`} />
             <div><h1 className={`font-black tracking-tighter text-lg leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>Ledger Planner</h1><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{isDemoMode ? "Demo Mode" : "Master Engine"}</p></div>
           </div>
-          <div className="space-y-2 flex-1">
+          
+          {/* OPTION 1 WRAPPER: INDEPENDENT INNER SCROLLABLE BLOCK */}
+          <div className="flex-1 overflow-y-auto space-y-2 pr-1 hide-scrollbar">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 ml-2">Navigation</p>
             {[{ id: "home", icon: Home, label: "Dashboard" }, { id: "accounts", icon: Wallet, label: "Accounts" }, { id: "bills", icon: CalendarIcon, label: "Bills & Plans" }, { id: "activity", icon: CreditCard, label: "Activity" }, { id: "todo", icon: CheckSquare, label: "To-Do List" }].map((tab) => (
               <button key={tab.id} onClick={() => changeTab(tab.id)} className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 ${activeTab === tab.id ? isDarkMode ? "bg-slate-800 text-[#1877F2]" : "bg-blue-50 text-[#1877F2]" : isDarkMode ? "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"}`}>
@@ -1120,7 +1125,8 @@ const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0");
               </button>
             ))}
           </div>
-          <div className="mt-auto space-y-4">
+          
+          <div className="mt-auto space-y-4 pt-4 shrink-0 border-t border-dashed border-slate-700/30">
             <button onClick={() => setIsQabOpen(true)} className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-white bg-[#1877F2] font-black uppercase tracking-widest text-xs transition-transform active:scale-95 hover:-translate-y-1`}><Plus size={18} /> Quick Add</button>
             <button onClick={() => { setEditName(userName || ""); setIsSettingsOpen(true); }} className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800/50 border-slate-700 text-slate-300 hover:text-white" : "bg-white border-slate-100 text-slate-500 hover:text-slate-900"}`}>
               <Settings size={16} strokeWidth={2.5} />
@@ -1156,7 +1162,7 @@ const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0");
         {isSettingsOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsSettingsOpen(false)}></div>
-            <div className={`w-full lg:max-w-md h-[85vh] rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col ${isDarkMode ? "bg-[#0F172A] border border-slate-800" : "bg-[#F8FAFC] border border-slate-100"}`}>
+            <div className={`w-full lg:max-w-md h-[85vh] rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col ${isDarkMode ? "bg-[#0F172A] border border-slate-800" : "bg-white border border-slate-100"}`}>
               <div className={`p-6 border-b flex justify-between items-center shrink-0 ${isDarkMode ? "bg-[#1E293B] rounded-t-[2.5rem] border-slate-800" : "bg-white rounded-t-[2.5rem] border-slate-100 shadow-sm"}`}>
                 <h3 className={`font-black uppercase tracking-widest flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}><Settings size={18} className="text-slate-400" /> Settings Vault</h3>
                 <button onClick={() => setIsSettingsOpen(false)} className={closeButtonClass}><X size={18} /></button>
@@ -1193,7 +1199,6 @@ const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0");
                   </button>
                 </div>
                 
-                {/* 2.0 STRIKE: FACTORY RESET MODAL ENGINE INTEGRATION */}
                 <div className={`p-5 rounded-3xl border shadow-sm mt-6 ${isDarkMode ? "bg-red-900/10 border-red-900/30" : "bg-red-50/50 border-red-100"}`}>
                   <h4 className="text-[10px] font-black uppercase tracking-widest text-red-500/70 mb-4 flex items-center gap-2"><AlertCircle size={14}/> Danger Zone</h4>
                   <div className="mb-4">
@@ -1208,46 +1213,122 @@ const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0");
           </div>
         )}
 
-        {isNotificationsOpen && (
-          <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
-            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsNotificationsOpen(false)}></div>
-            <div className={`w-full lg:max-w-md h-[80vh] rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
-              <div className="p-6 border-b flex justify-between items-center shrink-0">
-                <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Command Center</h3>
-                <button onClick={() => setIsNotificationsOpen(false)} className={closeButtonClass}><X size={18} /></button>
-              </div>
-              <div className={`p-6 overflow-y-auto space-y-4 flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
-                {!isPushEnabled && !isDemoMode && (
-                  <div className={`p-4 rounded-2xl border flex items-center justify-between shadow-sm ${isDarkMode ? "bg-[#10B981]/10 border-[#10B981]/20" : "bg-emerald-50 border-emerald-100"}`}>
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-full text-white bg-[#10B981] shadow-[0_4px_10px_rgba(16,185,129,0.3)]`}><Bell size={16} /></div>
-                      <div><p className={`text-sm font-black ${isDarkMode ? "text-[#10B981]" : "text-emerald-700"}`}>Enable Notifications</p><p className={`text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-emerald-500/70" : "text-emerald-600/70"}`}>Never miss a payday</p></div>
+        {/* === CHANGE #6: UPGRADED INTERACTIVE COMMAND CENTER SIDE PANEL === */}
+        {isNotificationsOpen && (() => {
+          const hasOverdueOrDueNow = dynamicBills.some(b => !b.isPaid && (b.isOverdue || b.payday === "Due Now"));
+          const hours = new Date().getHours();
+          const isAM = hours >= 5 && hours < 12;
+
+          // Backstage calculations for dynamic templates
+          const liquidCash = accounts.filter(a => !a.isGoal && (a.type === "Checking" || a.type === "Cash")).reduce((sum, acc) => sum + (acc.balance || 0), 0);
+          
+          // Next Payday extraction
+          let nextPaydayDate = todayForDynamic;
+          let activePaydayKey = "Payday 1";
+          for (let i = 1; i <= 5; i++) {
+            if (paydayConfig?.[`Payday ${i}`]?.date) {
+              const d = new Date(paydayConfig[`Payday ${i}`].date);
+              if (!isNaN(d.getTime()) && d >= todayForDynamic) {
+                nextPaydayDate = d;
+                activePaydayKey = `Payday ${i}`;
+                break;
+              }
+            }
+          }
+          const daysLeft = Math.max(Math.ceil((nextPaydayDate - todayForDynamic) / (1000 * 60 * 60 * 24)), 1);
+          const currentCycleBillsTotal = bills.filter(b => b.payday === activePaydayKey && !b.isPaid).reduce((sum, b) => sum + (b.amount || 0), 0);
+          const trueRunwayAmount = Math.max((liquidCash - currentCycleBillsTotal) / daysLeft, 0);
+
+          const totalCycleIncome = parseFloat(paydayConfig?.[activePaydayKey]?.income) || 0;
+          const burnPercentage = totalCycleIncome > 0 ? Math.round((currentCycleBillsTotal / totalCycleIncome) * 100) : 0;
+          const excessCushion = liquidCash;
+
+          const isUnconsumedBriefing = isAM ? !hasConsumedAMBriefing : !hasConsumedPMBriefing;
+
+          return (
+            <div className="fixed inset-0 z-[120] flex justify-end">
+              <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsNotificationsOpen(false)}></div>
+              <div className={`w-full max-w-sm h-full shadow-2xl animate-slide-left relative z-[130] flex flex-col transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A] border-l border-slate-800" : "bg-white border-l border-slate-100"}`}>
+                <div className="p-6 border-b flex justify-between items-center shrink-0">
+                  <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Command Center</h3>
+                  <button onClick={() => setIsNotificationsOpen(false)} className={closeButtonClass}><X size={18} /></button>
+                </div>
+                
+                <div className="p-6 overflow-y-auto space-y-4 flex-1 hide-scrollbar">
+                  {!isPushEnabled && !isDemoMode && (
+                    <div className={`p-4 rounded-2xl border flex items-center justify-between shadow-sm ${isDarkMode ? "bg-[#10B981]/10 border-[#10B981]/20" : "bg-emerald-50 border-emerald-100"}`}>
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-full text-white bg-[#10B981] shadow-[0_4px_10px_rgba(16,185,129,0.3)]`}><Bell size={16} /></div>
+                        <div><p className={`text-sm font-black ${isDarkMode ? "text-[#10B981]" : "text-emerald-700"}`}>Enable Notifications</p><p className={`text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-emerald-500/70" : "text-emerald-600/70"}`}>Never miss a payday</p></div>
+                      </div>
+                      <button onClick={enablePushNotifications} className="px-4 py-2 bg-[#10B981] text-white text-[10px] font-black uppercase tracking-widest rounded-xl active:scale-95 transition-transform shadow-md">Enable</button>
                     </div>
-                    <button onClick={enablePushNotifications} className="px-4 py-2 bg-[#10B981] text-white text-[10px] font-black uppercase tracking-widest rounded-xl active:scale-95 transition-transform shadow-md">Enable</button>
-                  </div>
-                )}
-                {activeAlerts.length === 0 ? (
-                  <div className="text-center py-10 opacity-60">
-                    <CheckCircle2 size={40} className="mx-auto mb-4 text-[#10B981]" />
-                    <p className={`font-bold text-sm ${isDarkMode ? "text-slate-300" : "text-slate-900"}`}>All Systems Go</p>
-                  </div>
-                ) : (
-                  activeAlerts.map(alert => (
-                    <div key={alert.id} onClick={alert.action} className={`flex items-start gap-4 p-4 rounded-2xl cursor-pointer border transition-colors ${alert.type === 'danger' ? (isDarkMode ? "bg-red-900/20 border-red-900/50 hover:bg-red-900/30" : "bg-red-50 border-red-100 hover:bg-red-100") : (isDarkMode ? "bg-[#1E293B] border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50 shadow-sm")}`}>
-                      <div className={`mt-1 p-2 rounded-full ${isDarkMode ? "bg-[#0F172A]" : "bg-slate-50"}`}>{alert.icon}</div>
+                  )}
+
+                  {/* HIGH INTENSITY MATRIC BRIEFING SYSTEM */}
+                  {isUnconsumedBriefing && (
+                    <div className={`p-5 rounded-[1.8rem] border flex items-start gap-4 shadow-[0_0_14px_rgba(245,158,11,0.15)] transition-all duration-500 ${isDarkMode ? "bg-slate-900/90 border-amber-500/20" : "bg-amber-50/80 border-amber-200/60"}`}>
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-amber-500/10 text-xl">✨</div>
                       <div className="flex-1">
                         <div className="flex justify-between items-start">
-                          <p className={`font-black text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>{alert.title}</p>
-                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{alert.time}</span>
+                          <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${isDarkMode ? "text-amber-400" : "text-amber-800"}`}>{isAM ? "Morning Strategy" : "Evening Analysis"}</p>
+                          <button onClick={() => { triggerHaptic(30); if(isAM) setHasConsumedAMBriefing(true); else setHasConsumedPMBriefing(true); }} className={`text-slate-400 hover:text-slate-600 p-0.5`}>×</button>
                         </div>
-                        <p className={`text-xs font-bold mt-0.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{alert.message}</p>
+                        <p className={`text-xs font-bold leading-relaxed ${isDarkMode ? "text-slate-300" : "text-amber-950"}`}>
+                          {isAM ? (
+                            burnPercentage > 60 ? (
+                              `Heads up, Founder. This paycheck is a High-Burn cycle—${burnPercentage}% of this income is spoken for by fixed bills. It’s a great week to hold the line on non-essential spending and let your automation handle the heavy lifting.`
+                            ) : burnPercentage < 30 ? (
+                              `Good morning, Founder. This is a Low-Burn cycle—only ${burnPercentage}% of this income goes to bills. You have a prime opportunity this week to make an extra manual transfer toward your Savings Goal ahead of schedule.`
+                            ) : (
+                              `Good morning, Founder. After accounting for all bills in this cycle, your true safe-to-spend runway is exactly $${trueRunwayAmount.toFixed(2)} per day until your next paycheck drops on ${formatPaydayDateStr(paydayConfig?.[activePaydayKey]?.date)}. Keep daily spending under this line to maintain a perfect cushion.`
+                            )
+                          ) : (
+                            `Good evening, Founder. Payday Eve is active. You successfully navigated this cycle with a surplus of $${excessCushion.toFixed(2)} remaining in your baseline checking buffer. Excellent discipline. Preparing the vault to initialize your incoming paycheck tomorrow morning.`
+                          )}
+                        </p>
                       </div>
                     </div>
-                  )))}
+                  )}
+
+                  {activeAlerts.length === 0 && !isUnconsumedBriefing ? (
+                    <div className="text-center py-20 opacity-100 flex flex-col items-center justify-center h-full">
+                      <CheckCircle2 size={44} className="mb-4 text-[#10B981] drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]" />
+                      <p className={`font-black text-sm uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-900"}`}>All clear. Your ledger is up to date.</p>
+                    </div>
+                  ) : (
+                    activeAlerts.map(alert => (
+                      <div key={alert.id} onClick={alert.action} className={`flex items-start gap-4 p-4 rounded-2xl cursor-pointer border transition-colors ${alert.type === 'danger' ? (isDarkMode ? "bg-red-900/20 border-red-900/50 hover:bg-red-900/30" : "bg-red-50 border-red-100 hover:bg-red-100") : (isDarkMode ? "bg-[#1E293B] border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50 shadow-sm")}`}>
+                        <div className={`mt-1 p-2 rounded-full ${isDarkMode ? "bg-[#0F172A]" : "bg-slate-50"}`}>{alert.icon}</div>
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start">
+                            <p className={`font-black text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>{alert.title}</p>
+                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{alert.time}</span>
+                          </div>
+                          <p className={`text-xs font-bold mt-0.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{alert.message}</p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* ACCESS DISMISS BUTTON */}
+                <div className="p-6 border-t shrink-0">
+                  <button 
+                    onClick={() => {
+                      triggerHaptic(50);
+                      setHasConsumedAMBriefing(true);
+                      setHasConsumedPMBriefing(true);
+                    }}
+                    className="w-full py-4 rounded-xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all"
+                  >
+                    Dismiss All Insights
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {isPaydaySetupOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
@@ -1282,7 +1363,6 @@ const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0");
                   <div key={pd} className={`p-4 rounded-2xl border ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-slate-50 border-slate-100"}`}>
                     <h4 className={`text-xs font-black uppercase tracking-widest mb-4 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>{pd}</h4>
                     
-                    {/* 2.0 STRIKE: PAYDAY SETUP ALIGNMENT FIX */}
                     <div className="grid grid-cols-2 gap-2 min-[360px]:gap-3">
                       <div className={`relative w-full h-[54px] rounded-xl border flex flex-col justify-end pb-1.5 px-3 transition-colors ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"}`}>
                          <label className={`absolute top-2 left-0 w-full text-center text-[8px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Pay Date</label>
@@ -1378,24 +1458,20 @@ const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0");
               </div>
               <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
                 
-                <div className="relative cursor-pointer" onClick={() => setIsIconSelectorOpen(true)}>
-                   <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Goal Icon</label>
-                   <div className={`w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
-                      <span className="text-xl leading-none">{newGoalIcon}</span>
-                      <ArrowDown size={14} className={isDarkMode ? "text-slate-400" : "text-slate-500"} />
-                   </div>
-                </div>
+                {/* === CHANGE #2: Goal Name SWAPPED TO SIT PROUDLY ON TOP === */}
                 <div className="relative">
                   <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Goal Name</label>
                   <input type="text" value={newGoalName} onChange={(e) => setNewGoalName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors focus:border-[#F97316] outline-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                 </div>
-                <div className="relative">
-                  <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Transfer from which account?</label>
-                  <select value={newGoalFundingAccount} onChange={(e) => setNewGoalFundingAccount(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors focus:border-[#F97316] outline-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
-                    <option value="" disabled>Select Account</option>
-                    {accounts.filter(a => !a.isGoal).map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                  </select>
+                
+                <div className="relative cursor-pointer" onClick={() => setIsIconSelectorOpen(true)}>
+                    <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Goal Icon</label>
+                    <div className={`w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
+                       <span className="text-xl leading-none">{newGoalIcon}</span>
+                       <ArrowDown size={14} className={isDarkMode ? "text-slate-400" : "text-slate-500"} />
+                    </div>
                 </div>
+
                 <div className="relative">
                   <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Goal Amount</label>
                   <div className="relative w-full flex items-center">
@@ -1411,7 +1487,7 @@ const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0");
                      <input type="date" value={newGoalDate} onChange={(e) => setNewGoalDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                    </div>
                 </div>
-                <button onClick={handleAddGoal} disabled={!newGoalName.trim() || isNaN(parseFloat(newGoalAmount)) || parseFloat(newGoalAmount) <= 0 || !newGoalFundingAccount || !newGoalDate || !newGoalIcon} className={`w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${!newGoalName.trim() || isNaN(parseFloat(newGoalAmount)) || parseFloat(newGoalAmount) <= 0 || !newGoalFundingAccount || !newGoalDate || !newGoalIcon ? "bg-slate-300 opacity-50 cursor-not-allowed" : "bg-[#F97316] shadow-[0_8px_16px_rgba(249,115,22,0.3)] active:scale-95"}`}>Lock In Goal <Target size={16} /></button>
+                <button onClick={handleAddGoal} disabled={!newGoalName.trim() || isNaN(parseFloat(newGoalAmount)) || parseFloat(newGoalAmount) <= 0 || !newGoalDate || !newGoalIcon} className={`w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${!newGoalName.trim() || isNaN(parseFloat(newGoalAmount)) || parseFloat(newGoalAmount) <= 0 || !newGoalDate || !newGoalIcon ? "bg-slate-300 opacity-50 cursor-not-allowed shadow-none" : "bg-[#F97316] shadow-[0_8px_16px_rgba(249,115,22,0.3)] active:scale-95"}`}>Lock In Goal <Target size={16} /></button>
               </div>
               {isIconSelectorOpen && (
                  <div className={`absolute inset-0 z-[150] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
@@ -1451,7 +1527,7 @@ const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0");
                     return ( <button key={btn} onClick={() => handleTransferNumpad(btn)} className={`w-full h-14 lg:h-12 rounded-2xl text-2xl font-bold flex items-center justify-center transition-all border active:scale-95 touch-manipulation ${isDarkMode ? "bg-slate-800 border-slate-700 text-white active:bg-slate-700" : "bg-slate-100 border-slate-200 text-slate-900 active:bg-slate-200"}`}> {btn} </button> );
                   })}
                 </div>
-                <button onClick={executeTransfer} disabled={parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo} className={`w-full mt-6 lg:mt-3 h-16 lg:h-12 shrink-0 rounded-2xl font-black uppercase tracking-widest text-sm text-white shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2 ${parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo ? "bg-slate-300 opacity-50 shadow-none cursor-not-allowed" : "bg-[#1877F2]"}`}>Execute Transfer <ArrowRight size={18} /></button>
+                <button onClick={executeTransfer} disabled={parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo} className={`w-full mt-6 lg:mt-3 h-16 lg:h-12 shrink-0 rounded-2xl font-black uppercase tracking-widest text-sm text-white shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2 ${parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo ? "bg-slate-300 opacity-50 shadow-none cursor-not-allowed shadow-none" : "bg-[#1877F2]"}`}>Execute Transfer <ArrowRight size={18} /></button>
               </div>
             </div>
           </div>
@@ -1513,7 +1589,7 @@ const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0");
                       onChange={(e) => setEditAccountBalance(e.target.value)} 
                       onFocus={() => setEditAccountBalance(Math.abs(selectedAccount.balance || 0).toFixed(2))} 
                       onBlur={() => { if(!isNaN(parseFloat(editAccountBalance)) && editAccountBalance !== "") setEditAccountBalance(parseFloat(editAccountBalance).toFixed(2)) }}
-                      className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl font-bold text-lg border focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`} 
+                      className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl border focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`} 
                     />
                   </div>
                   
@@ -1539,7 +1615,7 @@ const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0");
                 <button onClick={updateAccountBalance} disabled={isNaN(parseFloat(editAccountBalance))} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${isNaN(parseFloat(editAccountBalance)) ? "bg-slate-300 opacity-50 cursor-not-allowed" : "bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] active:scale-95"}`}><Save size={16} /> Save Changes</button>
                 <button onClick={deleteAccount} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-red-500 shadow-[0_8px_16px_rgba(239,68,68,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><Trash2 size={16}/> {selectedAccount.isGoal ? "Delete Goal" : "Delete Account"}</button>
               </div>
-              {isIconSelectorOpen && (
+              {isIconSelectorOpen && editIconSelectorOpen && (
                  <div className={`absolute inset-0 z-[150] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
                     <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}><h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Icon</h3><button onClick={() => setIsIconSelectorOpen(false)} className={closeButtonClass}><X size={18}/></button></div>
                     <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] p-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : "pb-20 lg:pb-6"}`}>
@@ -1818,11 +1894,11 @@ const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0");
           </div>
         )}
 
-        {/* === RESTORED: QUICK ADD BOARD (QAB) MODAL === */}
+        {/* QUICK ADD BOARD (QAB) MODAL */}
         {isQabOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={closeQab}></div>
-            <div className={`w-full lg:max-w-md h-auto max-h-[95vh] lg:max-h-[95vh] rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+            <div className={`w-full lg:max-w-md h-auto max-h-[95vh] rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
                 
                 <div className={`p-6 border-b flex justify-between items-center shrink-0 ${isDarkMode ? "border-slate-800" : "border-slate-100"}`}>
                    <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{qabActiveLabel}</h3>
@@ -1997,7 +2073,7 @@ const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0");
           </div>
         )}
 
-        {/* === UPGRADED: GLOBAL ACTION MODAL (Alert Only Support) === */}
+        {/* GLOBAL ACTION OVERLAY */}
         {globalActionConfig.isOpen && (
            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
              <div className={`w-full max-w-sm p-6 rounded-3xl shadow-2xl ${isDarkMode ? "bg-[#1E293B] border border-slate-700" : "bg-white"}`}>
@@ -2019,7 +2095,7 @@ const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0");
              </div>
           </div>
         )}
-      
+        
         {showConfetti && (
           <div className="absolute inset-0 z-[200] pointer-events-none flex items-center justify-center overflow-hidden">
             {[...Array(200)].map((_, i) => (

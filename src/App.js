@@ -108,9 +108,21 @@ export default function App() {
   const [resetConfirm, setResetConfirm] = useState("");
   const [openManualId, setOpenManualId] = useState(null);
   
-  // === NEW: COMMAND CENTER BRIEFINGS ENGINE STATES ===
-  const [hasConsumedAMBriefing, setHasConsumedAMBriefing] = useState(false);
-  const [hasConsumedPMBriefing, setHasConsumedPMBriefing] = useState(false);
+  // === FIX #6: RE-ENGINEERED DATE-STAMPED LAZY INITIALIZERS FOR DAILY FOOTPRINT RETENTION ===
+  const [hasConsumedAMBriefing, setHasConsumedAMBriefing] = useState(() => {
+    if (typeof window !== "undefined") {
+      const todayKey = new Date().toISOString().split('T')[0];
+      return localStorage.getItem(`lp_briefing_am_${todayKey}`) === "true";
+    }
+    return false;
+  });
+  const [hasConsumedPMBriefing, setHasConsumedPMBriefing] = useState(() => {
+    if (typeof window !== "undefined") {
+      const todayKey = new Date().toISOString().split('T')[0];
+      return localStorage.getItem(`lp_briefing_pm_${todayKey}`) === "true";
+    }
+    return false;
+  });
 
   const [isQabOpen, setIsQabOpen] = useState(false);
   const [qabStep, setQabStep] = useState(1);
@@ -164,7 +176,7 @@ export default function App() {
   });
   const categoryEmojis = ["💵", "💲", "🤑", "💰", "🏦", "💹", "₿", "💎", "💳", "🧾", "📋", "💼", "🏠", "🏢", "🔑", "🛋️", "🧹", "💧", "⚡", "📶", "📡", "☁️", "📺", "🎬", "🍿", "🎵", "🎧", "🚗", "🚲", "🚂", "✈️", "⛽", "🛠️", "🅿️", "🎫", "🚕", "🚇", "🛒", "🛍️", "📦", "👕", "👗", "👟", "💅", "💄", "💈", "🕶️", "💍", "🍔", "🍕", "🌮", "🍣", "🥗", "🍳", "☕", "🍦", "🍻", "🍹", "🍷", "🏥", "💊", "🦷", "👓", "🧘", "🏋️", "🐾", "🐶", "🎁", "🎉", "🎟️", "🎮", "🕹️", "📱", "💻", "⌚", "🤖", "🚀", "🌴", "🎓", "🏪", "🎯", "🏖️", "👶", "🛡️", "🏍️", "🎸", "⛵"];
 
-  // === CATEGORY EXPANSION (CHANGE #5: "My Goals" INJECTED INTO INCOME & WEALTH) ===
+  // === FIX #5: "My Goals" PERMANENTLY INJECTED UNDER THE INCOME & WEALTH CLASSIFICATION MATRIX ===
   const modernCategories = [
     { group: "Income & Wealth", items: ["Primary Salary", "Side Hustle / Gig", "Tips / Cash", "Investments / Crypto", "Transfers (Venmo/Zelle)", "Refunds & Adjustments", "Cash App", "PayDay Loans", "Unemployment", "Retirement / 401k", "Benefits", "My Goals"] },
     { group: "Housing & Utilities", items: ["Rent / Mortgage", "Electric / Gas", "Water / Trash", "Internet / Wi-Fi", "Home Goods / Maintenance", "Cell Phone"] },
@@ -177,7 +189,6 @@ export default function App() {
     { group: "Entrepreneur", items: ["Domain / Hosting", "Software / SaaS", "AI Subscriptions", "Marketing & Ads", "Contractors & Freelancers", "Business Fees / LLC", "Office Supplies"] },
     { group: "Other", items: ["Miscellaneous Expense", "Charity / Gifts", "Other"] }
   ];
-
   // === DYNAMIC HAPTIC ENGINE ===
   const triggerHaptic = (pattern = 50) => {
     if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) {
@@ -648,7 +659,7 @@ export default function App() {
     triggerVictory(); setIsAddAccountOpen(false); setNewAccName(""); setNewAccBalance(""); setNewAccDesc(""); setNewAccType("Checking"); setNewAccIsNegative(false);
   };
 
-  // === CHANGE #2 & #3: REORDERED INPUTS AND REMOVED FUNDING SOURCE DROPDOWN ===
+  // === FIX #3: PURIFIED LIQUID MATHEMATICS SAVINGS GOAL SUBMIT ENGINE WITH UNLINKED SOURCE STATE ===
   const handleAddGoal = async () => {
     const targetBal = parseFloat(newGoalAmount);
     if (!newGoalName.trim() || isNaN(targetBal) || targetBal <= 0 || !newGoalDate || !newGoalIcon) return;
@@ -882,8 +893,7 @@ export default function App() {
   };
   const activeAlerts = generateAlerts();
   const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
-  
-  // === CHANGE #1 & #6: UPGRADED RENDER HERO SHELL + UNIVERSALLY PULSING NOTIFICATION DOTS ===
+// === CHANGE #1 & #6: UPGRADED RENDER HERO SHELL + UNIVERSALLY PULSING NOTIFICATION DOTS ===
   const renderHeroShell = (title, graphicContent) => {
     const hasOverdueOrDueNow = dynamicBills.some(b => !b.isPaid && (b.isOverdue || b.payday === "Due Now"));
     const hours = new Date().getHours();
@@ -940,7 +950,8 @@ export default function App() {
       </header>
     );
   };
-const confirmPaymentRoute = async () => {
+
+  const confirmPaymentRoute = async () => {
     const bill = bills.find(b => b.id === paymentModalConfig.billId);
     const targetAcc = accounts.find(a => a.id === paymentModalConfig.accountId);
     if (!bill || !targetAcc) return;
@@ -1109,15 +1120,15 @@ const confirmPaymentRoute = async () => {
       
       <div className={`w-full h-full relative flex flex-col lg:flex-row transition-colors duration-500 overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
         
-        {/* === CHANGE #1: UPGRADED SIDEBAR WITH SCROLLABLE INTERNAL MENUS === */}
+        {/* === CHANGE #1: FIX INDEPENDENT SCROLLING VIA HEIGHT CONTROL ON WRAPPER INJECTION BOUNDS === */}
         <div className={`hidden lg:flex w-[280px] flex-col border-r z-40 p-6 transition-colors duration-500 shrink-0 ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-100"}`}>
           <div className="flex items-center gap-4 mb-8 mt-4 shrink-0">
             <img src="/login-logo.png" alt="Ledger Planner" className={`w-12 h-12 rounded-full object-cover border-[2px] transition-colors ${isDarkMode ? "border-slate-700" : "border-slate-100"}`} />
             <div><h1 className={`font-black tracking-tighter text-lg leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>Ledger Planner</h1><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{isDemoMode ? "Demo Mode" : "Master Engine"}</p></div>
           </div>
           
-          {/* OPTION 1 WRAPPER: INDEPENDENT INNER SCROLLABLE BLOCK */}
-          <div className="flex-1 overflow-y-auto space-y-2 pr-1 hide-scrollbar">
+          {/* OPTION 1 CONTENT RUNWAY: MIDDLE MENU CONVERTED TO AN INDEPENDENTLY SCROLLABLE HIDE-SCROLLBAR CONTAINER */}
+          <div className="flex-1 overflow-y-auto space-y-2 pr-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 ml-2">Navigation</p>
             {[{ id: "home", icon: Home, label: "Dashboard" }, { id: "accounts", icon: Wallet, label: "Accounts" }, { id: "bills", icon: CalendarIcon, label: "Bills & Plans" }, { id: "activity", icon: CreditCard, label: "Activity" }, { id: "todo", icon: CheckSquare, label: "To-Do List" }].map((tab) => (
               <button key={tab.id} onClick={() => changeTab(tab.id)} className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 ${activeTab === tab.id ? isDarkMode ? "bg-slate-800 text-[#1877F2]" : "bg-blue-50 text-[#1877F2]" : isDarkMode ? "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"}`}>
@@ -1213,16 +1224,14 @@ const confirmPaymentRoute = async () => {
           </div>
         )}
 
-        {/* === CHANGE #6: UPGRADED INTERACTIVE COMMAND CENTER SIDE PANEL === */}
+        {/* === FIX #1 & #6: UPGRADED COMMAND CENTER OVERLAY CONTAINER WITH FULL MOBILE TAKEOVER BREAKPOINTS + FOOTER DROPPED === */}
         {isNotificationsOpen && (() => {
           const hasOverdueOrDueNow = dynamicBills.some(b => !b.isPaid && (b.isOverdue || b.payday === "Due Now"));
           const hours = new Date().getHours();
           const isAM = hours >= 5 && hours < 12;
 
-          // Backstage calculations for dynamic templates
           const liquidCash = accounts.filter(a => !a.isGoal && (a.type === "Checking" || a.type === "Cash")).reduce((sum, acc) => sum + (acc.balance || 0), 0);
           
-          // Next Payday extraction
           let nextPaydayDate = todayForDynamic;
           let activePaydayKey = "Payday 1";
           for (let i = 1; i <= 5; i++) {
@@ -1248,7 +1257,8 @@ const confirmPaymentRoute = async () => {
           return (
             <div className="fixed inset-0 z-[120] flex justify-end">
               <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsNotificationsOpen(false)}></div>
-              <div className={`w-full max-w-sm h-full shadow-2xl animate-slide-left relative z-[130] flex flex-col transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A] border-l border-slate-800" : "bg-white border-l border-slate-100"}`}>
+              {/* FIX #1: RESPONSIBLE TARGET TAKEOVER SWITCHED SURGICALLY FROM w-full max-w-sm TO w-full sm:max-w-sm TO TAKE OVER IN MOBILE VIEWS */}
+              <div className={`w-full sm:max-w-sm h-full shadow-2xl animate-slide-left relative z-[130] flex flex-col transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A] border-l border-slate-800" : "bg-white border-l border-slate-100"}`}>
                 <div className="p-6 border-b flex justify-between items-center shrink-0">
                   <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Command Center</h3>
                   <button onClick={() => setIsNotificationsOpen(false)} className={closeButtonClass}><X size={18} /></button>
@@ -1272,19 +1282,30 @@ const confirmPaymentRoute = async () => {
                       <div className="flex-1">
                         <div className="flex justify-between items-start">
                           <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${isDarkMode ? "text-amber-400" : "text-amber-800"}`}>{isAM ? "Morning Strategy" : "Evening Analysis"}</p>
-                          <button onClick={() => { triggerHaptic(30); if(isAM) setHasConsumedAMBriefing(true); else setHasConsumedPMBriefing(true); }} className={`text-slate-400 hover:text-slate-600 p-0.5`}>×</button>
+                          {/* FIX #6: ATTACHED LOCAL STORAGE DAILY KEY STAMP PERSISTENCE FOOTPRINTS CLEANLY ON SEPARATE DISMISS Toggles */}
+                          <button onClick={() => { 
+                            triggerHaptic(30); 
+                            const todayKey = new Date().toISOString().split('T')[0];
+                            if (isAM) {
+                              setHasConsumedAMBriefing(true);
+                              localStorage.setItem(`lp_briefing_am_${todayKey}`, "true");
+                            } else {
+                              setHasConsumedPMBriefing(true);
+                              localStorage.setItem(`lp_briefing_pm_${todayKey}`, "true");
+                            }
+                          }} className={`text-slate-400 hover:text-slate-600 p-0.5`}>×</button>
                         </div>
                         <p className={`text-xs font-bold leading-relaxed ${isDarkMode ? "text-slate-300" : "text-amber-950"}`}>
                           {isAM ? (
                             burnPercentage > 60 ? (
-                              `Heads up, Founder. This paycheck is a High-Burn cycle—${burnPercentage}% of this income is spoken for by fixed bills. It’s a great week to hold the line on non-essential spending and let your automation handle the heavy lifting.`
+                              `Heads up, ${userName}. This paycheck is a High-Burn cycle—${burnPercentage}% of this income is spoken for by fixed bills. It’s a great week to hold the line on non-essential spending and let your automation handle the heavy lifting.`
                             ) : burnPercentage < 30 ? (
-                              `Good morning, Founder. This is a Low-Burn cycle—only ${burnPercentage}% of this income goes to bills. You have a prime opportunity this week to make an extra manual transfer toward your Savings Goal ahead of schedule.`
+                              `Good morning, ${userName}. This is a Low-Burn cycle—only ${burnPercentage}% of this income goes to bills. You have a prime opportunity this week to make an extra manual transfer toward your Savings Goal ahead of schedule.`
                             ) : (
-                              `Good morning, Founder. After accounting for all bills in this cycle, your true safe-to-spend runway is exactly $${trueRunwayAmount.toFixed(2)} per day until your next paycheck drops on ${formatPaydayDateStr(paydayConfig?.[activePaydayKey]?.date)}. Keep daily spending under this line to maintain a perfect cushion.`
+                              `Good morning, ${userName}. After accounting for all bills in this cycle, your true safe-to-spend runway is exactly $${trueRunwayAmount.toFixed(2)} per day until your next paycheck drops on ${formatPaydayDateStr(paydayConfig?.[activePaydayKey]?.date)}. Keep daily spending under this line to maintain a perfect cushion.`
                             )
                           ) : (
-                            `Good evening, Founder. Payday Eve is active. You successfully navigated this cycle with a surplus of $${excessCushion.toFixed(2)} remaining in your baseline checking buffer. Excellent discipline. Preparing the vault to initialize your incoming paycheck tomorrow morning.`
+                            `Good evening, ${userName}. Payday Eve is active. You successfully navigated this cycle with a surplus of $${excessCushion.toFixed(2)} remaining in your baseline checking buffer. Excellent discipline. Preparing the vault to initialize your incoming paycheck tomorrow morning.`
                           )}
                         </p>
                       </div>
@@ -1311,20 +1332,7 @@ const confirmPaymentRoute = async () => {
                     ))
                   )}
                 </div>
-
-                {/* ACCESS DISMISS BUTTON */}
-                <div className="p-6 border-t shrink-0">
-                  <button 
-                    onClick={() => {
-                      triggerHaptic(50);
-                      setHasConsumedAMBriefing(true);
-                      setHasConsumedPMBriefing(true);
-                    }}
-                    className="w-full py-4 rounded-xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all"
-                  >
-                    Dismiss All Insights
-                  </button>
-                </div>
+                {/* FIX #6: OPTION A CONFIRMED — REDUNDANT LOWER DISMISS BUTTON GROUP CONTAINER HAS BEEN REMOVED ENTIRELY FROM THIS SHADOW WRAPPER */}
               </div>
             </div>
           );
@@ -1458,7 +1466,7 @@ const confirmPaymentRoute = async () => {
               </div>
               <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
                 
-                {/* === CHANGE #2: Goal Name SWAPPED TO SIT PROUDLY ON TOP === */}
+                {/* === FIX #2: Savings Goal Name INPUT FIELD SWAPPED SURGICALLY TO SIT FIRST IN ORDER === */}
                 <div className="relative">
                   <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Goal Name</label>
                   <input type="text" value={newGoalName} onChange={(e) => setNewGoalName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors focus:border-[#F97316] outline-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
@@ -1487,6 +1495,7 @@ const confirmPaymentRoute = async () => {
                      <input type="date" value={newGoalDate} onChange={(e) => setNewGoalDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                    </div>
                 </div>
+                {/* FIX #3: DELETED THE REMAINING UNUSED FUNDING SOURCE FORM DROPDOWN BLOCKS ENTIRELY FROM HERE */}
                 <button onClick={handleAddGoal} disabled={!newGoalName.trim() || isNaN(parseFloat(newGoalAmount)) || parseFloat(newGoalAmount) <= 0 || !newGoalDate || !newGoalIcon} className={`w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${!newGoalName.trim() || isNaN(parseFloat(newGoalAmount)) || parseFloat(newGoalAmount) <= 0 || !newGoalDate || !newGoalIcon ? "bg-slate-300 opacity-50 cursor-not-allowed shadow-none" : "bg-[#F97316] shadow-[0_8px_16px_rgba(249,115,22,0.3)] active:scale-95"}`}>Lock In Goal <Target size={16} /></button>
               </div>
               {isIconSelectorOpen && (
@@ -1524,7 +1533,7 @@ const confirmPaymentRoute = async () => {
                 </div>
                 <div className="grid grid-cols-4 gap-3 lg:gap-2 mt-auto">
                   {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", ".", "0", "=", "+"].map((btn) => {
-                    return ( <button key={btn} onClick={() => handleTransferNumpad(btn)} className={`w-full h-14 lg:h-12 rounded-2xl text-2xl font-bold flex items-center justify-center transition-all border active:scale-95 touch-manipulation ${isDarkMode ? "bg-slate-800 border-slate-700 text-white active:bg-slate-700" : "bg-slate-100 border-slate-200 text-slate-900 active:bg-slate-200"}`}> {btn} </button> );
+                    return ( <button key={btn} onClick={() => handleTransferNumpad(btn)} className={`w-full h-14 lg:h-12 rounded-2xl text-2xl font-bold flex items-center justify-center transition-all border mt-2 active:scale-95 touch-manipulation ${isDarkMode ? "bg-slate-800 border-slate-700 text-white active:bg-slate-700" : "bg-slate-100 border-slate-200 text-slate-900 active:bg-slate-200"}`}> {btn} </button> );
                   })}
                 </div>
                 <button onClick={executeTransfer} disabled={parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo} className={`w-full mt-6 lg:mt-3 h-16 lg:h-12 shrink-0 rounded-2xl font-black uppercase tracking-widest text-sm text-white shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2 ${parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo ? "bg-slate-300 opacity-50 shadow-none cursor-not-allowed shadow-none" : "bg-[#1877F2]"}`}>Execute Transfer <ArrowRight size={18} /></button>
@@ -1615,7 +1624,7 @@ const confirmPaymentRoute = async () => {
                 <button onClick={updateAccountBalance} disabled={isNaN(parseFloat(editAccountBalance))} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${isNaN(parseFloat(editAccountBalance)) ? "bg-slate-300 opacity-50 cursor-not-allowed" : "bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] active:scale-95"}`}><Save size={16} /> Save Changes</button>
                 <button onClick={deleteAccount} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-red-500 shadow-[0_8px_16px_rgba(239,68,68,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><Trash2 size={16}/> {selectedAccount.isGoal ? "Delete Goal" : "Delete Account"}</button>
               </div>
-              {isIconSelectorOpen && editIconSelectorOpen && (
+              {isIconSelectorOpen && (
                  <div className={`absolute inset-0 z-[150] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
                     <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}><h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Icon</h3><button onClick={() => setIsIconSelectorOpen(false)} className={closeButtonClass}><X size={18}/></button></div>
                     <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] p-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : "pb-20 lg:pb-6"}`}>
@@ -1919,7 +1928,7 @@ const confirmPaymentRoute = async () => {
                       </div>
                       <div className="grid grid-cols-4 gap-3 lg:gap-2 mt-auto mb-6 lg:mb-3">
                         {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", ".", "0", "=", "+"].map((btn) => (
-                          <button key={btn} onClick={() => handleNumpad(btn)} className={`w-full h-14 lg:h-10 rounded-2xl text-2xl font-bold flex items-center justify-center transition-all border active:scale-95 touch-manipulation ${isDarkMode ? "bg-slate-800 border-slate-700 text-white active:bg-slate-700" : "bg-slate-100 border-slate-200 text-slate-900 active:bg-slate-200"}`}>{btn}</button>
+                          <button key={btn} onClick={() => handleNumpad(btn)} className={`w-full h-14 lg:h-10 rounded-2xl text-2xl font-bold flex items-center justify-center transition-all border mt-2 active:scale-95 touch-manipulation ${isDarkMode ? "bg-slate-800 border-slate-700 text-white active:bg-slate-700" : "bg-slate-100 border-slate-200 text-slate-900 active:bg-slate-200"}`}>{btn}</button>
                         ))}
                       </div>
                       <button onClick={() => { triggerHaptic(20); setInputValue(parseFloat(inputValue).toFixed(2)); setQabStep(2); }} disabled={!isQabAmountValid} className={`w-full h-16 lg:h-12 shrink-0 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${!isQabAmountValid ? "bg-slate-300 opacity-50 cursor-not-allowed shadow-none" : `active:scale-95 ${qabActiveBg} ${qabActiveShadow} hover:-translate-y-1`}`}>Next Step <ArrowRight size={18} /></button>

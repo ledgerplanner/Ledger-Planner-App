@@ -171,7 +171,7 @@ export default function Dashboard({
           </div>
         </div>
         
-        {/* 📱 FLUID TYPOGRAPHY (NO ELLIPSES) */}
+        {/* 🛍️ SAFE TO SPEND VALUE AREA */}
         <div className={`flex-1 pl-4 flex flex-col items-end transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
           <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border mb-2 shadow-sm ${isDarkMode ? "bg-slate-800/80 border-slate-700 text-slate-300" : "bg-white/80 border-white text-slate-600"}`}>
             <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${safeToSpend < 0 ? "bg-red-500" : "bg-emerald-500 animate-pulse"}`}></div>
@@ -185,7 +185,8 @@ export default function Dashboard({
           {nextPaydayDayName && (
             <div className={`flex flex-col items-end gap-1 w-full mt-1 transform transition-all duration-700 delay-500 ease-out ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"}`}>
                <span className={`text-[9px] font-black uppercase tracking-widest text-right leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                 NEXT PAYDAY: {nextPaydayDayName} <span className="text-[#1877F2]">(IN {daysUntilNext} {daysUntilNext === 1 ? "DAY" : "DAYS"})</span>
+                  {/* FIX #5: COUNTDOWN TRACKING TAG SWITCHED SURGICALLY FROM SIGNATURE BLUE TO EMERALD GREEN */}
+                  NEXT PAYDAY: {nextPaydayDayName} <span className="text-[#10B981]">(IN {daysUntilNext} {daysUntilNext === 1 ? "DAY" : "DAYS"})</span>
                </span>
             </div>
           )}
@@ -212,7 +213,7 @@ export default function Dashboard({
   }, 0);
 
   return (
-    // 🎨 MASTER GRADIENT LAYER
+    // 🎨 MASTER LAYOUT CHASSIS
     <div className={`pb-32 transition-colors duration-500 min-h-screen relative overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-gradient-to-b from-slate-50 via-[#F8FAFC] to-blue-50/40"}`}>
       
       <div className="relative z-10">
@@ -220,7 +221,8 @@ export default function Dashboard({
       </div>
 
       <div className="flex justify-center px-6 mb-5 -mt-2 relative z-10">
-         <button onClick={() => setIsPaydaySetupOpen(true)} className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border transition-all active:scale-95 ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#1877F2] shadow-sm" : "bg-white/80 backdrop-blur-md border-white/60 text-[#1877F2] shadow-[0_4px_20px_rgba(0,0,0,0.03)]"}`}>
+         {/* FIX #5: ACTION BUTTON ROUTING CALL TEXT RESKINNED SURGICALLY FROM BLUE TO EMERALD GREEN */}
+         <button onClick={() => setIsPaydaySetupOpen(true)} className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border transition-all active:scale-95 ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#10B981] shadow-sm" : "bg-white/80 backdrop-blur-md border-white/60 text-[#10B981] shadow-[0_4px_20px_rgba(0,0,0,0.03)]"}`}>
             <Settings2 size={18} strokeWidth={2.5} /> Set Your Pay Dates & Amounts
          </button>
       </div>
@@ -255,7 +257,7 @@ export default function Dashboard({
 
                 <div className="text-center py-2">
                   <p className={`text-2xl font-black tracking-tighter ${isDeficit ? "text-red-500" : "text-[#10B981]"}`}>
-                    {isDeficit ? "-" : ""}${Math.abs(waterfallBalance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    ${Math.abs(waterfallBalance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                   </p>
                   <span className="text-[8px] font-black uppercase tracking-[0.15em] text-slate-400 opacity-60">{subLabelStr}</span>
                 </div>
@@ -271,7 +273,8 @@ export default function Dashboard({
                   )}
                   <div className="flex flex-col items-end shrink-0">
                     <span className="text-[7px] font-black uppercase text-slate-400 tracking-widest mb-0.5">{unpaidCount} Bills Out</span>
-                    <span className={`text-[10px] font-black ${isDarkMode ? "text-red-400" : "text-red-500"}`}>-${unpaidTotal.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
+                    {/* FIX #6: HORIZONTAL ASSIGNED pay CARDS "BILLS OUT" PROJECTION METRIC SWITCHED SURGICALLY FROM RED TO BRAND SIGNATURE BLUE */}
+                    <span className="text-[10px] font-black text-[#1877F2]">-${unpaidTotal.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
                   </div>
                 </div>
 
@@ -354,7 +357,7 @@ export default function Dashboard({
                                   <span className={`text-xs font-bold ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
                                      {bill?.fullDate || "TBD"}
                                   </span>
-                                </div>
+                               </div>
                                
                                <div className="flex-1 flex justify-center px-1">
                                   {!bill?.isPaid ? (
@@ -369,7 +372,7 @@ export default function Dashboard({
                                </div>
                                
                                <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 text-[#1877F2] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] whitespace-nowrap`}>
-                                  ${(Number(bill?.amount) || 0).toFixed(2)}
+                                  {(Number(bill?.amount) || 0).toFixed(2)}
                                 </div>
                             </div>
 

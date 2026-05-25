@@ -1181,8 +1181,28 @@ export default function App() {
       </header>
     );
   };
-
-  return (
+// === THE SECURITY GUARDRAILS ===
+  if (!isMounted) return <div className={`min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}></div>;
+  if (isAuthLoading && !isDemoMode) {
+    return (
+      <div className={`min-h-screen flex items-center justify-center ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
+        <div className="w-12 h-12 border-4 border-[#1877F2] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+  if (!user && !isDemoMode) {
+    return (
+      <Login
+        email={email} setEmail={setEmail}
+        password={password} setPassword={setPassword}
+        firstName={firstName} setFirstName={setFirstName}
+        isLoginMode={isLoginMode} setIsLoginMode={setIsLoginMode}
+        handleAuthSubmit={handleAuthSubmit} handleGoogleLogin={handleGoogleLogin}
+        authError={authError} setAuthError={setAuthError} isAuthLoading={isAuthLoading}
+      />
+    );
+  }
+return (
     <div 
       onContextMenu={(e) => e.preventDefault()} 
       className={`h-screen w-full font-sans relative flex transition-colors duration-500 select-none [-webkit-touch-callout:none] ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}

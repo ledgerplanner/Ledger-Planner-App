@@ -354,8 +354,9 @@ export default function Accounts({
                            </div>
                         </div>
 
+                        {/* === REVERTED FROM ORANGE BACK TO SIGNATURE BRAND BLUE TO CRUSH ORANGE OVERLOAD === */}
                         <div className={`w-full h-2.5 rounded-full overflow-hidden border mb-2 ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-slate-100 border-slate-200"}`}>
-                             <div className={`h-full transition-all duration-1000 ${isComplete ? "bg-gradient-to-r from-orange-500 to-orange-400 shadow-[0_0_10px_rgba(249,115,22,0.5)]" : "bg-[#F97316]"}`} style={{ width: `${progressPct}%` }}></div>
+                             <div className="h-full transition-all duration-1000 bg-[#1877F2]" style={{ width: `${progressPct}%` }}></div>
                         </div>
 
                         {goal.targetDate && (
@@ -364,8 +365,8 @@ export default function Accounts({
                            </div>
                         )}
 
-                        {/* === ITEM #1 & #5: UNIFIED THEME ORANGE CASH OUT REFACTOR ENGINE === */}
-                        {isComplete && (
+                        {/* === LIQUIDITY RELEASE VALVE ENGINE: SHOW BUTTON FOR ANY AVAILABLE CASH ASSETRANGE === */}
+                        {balanceAmt > 0 && (
                           <button 
                             onClick={(e) => {
                               e.stopPropagation();
@@ -374,7 +375,7 @@ export default function Accounts({
                             }}
                             className="w-full py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest text-white bg-[#F97316] hover:bg-[#EA580C] shadow-[0_8px_20px_rgba(249,115,22,0.3)] flex items-center justify-center gap-2 transition-all active:scale-95 mt-2 border border-transparent"
                           >
-                            <CheckCircle2 size={14} strokeWidth={3} /> Cash Out Goal
+                            <CheckCircle2 size={14} strokeWidth={3} /> Cash Out From This Goal
                           </button>
                         )}
 

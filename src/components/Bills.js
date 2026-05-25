@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { CheckCircle2, RefreshCw, ChevronUp, ChevronDown, RotateCcw, Edit2, Calendar as CalendarIcon, Archive, Eye, Sparkles } from "lucide-react";
+import { CheckCircle2, RefreshCw, ChevronUp, ChevronDown, RotateCcw, Edit2, Archive, Eye, Sparkles } from "lucide-react";
 
 export default function Bills({
   userName = "Founder",
@@ -13,6 +13,9 @@ export default function Bills({
 }) {
   const [isMounted, setIsMounted] = useState(false);
   
+  // Localized Accordion State to prevent global App.js runtime state crashes
+  const [localCollapsedSections, setLocalCollapsedSections] = useState({});
+
   // Get active system clocks
   const today = new Date();
   const currentMonthIdx = today.getMonth(); // 0-11
@@ -31,7 +34,6 @@ export default function Bills({
   ];
 
   // === ARCHITECTURAL TIME-MACHINE CALENDAR ENGINE ===
-  // State 1 (Past Archive), State 2 (Live Operational Board), State 3 (Future Projection Engine)
   const isPastMonth = selectedMonth < currentMonthIdx;
   const isCurrentMonth = selectedMonth === currentMonthIdx;
   const isFutureMonth = selectedMonth > currentMonthIdx;
@@ -40,7 +42,6 @@ export default function Bills({
   let operationalBills = [];
 
   if (isPastMonth || isCurrentMonth) {
-    // Standard extraction bounds matching rawDate patterns: YYYY-MM-DD
     operationalBills = bills.filter((b) => {
       if (!b.rawDate) return false;
       const parts = b.rawDate.split("-");
@@ -59,11 +60,9 @@ export default function Bills({
     }
   } else if (isFutureMonth) {
     // === THE AUTOMATED PROJECTION ENGINE ===
-    // Scan current database configurations and dynamically clone all recurring fixed obligations
     operationalBills = bills
       .filter((b) => b.isRecurring === true)
       .map((b) => {
-        // Project adjusted tracking dates dynamically onto the future monthly vector
         let projectedFullDate = "TBD";
         let projectedRawDate = b.rawDate;
         
@@ -82,7 +81,7 @@ export default function Bills({
         return {
           ...b,
           id: `projected-${b.id}-${selectedMonth}`,
-          isPaid: false, // Future projections always launch clear and unpaid
+          isPaid: false, 
           fullDate: projectedFullDate,
           rawDate: projectedRawDate,
           isProjection: true
@@ -111,6 +110,14 @@ export default function Bills({
       if (!b.rawDate) return -1;
       return new Date(a.rawDate) - new Date(b.rawDate);
     });
+  };
+
+  // Toggle local section visibility safely
+  const toggleLocalSection = (sectionKey) => {
+    setLocalCollapsedSections(prev => ({
+      ...prev,
+      [sectionKey]: !prev[sectionKey]
+    }));
   };
 
   // Group unpaid items structurally for collapsible UI rows inside the targeted month layout view
@@ -158,7 +165,7 @@ export default function Bills({
         </div>
       </div>
 
-      {/* === ITEM #2: EXECUTE BILLS HERO HORIZONTAL METRIC BAR INTEGRATION === */}
+      {/* === TELEMETRY DUAL METRIC BAR === */}
       <div className={`w-full p-2 rounded-2xl border flex flex-col gap-1.5 transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-100 shadow-sm"}`}>
         <div className="flex justify-between items-center px-1">
           <span className="text-[8px] font-black tracking-widest uppercase text-slate-400">Telemetry Allocation Ratio</span>
@@ -169,9 +176,7 @@ export default function Bills({
           </span>
         </div>
         
-        {/* Dynamic Multi-Segment Fluid Fill Trackbar */}
         <div className={`w-full h-6 rounded-xl overflow-hidden flex font-black text-[9px] tracking-wider text-white select-none shadow-inner ${isDarkMode ? "bg-slate-900" : "bg-slate-100"}`}>
-          {/* Green income block segment */}
           {countableIncome > 0 && (
             <div 
               className="bg-[#10B981] h-full flex items-center pl-2.5 transition-all duration-1000 shadow-md whitespace-nowrap overflow-hidden" 
@@ -181,7 +186,6 @@ export default function Bills({
             </div>
           )}
           
-          {/* Signature blue obligations block segment */}
           {unpaidBillsAmount > 0 && (
             <div 
               className="bg-[#1877F2] h-full flex items-center justify-end pr-2.5 transition-all duration-1000 shadow-md whitespace-nowrap overflow-hidden ml-auto text-right" 
@@ -205,7 +209,7 @@ export default function Bills({
     <div className={`pb-32 transition-colors duration-500 min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
       {renderHeroShell(`${userName}'s Bills`, graphicContent)}
       
-      {/* === ITEM #3: 12-MONTH HORIZONTAL CALENDAR SCROLLER NAV CONTAINER === */}
+      {/* 📅 12-MONTH HORIZONTAL SCROLLER NAV CONTAINER */}
       <div className="w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-2 mt-4 relative z-10">
         <div className="flex gap-2.5 pr-6 pb-2">
           {monthNames.map((name, idx) => {
@@ -249,7 +253,7 @@ export default function Bills({
 
       <main className="px-6 space-y-8 mt-4 relative z-10">
         
-        {/* TARGET MONTH CALENDAR ROW WRAPPER CONTAINER */}
+        {/* OBLIGATIONS DISPLAY COMPONENT CONTAINER */}
         <div className="space-y-4">
           <div className="flex justify-between items-center px-2">
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">
@@ -281,16 +285,17 @@ export default function Bills({
             <div className="space-y-4">
               {Object.keys(categoryGroupings).map((groupName) => {
                 const groupBills = categoryGroupings[groupName] || [];
-                const isCollapsed = collapsedPaydays?.[`${selectedMonth}-${groupName}`];
+                const sectionKey = `${selectedMonth}-${groupName}`;
+                const isCollapsed = localCollapsedSections[sectionKey];
                 const sortedBills = sortBillsSurgically(groupBills);
                 const groupSum = groupBills.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
 
                 return (
                   <div key={groupName} className="space-y-2">
-                    {/* EXPANDABLE ACCORDION HEADER TRIGGER CARD */}
+                    {/* SAFE LOCALIZED EXPANDABLE ACCORDION HEADER */}
                     <div 
                       className={`flex justify-between items-center px-4 py-3.5 rounded-2xl border transition-all cursor-pointer ${isDarkMode ? "bg-[#1E293B] border-slate-800/60 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50 shadow-sm"}`}
-                      onClick={() => toggleCollapse(`${selectedMonth}-${groupName}`)}
+                      onClick={() => toggleLocalSection(sectionKey)}
                     >
                       <div className="flex items-center gap-2">
                         <span className="text-slate-400">{isCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}</span>
@@ -311,7 +316,7 @@ export default function Bills({
                           return (
                             <div key={bill.id} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all ${isDarkMode ? "bg-slate-800/40 border-slate-700/60" : "bg-white border-slate-100/80"}`}>
                               
-                              {/* LEVEL 1: Identity & Parameters Override Trigger */}
+                              {/* LEVEL 1: Identity Matrix */}
                               <div className="flex items-start justify-between w-full mb-4">
                                 <div className="flex items-center gap-3 flex-1 min-w-0">
                                   <div className={`w-11 h-11 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isUrgent ? isDarkMode ? "bg-red-900/20 border-red-900/50" : "bg-red-50 border-red-100" : isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
@@ -338,7 +343,7 @@ export default function Bills({
                                 )}
                               </div>
 
-                              {/* LEVEL 2: Action Interceptors */}
+                              {/* LEVEL 2: Action Controls */}
                               <div className="flex items-center justify-between gap-2 w-full">
                                 <div className="flex flex-col shrink-0">
                                   <span className={`text-[9px] font-black uppercase tracking-wider ${isUrgent ? "text-red-500" : "text-slate-400"}`}>
@@ -357,7 +362,7 @@ export default function Bills({
                                   )}
 
                                   {isFutureMonth && (
-                                    <div className="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-orange-500/10 text-orange-400 border border-orange-500/10 flex items-center gap-1.5 animate-pulse">
+                                    <div className="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-orange-500/10 text-orange-400 border border-orange-500/10 flex items-center gap-1.5">
                                       <Eye size={12} /> Forecast Node
                                     </div>
                                   )}
@@ -389,7 +394,7 @@ export default function Bills({
           )}
         </div>
 
-        {/* SETTLED AND ARCHIVED INACTIVE BLOCK ROW */}
+        {/* SETTLED HISTORICAL BLOCK */}
         {paidBills.length > 0 && (
           <div className="space-y-4 mt-6">
             <div className="flex items-center gap-2 px-2">

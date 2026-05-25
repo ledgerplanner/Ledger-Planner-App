@@ -363,7 +363,7 @@ export default function Dashboard({
                                   <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                                      {bill?.name || "Unnamed"}
                                   </p>
-                               </div>
+                                Amin</div>
                                <button 
                                  onClick={(e) => { e.stopPropagation(); setSelectedEntry(bill); }} 
                                  className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
@@ -380,7 +380,7 @@ export default function Dashboard({
                                   <span className={`text-xs font-bold ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
                                      {bill?.fullDate || "TBD"}
                                   </span>
-                                bounds</div>
+                               </div>
                                
                                <div className="flex-1 flex justify-center px-1">
                                   {!bill?.isPaid ? (

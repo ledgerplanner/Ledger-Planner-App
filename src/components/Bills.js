@@ -146,7 +146,6 @@ export default function Bills({
 
         {/* DATA METRICS CONTAINER */}
         <div className={`flex-1 pl-4 text-right transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-          {/* === ITEM #1: BILLS HERO TEXT COLOR SHIFT FROM SLATE TO SIGNATURE BLUE === */}
           <p className="text-[10px] font-black uppercase tracking-widest mb-1 text-[#1877F2]">Total Bills Paid</p>
           <p className="font-black tracking-tighter mb-0 leading-none sm:leading-tight">
             <span className={`text-2xl min-[380px]:text-3xl sm:text-4xl block sm:inline ${paidBillsAmount === 0 ? "text-red-500" : "text-[#10B981]"}`}>
@@ -210,7 +209,6 @@ export default function Bills({
       <div className="w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-2 mt-4 relative z-10">
         <div className="flex gap-2.5 pr-6 pb-2">
           {monthNames.map((name, idx) => {
-            const isNavCurrent = idx === currentMonthIdx;
             const isNavSelected = idx === selectedMonth;
             
             let cardStyle = "";
@@ -281,7 +279,6 @@ export default function Bills({
             </div>
           ) : (
             <div className="space-y-4">
-              {/* Build collapsible buckets dynamically by processing parsed criteria loops */}
               {Object.keys(categoryGroupings).map((groupName) => {
                 const groupBills = categoryGroupings[groupName] || [];
                 const isCollapsed = collapsedPaydays?.[`${selectedMonth}-${groupName}`];
@@ -331,7 +328,6 @@ export default function Bills({
                                   </div>
                                 </div>
                                 
-                                {/* Hide edits on dynamically generated future projection nodes */}
                                 {!bill.isProjection && (
                                   <button
                                     onClick={(e) => { e.stopPropagation(); setSelectedEntry(bill); }}

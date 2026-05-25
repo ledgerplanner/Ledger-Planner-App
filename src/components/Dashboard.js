@@ -64,11 +64,11 @@ export default function Dashboard({
   const currentMonthIdx = todayForMath.getMonth(); 
   const currentYearIdx = todayForMath.getFullYear(); 
 
-  // === ITEM #7: PURE LIQUID NET WORTH HERO CARD CALIBRATION ===
+  // === PURE LIQUID NET WORTH HERO CARD CALIBRATION ===
   const liquidAccounts = accounts.filter(a => !a.isGoal);
   const totalIncomeBalance = liquidAccounts.reduce((sum, a) => sum + (Number(a?.balance) || 0), 0);
   
-  // === ITEM #1: FIXED OBLIGATIONS MONTH BOUNDARY ENGINE REPAIR ===
+  // === FIXED OBLIGATIONS MONTH BOUNDARY ENGINE REPAIR ===
   const scopedUnpaidBillsAmount = bills.reduce((sum, bill) => {
     if (bill.isPaid) return sum;
     let include = false;
@@ -157,7 +157,7 @@ export default function Dashboard({
       {/* 👑 PREMIUM GRADIENT HERO */}
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-100 via-white via-25% to-white border-white/80 border-t-white shadow-[inset_0_2px_4px_rgba(255,255,255,0.8),0_12px_24px_rgba(24,119,242,0.3),0_4px_12px_rgba(0,0,0,0.05)]"}`}>
         
-        {/* === ITEM #2: HERO CARD SNAPSHOT TITLE LAYER INJECTION === */}
+        {/* === HERO CARD SNAPSHOT TITLE LAYER INJECTION === */}
         <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
           <span className={`text-[10px] font-black uppercase tracking-widest opacity-80 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
             {currentMonthName}'s Monthly Snapshot
@@ -166,7 +166,7 @@ export default function Dashboard({
         
         <div className="relative w-28 h-28 flex-shrink-0">
           <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
-            {/* === ITEM #6: DASHBOARD GRAPH ANIMATION SLOW DOWN (1.2s ➔ 2.2s) === */}
+            {/* === DASHBOARD GRAPH ANIMATION SLOW DOWN (1.2s ➔ 2.2s) === */}
             <style>{`
               @keyframes drawTrendLine {
                 from { stroke-dashoffset: 1000; }
@@ -236,7 +236,7 @@ export default function Dashboard({
       </div>
 
       <div className="flex justify-center px-6 mb-5 -mt-2 relative z-10">
-         {/* === ITEM #5: DYNAMIC SETUP BUTTON MONTH LABELLING UPDATE === */}
+         {/* === DYNAMIC SETUP BUTTON MONTH LABELLING UPDATE === */}
          <button onClick={() => setIsPaydaySetupOpen(true)} className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border transition-all active:scale-95 ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#10B981] shadow-sm" : "bg-white/80 backdrop-blur-md border-white/60 text-[#10B981] shadow-[0_4px_20px_rgba(0,0,0,0.03)]"}`}>
             <Settings2 size={18} strokeWidth={2.5} /> Set {currentMonthName}'s Pay Dates & Amounts
          </button>
@@ -270,7 +270,7 @@ export default function Dashboard({
                   <span className={`text-[9px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>{expectedDateStr}</span>
                 </div>
 
-                {/* === ITEM #4: TIMELINES & TYPOGRAPHY TIGHTENING === */}
+                {/* === TIMELINES & TYPOGRAPHY TIGHTENING === */}
                 <div className="text-center pt-1.5 pb-1">
                   <p className={`text-2xl font-black tracking-tighter leading-none mb-1 ${isDeficit ? "text-red-500" : "text-[#10B981]"}`}>
                     ${Math.abs(waterfallBalance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
@@ -278,7 +278,7 @@ export default function Dashboard({
                   <span className="text-[8px] font-black uppercase tracking-[0.15em] text-slate-400 opacity-60 leading-none block">{subLabelStr}</span>
                 </div>
 
-                {/* === ITEM #4: HORIZONTAL CARD VIEW DETAILS PILL INJECTION === */}
+                {/* === HORIZONTAL CARD VIEW DETAILS PILL INJECTION === */}
                 <div className={`w-full py-1.5 rounded-xl text-center font-black text-[9px] tracking-wider transition-all uppercase ${isDarkMode ? "bg-blue-500/10 text-[#1877F2] hover:bg-blue-500/20" : "bg-blue-50 text-[#1877F2] hover:bg-blue-100/80"}`}>
                   VIEW DETAILS
                 </div>
@@ -293,7 +293,7 @@ export default function Dashboard({
                     </div>
                   )}
                   <div className="flex flex-col items-end shrink-0">
-                    {/* === ITEM #3: SINGULAR BILL COUNT METRIC PLURALIZATION TERNARY === */}
+                    {/* === SINGULAR BILL COUNT METRIC PLURALIZATION TERNARY === */}
                     <span className="text-[7px] font-black uppercase text-slate-400 tracking-widest mb-0.5">
                       {unpaidCount === 1 ? `${unpaidCount} Bill Out` : `${unpaidCount} Bills Out`}
                     </span>
@@ -363,7 +363,7 @@ export default function Dashboard({
                                   <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                                      {bill?.name || "Unnamed"}
                                   </p>
-                                Amin</div>
+                               </div>
                                <button 
                                  onClick={(e) => { e.stopPropagation(); setSelectedEntry(bill); }} 
                                  className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}

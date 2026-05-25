@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { ArrowRightLeft, PlusCircle, Edit2, Target, CheckCircle2, Calendar as CalendarIcon, ArrowDown, X } from "lucide-react";
 
 export default function Accounts({
@@ -211,13 +211,13 @@ export default function Accounts({
           } else {
             if (isItemZero) barBgClass = isDarkMode ? "bg-slate-800 group-hover:bg-slate-700" : "bg-slate-100 group-hover:bg-slate-200";
             else if (isItemPositive) barBgClass = isDarkMode ? "bg-emerald-900/20 group-hover:bg-emerald-900/40 opacity-50" : "bg-emerald-50 group-hover:bg-emerald-100 opacity-60";
-            else barBgClass = "bg-red-900/20 group-hover:bg-red-900/40 opacity-50" : "bg-red-50 group-hover:bg-red-100 opacity-60";
+            else barBgClass = isDarkMode ? "bg-red-900/20 group-hover:bg-red-900/40 opacity-50" : "bg-red-50 group-hover:bg-red-100 opacity-60";
           }
 
           return (
             <div key={i} onClick={() => setActiveChartNode(i)} className="flex flex-col items-center justify-end h-full flex-1 cursor-pointer group relative z-10">
               <div className="w-full relative flex justify-center h-full items-end">
-                <div className={`w-full max-w-[32px] rounded-t-[6px] transition-all duration-500 ease-out ${barBgClass}`} style={{ height: `${heightPct}%`, minHeight: Math.abs(item.val) > 0 ? "12px" : "4px" }}></div>
+                <div className={`w-full max-w-[32px] rounded-t-xl transition-all duration-500 ease-out ${barBgClass}`} style={{ height: `${heightPct}%`, minHeight: Math.abs(item.val) > 0 ? "12px" : "4px" }}></div>
               </div>
               <span className={`text-[9px] font-black mt-3 uppercase tracking-wider transition-colors duration-300 ${isActive ? (isItemZero ? (isDarkMode ? "text-slate-300" : "text-slate-500") : isItemNegative ? "text-red-500" : "text-[#10B981]") : "text-slate-400"}`}>{item.label}</span>
             </div>
@@ -244,7 +244,7 @@ export default function Accounts({
                     const isNegative = acc.balance < 0;
                     const isPositive = acc.balance > 0;
                     return (
-                    <div key={acc.id} onClick={() => { if (typeof setIsTransferOpen === 'function') setIsTransferOpen(true); }} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all cursor-pointer ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
+                    <div key={acc.id} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
                         
                         <div className="flex items-start justify-between w-full mb-4">
                            <div className="flex items-center gap-3 flex-1">
@@ -257,9 +257,9 @@ export default function Accounts({
                            </div>
                            <button 
                              onClick={(e) => { e.stopPropagation(); setSelectedAccount(acc); setEditAccountBalance(acc.balance.toString()); }}
-                             className={`w-8 h-8 rounded-full flex items-center justify-center border border-transparent shadow-sm transition-all hover:scale-105 active:scale-95 ${isDarkMode ? "bg-slate-700/50 text-slate-400 hover:text-white hover:bg-slate-700" : "bg-slate-50 text-slate-400 hover:text-slate-900 hover:bg-slate-100"}`}
+                             className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
                            >
-                              <Edit2 size={14} strokeWidth={2.5} />
+                              <Edit2 size={16} strokeWidth={2.5} />
                            </button>
                         </div>
 
@@ -332,9 +332,9 @@ export default function Accounts({
                            </div>
                            <button 
                              onClick={(e) => { e.stopPropagation(); setSelectedAccount(goal); setEditAccountBalance(goal.balance.toString()); }}
-                             className={`w-8 h-8 rounded-full flex items-center justify-center border border-transparent shadow-sm transition-all hover:scale-105 active:scale-95 ${isDarkMode ? "bg-slate-700/50 text-slate-400 hover:text-white hover:bg-slate-700" : "bg-slate-50 text-slate-400 hover:text-slate-900 hover:bg-slate-100"}`}
+                             className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
                            >
-                              <Edit2 size={14} strokeWidth={2.5} />
+                              <Edit2 size={16} strokeWidth={2.5} />
                            </button>
                         </div>
 

@@ -48,7 +48,7 @@ export default function Dashboard({
       if (!a.isOverdue && b.isOverdue) return 1;
       if (a.payday === "Due Now" && b.payday !== "Due Now") return -1;
       if (a.payday !== "Due Now" && b.payday === "Due Now") return 1;
-      return parseLocalDate(a.rawDate) - parseLocalDate(b.rawDate);
+      return parseLocalDate(a.rawDate) - parseLocalDate(dateStr => parseLocalDate(a.rawDate) - parseLocalDate(b.rawDate));
     });
   };
 
@@ -77,7 +77,6 @@ export default function Dashboard({
     } else if (bill.rawDate) {
       const parts = bill.rawDate.split("-");
       if (parts.length === 3) {
-        // Isolate parts[1] surgically directly from rawDate text strings to destroy timezone bleeding
         const bMonth = parseInt(parts[1], 10) - 1;
         const bYear = parseInt(parts[0], 10);
         if (bMonth === currentMonthIdx && bYear === currentYearIdx) {
@@ -157,7 +156,6 @@ export default function Dashboard({
       {/* 👑 PREMIUM GRADIENT HERO */}
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-100 via-white via-25% to-white border-white/80 border-t-white shadow-[inset_0_2px_4px_rgba(255,255,255,0.8),0_12px_24px_rgba(24,119,242,0.3),0_4px_12px_rgba(0,0,0,0.05)]"}`}>
         
-        {/* === HERO CARD SNAPSHOT TITLE LAYER INJECTION === */}
         <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
           <span className={`text-[10px] font-black uppercase tracking-widest opacity-80 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
             {currentMonthName}'s Monthly Snapshot
@@ -166,7 +164,6 @@ export default function Dashboard({
         
         <div className="relative w-28 h-28 flex-shrink-0">
           <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
-            {/* === DASHBOARD GRAPH ANIMATION SLOW DOWN (1.2s ➔ 2.2s) === */}
             <style>{`
               @keyframes drawTrendLine {
                 from { stroke-dashoffset: 1000; }
@@ -236,7 +233,6 @@ export default function Dashboard({
       </div>
 
       <div className="flex justify-center px-6 mb-5 -mt-2 relative z-10">
-         {/* === DYNAMIC SETUP BUTTON MONTH LABELLING UPDATE === */}
          <button onClick={() => setIsPaydaySetupOpen(true)} className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border transition-all active:scale-95 ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#10B981] shadow-sm" : "bg-white/80 backdrop-blur-md border-white/60 text-[#10B981] shadow-[0_4px_20px_rgba(0,0,0,0.03)]"}`}>
             <Settings2 size={18} strokeWidth={2.5} /> Set {currentMonthName}'s Pay Dates & Amounts
          </button>
@@ -270,16 +266,18 @@ export default function Dashboard({
                   <span className={`text-[9px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>{expectedDateStr}</span>
                 </div>
 
-                {/* === TIMELINES & TYPOGRAPHY TIGHTENING === */}
                 <div className="text-center pt-1.5 pb-1">
                   <p className={`text-2xl font-black tracking-tighter leading-none mb-1 ${isDeficit ? "text-red-500" : "text-[#10B981]"}`}>
                     ${Math.abs(waterfallBalance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                   </p>
-                  <span className="text-[8px] font-black uppercase tracking-[0.15em] text-slate-400 opacity-60 leading-none block">{subLabelStr}</span>
+                  {/* === FIX #2: APPLIED CONTRAST BLACK FOR LIGHT MODE === */}
+                  <span className={`text-[8px] font-black uppercase tracking-[0.15em] ${isDarkMode ? "text-slate-400 opacity-60" : "text-black"} leading-none block`}>
+                    {subLabelStr}
+                  </span>
                 </div>
 
-                {/* === HORIZONTAL CARD VIEW DETAILS PILL INJECTION === */}
-                <div className={`w-full py-1.5 rounded-xl text-center font-black text-[9px] tracking-wider transition-all uppercase ${isDarkMode ? "bg-blue-500/10 text-[#1877F2] hover:bg-blue-500/20" : "bg-blue-50 text-[#1877F2] hover:bg-blue-100/80"}`}>
+                {/* === FIX #1: LOCKED TO SOLID SIGNATURE BLUE WITH WHITE TEXT === */}
+                <div className="w-full py-1.5 rounded-xl text-center font-black text-[9px] tracking-wider transition-all uppercase bg-[#1877F2] text-white shadow-md">
                   VIEW DETAILS
                 </div>
 
@@ -293,7 +291,6 @@ export default function Dashboard({
                     </div>
                   )}
                   <div className="flex flex-col items-end shrink-0">
-                    {/* === SINGULAR BILL COUNT METRIC PLURALIZATION TERNARY === */}
                     <span className="text-[7px] font-black uppercase text-slate-400 tracking-widest mb-0.5">
                       {unpaidCount === 1 ? `${unpaidCount} Bill Out` : `${unpaidCount} Bills Out`}
                     </span>
@@ -318,7 +315,22 @@ export default function Dashboard({
         <div className="space-y-4">
           {["Due Now", "Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].map((payday) => {
             const groupBills = billsByPayday[payday] || [];
-            const activeGroupBills = groupBills.filter(b => !b.isPaid); 
+            
+            // === FIX #3B: DUAL-PASS MONTH FILTER IMPLEMENTED PRECISELY ===
+            const filteredVerticalBills = groupBills.filter((bill) => {
+              if (bill.isOverdue || bill.payday === "Due Now") return true;
+              if (bill.rawDate) {
+                const parts = bill.rawDate.split("-");
+                if (parts.length === 3) {
+                  const bMonth = parseInt(parts[1], 10) - 1;
+                  const bYear = parseInt(parts[0], 10);
+                  return bMonth === currentMonthIdx && bYear === currentYearIdx;
+                }
+              }
+              return false;
+            });
+
+            const activeGroupBills = filteredVerticalBills.filter(b => !b.isPaid); 
             const pdSettings = paydayConfig?.[payday] || {};
             const isDueNow = payday === "Due Now";
             
@@ -424,7 +436,7 @@ export default function Dashboard({
         </div>
 
         <div className={`mt-6 py-4 px-5 rounded-[1.5rem] border flex flex-col items-center justify-center gap-2 transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-800 shadow-sm" : "bg-white/80 backdrop-blur-md border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]"}`}>
-           <span className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Total Bills for {currentMonthName}</span>
+           <span className={`text-[11px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Total Bills for {currentMonthName}</span>
            <div className={`px-3 py-1.5 rounded-[8px] border font-black text-lg tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"}`}>
               ${currentMonthBillsTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
            </div>

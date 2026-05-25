@@ -48,7 +48,7 @@ export default function Dashboard({
       if (!a.isOverdue && b.isOverdue) return 1;
       if (a.payday === "Due Now" && b.payday !== "Due Now") return -1;
       if (a.payday !== "Due Now" && b.payday === "Due Now") return 1;
-      return parseLocalDate(a.rawDate) - parseLocalDate(dateStr => parseLocalDate(a.rawDate) - parseLocalDate(b.rawDate));
+      return parseLocalDate(a.rawDate) - parseLocalDate(b.rawDate);
     });
   };
 

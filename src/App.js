@@ -71,10 +71,17 @@ export default function App() {
   const [installmentPromptConfig, setInstallmentPromptConfig] = useState({ isOpen: false, billId: null, nextDate: "" });
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
+  // === TRANSFER DRAWER STATE MANAGEMENT ===
   const [isTransferOpen, setIsTransferOpen] = useState(false);
   const [transferFrom, setTransferFrom] = useState("");
   const [transferTo, setTransferTo] = useState("");
   const [transferAmount, setTransferAmount] = useState("0");
+
+  // === NEW: GOAL CASH OUT DRAWER STATE NODES ===
+  const [isCashOutOpen, setIsCashOutOpen] = useState(false);
+  const [cashOutGoal, setCashOutGoal] = useState(null);
+  const [cashOutAmount, setCashOutAmount] = useState("0");
+  const [cashOutToAccount, setCashOutToAccount] = useState("");
 
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [editAccountBalance, setEditAccountBalance] = useState("0");
@@ -108,7 +115,6 @@ export default function App() {
   const [resetConfirm, setResetConfirm] = useState("");
   const [openManualId, setOpenManualId] = useState(null);
   
-  // === FIX #6: RE-ENGINEERED DATE-STAMPED LAZY INITIALIZERS FOR DAILY FOOTPRINT RETENTION ===
   const [hasConsumedAMBriefing, setHasConsumedAMBriefing] = useState(() => {
     if (typeof window !== "undefined") {
       const todayKey = new Date().toISOString().split('T')[0];
@@ -136,23 +142,21 @@ export default function App() {
   const [entryIsRecurring, setEntryIsRecurring] = useState(false);
   const [entryIsInstallment, setEntryIsInstallment] = useState(false);
   const [entryTotalAmount, setEntryTotalAmount] = useState("");
+  const [entryRefinedPaid, setEntryRefinedPaid] = useState("");
   const [entryPaidAmount, setEntryPaidAmount] = useState("");
   const [isCategorySelectorOpen, setIsCategorySelectorOpen] = useState(false);
   const [isIconSelectorOpen, setIsIconSelectorOpen] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   
-  // === NEW: CROSS-MONTH REFRESH ENGINE ===
   const sessionMonth = useRef(new Date().getMonth());
   const [needsRefresh, setNeedsRefresh] = useState(false);
   
-  // === UPGRADED: GLOBAL ACTION MODAL ENGINE (Alert-Only Support) ===
   const [globalActionConfig, setGlobalActionConfig] = useState({ isOpen: false, title: "", message: "", confirmText: "Confirm", isDanger: true, isAlertOnly: false, action: null });
   const openGlobalAction = (title, message, confirmText, isDanger, action, isAlertOnly = false) => {
     if (isDanger) triggerWarning(); else triggerHaptic(50);
     setGlobalActionConfig({ isOpen: true, title, message, confirmText, isDanger, isAlertOnly, action });
   };
   
-  // === SURGICAL SPLIT: RECENT CATEGORY BANKS ===
   const [recentBillCategories, setRecentBillCategories] = useState(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem('lp_recent_bill_cat');
@@ -176,7 +180,7 @@ export default function App() {
   });
   const categoryEmojis = ["💵", "💲", "🤑", "💰", "🏦", "💹", "₿", "💎", "💳", "🧾", "📋", "💼", "🏠", "🏢", "🔑", "🛋️", "🧹", "💧", "⚡", "📶", "📡", "☁️", "📺", "🎬", "🍿", "🎵", "🎧", "🚗", "🚲", "🚂", "✈️", "⛽", "🛠️", "🅿️", "🎫", "🚕", "🚇", "🛒", "🛍️", "📦", "👕", "👗", "👟", "💅", "💄", "💈", "🕶️", "💍", "🍔", "🍕", "🌮", "🍣", "🥗", "🍳", "☕", "🍦", "🍻", "🍹", "🍷", "🏥", "💊", "🦷", "👓", "🧘", "🏋️", "🐾", "🐶", "🎁", "🎉", "🎟️", "🎮", "🕹️", "📱", "💻", "⌚", "🤖", "🚀", "🌴", "🎓", "🏪", "🎯", "🏖️", "👶", "🛡️", "🏍️", "🎸", "⛵"];
 
-  // === FIX #5: "My Goals" PERMANENTLY INJECTED UNDER THE INCOME & WEALTH CLASSIFICATION MATRIX ===
+  // === INCOME & WEALTH EXTENSION MATRIX ===
   const modernCategories = [
     { group: "Income & Wealth", items: ["Primary Salary", "Side Hustle / Gig", "Tips / Cash", "Investments / Crypto", "Transfers (Venmo/Zelle)", "Refunds & Adjustments", "Cash App", "PayDay Loans", "Unemployment", "Retirement / 401k", "Benefits", "My Goals"] },
     { group: "Housing & Utilities", items: ["Rent / Mortgage", "Electric / Gas", "Water / Trash", "Internet / Wi-Fi", "Home Goods / Maintenance", "Cell Phone"] },
@@ -189,15 +193,17 @@ export default function App() {
     { group: "Entrepreneur", items: ["Domain / Hosting", "Software / SaaS", "AI Subscriptions", "Marketing & Ads", "Contractors & Freelancers", "Business Fees / LLC", "Office Supplies"] },
     { group: "Other", items: ["Miscellaneous Expense", "Charity / Gifts", "Other"] }
   ];
-  // === DYNAMIC HAPTIC ENGINE ===
+
+  // === DYNAMIC ULTRA-LOW LATENCY HAPTIC ENGINE ===
   const triggerHaptic = (pattern = 50) => {
     if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) {
       window.navigator.vibrate(pattern);
     }
   };
-  const triggerVictory = () => { triggerHaptic([30, 50, 30]); setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2000); };
+  const triggerVictory = () => { triggerHaptic([30, 50, 30]); setShowConfetti(true); setTimeout(() => setShowConfetti(false), 3000); };
   const triggerWarning = () => { triggerHaptic([50, 100, 50]); };
 
+  // === BASELINE MOUNT & DEMO MODE INITIALIZATION ===
   useEffect(() => {
     setIsMounted(true);
     const isDemo = window.location.hostname.includes("demo");
@@ -217,6 +223,7 @@ export default function App() {
     }
   }, []);
 
+  // === SECURITY SUBSYSTEM AUTH CHANGE OBSERVER ===
   useEffect(() => {
     if (!isMounted || isDemoMode) return;
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
@@ -226,6 +233,7 @@ export default function App() {
     return () => unsubscribeAuth();
   }, [isMounted, isDemoMode]);
 
+  // === FIRESTORE LIVE REAL-TIME DATA VAULT SYNCHRONIZER ===
   useEffect(() => {
     if (!isMounted || isDemoMode || !user) return;
     const userRef = doc(db, "users", user.uid);
@@ -237,7 +245,7 @@ export default function App() {
     return () => { unsubAcc(); unsubBills(); unsubTxs(); unsubTodos(); unsubConfig(); };
   }, [isMounted, isDemoMode, user]);
 
-  // === SILENT AUTO-ROLLOVER ENGINE ===
+  // === AUTOMATED SILENT AUTOROLLOVER BALANCER ===
   useEffect(() => {
     if (!isMounted || isDemoMode || !user || hasCheckedRollover || bills.length === 0) return;
     const checkAutoRollover = async () => {
@@ -285,6 +293,8 @@ export default function App() {
     };
     checkAutoRollover();
   }, [isMounted, isDemoMode, user, bills.length, hasCheckedRollover]);
+
+  // === OPERATIONAL SYSTEM TIMER & MATRIX THEME DRIFT ENGINE ===
   useEffect(() => {
     const timer = setInterval(() => {
       const now = new Date();
@@ -298,7 +308,6 @@ export default function App() {
           setIsDarkMode(false);
         }
       }
-      // === THE CROSS-MONTH DRIFT DETECTOR ===
       if (now.getMonth() !== sessionMonth.current) {
         setNeedsRefresh(true);
       }
@@ -306,6 +315,7 @@ export default function App() {
     return () => clearInterval(timer);
   }, [manualThemeOverride]);
 
+  // === SELECTED ACCOUNT BOUND STATE POPULATOR ===
   useEffect(() => {
     if (selectedAccount) {
       setEditAccountBalance(Math.abs(selectedAccount.balance || 0).toFixed(2));
@@ -317,6 +327,7 @@ export default function App() {
     }
   }, [selectedAccount]);
 
+  // === AUTO-COLLAPSE INTENSITY PARSER ===
   useEffect(() => {
     if (!hasInitializedCollapse.current && bills.length > 0) {
       const todayLocal = new Date(); todayLocal.setHours(0, 0, 0, 0);
@@ -338,7 +349,6 @@ export default function App() {
       hasInitializedCollapse.current = true;
     }
   }, [bills]);
-
   const handleOpenPaydaySetup = () => {
     setEditPaydayConfig(paydayConfig);
     setIsPaydaySetupOpen(true);
@@ -377,27 +387,6 @@ export default function App() {
     });
   };
 
-  if (!isMounted) return <div className={`min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}></div>;
-  if (isAuthLoading && !isDemoMode) {
-    return (
-      <div className={`min-h-screen flex items-center justify-center ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
-        <div className="w-12 h-12 border-4 border-[#1877F2] border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-  if (!user && !isDemoMode) {
-    return (
-      <Login
-        email={email} setEmail={setEmail}
-        password={password} setPassword={setPassword}
-        firstName={firstName} setFirstName={setFirstName}
-        isLoginMode={isLoginMode} setIsLoginMode={setIsLoginMode}
-        handleAuthSubmit={handleAuthSubmit} handleGoogleLogin={handleGoogleLogin}
-        authError={authError} setAuthError={setAuthError} isAuthLoading={isAuthLoading}
-      />
-    );
-  }
-
   const enablePushNotifications = async () => {
     try {
       const permission = await Notification.requestPermission();
@@ -425,6 +414,7 @@ export default function App() {
   const yearNum = currentTime.getFullYear();
   const timeStr = currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toUpperCase();
   const heroDateTimeStr = `${dayStr}, ${monthStr} ${getOrdinalNum(dateNum).toUpperCase()}, ${yearNum} — ${timeStr}`;
+  
   const formatPaydayDateStr = (dateString) => {
     if (!dateString) return "TBD";
     const parts = dateString.split("-");
@@ -438,6 +428,7 @@ export default function App() {
     if (parts.length === 3) return `${parts[1]}/${parts[2]}/${parts[0]}`;
     return dString;
   };
+
   const changeTab = (tabId) => {
     triggerHaptic(20);
     setActiveTab(tabId);
@@ -448,6 +439,7 @@ export default function App() {
   const toggleCollapse = (payday) => setCollapsedPaydays((prev) => ({ ...prev, [payday]: !prev[payday] }));
   const openEntryDrawer = (entry) => { setSelectedEntry(entry); setIsEditingEntry(false); };
   const closeEntryDrawer = () => { setSelectedEntry(null); setIsEditingEntry(false); };
+  
   const handleUpdateIdentity = async () => {
     if (!(editName || "").trim()) return;
     if (isDemoMode) { triggerVictory(); setIsSettingsOpen(false); return; }
@@ -546,29 +538,28 @@ export default function App() {
 
   const handleBillClick = async (id) => {
     const bill = bills.find(b => b.id === id);
-    const targetAcc = accounts.find(a => a.id === refundAccountId);
-    if (!bill || bill.isPaid) {
-      if (bill && bill.isPaid) {
-        const refundAccountId = bill.paidFromAccountId;
-        let newPaidAmount = bill.paidAmount || 0;
-        if (bill.isInstallment) newPaidAmount = (bill.paidAmount || 0) - (bill.amount || 0);
+    if (!bill) return;
+    if (bill.isPaid) {
+      const refundAccountId = bill.paidFromAccountId;
+      const targetAcc = accounts.find(a => a.id === refundAccountId);
+      let newPaidAmount = bill.paidAmount || 0;
+      if (bill.isInstallment) newPaidAmount = Math.max(0, (bill.paidAmount || 0) - (bill.amount || 0));
 
-        if (isDemoMode) {
-          setBills(bills.map(b => b.id === id ? { ...b, isPaid: false, paidAmount: newPaidAmount, paidFromAccountId: null, linkedTxId: null } : b));
-          if (targetAcc) setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: a.balance + (bill.amount || 0) } : a));
-          if (bill.linkedTxId) setTransactions(transactions.filter(t => t.id !== bill.linkedTxId));
-        } else {
-          await updateDoc(doc(db, "users", user.uid, "bills", id), { isPaid: false, paidAmount: newPaidAmount, paidFromAccountId: null, linkedTxId: null });
-          if (targetAcc) await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance + (bill.amount || 0) });
-          if (bill.linkedTxId) await deleteDoc(doc(db, "users", user.uid, "transactions", bill.linkedTxId));
-        }
-        triggerHaptic(50);
+      if (isDemoMode) {
+        setBills(bills.map(b => b.id === id ? { ...b, isPaid: false, paidAmount: newPaidAmount, paidFromAccountId: null, linkedTxId: null } : b));
+        if (targetAcc) setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: a.balance + (bill.amount || 0) } : a));
+        if (bill.linkedTxId) setTransactions(transactions.filter(t => t.id !== bill.linkedTxId));
+      } else {
+        await updateDoc(doc(db, "users", user.uid, "bills", id), { isPaid: false, paidAmount: newPaidAmount, paidFromAccountId: null, linkedTxId: null });
+        if (targetAcc) await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance + (bill.amount || 0) });
+        if (bill.linkedTxId) await deleteDoc(doc(db, "users", user.uid, "transactions", bill.linkedTxId));
       }
+      triggerHaptic(50);
       return;
     }
-    setPaymentModalConfig({ isOpen: true, billId: id, accountId: accounts.find(a => a.type === "Checking" || a.type === "Cash")?.id || (accounts[0]?.id || ""), isPayInFull: false });
+    setPaymentModalConfig({ isOpen: true, billId: id, accountId: accounts.find(a => !a.isGoal && (a.type === "Checking" || a.type === "Cash"))?.id || (accounts[0]?.id || ""), isPayInFull: false });
   };
-// === RETROACTIVE DELTA ENGINE ===
+
   const handleSaveEntryEdit = async () => {
     if (!selectedEntry) return;
     const colName = selectedEntry.fullDate !== undefined ? "bills" : "transactions";
@@ -659,7 +650,6 @@ export default function App() {
     triggerVictory(); setIsAddAccountOpen(false); setNewAccName(""); setNewAccBalance(""); setNewAccDesc(""); setNewAccType("Checking"); setNewAccIsNegative(false);
   };
 
-  // === FIX #3: PURIFIED LIQUID MATHEMATICS SAVINGS GOAL SUBMIT ENGINE WITH UNLINKED SOURCE STATE ===
   const handleAddGoal = async () => {
     const targetBal = parseFloat(newGoalAmount);
     if (!newGoalName.trim() || isNaN(targetBal) || targetBal <= 0 || !newGoalDate || !newGoalIcon) return;
@@ -696,6 +686,7 @@ export default function App() {
     else setTransferAmount(transferAmount + btn);
   };
 
+  // === UPGRADED: TRANSFER TRANSACTION CELEBRATION INTERCEPTOR ===
   const executeTransfer = async () => {
     const amt = parseFloat(transferAmount);
     if (isNaN(amt) || amt <= 0 || !transferFrom || !transferTo) return;
@@ -706,6 +697,11 @@ export default function App() {
     const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
     const sentName = `${fromAcc.name} → ${toAcc.name} (Sent)`;
     const receivedName = `${fromAcc.name} → ${toAcc.name} (Received)`;
+
+    const oldToBalance = toAcc.balance || 0;
+    const newToBalance = oldToBalance + amt;
+    const isGoalCompleted = toAcc.isGoal && oldToBalance < (toAcc.targetAmount || 0) && newToBalance >= (toAcc.targetAmount || 0);
+
     if (isDemoMode) {
       setAccounts(accounts.map(a => {
         if(a.id === fromAcc.id) return { ...a, balance: a.balance - amt };
@@ -725,7 +721,64 @@ export default function App() {
       await addDoc(collection(db, "users", user.uid, "transactions"), { name: sentName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Expense", category: "Transfers (Venmo/Zelle)", accountId: fromAcc.id, createdAt: serverTimestamp() });
       await addDoc(collection(db, "users", user.uid, "transactions"), { name: receivedName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: toAcc.id, createdAt: serverTimestamp() });
     }
-    triggerVictory(); setIsTransferOpen(false); setTransferAmount("0"); setTransferFrom(""); setTransferTo("");
+
+    if (isGoalCompleted) {
+      triggerVictory(); 
+    } else {
+      triggerHaptic(50);
+    }
+    setIsTransferOpen(false); setTransferAmount("0"); setTransferFrom(""); setTransferTo("");
+  };
+
+  // === NEW: VISUAL GOAL CASH OUT LEDGER SUBMIT ENGINE ===
+  const handleCashOutGoalSubmit = async (e) => {
+    if (e) e.preventDefault();
+    const amt = parseFloat(cashOutAmount);
+    if (isNaN(amt) || amt <= 0 || !cashOutGoal || !cashOutToAccount) return;
+    if (amt > cashOutGoal.balance) return; 
+
+    const destAcc = accounts.find(a => a.id === cashOutToAccount);
+    if (!destAcc) return;
+
+    const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+    const txName = `Goal Cash Out: ${cashOutGoal.name} → ${destAcc.name}`;
+
+    if (isDemoMode) {
+      setAccounts(accounts.map(a => {
+        if (a.id === cashOutGoal.id) return { ...a, balance: a.balance - amt };
+        if (a.id === destAcc.id) return { ...a, balance: a.balance + amt };
+        return a;
+      }));
+      setTransactions([
+        { id: `tx_demo_co_${Date.now()}`, name: txName, icon: "🎯", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: destAcc.id },
+        ...transactions
+      ]);
+    } else {
+      await updateDoc(doc(db, "users", user.uid, "accounts", cashOutGoal.id), { balance: cashOutGoal.balance - amt });
+      await updateDoc(doc(db, "users", user.uid, "accounts", destAcc.id), { balance: destAcc.balance + amt });
+      await addDoc(collection(db, "users", user.uid, "transactions"), { name: txName, icon: "🎯", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: destAcc.id, createdAt: serverTimestamp() });
+    }
+
+    triggerHaptic(50);
+    setIsCashOutOpen(false);
+    setCashOutGoal(null);
+    setCashOutAmount("0");
+    setCashOutToAccount("");
+  };
+
+  const handleCashOutNumpad = (btn) => {
+    triggerHaptic(15);
+    if (!cashOutGoal) return;
+    if (btn === "CLR") {
+      setCashOutAmount("0");
+    } else if (cashOutAmount === "0" && btn !== ".") {
+      setCashOutAmount(btn);
+    } else {
+      const nextVal = cashOutAmount + btn;
+      if (parseFloat(nextVal) <= cashOutGoal.balance) {
+        setCashOutAmount(nextVal);
+      }
+    }
   };
 
   const updateAccountBalance = async () => {
@@ -784,7 +837,9 @@ export default function App() {
     if (!isDemoMode) { await setDoc(doc(db, "users", user.uid, "settings", "paydayConfig"), editPaydayConfig); }
     setIsPaydaySetupOpen(false); triggerVictory();
   };
+  
   const todayForDynamic = new Date(); todayForDynamic.setHours(0, 0, 0, 0);
+  
   const calculatePaydayGroup = (dateString) => {
     if (!dateString) return "Unscheduled";
     const billDate = new Date(dateString);
@@ -815,6 +870,7 @@ export default function App() {
     }
     return assignedPd;
   };
+  
   const dynamicBills = bills.map(bill => {
     let currentPayday = bill.payday;
     let isOverdue = bill.isOverdue || false;
@@ -844,6 +900,7 @@ export default function App() {
     if (!a.rawDate) return 1; if (!b.rawDate) return -1;
     return new Date(a.rawDate || 0) - new Date(b.rawDate || 0);
   });
+
   const generateAlerts = () => {
     const currentAlerts = [];
     const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -879,7 +936,7 @@ export default function App() {
         }
       }
     });
-    const liquidCash = accounts.filter(a => a.type === "Checking" || a.type === "Cash").reduce((sum, acc) => sum + (acc.balance || 0), 0);
+    const liquidCash = accounts.filter(a => !a.isGoal && (a.type === "Checking" || a.type === "Cash")).reduce((sum, acc) => sum + (acc.balance || 0), 0);
     const upcomingBills = bills.filter(b => !b.isPaid && !b.isOverdue);
     const upcomingBurn = upcomingBills.reduce((sum, b) => sum + (b.amount || 0), 0);
     const safeToSpend = liquidCash - upcomingBurn;
@@ -893,64 +950,8 @@ export default function App() {
   };
   const activeAlerts = generateAlerts();
   const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
-// === CHANGE #1 & #6: UPGRADED RENDER HERO SHELL + UNIVERSALLY PULSING NOTIFICATION DOTS ===
-  const renderHeroShell = (title, graphicContent) => {
-    const hasOverdueOrDueNow = dynamicBills.some(b => !b.isPaid && (b.isOverdue || b.payday === "Due Now"));
-    const hours = new Date().getHours();
-    const isAM = hours >= 5 && hours < 12;
-    const isUnconsumedBriefing = isAM ? !hasConsumedAMBriefing : !hasConsumedPMBriefing;
 
-    return (
-      <header className={`px-6 pt-12 pb-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden mb-8 z-30 rounded-b-[3rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
-        <div className="flex justify-between items-center mb-6 relative z-30 h-10">
-          <div className="flex items-center gap-2">
-            <button onClick={() => { setIsDarkMode(!isDarkMode); setManualThemeOverride(true); triggerHaptic(20); }} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ?
-              "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
-              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
-            <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ?
-              "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
-              <Bell size={18} />
-              {(hasOverdueOrDueNow || isUnconsumedBriefing || !isPushEnabled) && (
-                <span className={`absolute top-0 right-0 w-2.5 h-2.5 rounded-full border-[1.5px] animate-pulse ${
-                  hasOverdueOrDueNow 
-                    ? "bg-red-500 border-red-500" 
-                    : isUnconsumedBriefing 
-                    ? "bg-[#1877F2] border-[#1877F2]" 
-                    : "bg-red-500 border-red-500"
-                } ${isDarkMode ? "border-t-transparent border-l-transparent" : "border-white"}`}></span>
-              )}
-            </button>
-          </div>
-          <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center z-20 origin-top -top-5 lg:hidden">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-[#1877F2]/20 blur-xl rounded-full -z-10 pointer-events-none"></div>
-            <img src="/login-logo.png" alt="Ledger Planner" className={`relative z-10 w-16 h-16 rounded-full shadow-[0_12px_24px_rgba(24,119,242,0.3)] object-cover border-[3px] transition-colors ${isDarkMode ? "border-slate-800" : "border-white"}`} />
-          </div>
-          <div className="flex items-center gap-2 relative z-30">
-            <button onClick={() => { setEditName(userName || ""); setIsSettingsOpen(true); }} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm lg:hidden ${isDarkMode ?
-              "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
-              <Settings size={18} />
-            </button>
-            <button onClick={handleLogout} className={`h-10 px-3.5 rounded-full flex items-center justify-center gap-2 border transition-colors shadow-sm lg:hidden ${isDarkMode ?
-              "bg-slate-800 border-slate-700 text-red-400 hover:bg-red-900/30" : "bg-white border-slate-100 text-red-500 hover:bg-red-50"}`}>
-              <LogOut size={14} strokeWidth={2.5} />
-              <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">{isDemoMode ? "Exit" : "Logout"}</span>
-            </button>
-          </div>
-        </div>
-        <div className="relative z-10 flex justify-center px-1 mb-6">
-          <h2 title={title || "Overview"} className={`text-3xl font-black tracking-tight leading-tight truncate max-w-full ${isDarkMode ? "text-white" : "text-slate-900"}`}>{title || "Overview"}</h2>
-        </div>
-
-        <div className="relative z-10 w-full h-auto opacity-100">{graphicContent}</div>
-
-        <div className={`relative z-10 pt-4 border-t flex justify-center items-center ${isDarkMode ? "border-slate-800" : "border-slate-50"}`}>
-          <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{heroDateTimeStr}</span>
-        </div>
-      </header>
-    );
-  };
-
+  // === UPGRADED: BILL PAYMENT TRANSACTION CELEBRATION INTERCEPTOR ===
   const confirmPaymentRoute = async () => {
     const bill = bills.find(b => b.id === paymentModalConfig.billId);
     const targetAcc = accounts.find(a => a.id === paymentModalConfig.accountId);
@@ -958,6 +959,11 @@ export default function App() {
     const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
     const remainingBalance = (bill.totalAmount || 0) - (bill.paidAmount || 0);
     const amountToPay = paymentModalConfig.isPayInFull ? remainingBalance : (bill.amount || 0);
+
+    const oldTargetBalance = targetAcc.balance || 0;
+    const newTargetBalance = oldTargetBalance - amountToPay;
+    const isGoalCompleted = targetAcc.isGoal && oldTargetBalance < (targetAcc.targetAmount || 0) && newTargetBalance >= (targetAcc.targetAmount || 0);
+
     if (isDemoMode) {
       const txId = `tx_demo_${Date.now()}`;
       setTransactions([{ id: txId, name: bill.name || "Bill", icon: bill.icon || "🧾", amount: amountToPay, date: autoTimeStamp, type: "Expense", category: bill.category || "Bill Payment", accountId: targetAcc.id, isBillPayment: true }, ...transactions]);
@@ -966,14 +972,16 @@ export default function App() {
         const newPaidAmt = (bill.paidAmount || 0) + amountToPay;
         if (newPaidAmt >= (bill.totalAmount || 0) || paymentModalConfig.isPayInFull) {
           setBills(bills.map(b => b.id === bill.id ? { ...b, isPaid: true, paidAmount: newPaidAmt, paidFromAccountId: targetAcc.id, linkedTxId: txId } : b));
-          triggerVictory(); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false });
+          if (isGoalCompleted) triggerVictory(); else triggerHaptic(50);
+          setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false });
         } else {
           setBills(bills.map(b => b.id === bill.id ? { ...b, paidAmount: newPaidAmt, isOverdue: false } : b));
           triggerHaptic(50); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false }); setInstallmentPromptConfig({ isOpen: true, billId: bill.id, nextDate: "" });
         }
       } else {
         setBills(bills.map(b => b.id === bill.id ? { ...b, isPaid: true, paidAmount: 0, paidFromAccountId: targetAcc.id, linkedTxId: txId } : b));
-        triggerVictory(); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false });
+        if (isGoalCompleted) triggerVictory(); else triggerHaptic(50);
+        setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false });
       }
     } else {
       const txRef = await addDoc(collection(db, "users", user.uid, "transactions"), { name: bill.name || "Bill", icon: bill.icon || "🧾", amount: amountToPay, date: autoTimeStamp, type: "Expense", category: bill.category || "Bill Payment", accountId: targetAcc.id, isBillPayment: true, createdAt: serverTimestamp() });
@@ -982,14 +990,16 @@ export default function App() {
         const newPaidAmt = (bill.paidAmount || 0) + amountToPay;
         if (newPaidAmt >= (bill.totalAmount || 0) || paymentModalConfig.isPayInFull) {
           await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: true, paidAmount: newPaidAmt, paidFromAccountId: targetAcc.id, linkedTxId: txRef.id });
-          triggerVictory(); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false });
+          if (isGoalCompleted) triggerVictory(); else triggerHaptic(50);
+          setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false });
         } else {
           await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { paidAmount: newPaidAmt, isOverdue: false });
           triggerHaptic(50); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false }); setInstallmentPromptConfig({ isOpen: true, billId: bill.id, nextDate: "" });
         }
       } else {
         await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: true, paidAmount: 0, paidFromAccountId: targetAcc.id, linkedTxId: txRef.id });
-        triggerVictory(); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false });
+        if (isGoalCompleted) triggerVictory(); else triggerHaptic(50);
+        setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false });
       }
     }
   };
@@ -1020,6 +1030,7 @@ export default function App() {
     else if (inputValue === "0" && btn !== ".") setInputValue(btn); else setInputValue(inputValue + btn);
   };
 
+  // === UPGRADED: QUICK ADD TRANSACTION CELEBRATION INTERCEPTOR ===
   const handleConfirmAction = () => {
     const amountToProcess = parseFloat(inputValue);
     if (isNaN(amountToProcess) || (drawerTab === "bills" ? amountToProcess < 0 : amountToProcess <= 0)) return;
@@ -1060,18 +1071,28 @@ export default function App() {
       const targetAcc = accounts.find(a => a.id === entryAccount) || accounts[0];
       if (targetAcc) {
         const isIncome = drawerTab === "income";
+        const oldAccBalance = targetAcc.balance || 0;
+        const netDelta = isIncome ? amountToProcess : -amountToProcess;
+        const newAccBalance = oldAccBalance + netDelta;
+        const isGoalCompleted = isIncome && targetAcc.isGoal && oldAccBalance < (targetAcc.targetAmount || 0) && newAccBalance >= (targetAcc.targetAmount || 0);
+
         if (isDemoMode) {
           setTransactions([{ id: `tx_demo_${Date.now()}`, name: entryName || (isIncome ? "Income" : "Expense"), icon: isIncome ? "💵" : entryIcon, category: entryCategory || "Other", amount: amountToProcess, date: autoTimeStamp, type: isIncome ? "Income" : "Expense", accountId: targetAcc.id }, ...transactions]);
-          setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: (a.balance || 0) + (isIncome ? amountToProcess : -amountToProcess) } : a));
+          setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: newAccBalance } : a));
         } else {
           addDoc(collection(db, "users", user.uid, "transactions"), { name: entryName || (isIncome ? "Income" : "Expense"), icon: isIncome ? "💵" : entryIcon, category: entryCategory || "Other", amount: amountToProcess, date: autoTimeStamp, type: isIncome ? "Income" : "Expense", accountId: targetAcc.id, createdAt: serverTimestamp() }).catch(e => console.log("Offline outbox queued"));
-          updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: (targetAcc.balance || 0) + (isIncome ? amountToProcess : -amountToProcess) }).catch(e => console.log("Offline outbox queued"));
+          updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: newAccBalance }).catch(e => console.log("Offline outbox queued"));
+        }
+
+        if (isGoalCompleted) {
+          triggerVictory();
+        } else {
+          triggerHaptic(50);
         }
       }
-      triggerVictory(); closeQab();
+      closeQab();
     }
   };
-
   const qabActiveText = drawerTab === "bills" ? "text-[#1877F2]" : drawerTab === "income" ? "text-[#10B981]" : "text-[#F97316]";
   const qabActiveBg = drawerTab === "bills" ? "bg-[#1877F2]" : drawerTab === "income" ? "bg-[#10B981]" : "bg-[#F97316]";
   const qabActiveShadow = drawerTab === "bills" ? "shadow-[0_8px_16px_rgba(24,119,242,0.3)]" : drawerTab === "income" ? "shadow-[0_8px_16px_rgba(16,185,129,0.3)]" : "shadow-[0_8px_16px_rgba(249,115,22,0.3)]";
@@ -1101,6 +1122,66 @@ export default function App() {
     return "text-[#1877F2]";
   };
 
+  // === UPDATE #2: UNIFIED HEADER HERO SHELL (lg:hidden REMOVED FROM ACTION BARS) ===
+  const renderHeroShell = (title, graphicContent) => {
+    const hasOverdueOrDueNow = dynamicBills.some(b => !b.isPaid && (b.isOverdue || b.payday === "Due Now"));
+    const hours = new Date().getHours();
+    const isAM = hours >= 5 && hours < 12;
+    const isUnconsumedBriefing = isAM ? !hasConsumedAMBriefing : !hasConsumedPMBriefing;
+
+    return (
+      <header className={`px-6 pt-12 pb-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden mb-8 z-30 rounded-b-[3rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
+        <div className="flex justify-between items-center mb-6 relative z-30 h-10">
+          <div className="flex items-center gap-2">
+            <button onClick={() => { setIsDarkMode(!isDarkMode); setManualThemeOverride(true); triggerHaptic(20); }} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ?
+              "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
+              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+            <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ?
+              "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
+              <Bell size={18} />
+              {(hasOverdueOrDueNow || isUnconsumedBriefing || !isPushEnabled) && (
+                <span className={`absolute top-0 right-0 w-2.5 h-2.5 rounded-full border-[1.5px] animate-pulse ${
+                  hasOverdueOrDueNow 
+                    ? "bg-red-500 border-red-500" 
+                    : isUnconsumedBriefing 
+                    ? "bg-[#1877F2] border-[#1877F2]" 
+                    : "bg-red-500 border-red-500"
+                } ${isDarkMode ? "border-t-transparent border-l-transparent" : "border-white"}`}></span>
+              )}
+            </button>
+          </div>
+          <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center z-20 origin-top -top-5 lg:hidden">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-[#1877F2]/20 blur-xl rounded-full -z-10 pointer-events-none"></div>
+            <img src="/login-logo.png" alt="Ledger Planner" className={`relative z-10 w-16 h-16 rounded-full shadow-[0_12px_24px_rgba(24,119,242,0.3)] object-cover border-[3px] transition-colors ${isDarkMode ? "border-slate-800" : "border-white"}`} />
+          </div>
+          
+          {/* CONVERGED HEAD NAVIGATION FLEX CLUSTER (lg:hidden REMOVED FOR DESKTOP HEAD CONVERGENCE) */}
+          <div className="flex items-center gap-2 relative z-30">
+            <button onClick={() => { setEditName(userName || ""); setIsSettingsOpen(true); }} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ?
+              "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
+              <Settings size={18} />
+            </button>
+            <button onClick={handleLogout} className={`h-10 px-3.5 rounded-full flex items-center justify-center gap-2 border transition-colors shadow-sm ${isDarkMode ?
+              "bg-slate-800 border-slate-700 text-red-400 hover:bg-red-900/30" : "bg-white border-slate-100 text-red-500 hover:bg-red-50"}`}>
+              <LogOut size={14} strokeWidth={2.5} />
+              <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">{isDemoMode ? "Exit" : "Logout"}</span>
+            </button>
+          </div>
+        </div>
+        <div className="relative z-10 flex justify-center px-1 mb-6">
+          <h2 title={title || "Overview"} className={`text-3xl font-black tracking-tight leading-tight truncate max-w-full ${isDarkMode ? "text-white" : "text-slate-900"}`}>{title || "Overview"}</h2>
+        </div>
+
+        <div className="relative z-10 w-full h-auto opacity-100">{graphicContent}</div>
+
+        <div className={`relative z-10 pt-4 border-t flex justify-center items-center ${isDarkMode ? "border-slate-800" : "border-slate-50"}`}>
+          <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{heroDateTimeStr}</span>
+        </div>
+      </header>
+    );
+  };
+
   return (
     <div 
       onContextMenu={(e) => e.preventDefault()} 
@@ -1120,15 +1201,22 @@ export default function App() {
       
       <div className={`w-full h-full relative flex flex-col lg:flex-row transition-colors duration-500 overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
         
-        {/* === CHANGE #1: FIX INDEPENDENT SCROLLING VIA HEIGHT CONTROL ON WRAPPER INJECTION BOUNDS === */}
+        {/* === UPDATE #2: SIDEBAR PURIFICATION CONTAINER PANEL === */}
         <div className={`hidden lg:flex w-[280px] flex-col border-r z-40 p-6 transition-colors duration-500 shrink-0 ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-100"}`}>
           <div className="flex items-center gap-4 mb-8 mt-4 shrink-0">
             <img src="/login-logo.png" alt="Ledger Planner" className={`w-12 h-12 rounded-full object-cover border-[2px] transition-colors ${isDarkMode ? "border-slate-700" : "border-slate-100"}`} />
-            <div><h1 className={`font-black tracking-tighter text-lg leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>Ledger Planner</h1><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{isDemoMode ? "Demo Mode" : "Master Engine"}</p></div>
+            <div>
+              <h1 className={`font-black tracking-tighter text-lg leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>Ledger Planner</h1>
+              {/* UPDATE #1: SIDEBAR ENGINE STATUS INDICATOR */}
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <div className={`w-2 h-2 rounded-full animate-pulse ${isDemoMode ? "bg-[#F97316]" : "bg-[#10B981]"}`}></div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{isDemoMode ? "Demo Mode" : "Master Engine"}</p>
+              </div>
+            </div>
           </div>
           
-          {/* OPTION 1 CONTENT RUNWAY: MIDDLE MENU CONVERTED TO AN INDEPENDENTLY SCROLLABLE HIDE-SCROLLBAR CONTAINER */}
-          <div className="flex-1 overflow-y-auto space-y-2 pr-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
+          {/* UPDATE #2: REMOVED INNER SCROLLING OVERFLOW LOGIC WRAPPERS FOR NATURAL LAYOUT ANCHORING */}
+          <div className="space-y-2">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 ml-2">Navigation</p>
             {[{ id: "home", icon: Home, label: "Dashboard" }, { id: "accounts", icon: Wallet, label: "Accounts" }, { id: "bills", icon: CalendarIcon, label: "Bills & Plans" }, { id: "activity", icon: CreditCard, label: "Activity" }, { id: "todo", icon: CheckSquare, label: "To-Do List" }].map((tab) => (
               <button key={tab.id} onClick={() => changeTab(tab.id)} className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 ${activeTab === tab.id ? isDarkMode ? "bg-slate-800 text-[#1877F2]" : "bg-blue-50 text-[#1877F2]" : isDarkMode ? "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"}`}>
@@ -1137,13 +1225,9 @@ export default function App() {
             ))}
           </div>
           
-          <div className="mt-auto space-y-4 pt-4 shrink-0 border-t border-dashed border-slate-700/30">
+          {/* UPDATE #2: SIDEBAR ACTION FOOTER PURIFIED (SETTINGS AND LOGOUT REMOVED, QUICK ADD INSULATED) */}
+          <div className="mt-auto pt-4 shrink-0">
             <button onClick={() => setIsQabOpen(true)} className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-white bg-[#1877F2] font-black uppercase tracking-widest text-xs transition-transform active:scale-95 hover:-translate-y-1`}><Plus size={18} /> Quick Add</button>
-            <button onClick={() => { setEditName(userName || ""); setIsSettingsOpen(true); }} className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800/50 border-slate-700 text-slate-300 hover:text-white" : "bg-white border-slate-100 text-slate-500 hover:text-slate-900"}`}>
-              <Settings size={16} strokeWidth={2.5} />
-              <span className="text-[10px] font-black uppercase tracking-widest">Settings</span>
-            </button>
-            <button onClick={handleLogout} className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800/50 border-slate-700 text-red-400" : "bg-white border-slate-100 text-red-500"}`}><LogOut size={16} strokeWidth={2.5} /><span className="text-[10px] font-black uppercase tracking-widest">{isDemoMode ? "Exit Demo" : "Logout"}</span></button>
           </div>
         </div>
         
@@ -1151,14 +1235,17 @@ export default function App() {
         <div className="flex-1 flex flex-col relative h-full overflow-hidden">
           <div className={`flex-1 overflow-y-auto hide-scrollbar lg:pb-0 ${isDemoMode ? "pb-[220px]" : "pb-28"}`} ref={scrollRef} onScroll={handleScroll}>
             {activeTab === "home" && <Dashboard userName={userName} accounts={accounts} bills={dynamicBills} transactions={transactions} paydayConfig={paydayConfig} setEditPaydayConfig={setEditPaydayConfig} setIsPaydaySetupOpen={handleOpenPaydaySetup} setIsNotificationsOpen={setIsNotificationsOpen} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} isDarkMode={isDarkMode} formatPaydayDateStr={formatPaydayDateStr} renderHeroShell={renderHeroShell} changeTab={changeTab} hasConsumedAMBriefing={hasConsumedAMBriefing} setHasConsumedAMBriefing={setHasConsumedAMBriefing} hasConsumedPMBriefing={hasConsumedPMBriefing} setHasConsumedPMBriefing={setHasConsumedPMBriefing} />}
-            {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setIsAddGoalOpen={setIsAddGoalOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} isDemoMode={isDemoMode} triggerCelebration={triggerVictory} />}
+            {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setIsAddGoalOpen={setIsAddGoalOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} isDemoMode={isDemoMode} triggerCelebration={triggerVictory} setIsCashOutOpen={setIsCashOutOpen} setCashOutGoal={setCashOutGoal} />}
             {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} paydayConfig={paydayConfig} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} handleRolloverMonth={handleRolloverMonth} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} />}
             {activeTab === "activity" && <Activity userName={userName} transactions={transactions} activitySearch={activitySearch} setActivitySearch={setActivitySearch} activityFilter={activityFilter} setActivityFilter={setActivityFilter} isDarkMode={isDarkMode} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} />}
             {activeTab === "todo" && <Todo userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} newTodoType={newTodoType} setNewTodoType={setNewTodoType} isDarkMode={isDarkMode} handleAddTodo={async (e) => { e.preventDefault(); if(!newTodoText.trim()) return; if (isDemoMode) { setTodos([{ id: `todo_demo_${Date.now()}`, text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false }, ...todos]); } else { await addDoc(collection(db, "users", user.uid, "todos"), { text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() }); } triggerVictory(); setNewTodoText(""); setNewTodoPriority(3); }} toggleTodoStatus={async (id) => { triggerHaptic(50); const todo = todos.find(t => t.id === id); if (isDemoMode) { setTodos(todos.map(t => t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)); } else { await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); } }} setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} clearCompletedTodos={clearCompletedTodos} openGlobalAction={openGlobalAction} />}
           </div>
+{/* MOBILE QUICK ACTION BUTTON */}
           <div className={`fixed lg:hidden ${isDemoMode ? "bottom-[200px]" : "bottom-28"} right-6 z-50`}>
             <button onClick={() => { triggerHaptic(20); setIsQabOpen(true); }} className={`w-14 h-14 rounded-full flex items-center justify-center text-white bg-[#1877F2] shadow-[0_12px_24px_rgba(24,119,242,0.4)] border-4 ${isDarkMode ? "border-[#0F172A]" : "border-white"}`}><Plus size={28} /></button>
           </div>
+
+          {/* MOBILE BOTTOM NAVIGATION FOOTER */}
           <div className={`lg:hidden fixed ${isDemoMode ? "bottom-[120px]" : "bottom-0"} left-0 w-full backdrop-blur-md border-t px-2 h-[88px] pb-4 pt-2 flex justify-between items-center z-[100] ${isDarkMode ? "bg-[#1E293B]/95 border-slate-800" : "bg-white/95 border-slate-100"}`}>
             {[{ id: "home", icon: Home, label: "Home" }, { id: "accounts", icon: Wallet, label: "Accounts" }, { id: "bills", icon: CalendarIcon, label: "Bills" }, { id: "activity", icon: CreditCard, label: "Activity" }, { id: "todo", icon: CheckSquare, label: "To-Do" }].map((tab) => (
               <button key={tab.id} onClick={() => changeTab(tab.id)} className="flex-1 flex flex-col items-center justify-center gap-1 group h-full">
@@ -1169,7 +1256,7 @@ export default function App() {
           </div>
         </div>
         
-        {/* SETTINGS VAULT */}
+        {/* SETTINGS MODAL VAULT */}
         {isSettingsOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsSettingsOpen(false)}></div>
@@ -1195,6 +1282,7 @@ export default function App() {
                   <p className={`text-xs font-bold mb-4 leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Found a glitch in the matrix or need a new feature? Contact support below.</p>
                   <a href="mailto:support@ledgerplanner.com" className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 border transition-all active:scale-95 ${isDarkMode ? "bg-slate-800 border-slate-600 text-white hover:bg-slate-700" : "bg-slate-50 border-slate-200 text-slate-900 hover:bg-slate-100"}`}>REPORT BUG / REQUEST FEATURE</a>
                 </div>
+
                 <div className={`p-5 rounded-3xl border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2"><CreditCard size={14}/> Subscription</h4>
                    <div className={`p-4 rounded-2xl border flex items-center justify-between ${isDarkMode ? "bg-[#0F172A] border-slate-600" : "bg-slate-50 border-slate-200"}`}>
@@ -1202,6 +1290,7 @@ export default function App() {
                     <button onClick={() => openGlobalAction("Subscription", "Connecting to the secure subscription portal...", "Close", false, () => setGlobalActionConfig(prev => ({...prev, isOpen: false})), true)} className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-colors ${isDarkMode ? "bg-slate-800 border-slate-600 text-white hover:bg-slate-700" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100 shadow-sm"}`}>Manage</button>
                   </div>
                 </div>
+
                 <div className={`p-5 rounded-3xl border shadow-sm mt-6 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
                   <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2"><RefreshCw size={14}/> System Override</h4>
                   <p className={`text-xs font-bold mb-4 leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>The Master Engine auto-rolls your month. If you need to force a manual rollover, use the override below.</p>
@@ -1224,12 +1313,11 @@ export default function App() {
           </div>
         )}
 
-        {/* === FIX #1 & #6: UPGRADED COMMAND CENTER OVERLAY CONTAINER WITH FULL MOBILE TAKEOVER BREAKPOINTS + FOOTER DROPPED === */}
+        {/* COMMAND CENTER NOTIFICATIONS POPUP */}
         {isNotificationsOpen && (() => {
           const hasOverdueOrDueNow = dynamicBills.some(b => !b.isPaid && (b.isOverdue || b.payday === "Due Now"));
           const hours = new Date().getHours();
           const isAM = hours >= 5 && hours < 12;
-
           const liquidCash = accounts.filter(a => !a.isGoal && (a.type === "Checking" || a.type === "Cash")).reduce((sum, acc) => sum + (acc.balance || 0), 0);
           
           let nextPaydayDate = todayForDynamic;
@@ -1247,17 +1335,14 @@ export default function App() {
           const daysLeft = Math.max(Math.ceil((nextPaydayDate - todayForDynamic) / (1000 * 60 * 60 * 24)), 1);
           const currentCycleBillsTotal = bills.filter(b => b.payday === activePaydayKey && !b.isPaid).reduce((sum, b) => sum + (b.amount || 0), 0);
           const trueRunwayAmount = Math.max((liquidCash - currentCycleBillsTotal) / daysLeft, 0);
-
           const totalCycleIncome = parseFloat(paydayConfig?.[activePaydayKey]?.income) || 0;
           const burnPercentage = totalCycleIncome > 0 ? Math.round((currentCycleBillsTotal / totalCycleIncome) * 100) : 0;
           const excessCushion = liquidCash;
-
           const isUnconsumedBriefing = isAM ? !hasConsumedAMBriefing : !hasConsumedPMBriefing;
 
           return (
             <div className="fixed inset-0 z-[120] flex justify-end">
               <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsNotificationsOpen(false)}></div>
-              {/* FIX #1: RESPONSIBLE TARGET TAKEOVER SWITCHED SURGICALLY FROM w-full max-w-sm TO w-full sm:max-w-sm TO TAKE OVER IN MOBILE VIEWS */}
               <div className={`w-full sm:max-w-sm h-full shadow-2xl animate-slide-left relative z-[130] flex flex-col transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A] border-l border-slate-800" : "bg-white border-l border-slate-100"}`}>
                 <div className="p-6 border-b flex justify-between items-center shrink-0">
                   <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Command Center</h3>
@@ -1275,14 +1360,12 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* HIGH INTENSITY MATRIC BRIEFING SYSTEM */}
                   {isUnconsumedBriefing && (
                     <div className={`p-5 rounded-[1.8rem] border flex items-start gap-4 shadow-[0_0_14px_rgba(245,158,11,0.15)] transition-all duration-500 ${isDarkMode ? "bg-slate-900/90 border-amber-500/20" : "bg-amber-50/80 border-amber-200/60"}`}>
                       <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-amber-500/10 text-xl">✨</div>
                       <div className="flex-1">
                         <div className="flex justify-between items-start">
                           <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${isDarkMode ? "text-amber-400" : "text-amber-800"}`}>{isAM ? "Morning Strategy" : "Evening Analysis"}</p>
-                          {/* FIX #6: ATTACHED LOCAL STORAGE DAILY KEY STAMP PERSISTENCE FOOTPRINTS CLEANLY ON SEPARATE DISMISS Toggles */}
                           <button onClick={() => { 
                             triggerHaptic(30); 
                             const todayKey = new Date().toISOString().split('T')[0];
@@ -1332,12 +1415,12 @@ export default function App() {
                     ))
                   )}
                 </div>
-                {/* FIX #6: OPTION A CONFIRMED — REDUNDANT LOWER DISMISS BUTTON GROUP CONTAINER HAS BEEN REMOVED ENTIRELY FROM THIS SHADOW WRAPPER */}
               </div>
             </div>
           );
         })()}
 
+        {/* PAYDAY ROUTING POPUP */}
         {isPaydaySetupOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsPaydaySetupOpen(false)}></div>
@@ -1347,16 +1430,11 @@ export default function App() {
                 <button onClick={() => setIsPaydaySetupOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
               <div className={`p-6 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
-                
                 <div className="mb-6">
                   <label className={`block text-[9px] font-bold uppercase tracking-widest mb-3 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Pay Frequency</label>
                   <div className={`grid grid-cols-2 gap-2 p-1.5 rounded-2xl border ${isDarkMode ? "bg-slate-800/80 border-slate-700" : "bg-slate-100/80 border-slate-200"}`}>
                     {["Weekly", "Bi-Weekly", "Semi-Monthly", "Monthly"].map(freq => (
-                      <button
-                        key={freq}
-                        onClick={() => setEditPaydayConfig({...editPaydayConfig, frequency: freq})}
-                        className={`w-full py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 flex items-center justify-center text-center ${editPaydayConfig?.frequency === freq || (!editPaydayConfig?.frequency && freq === "Weekly") ? "bg-[#1877F2] text-white shadow-[0_4px_12px_rgba(24,119,242,0.3)] transform scale-100" : isDarkMode ? "text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transform scale-[0.98]" : "text-slate-500 hover:text-slate-800 hover:bg-white shadow-sm transform scale-[0.98]"}`}
-                      >
+                      <button key={freq} onClick={() => setEditPaydayConfig({...editPaydayConfig, frequency: freq})} className={`w-full py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 flex items-center justify-center text-center ${editPaydayConfig?.frequency === freq || (!editPaydayConfig?.frequency && freq === "Weekly") ? "bg-[#1877F2] text-white shadow-[0_4px_12px_rgba(24,119,242,0.3)] transform scale-100" : isDarkMode ? "text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transform scale-[0.98]" : "text-slate-500 hover:text-slate-800 hover:bg-white shadow-sm transform scale-[0.98]"}`}>
                         {freq}
                       </button>
                     ))}
@@ -1370,7 +1448,6 @@ export default function App() {
                   ["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"]).map((pd) => (
                   <div key={pd} className={`p-4 rounded-2xl border ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-slate-50 border-slate-100"}`}>
                     <h4 className={`text-xs font-black uppercase tracking-widest mb-4 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>{pd}</h4>
-                    
                     <div className="grid grid-cols-2 gap-2 min-[360px]:gap-3">
                       <div className={`relative w-full h-[54px] rounded-xl border flex flex-col justify-end pb-1.5 px-3 transition-colors ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"}`}>
                          <label className={`absolute top-2 left-0 w-full text-center text-[8px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Pay Date</label>
@@ -1380,25 +1457,11 @@ export default function App() {
                          </div>
                          <input type="date" value={editPaydayConfig?.[pd]?.date || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), date: e.target.value}})} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" />
                       </div>
-                      
                       <div className={`relative w-full h-[54px] rounded-xl border flex flex-col justify-end pb-1.5 px-3 transition-colors focus-within:border-[#1877F2] ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"}`}>
                         <label className={`absolute top-2 left-0 w-full text-center z-10 text-[8px] font-black uppercase tracking-widest pointer-events-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Income</label>
                         <div className="flex items-center justify-center w-full relative z-10">
                           <span className={`font-bold text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
-                          <input 
-                            type="text" 
-                            inputMode="decimal" 
-                            pattern="[0-9.-]*" 
-                            placeholder="0.00" 
-                            value={editPaydayConfig?.[pd]?.income || ""} 
-                            onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), income: e.target.value}})} 
-                            onBlur={(e) => {
-                               if(e.target.value && !isNaN(parseFloat(e.target.value))) {
-                                  setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), income: parseFloat(e.target.value).toFixed(2)}});
-                               }
-                            }}
-                            className={`bg-transparent outline-none font-bold text-sm w-[76px] ml-1 ${isDarkMode ? "text-white placeholder-slate-500" : "text-slate-900 placeholder-slate-400"}`} 
-                          />
+                          <input type="text" inputMode="decimal" pattern="[0-9.-]*" placeholder="0.00" value={editPaydayConfig?.[pd]?.income || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), income: e.target.value}})} onBlur={(e) => { if(e.target.value && !isNaN(parseFloat(e.target.value))) { setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), income: parseFloat(e.target.value).toFixed(2)}}); } }} className={`bg-transparent outline-none font-bold text-sm w-[76px] ml-1 ${isDarkMode ? "text-white placeholder-slate-500" : "text-slate-900 placeholder-slate-400"}`} />
                         </div>
                       </div>
                     </div>
@@ -1414,6 +1477,7 @@ export default function App() {
           </div>
         )}
 
+        {/* ADD ACCOUNT WINDOW */}
         {isAddAccountOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsAddAccountOpen(false)}></div>
@@ -1424,22 +1488,12 @@ export default function App() {
               </div>
               <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
                 <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Name</label><input type="text" value={newAccName} onChange={(e) => setNewAccName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
-                
                 <div className="relative">
                   <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Current Balance</label>
                   <div className="relative w-full flex items-center">
                     <span className={`absolute left-5 top-[22px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
-                    <input 
-                      type="text" 
-                      inputMode="decimal" 
-                      pattern="[0-9.-]*" 
-                      value={newAccBalance} 
-                      onChange={(e) => setNewAccBalance(e.target.value)} 
-                      onBlur={() => { if(!isNaN(parseFloat(newAccBalance)) && newAccBalance !== "") setNewAccBalance(parseFloat(newAccBalance).toFixed(2)) }}
-                      className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} 
-                    />
+                    <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={newAccBalance} onChange={(e) => setNewAccBalance(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(newAccBalance)) && newAccBalance !== "") setNewAccBalance(parseFloat(newAccBalance).toFixed(2)) }} className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                   </div>
-                  
                   <div className="flex items-center justify-between mt-3 ml-2 pr-2">
                     <span className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Negative Balance (Debt)</span>
                     <button onClick={() => { triggerHaptic(20); setNewAccIsNegative(!newAccIsNegative); }} className={`w-10 h-5 rounded-full transition-colors relative ${newAccIsNegative ? "bg-red-500" : "bg-slate-300 dark:bg-slate-700"}`}>
@@ -1455,7 +1509,7 @@ export default function App() {
           </div>
         )}
 
-        {/* GOAL CREATION DRAWER */}
+        {/* GOAL CREATION WINDOW */}
         {isAddGoalOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsAddGoalOpen(false)}></div>
@@ -1465,13 +1519,10 @@ export default function App() {
                 <button onClick={() => setIsAddGoalOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
               <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
-                
-                {/* === FIX #2: Savings Goal Name INPUT FIELD SWAPPED SURGICALLY TO SIT FIRST IN ORDER === */}
                 <div className="relative">
                   <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Goal Name</label>
                   <input type="text" value={newGoalName} onChange={(e) => setNewGoalName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors focus:border-[#F97316] outline-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                 </div>
-                
                 <div className="relative cursor-pointer" onClick={() => setIsIconSelectorOpen(true)}>
                     <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Goal Icon</label>
                     <div className={`w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
@@ -1479,7 +1530,6 @@ export default function App() {
                        <ArrowDown size={14} className={isDarkMode ? "text-slate-400" : "text-slate-500"} />
                     </div>
                 </div>
-
                 <div className="relative">
                   <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Goal Amount</label>
                   <div className="relative w-full flex items-center">
@@ -1495,53 +1545,115 @@ export default function App() {
                      <input type="date" value={newGoalDate} onChange={(e) => setNewGoalDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                    </div>
                 </div>
-                {/* FIX #3: DELETED THE REMAINING UNUSED FUNDING SOURCE FORM DROPDOWN BLOCKS ENTIRELY FROM HERE */}
                 <button onClick={handleAddGoal} disabled={!newGoalName.trim() || isNaN(parseFloat(newGoalAmount)) || parseFloat(newGoalAmount) <= 0 || !newGoalDate || !newGoalIcon} className={`w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${!newGoalName.trim() || isNaN(parseFloat(newGoalAmount)) || parseFloat(newGoalAmount) <= 0 || !newGoalDate || !newGoalIcon ? "bg-slate-300 opacity-50 cursor-not-allowed shadow-none" : "bg-[#F97316] shadow-[0_8px_16px_rgba(249,115,22,0.3)] active:scale-95"}`}>Lock In Goal <Target size={16} /></button>
               </div>
-              {isIconSelectorOpen && (
-                 <div className={`absolute inset-0 z-[150] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
-                    <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}><h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Icon</h3><button onClick={() => setIsIconSelectorOpen(false)} className={closeButtonClass}><X size={18}/></button></div>
-                    <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] p-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : "pb-20 lg:pb-6"}`}>
-                       <div className="grid grid-cols-6 lg:grid-cols-8 gap-3">{categoryEmojis.map(emoji => (<button key={emoji} onClick={() => { setNewGoalIcon(emoji); setIsIconSelectorOpen(false); }} className={`w-12 h-12 flex items-center justify-center rounded-xl text-2xl border transition-all active:scale-90 ${newGoalIcon === emoji ? `bg-[#F97316] text-white border-transparent shadow-md` : isDarkMode ? "bg-slate-800 border-slate-700 hover:bg-slate-700" : "bg-slate-50 border-slate-200 hover:bg-slate-100"}`}>{emoji}</button>))}</div>
-                    </div>
-                 </div>
-              )}
             </div>
           </div>
         )}
 
+        {/* === UPDATE #5: TRANSFER DRAWER REFACTOR (PREMIUM CALCULATOR NUMPAD DESIGN) === */}
         {isTransferOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsTransferOpen(false)}></div>
-            <div className={`w-full lg:max-w-md h-auto max-h-[95vh] rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+            <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col overflow-hidden transition-all ${isDarkMode ? "bg-[#1E293B] border border-slate-800" : "bg-white border border-slate-100"}`}>
               <div className="p-6 border-b flex justify-between items-center shrink-0">
                 <h3 className={`font-black uppercase tracking-widest flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}><ArrowRightLeft size={16}/> Internal Transfer</h3>
                 <button onClick={() => setIsTransferOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
-              <div className={`p-6 lg:p-5 lg:pb-4 flex flex-col overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDemoMode ? "pb-[140px]" : ""}`}>
-                <div className="flex items-center gap-2 mb-6 lg:mb-4">
-                  <select value={transferFrom} onChange={(e) => setTransferFrom(e.target.value)} className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs border text-center transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}><option value="" disabled>From</option>{accounts.map(a => (<option key={a.id} value={a.id}>{a.name}</option>))}
-                  </select>
-                  <ArrowRight size={16} className={isDarkMode ? "text-slate-500" : "text-slate-400"} />
-                  <select value={transferTo} onChange={(e) => setTransferTo(e.target.value)} className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs border text-center transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}><option value="" disabled>To</option>{accounts.map(a => (<option key={a.id} value={a.id}>{a.name}</option>))}
-                  </select>
+              
+              <div className="p-6 flex flex-col flex-1">
+                {/* DUAL ACCOUNT STAGE */}
+                <div className="grid grid-cols-2 gap-3 mb-4 items-center relative">
+                  <div className={`p-3.5 rounded-2xl border text-center flex flex-col items-center justify-center min-h-[82px] transition-colors relative focus-within:ring-2 focus-within:ring-[#1877F2]/50 ${isDarkMode ? "bg-slate-800/60 border-slate-700/50" : "bg-slate-50 border-slate-100 shadow-inner"}`}>
+                    <span className="text-[9px] font-black text-slate-400 tracking-widest uppercase mb-1">Source</span>
+                    <span className="text-xl leading-none mb-1">{accounts.find(a => a.id === transferFrom)?.icon || "🏦"}</span>
+                    <span className={`text-xs font-black truncate max-w-full leading-tight uppercase tracking-wider ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>{accounts.find(a => a.id === transferFrom)?.name || "Select Account"}</span>
+                    <span className="text-[10px] font-extrabold text-[#10B981] mt-0.5">${(accounts.find(a => a.id === transferFrom)?.balance || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                    <select value={transferFrom} onChange={(e) => setTransferFrom(e.target.value)} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-20">{accounts.map(a => (<option key={a.id} value={a.id}>{a.name}</option>))}</select>
+                  </div>
+                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full border flex items-center justify-center z-10 shadow-md transform bg-white text-slate-500 border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400">
+                    <ArrowRightLeft size={14} className="animate-[spin_4s_linear_infinite]" />
+                  </div>
+                  <div className={`p-3.5 rounded-2xl border text-center flex flex-col items-center justify-center min-h-[82px] transition-colors relative focus-within:ring-2 focus-within:ring-[#1877F2]/50 ${isDarkMode ? "bg-slate-800/60 border-slate-700/50" : "bg-slate-50 border-slate-100 shadow-inner"}`}>
+                    <span className="text-[9px] font-black text-slate-400 tracking-widest uppercase mb-1">Destination</span>
+                    <span className="text-xl leading-none mb-1">{accounts.find(a => a.id === transferTo)?.icon || "🏦"}</span>
+                    <span className={`text-xs font-black truncate max-w-full leading-tight uppercase tracking-wider ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>{accounts.find(a => a.id === transferTo)?.name || "Select Account"}</span>
+                    <span className="text-[10px] font-extrabold text-[#10B981] mt-0.5">${(accounts.find(a => a.id === transferTo)?.balance || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                    <select value={transferTo} onChange={(e) => setTransferTo(e.target.value)} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-20">{accounts.map(a => (<option key={a.id} value={a.id}>{a.name}</option>))}</select>
+                  </div>
                 </div>
-                
-                <div className="text-center relative flex justify-center items-center mb-6 lg:mb-3">
-                  <span className="text-6xl font-extrabold tracking-tighter text-[#10B981]">${transferAmount}</span>
-                  <button onClick={() => { triggerHaptic(15); setTransferAmount(transferAmount.slice(0, -1) || "0"); }} className={`absolute right-4 p-3 rounded-full text-2xl lg:text-4xl active:scale-90 transition-transform touch-manipulation text-[#10B981] opacity-70 hover:opacity-100`}> ⌫ </button>
+
+                {/* TRANSFER NUMERIC ENTRY SCREEN */}
+                <div className="text-center relative flex justify-center items-center mb-4 min-h-[70px] border border-dashed rounded-2xl dark:border-slate-800 border-slate-200/80 px-4 bg-slate-50/20 dark:bg-slate-900/10">
+                  <span className="text-5xl font-black tracking-tighter text-[#1877F2] drop-shadow-[0_0_15px_rgba(24,119,242,0.15)]">${transferAmount}</span>
+                  <button onClick={() => { triggerHaptic(15); setTransferAmount(transferAmount.slice(0, -1) || "0"); }} className={`absolute right-4 p-3 rounded-full text-2xl active:scale-90 transition-all text-slate-400 hover:text-red-500`}> ⌫ </button>
                 </div>
-                <div className="grid grid-cols-4 gap-3 lg:gap-2 mt-auto">
-                  {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", ".", "0", "=", "+"].map((btn) => {
-                    return ( <button key={btn} onClick={() => handleTransferNumpad(btn)} className={`w-full h-14 lg:h-12 rounded-2xl text-2xl font-bold flex items-center justify-center transition-all border mt-2 active:scale-95 touch-manipulation ${isDarkMode ? "bg-slate-800 border-slate-700 text-white active:bg-slate-700" : "bg-slate-100 border-slate-200 text-slate-900 active:bg-slate-200"}`}> {btn} </button> );
-                  })}
+
+                {/* GLASSMORPHISM NUMPAD KEY GRID */}
+                <div className="grid grid-cols-4 gap-2">
+                  {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", ".", "0", "=", "+"].map((btn) => (
+                    <button key={btn} onClick={() => handleTransferNumpad(btn)} className={`w-full h-12 rounded-xl text-xl font-bold flex items-center justify-center transition-all border active:scale-95 touch-manipulation ${isDarkMode ? "bg-slate-800/40 border-slate-700/50 text-slate-200 hover:bg-slate-700/40" : "bg-slate-100 border-slate-200/60 text-slate-800 hover:bg-slate-200/50"}`}>
+                      {btn}
+                    </button>
+                  ))}
                 </div>
-                <button onClick={executeTransfer} disabled={parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo} className={`w-full mt-6 lg:mt-3 h-16 lg:h-12 shrink-0 rounded-2xl font-black uppercase tracking-widest text-sm text-white shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2 ${parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo ? "bg-slate-300 opacity-50 shadow-none cursor-not-allowed shadow-none" : "bg-[#1877F2]"}`}>Execute Transfer <ArrowRight size={18} /></button>
+
+                {/* LAUNCH ENGINE TRIGGER */}
+                <button onClick={executeTransfer} disabled={parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo} className={`w-full mt-4 h-14 shrink-0 rounded-2xl font-black uppercase tracking-widest text-xs text-white shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 ${parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo ? "bg-slate-300 opacity-40 shadow-none cursor-not-allowed" : "bg-[#1877F2] shadow-[0_8px_20px_rgba(24,119,242,0.35)]"}`}>Execute Transfer <ArrowRightLeft size={16} /></button>
               </div>
             </div>
           </div>
         )}
 
+        {/* === UPDATE #3: GOAL CASH OUT DRAWER STATE (HARD-CAPPED & VISUAL FILTERED) === */}
+        {isCashOutOpen && cashOutGoal && (
+          <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => { setIsCashOutOpen(false); setCashOutGoal(null); }}></div>
+            <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col overflow-hidden transition-all ${isDarkMode ? "bg-[#1E293B] border border-slate-800" : "bg-white border border-slate-100"}`}>
+              <div className="p-6 border-b flex justify-between items-center shrink-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">{cashOutGoal.icon}</span>
+                  <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Cash Out: {cashOutGoal.name}</h3>
+                </div>
+                <button onClick={() => { setIsCashOutOpen(false); setCashOutGoal(null); }} className={closeButtonClass}><X size={18} /></button>
+              </div>
+
+              <div className="p-6 flex flex-col flex-1">
+                {/* STEP 1: DESTINATION SELECTION */}
+                <div className="relative mb-4">
+                  <label className={`absolute left-4 top-2 text-[9px] font-black uppercase tracking-widest z-10 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Liquid Destination Account</label>
+                  <select value={cashOutToAccount} onChange={(e) => setCashOutToAccount(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border font-bold text-sm appearance-none transition-colors outline-none focus:border-[#1877F2] ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900 shadow-sm"}`}>
+                    <option value="" disabled>Select liquid account...</option>
+                    {accounts.filter(a => !a.isGoal && (a.type === "Checking" || a.type === "Savings" || a.type === "Cash")).map(a => (
+                      <option key={a.id} value={a.id}>{a.name} (${(a.balance || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })})</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* STEP 2: HARD-CAPPED INPUT DISPLAY */}
+                <div className="text-center relative flex justify-center items-center mb-4 min-h-[64px] border border-dashed rounded-2xl dark:border-slate-800 border-slate-200/80 px-4 bg-slate-50/20 dark:bg-slate-900/10">
+                  <span className="text-4xl font-black tracking-tighter text-[#10B981]">${cashOutAmount}</span>
+                  <div className="absolute right-4 flex items-center gap-2">
+                    <button onClick={() => { triggerHaptic(20); setCashOutAmount(String(cashOutGoal.balance.toFixed(2))); }} className="px-2 py-1 rounded-md text-[9px] font-black uppercase bg-[#1877F2]/10 text-[#1877F2] tracking-wider border border-transparent dark:hover:bg-[#1877F2]/20">MAX</button>
+                    <button onClick={() => handleCashOutNumpad("CLR")} className="p-2 rounded-full text-sm text-slate-400 hover:text-red-500">⌫</button>
+                  </div>
+                </div>
+
+                {/* NUMPAD BUTTON STRUCTURE FOR BALANCED ACCURACY */}
+                <div className="grid grid-cols-3 gap-2">
+                  {["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0"].map((num) => (
+                    <button key={num} onClick={() => handleCashOutNumpad(num)} className={`h-11 rounded-xl text-lg font-bold flex items-center justify-center transition-all border active:scale-95 ${isDarkMode ? "bg-slate-800/40 border-slate-700/50 text-slate-200 hover:bg-slate-700" : "bg-slate-100 border-slate-200/60 text-slate-800 hover:bg-slate-200"}`}>{num}</button>
+                  ))}
+                </div>
+
+                {/* RUNWAY ACCOUNT ROUTER PROCESS TRIGGER */}
+                <button onClick={handleCashOutGoalSubmit} disabled={parseFloat(cashOutAmount) <= 0 || parseFloat(cashOutAmount) > cashOutGoal.balance || !cashOutToAccount} className={`w-full mt-4 h-14 shrink-0 rounded-2xl font-black uppercase tracking-widest text-xs text-white shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 ${parseFloat(cashOutAmount) <= 0 || parseFloat(cashOutAmount) > cashOutGoal.balance || !cashOutToAccount ? "bg-slate-300 opacity-40 shadow-none cursor-not-allowed" : "bg-[#10B981] shadow-[0_8px_20px_rgba(16,185,129,0.35)]"}`}>Disburse Funds <CheckCircle2 size={16} /></button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ACCOUNT & EDIT PANEL CONTROL SYSTEMS */}
         {selectedAccount && !isAddAccountOpen && !isTransferOpen && !isAddGoalOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedAccount(null)}></div>
@@ -1554,7 +1666,6 @@ export default function App() {
                 <button onClick={() => setSelectedAccount(null)} className={closeButtonClass}><X size={18} /></button>
               </div>
               <div className={`p-6 space-y-4 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
-                
                 {selectedAccount.isGoal && (
                   <>
                     <div className="relative">
@@ -1587,21 +1698,11 @@ export default function App() {
                 )}
                 
                 <div className="relative">
-                  <label className={`absolute left-4 top-2 text-[9px] font-black uppercase tracking-widest z-10 ${isDarkMode ? "text-[#1877F2]" : "text-[#1877F2]"}`}>{selectedAccount.isGoal ? "CURRENT BALANCE" : "QUICK BALANCE UPDATE"}</label>
+                  <label className={`absolute left-4 top-2 text-[9px] font-black uppercase tracking-widest z-10 text-[#1877F2]`}>{selectedAccount.isGoal ? "CURRENT BALANCE" : "QUICK BALANCE UPDATE"}</label>
                   <div className="relative w-full flex items-center">
                     <span className={`absolute left-5 top-[22px] font-bold text-lg ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
-                    <input 
-                      type="text" 
-                      inputMode="decimal" 
-                      pattern="[0-9.-]*"
-                      value={editAccountBalance} 
-                      onChange={(e) => setEditAccountBalance(e.target.value)} 
-                      onFocus={() => setEditAccountBalance(Math.abs(selectedAccount.balance || 0).toFixed(2))} 
-                      onBlur={() => { if(!isNaN(parseFloat(editAccountBalance)) && editAccountBalance !== "") setEditAccountBalance(parseFloat(editAccountBalance).toFixed(2)) }}
-                      className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl border focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`} 
-                    />
+                    <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={editAccountBalance} onChange={(e) => setEditAccountBalance(e.target.value)} onFocus={() => setEditAccountBalance(Math.abs(selectedAccount.balance || 0).toFixed(2))} onBlur={() => { if(!isNaN(parseFloat(editAccountBalance)) && editAccountBalance !== "") setEditAccountBalance(parseFloat(editAccountBalance).toFixed(2)) }} className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl border focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`} />
                   </div>
-                  
                   {!selectedAccount.isGoal && (
                     <div className="flex items-center justify-between mt-3 ml-2 pr-2">
                       <span className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Negative Balance (Debt)</span>
@@ -1613,18 +1714,12 @@ export default function App() {
                 </div>
                 <div className="relative mt-2">
                   <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest text-slate-400 z-10 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{selectedAccount.isGoal ? "Goal Details" : "Account Details"}</label>
-                  <input 
-                    type="text" 
-                    placeholder={selectedAccount.type}
-                    value={editAccountDesc} 
-                    onChange={(e) => setEditAccountDesc(e.target.value)} 
-                    className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white placeholder-slate-600" : "bg-white border-slate-200 text-slate-900 placeholder-slate-400"}`} 
-                  />
+                  <input type="text" placeholder={selectedAccount.type} value={editAccountDesc} onChange={(e) => setEditAccountDesc(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white placeholder-slate-600" : "bg-white border-slate-200 text-slate-900 placeholder-slate-400"}`} />
                 </div>
                 <button onClick={updateAccountBalance} disabled={isNaN(parseFloat(editAccountBalance))} className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${isNaN(parseFloat(editAccountBalance)) ? "bg-slate-300 opacity-50 cursor-not-allowed" : "bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] active:scale-95"}`}><Save size={16} /> Save Changes</button>
                 <button onClick={deleteAccount} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-red-500 shadow-[0_8px_16px_rgba(239,68,68,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><Trash2 size={16}/> {selectedAccount.isGoal ? "Delete Goal" : "Delete Account"}</button>
               </div>
-              {isIconSelectorOpen && (
+              {isIconSelectorOpen && selectedAccount.isGoal && (
                  <div className={`absolute inset-0 z-[150] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
                     <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}><h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Icon</h3><button onClick={() => setIsIconSelectorOpen(false)} className={closeButtonClass}><X size={18}/></button></div>
                     <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] p-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : "pb-20 lg:pb-6"}`}>
@@ -1636,6 +1731,7 @@ export default function App() {
           </div>
         )}
         
+        {/* PAYMENT MODAL WRAPPERS */}
         {paymentModalConfig.isOpen && (() => {
           const activeBill = bills.find(b => b.id === paymentModalConfig.billId);
           const remainingBal = activeBill?.isInstallment ? (activeBill.totalAmount || 0) - (activeBill.paidAmount || 0) : 0;
@@ -1656,11 +1752,10 @@ export default function App() {
                       {accounts.map((a) => (<option key={a.id} value={a.id}>{a.name} (${(a.balance || 0).toFixed(2)})</option>))}
                     </select>
                   </div>
-
                   {isPayInFullAvailable && (
-                    <div className={`p-4 rounded-2xl border flex items-center justify-between transition-colors cursor-pointer ${paymentModalConfig.isPayInFull ? "bg-[#1877F2] border-[#1877F2] text-white shadow-[0_8px_16px_rgba(24,119,242,0.3)]" : isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`} onClick={() => { triggerHaptic(20); setPaymentModalConfig({...paymentModalConfig, isPayInFull: !paymentModalConfig.isPayInFull}); }}>
+                    <div className={`p-4 rounded-2xl border border-dashed flex items-center justify-between cursor-pointer ${paymentModalConfig.isPayInFull ? "bg-[#1877F2] border-[#1877F2] text-white shadow-md" : isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`} onClick={() => { triggerHaptic(20); setPaymentModalConfig({...paymentModalConfig, isPayInFull: !paymentModalConfig.isPayInFull}); }}>
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">Pay In Full</span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest opacity-85">Pay In Full</span>
                         <span className="font-black text-sm">Remaining: ${remainingBal.toFixed(2)}</span>
                       </div>
                       <div className={`w-12 h-6 rounded-full transition-colors relative ${paymentModalConfig.isPayInFull ? "bg-white/30" : isDarkMode ? "bg-slate-700" : "bg-slate-300"}`}>
@@ -1668,7 +1763,6 @@ export default function App() {
                       </div>
                     </div>
                   )}
-
                   <button onClick={confirmPaymentRoute} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#10B981] shadow-[0_8px_16px_rgba(16,185,129,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><CheckCircle2 size={16}/> Complete Payment {paymentModalConfig.isPayInFull ? `($${remainingBal.toFixed(2)})` : (activeBill ? `($${(activeBill.amount || 0).toFixed(2)})` : '')}</button>
                 </div>
               </div>
@@ -1676,6 +1770,7 @@ export default function App() {
           );
         })()}
 
+        {/* LEDGER ENTRY ANALYSIS OVERLAYS */}
         {selectedEntry && !selectedAccount && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={closeEntryDrawer}></div>
@@ -1728,7 +1823,7 @@ export default function App() {
                       )}
                     </div>
                     {selectedEntry.isOverdue !== undefined && !selectedEntry.isPaid && (
-                      <button onClick={() => { setSelectedEntry(null); setPaymentModalConfig({ isOpen: true, billId: selectedEntry.id, accountId: accounts.find(a => a.type === "Checking" || a.type === "Cash")?.id || (accounts[0]?.id || ""), isPayInFull: false }); }} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#10B981] shadow-[0_8px_16px_rgba(16,185,129,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2">
+                      <button onClick={() => { setSelectedEntry(null); setPaymentModalConfig({ isOpen: true, billId: selectedEntry.id, accountId: accounts.find(a => !a.isGoal && (a.type === "Checking" || a.type === "Cash"))?.id || (accounts[0]?.id || ""), isPayInFull: false }); }} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#10B981] shadow-[0_8px_16px_rgba(16,185,129,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2">
                         <CheckCircle2 size={16} /> Mark as Paid
                       </button>
                     )}
@@ -1758,23 +1853,13 @@ export default function App() {
                   <>
                     <div className="space-y-4">
                       <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Name</label><input type="text" value={editEntryData.name || ""} onChange={(e) => setEditEntryData({...editEntryData, name: e.target.value})} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
-                      
                       <div className="relative">
                         <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Amount</label>
                         <div className="relative w-full flex items-center">
                           <span className={`absolute left-5 top-[22px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
-                          <input 
-                            type="text" 
-                            inputMode="decimal" 
-                            pattern="[0-9.-]*" 
-                            value={editEntryData.amount || ""} 
-                            onChange={(e) => setEditEntryData({...editEntryData, amount: e.target.value})} 
-                            onBlur={() => { if(!isNaN(parseFloat(editEntryData.amount)) && editEntryData.amount !== "") setEditEntryData({...editEntryData, amount: parseFloat(editEntryData.amount).toFixed(2)}) }}
-                            className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} 
-                          />
+                          <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={editEntryData.amount || ""} onChange={(e) => setEditEntryData({...editEntryData, amount: e.target.value})} onBlur={() => { if(!isNaN(parseFloat(editEntryData.amount)) && editEntryData.amount !== "") setEditEntryData({...editEntryData, amount: parseFloat(editEntryData.amount).toFixed(2)}) }} className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                         </div>
                       </div>
-                      
                       <div className="relative cursor-pointer" onClick={() => setIsIconSelectorOpen(true)}>
                         <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Icon</label>
                         <div className={`w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
@@ -1782,27 +1867,13 @@ export default function App() {
                           <ArrowDown size={14} className={isDarkMode ? "text-slate-400" : "text-slate-500"} />
                         </div>
                       </div>
-                      {currentRecentCategories.length > 0 && (
-                          <div className="mb-2 mt-2">
-                              <label className={`block text-[9px] font-bold uppercase tracking-widest mb-1 px-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Recent Categories</label>
-                              <div className="flex gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] pb-2">
-                                   {currentRecentCategories.map(cat => (
-                                      <button key={cat} onClick={() => setEntryCategory(cat)} className={`px-4 py-2 shrink-0 rounded-xl text-[10px] font-bold whitespace-nowrap border transition-colors ${entryCategory === cat ? `${qabActiveBg} text-white border-transparent shadow-md` : isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-700"}`}>
-                                          {cat}
-                                      </button>
-                                   ))}
-                              </div>
-                          </div>
-                      )}
-                      
                       <div className="relative">
                          <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Category</label>
-                         <select value={editEntryData.category || ""} onChange={(e) => setEntryCategory(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
+                         <select value={editEntryData.category || ""} onChange={(e) => setEditEntryData({...editEntryData, category: e.target.value})} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
                             <option value="" disabled>Select Category</option>
                             {categoriesToRender.map(group => ( <optgroup key={group.group} label={group.group} className={isDarkMode ? "bg-[#1E293B] text-white" : "bg-white text-slate-900"}> {group.items.map(item => <option key={item} value={item}>{item}</option>)} </optgroup> ))}
                          </select>
                       </div>
-                      
                       {selectedEntry.fullDate !== undefined && (
                         <>
                           <div className="relative">
@@ -1813,7 +1884,6 @@ export default function App() {
                                <input type="date" value={editEntryData.rawDate || ""} onChange={(e) => setEditEntryData({...editEntryData, rawDate: e.target.value})} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                              </div>
                           </div>
-                          
                           <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
                             <div className="flex items-center justify-between">
                               <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Recurring Bill</span>
@@ -1848,7 +1918,6 @@ export default function App() {
                           </div>
                         </>
                       )}
-                      
                       {selectedEntry.fullDate === undefined && (
                          <div className="relative">
                             <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account</label>
@@ -1863,7 +1932,6 @@ export default function App() {
                   </>
                 )}
               </div>
-              
               {isIconSelectorOpen && isEditingEntry && (
                  <div className={`absolute inset-0 z-[150] flex flex-col ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
                     <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}><h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Icon</h3><button onClick={() => setIsIconSelectorOpen(false)} className={closeButtonClass}><X size={18}/></button></div>
@@ -1876,6 +1944,7 @@ export default function App() {
           </div>
         )}
 
+        {/* INSTALLMENT PLAN SCHEDULER POPUP */}
         {installmentPromptConfig.isOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setInstallmentPromptConfig({ isOpen: false, billId: null, nextDate: "" })}></div>
@@ -1903,28 +1972,26 @@ export default function App() {
           </div>
         )}
 
-        {/* QUICK ADD BOARD (QAB) MODAL */}
+        {/* QUICK ADD BOARD (QAB) DRAWER ENGINE */}
         {isQabOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={closeQab}></div>
             <div className={`w-full lg:max-w-md h-auto max-h-[95vh] rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
-                
                 <div className={`p-6 border-b flex justify-between items-center shrink-0 ${isDarkMode ? "border-slate-800" : "border-slate-100"}`}>
                    <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{qabActiveLabel}</h3>
                    <button onClick={closeQab} className={closeButtonClass}><X size={18} /></button>
                 </div>
-                
                 <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] flex flex-col ${isDemoMode ? "pb-[140px] lg:pb-0" : ""}`}>
                   {qabStep === 1 ? (
                     <div className="p-6 lg:p-5 flex flex-col h-full min-h-[300px] lg:min-h-[360px]">
                       <div className={`flex p-1.5 rounded-2xl mb-4 lg:mb-3 ${isDarkMode ? "bg-slate-800" : "bg-slate-100"}`}>
-                        <button onClick={() => { setDrawerTab("bills"); setInputValue("0"); }} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${drawerTab === "bills" ? "bg-[#1877F2] text-white shadow-[0_4px_12px_rgba(24,119,242,0.3)] transform scale-100" : isDarkMode ? "text-slate-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>Bill</button>
-                        <button onClick={() => { setDrawerTab("transactions"); setInputValue("0"); }} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${drawerTab === "transactions" ? "bg-[#F97316] text-white shadow-[0_4px_12px_rgba(249,115,22,0.3)] transform scale-100" : isDarkMode ? "text-slate-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>Expense</button>
-                        <button onClick={() => { setDrawerTab("income"); setInputValue("0"); }} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${drawerTab === "income" ? "bg-[#10B981] text-white shadow-[0_4px_12px_rgba(16,185,129,0.3)] transform scale-100" : isDarkMode ? "text-slate-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>Income</button>
+                        <button onClick={() => { setDrawerTab("bills"); setInputValue("0"); }} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${drawerTab === "bills" ? "bg-[#1877F2] text-white shadow-[0_4px_12px_rgba(24,119,242,0.3)]" : isDarkMode ? "text-slate-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>Bill</button>
+                        <button onClick={() => { setDrawerTab("transactions"); setInputValue("0"); }} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${drawerTab === "transactions" ? "bg-[#F97316] text-white shadow-[0_4px_12px_rgba(249,115,22,0.3)]" : isDarkMode ? "text-slate-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>Expense</button>
+                        <button onClick={() => { setDrawerTab("income"); setInputValue("0"); }} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${drawerTab === "income" ? "bg-[#10B981] text-white shadow-[0_4px_12px_rgba(16,185,129,0.3)]" : isDarkMode ? "text-slate-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>Income</button>
                       </div>
                       <div className="text-center relative flex justify-center items-center mb-4 lg:mb-3 mt-4 lg:mt-auto">
                         <span className={`text-6xl font-extrabold tracking-tighter ${qabActiveText}`}>${inputValue}</span>
-                        <button onClick={() => { triggerHaptic(15); setInputValue(inputValue.slice(0, -1) || "0"); }} className={`absolute right-4 p-3 rounded-full text-2xl lg:text-4xl active:scale-90 transition-transform touch-manipulation ${qabActiveText} opacity-70 hover:opacity-100`}> ⌫ </button>
+                        <button onClick={() => { triggerHaptic(15); setInputValue(inputValue.slice(0, -1) || "0"); }} className={`absolute right-4 p-3 rounded-full text-2xl lg:text-4xl active:scale-90 transition-transform ${qabActiveText} opacity-70 hover:opacity-100`}> ⌫ </button>
                       </div>
                       <div className="grid grid-cols-4 gap-3 lg:gap-2 mt-auto mb-6 lg:mb-3">
                         {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", ".", "0", "=", "+"].map((btn) => (
@@ -1939,23 +2006,13 @@ export default function App() {
                          <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Name</label>
                          <input type="text" value={entryName} onChange={(e) => setEntryName(e.target.value)} className={`w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                       </div>
-                      
                       <div className="relative">
                          <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Amount</label>
                          <div className="relative w-full flex items-center">
                            <span className={`absolute left-5 top-[22px] lg:top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
-                           <input 
-                             type="text" 
-                             inputMode="decimal" 
-                             pattern="[0-9.-]*" 
-                             value={inputValue} 
-                             onChange={(e) => setInputValue(e.target.value)} 
-                             onBlur={() => { if(!isNaN(parseFloat(inputValue)) && inputValue !== "") setInputValue(parseFloat(inputValue).toFixed(2)) }}
-                             className={`w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 pl-9 pr-5 rounded-2xl border font-bold text-base transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} 
-                           />
+                           <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={inputValue} onChange={(e) => setInputValue(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(inputValue)) && inputValue !== "") setInputValue(parseFloat(inputValue).toFixed(2)) }} className={`w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 pl-9 pr-5 rounded-2xl border  font-bold text-base transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                          </div>
                       </div>
-                      
                       <div className="relative cursor-pointer" onClick={() => setIsIconSelectorOpen(true)}>
                          <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Icon</label>
                          <div className={`w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
@@ -1975,7 +2032,6 @@ export default function App() {
                               </div>
                           </div>
                       )}
-                      
                       <div className="relative">
                          <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Category</label>
                          <select value={entryCategory} onChange={(e) => setEntryCategory(e.target.value)} className={`w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
@@ -1983,7 +2039,6 @@ export default function App() {
                             {categoriesToRender.map(group => ( <optgroup key={group.group} label={group.group} className={isDarkMode ? "bg-[#1E293B] text-white" : "bg-white text-slate-900"}> {group.items.map(item => <option key={item} value={item}>{item}</option>)} </optgroup> ))}
                          </select>
                       </div>
-                      
                       {drawerTab === "bills" && (
                          <>
                             <div className="relative">
@@ -2028,7 +2083,6 @@ export default function App() {
                             </div>
                          </>
                       )}
-                      
                       {(drawerTab === "income" || drawerTab === "transactions") && (
                          <div className="relative">
                             <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account</label>
@@ -2038,12 +2092,12 @@ export default function App() {
                             </select>
                          </div>
                       )}
-                      
                       <button onClick={handleConfirmAction} disabled={!canSubmitQab} className={`w-full mt-4 lg:mt-2 h-16 lg:h-12 shrink-0 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${!canSubmitQab ? "bg-slate-300 text-slate-500 cursor-not-allowed opacity-60 shadow-none" : `active:scale-95 ${qabActiveBg} ${qabActiveShadow} hover:-translate-y-1`}`}>Confirm & Save <CheckCircle2 size={18} /></button>
                     </div>
                   )}
                 </div>
-                
+
+                {/* MODAL NESTED SELECTION FILTERS */}
                 {isCategorySelectorOpen && (
                    <div className={`absolute inset-0 z-[140] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
                       <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
@@ -2063,7 +2117,6 @@ export default function App() {
                       </div>
                    </div>
                 )}
-                
                 {isIconSelectorOpen && !isEditingEntry && (
                    <div className={`absolute inset-0 z-[150] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
                       <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
@@ -2082,7 +2135,7 @@ export default function App() {
           </div>
         )}
 
-        {/* GLOBAL ACTION OVERLAY */}
+        {/* CONFIRMED DUAL-CANNY CELEBRATION DISPATCH MATRIX */}
         {globalActionConfig.isOpen && (
            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
              <div className={`w-full max-w-sm p-6 rounded-3xl shadow-2xl ${isDarkMode ? "bg-[#1E293B] border border-slate-700" : "bg-white"}`}>
@@ -2090,11 +2143,10 @@ export default function App() {
                    {globalActionConfig.isDanger ? <AlertCircle size={20} /> : <CheckCircle2 size={20} className="text-[#1877F2]" />} {globalActionConfig.title}
                 </h3>
                 <p className={`text-sm mb-6 font-bold ${isDarkMode ? "text-slate-300" : "text-slate-500"}`}>{globalActionConfig.message}</p>
-                
                 <div className="flex gap-3">
                    {!globalActionConfig.isAlertOnly && (
                        <button onClick={() => setGlobalActionConfig({ ...globalActionConfig, isOpen: false })} className={`flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 ${isDarkMode ? "bg-slate-800 text-slate-300 hover:bg-slate-700" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
-                          Cancel
+                         Cancel
                        </button>
                    )}
                    <button onClick={() => { if(globalActionConfig.action) { globalActionConfig.action(); } else { setGlobalActionConfig({ ...globalActionConfig, isOpen: false }); } }} className={`flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-white transition-all active:scale-95 shadow-lg ${globalActionConfig.isDanger ? "bg-red-500 hover:bg-red-600 shadow-[0_8px_16px_rgba(239,68,68,0.3)]" : "bg-[#1877F2] hover:bg-blue-600 shadow-[0_8px_16px_rgba(24,119,242,0.3)]"}`}>
@@ -2105,15 +2157,18 @@ export default function App() {
           </div>
         )}
         
+        {/* PREMIUM CONFETTI ENGINE */}
         {showConfetti && (
           <div className="absolute inset-0 z-[200] pointer-events-none flex items-center justify-center overflow-hidden">
             {[...Array(200)].map((_, i) => (
-              <div key={i} className="absolute w-3 h-3 rounded-sm" style={{ backgroundColor: ['#1877F2', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#FFFFFF', '#FFD700', '#059669'][Math.floor(Math.random() * 8)], left: '50%', top: '50%', transform: `translate(-50%, -50%)`, animation: `explode 2s ease-out forwards`, '--tx': `${(Math.random() - 0.5) * 1500}px`, '--ty': `${(Math.random() - 0.5) * 1500}px`, '--rot': `${Math.random() * 720}deg` }} />
+              <div key={i} className="absolute w-3 h-3 rounded-sm animate-[explode_3s_ease-out_forwards]" style={{ backgroundColor: ['#1877F2', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#FFFFFF', '#FFD700', '#059669'][Math.floor(Math.random() * 8)], left: '50%', top: '50%', transform: `translate(-50%, -50%)`, '--tx': `${(Math.random() - 0.5) * 1500}px`, '--ty': `${(Math.random() - 0.3) * 1200 - 400}px`, '--rot': `${Math.random() * 720}deg` }} />
             ))}
             <style>{`@keyframes explode { 0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); opacity: 1; } 100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) rotate(calc(var(--rot))) scale(0); opacity: 0; } }`}</style>
           </div>
         )}
       </div>
+
+      {/* DEMO BOTTOM BANNER HUD */}
       {isDemoMode && (
         <div className="fixed bottom-0 left-0 w-full h-[120px] lg:h-[80px] bg-[#1877F2] text-white p-4 flex flex-col lg:flex-row justify-center lg:justify-between items-center z-[150] shadow-[0_-10px_40px_rgba(24,119,242,0.3)] gap-3 lg:gap-0">
           <div className="flex flex-col text-center lg:text-left w-full lg:w-auto">

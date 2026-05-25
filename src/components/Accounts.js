@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ArrowRightLeft, PlusCircle, Edit2, Target, CheckCircle2, Calendar as CalendarIcon, ArrowDown, X } from "lucide-react";
 
 export default function Accounts({
@@ -13,7 +13,9 @@ export default function Accounts({
   setEditAccountBalance,
   renderHeroShell,
   isDemoMode,
-  triggerCelebration
+  triggerCelebration,
+  setIsCashOutOpen,
+  setCashOutGoal
 }) {
   const [activeChartNode, setActiveChartNode] = useState(5);
   const [timeframe, setTimeframe] = useState("6M");
@@ -27,10 +29,12 @@ export default function Accounts({
   const [selectedGoalIcon, setSelectedGoalIcon] = useState("🎯");
   const categoryEmojis = ["🎯", "🏖️", "🚗", "🏠", "💍", "🎓", "👶", "🐶", "🏥", "🛡️", "💰", "🚀", "📱", "💻", "🎮", "✈️", "🏍️", "🎸", "🚲", "⛵"];
 
+  // === ARCHITECTURAL ACCOUNT BOUNDARY SEPARATION ===
   const liquidAccounts = accounts.filter(a => !a.isGoal);
   const goalAccounts = accounts.filter(a => a.isGoal);
 
-  const netWorth = accounts.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
+  // === ITEM #1: PURE LIQUID NET WORTH CALCULATION MATRIX ===
+  const netWorth = liquidAccounts.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
   
   const today = new Date();
   
@@ -141,7 +145,7 @@ export default function Accounts({
         
         <div className={`flex justify-between items-end mb-4 transform transition-all duration-700 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest mb-1 text-slate-400">Net Worth • <span className={`${isNetWorthNegative ? "text-red-500" : "text-[#1877F2]"}`}>{activeDataPoint?.label} {activeDataPoint?.year}</span></p>
+            <p className="text-[10px] font-black uppercase tracking-widest mb-1 text-slate-400">Liquid Net Worth • <span className={`${isNetWorthNegative ? "text-red-500" : "text-[#1877F2]"}`}>{activeDataPoint?.label} {activeDataPoint?.year}</span></p>
             <p className={`text-4xl font-black tracking-tighter transition-colors duration-300 ${isNetWorthNegative ? "text-red-500" : activeDataPoint?.val > 0 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
               {isNetWorthNegative ? "-" : ""}${Math.abs(activeDataPoint?.val || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
@@ -161,9 +165,10 @@ export default function Accounts({
         </div>
       </div>
 
-      {/* 📊 CHART CANVAS CONTAINER (LEFT ON BASE CANVAS LAYER) */}
+      {/* 📊 CHART CANVAS CONTAINER */}
       <div className={`relative flex items-end justify-between h-28 gap-2 border-b border-dashed border-slate-200 dark:border-slate-700 pb-2 mt-4 transform transition-all duration-1000 ease-out origin-bottom ${showChart ? "opacity-100 scale-y-100" : "opacity-0 scale-y-95"}`}>
         <svg className="absolute inset-0 w-full h-full pointer-events-none drop-shadow-md z-20" preserveAspectRatio="none" viewBox="0 0 100 100">
+          {/* === ITEM #3: CINEMATIC SPLINE LINE SLOWDOWN REFACTOR (1.2s ➔ 2.2s) === */}
           <style>{`
             @keyframes drawTrendLine {
               from { stroke-dashoffset: 1000; }
@@ -172,7 +177,7 @@ export default function Accounts({
             .animate-trend-line {
               stroke-dasharray: 1000;
               stroke-dashoffset: 1000;
-              animation: drawTrendLine 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+              animation: drawTrendLine 2.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
             }
           `}</style>
           {showChart && (
@@ -206,13 +211,13 @@ export default function Accounts({
           } else {
             if (isItemZero) barBgClass = isDarkMode ? "bg-slate-800 group-hover:bg-slate-700" : "bg-slate-100 group-hover:bg-slate-200";
             else if (isItemPositive) barBgClass = isDarkMode ? "bg-emerald-900/20 group-hover:bg-emerald-900/40 opacity-50" : "bg-emerald-50 group-hover:bg-emerald-100 opacity-60";
-            else barBgClass = isDarkMode ? "bg-red-900/20 group-hover:bg-red-900/40 opacity-50" : "bg-red-50 group-hover:bg-red-100 opacity-60";
+            else barBgClass = "bg-red-900/20 group-hover:bg-red-900/40 opacity-50" : "bg-red-50 group-hover:bg-red-100 opacity-60";
           }
 
           return (
             <div key={i} onClick={() => setActiveChartNode(i)} className="flex flex-col items-center justify-end h-full flex-1 cursor-pointer group relative z-10">
               <div className="w-full relative flex justify-center h-full items-end">
-                <div className={`w-full max-w-[32px] rounded-t-xl transition-all duration-500 ease-out ${barBgClass}`} style={{ height: `${heightPct}%`, minHeight: Math.abs(item.val) > 0 ? "12px" : "4px" }}></div>
+                <div className={`w-full max-w-[32px] rounded-t-[6px] transition-all duration-500 ease-out ${barBgClass}`} style={{ height: `${heightPct}%`, minHeight: Math.abs(item.val) > 0 ? "12px" : "4px" }}></div>
               </div>
               <span className={`text-[9px] font-black mt-3 uppercase tracking-wider transition-colors duration-300 ${isActive ? (isItemZero ? (isDarkMode ? "text-slate-300" : "text-slate-500") : isItemNegative ? "text-red-500" : "text-[#10B981]") : "text-slate-400"}`}>{item.label}</span>
             </div>
@@ -227,6 +232,7 @@ export default function Accounts({
       {renderHeroShell(`${userName}'s Accounts`, graphicContent)}
       <main className="px-6 space-y-8 mt-4">
         
+        {/* LIQUID BANK ASSET ROW */}
         <div className="space-y-4">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">All Accounts</h3>
           <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
@@ -238,7 +244,7 @@ export default function Accounts({
                     const isNegative = acc.balance < 0;
                     const isPositive = acc.balance > 0;
                     return (
-                    <div key={acc.id} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
+                    <div key={acc.id} onClick={() => { if (typeof setIsTransferOpen === 'function') setIsTransferOpen(true); }} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all cursor-pointer ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
                         
                         <div className="flex items-start justify-between w-full mb-4">
                            <div className="flex items-center gap-3 flex-1">
@@ -251,9 +257,9 @@ export default function Accounts({
                            </div>
                            <button 
                              onClick={(e) => { e.stopPropagation(); setSelectedAccount(acc); setEditAccountBalance(acc.balance.toString()); }}
-                             className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
+                             className={`w-8 h-8 rounded-full flex items-center justify-center border border-transparent shadow-sm transition-all hover:scale-105 active:scale-95 ${isDarkMode ? "bg-slate-700/50 text-slate-400 hover:text-white hover:bg-slate-700" : "bg-slate-50 text-slate-400 hover:text-slate-900 hover:bg-slate-100"}`}
                            >
-                              <Edit2 size={16} strokeWidth={2.5} />
+                              <Edit2 size={14} strokeWidth={2.5} />
                            </button>
                         </div>
 
@@ -284,6 +290,7 @@ export default function Accounts({
 
         <div className={`border-t ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}></div>
 
+        {/* TARGET OBJECTIVE GOAL ROW */}
         <div className="space-y-4">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">My Goals</h3>
           <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
@@ -299,6 +306,14 @@ export default function Accounts({
                     
                     const isPositive = balanceAmt > 0;
                     const isNegative = balanceAmt < 0;
+
+                    // === ITEM #4: REAL-TIME SMART INTERCEPTOR RENDER GUARD EVENT ===
+                    if (!goal.hasCelebratedOnce && isComplete) {
+                      goal.hasCelebratedOnce = true;
+                      if (typeof triggerCelebration === "function") {
+                        setTimeout(() => triggerCelebration(), 250);
+                      }
+                    }
 
                     return (
                     <div key={goal.id} className={`flex flex-col p-5 rounded-[1.5rem] border shadow-sm transition-all ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
@@ -317,21 +332,22 @@ export default function Accounts({
                            </div>
                            <button 
                              onClick={(e) => { e.stopPropagation(); setSelectedAccount(goal); setEditAccountBalance(goal.balance.toString()); }}
-                             className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
+                             className={`w-8 h-8 rounded-full flex items-center justify-center border border-transparent shadow-sm transition-all hover:scale-105 active:scale-95 ${isDarkMode ? "bg-slate-700/50 text-slate-400 hover:text-white hover:bg-slate-700" : "bg-slate-50 text-slate-400 hover:text-slate-900 hover:bg-slate-100"}`}
                            >
-                              <Edit2 size={16} strokeWidth={2.5} />
+                              <Edit2 size={14} strokeWidth={2.5} />
                            </button>
                         </div>
 
                         <div className="flex items-end justify-between gap-2 mb-3">
                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Current Balance</span>
-                           <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 transition-colors whitespace-nowrap ${
+                           {/* === ITEM #2: PREMIUM UNIQUE ORANGE GLOW THEME UPGRADE CHASSIS === */}
+                           <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 transition-all whitespace-nowrap ${
                                isComplete
-                                   ? isDarkMode ? "bg-yellow-900/30 text-yellow-400 border-yellow-900/50 drop-shadow-[0_0_12px_rgba(234,179,8,0.7)]" : "bg-yellow-50 text-yellow-600 border-yellow-200 drop-shadow-[0_0_12px_rgba(234,179,8,0.7)]"
+                                   ? "bg-orange-500/10 text-[#F97316] border-orange-500/30 dark:border-orange-500/40 drop-shadow-[0_0_12px_rgba(249,115,22,0.7)]"
                                    : isNegative 
                                    ? isDarkMode ? "bg-red-900/30 text-red-400 border-red-900/50 drop-shadow-[0_0_12px_rgba(239,68,68,0.7)]" : "bg-red-50 text-red-600 border-red-200 drop-shadow-[0_0_12px_rgba(239,68,68,0.7)]"
                                    : isPositive 
-                                   ? isDarkMode ? "bg-emerald-900/30 text-emerald-400 border-emerald-900/50 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]" : "bg-emerald-50 text-emerald-600 border-emerald-200 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]"
+                                   ? "bg-orange-500/10 text-[#F97316] border-orange-500/20 dark:border-orange-500/30 drop-shadow-[0_0_12px_rgba(249,115,22,0.4)]"
                                    : isDarkMode ? "bg-slate-800 text-slate-400 border-slate-700" : "bg-slate-100 text-slate-500 border-slate-200"
                            }`}>
                                ${balanceAmt.toLocaleString("en-US", { minimumFractionDigits: 2 })}
@@ -339,7 +355,7 @@ export default function Accounts({
                         </div>
 
                         <div className={`w-full h-2.5 rounded-full overflow-hidden border mb-2 ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-slate-100 border-slate-200"}`}>
-                             <div className={`h-full transition-all duration-1000 ${isComplete ? "bg-gradient-to-r from-yellow-500 to-yellow-300 shadow-[0_0_10px_rgba(234,179,8,0.5)]" : "bg-[#1877F2]"}`} style={{ width: `${progressPct}%` }}></div>
+                             <div className={`h-full transition-all duration-1000 ${isComplete ? "bg-gradient-to-r from-orange-500 to-orange-400 shadow-[0_0_10px_rgba(249,115,22,0.5)]" : "bg-[#F97316]"}`} style={{ width: `${progressPct}%` }}></div>
                         </div>
 
                         {goal.targetDate && (
@@ -348,15 +364,17 @@ export default function Accounts({
                            </div>
                         )}
 
+                        {/* === ITEM #1 & #5: UNIFIED THEME ORANGE CASH OUT REFACTOR ENGINE === */}
                         {isComplete && (
                           <button 
-                            onClick={() => {
-                              if (typeof triggerCelebration === 'function') triggerCelebration();
-                              if (typeof setIsTransferOpen === 'function') setIsTransferOpen({ from: goal.id });
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (typeof setCashOutGoal === "function") setCashOutGoal(goal);
+                              if (typeof setIsCashOutOpen === "function") setIsCashOutOpen(true);
                             }}
-                            className="w-full py-3 rounded-xl font-black text-[10px] uppercase tracking-widest text-white bg-gradient-to-r from-yellow-500 to-yellow-600 shadow-[0_4px_15px_rgba(234,179,8,0.3)] flex items-center justify-center gap-2 transition-all active:scale-95 mt-2"
+                            className="w-full py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest text-white bg-[#F97316] hover:bg-[#EA580C] shadow-[0_8px_20px_rgba(249,115,22,0.3)] flex items-center justify-center gap-2 transition-all active:scale-95 mt-2 border border-transparent"
                           >
-                            <CheckCircle2 size={16} strokeWidth={3} /> Cash Out Goal
+                            <CheckCircle2 size={14} strokeWidth={3} /> Cash Out Goal
                           </button>
                         )}
 
@@ -368,6 +386,7 @@ export default function Accounts({
           </div>
         </div>
 
+        {/* PLATFORM METRIC ACCELERATORS */}
         <div className="flex flex-col gap-3">
           <div className="grid grid-cols-2 gap-3">
             <button onClick={() => setIsAddAccountOpen(true)} className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#10B981] text-white shadow-emerald-900/20" : "bg-[#10B981] text-white shadow-emerald-500/30"}`}>
@@ -377,14 +396,14 @@ export default function Accounts({
               <ArrowRightLeft size={18} /> Transfer
             </button>
           </div>
-          <button onClick={() => setIsAddGoalOpen && setIsAddGoalOpen(true)} className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-orange-500 text-white shadow-orange-900/20" : "bg-[#F97316] text-white shadow-orange-500/30"}`}>
+          <button onClick={() => { if (typeof setIsAddGoalOpen === "function") setIsAddGoalOpen(true); }} className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-orange-500 text-white shadow-orange-900/20" : "bg-[#F97316] text-white shadow-orange-500/30"}`}>
             <Target size={18} /> Add Goal
           </button>
         </div>
 
       </main>
 
-      {/* Embedded Icon Selector Modal for Goal Drawer */}
+      {/* ICON DRAWER WRAPPER */}
       {isIconSelectorOpen && (
          <div className={`absolute inset-0 z-[150] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
             <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
@@ -401,8 +420,8 @@ export default function Accounts({
                           setIsIconSelectorOpen(false); 
                       }} 
                       className={`w-12 h-12 flex items-center justify-center rounded-xl text-2xl border transition-all active:scale-90 ${selectedGoalIcon === emoji ? `bg-[#F97316] text-white border-transparent shadow-md` : isDarkMode ? "bg-slate-800 border-slate-700 hover:bg-slate-700" : "bg-slate-50 border-slate-200 hover:bg-slate-100"}`}
-                    >
-                      {emoji}
+                   >
+                     {emoji}
                    </button>
                  ))}
                </div>

@@ -270,13 +270,13 @@ export default function Dashboard({
                   <p className={`text-2xl font-black tracking-tighter leading-none mb-1 ${isDeficit ? "text-red-500" : "text-[#10B981]"}`}>
                     ${Math.abs(waterfallBalance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                   </p>
-                  {/* === FIX #2: APPLIED CONTRAST BLACK FOR LIGHT MODE === */}
-                  <span className={`text-[8px] font-black uppercase tracking-[0.15em] ${isDarkMode ? "text-slate-400 opacity-60" : "text-black"} leading-none block`}>
+                  {/* === FIX #2 & #3: "AVAILABLE THIS WEEK" LIGHT/DARK OVERRIDES === */}
+                  <span className={`text-[8px] font-black uppercase tracking-[0.15em] ${isDarkMode ? "text-black" : "text-white"} leading-none block`}>
                     {subLabelStr}
                   </span>
                 </div>
 
-                {/* === FIX #1: LOCKED TO SOLID SIGNATURE BLUE WITH WHITE TEXT === */}
+                {/* === LOCKED TO SOLID SIGNATURE BLUE WITH WHITE TEXT === */}
                 <div className="w-full py-1.5 rounded-xl text-center font-black text-[9px] tracking-wider transition-all uppercase bg-[#1877F2] text-white shadow-md">
                   VIEW DETAILS
                 </div>
@@ -285,13 +285,15 @@ export default function Dashboard({
                   {pd === "Due Now" ? (
                     <div className="flex flex-col flex-1"></div> 
                   ) : (
+                    /* === FIX #2 & #3: "EXPECTED PAY" LIGHT/DARK OVERRIDES === */
                     <div className="flex flex-col flex-1">
-                      <span className="text-[7px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Expected Pay</span>
+                      <span className={`text-[7px] font-black uppercase tracking-widest mb-0.5 ${isDarkMode ? "text-black" : "text-white"}`}>Expected Pay</span>
                       <span className={`text-[10px] font-black ${isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>+${totalExpectedIncome.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
                     </div>
                   )}
                   <div className="flex flex-col items-end shrink-0">
-                    <span className="text-[7px] font-black uppercase text-slate-400 tracking-widest mb-0.5">
+                    {/* === FIX #2 & #3: "X BILLS OUT" LIGHT/DARK OVERRIDES === */}
+                    <span className={`text-[7px] font-black uppercase tracking-widest mb-0.5 ${isDarkMode ? "text-black" : "text-white"}`}>
                       {unpaidCount === 1 ? `${unpaidCount} Bill Out` : `${unpaidCount} Bills Out`}
                     </span>
                     <span className="text-[10px] font-black text-[#1877F2]">-${unpaidTotal.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
@@ -316,7 +318,7 @@ export default function Dashboard({
           {["Due Now", "Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].map((payday) => {
             const groupBills = billsByPayday[payday] || [];
             
-            // === FIX #3B: DUAL-PASS MONTH FILTER IMPLEMENTED PRECISELY ===
+            // === DUAL-PASS MONTH FILTER ===
             const filteredVerticalBills = groupBills.filter((bill) => {
               if (bill.isOverdue || bill.payday === "Due Now") return true;
               if (bill.rawDate) {
@@ -444,7 +446,7 @@ export default function Dashboard({
 
         <div className={`space-y-4 pt-4 border-t mt-8 ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}>
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Recent Activity</h3>
-          <div className={`rounded-[2rem] p-4 border transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white/80 backdrop-blur-md border-white/60 shadow-sm"}`}>
+          <div className={`rounded-[2rem] p-4 border shadow-sm transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white/80 backdrop-blur-md border-white/60 shadow-sm"}`}>
             {transactions.length === 0 ? ( <p className="text-center py-8 font-bold text-slate-400">No activity yet.</p> ) : (
               <div className="space-y-3">
                 {transactions.slice(0, 5).map((tx) => {

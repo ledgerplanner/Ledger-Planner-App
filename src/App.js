@@ -58,7 +58,6 @@ export default function App() {
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [isEditingEntry, setIsEditingEntry] = useState(false);
   const [editEntryData, setEditEntryData] = useState({});
-
   const [collapsedPaydays, setCollapsedPaydays] = useState({ "Due Now": true, "Payday 1": true, "Payday 2": true, "Payday 3": true, "Payday 4": true, "Payday 5": true, "Unscheduled": true });
   const hasInitializedCollapse = useRef(false);
   const [hasCheckedRollover, setHasCheckedRollover] = useState(false);
@@ -77,7 +76,7 @@ export default function App() {
   const [transferTo, setTransferTo] = useState("");
   const [transferAmount, setTransferAmount] = useState("0");
 
-  // === NEW: GOAL CASH OUT DRAWER STATE NODES ===
+  // === GOAL CASH OUT DRAWER STATE NODES ===
   const [isCashOutOpen, setIsCashOutOpen] = useState(false);
   const [cashOutGoal, setCashOutGoal] = useState(null);
   const [cashOutAmount, setCashOutAmount] = useState("0");
@@ -129,7 +128,6 @@ export default function App() {
     }
     return false;
   });
-
   const [isQabOpen, setIsQabOpen] = useState(false);
   const [qabStep, setQabStep] = useState(1);
   const [drawerTab, setDrawerTab] = useState("bills");
@@ -222,7 +220,6 @@ export default function App() {
       setIsPushEnabled(Notification.permission === "granted");
     }
   }, []);
-
   // === SECURITY SUBSYSTEM AUTH CHANGE OBSERVER ===
   useEffect(() => {
     if (!isMounted || isDemoMode) return;
@@ -349,6 +346,7 @@ export default function App() {
       hasInitializedCollapse.current = true;
     }
   }, [bills]);
+
   const handleOpenPaydaySetup = () => {
     setEditPaydayConfig(paydayConfig);
     setIsPaydaySetupOpen(true);
@@ -527,9 +525,9 @@ export default function App() {
       if (isDemoMode) {
          setTodos(todos.filter(t => !t.isCompleted));
       } else {
-         setTodos(todos.filter(t => !t.isCompleted));
-         const batchPromises = completed.map(t => deleteDoc(doc(db, "users", user.uid, "todos", t.id)));
-         await Promise.all(batchPromises);
+        setTodos(todos.filter(t => !t.isCompleted));
+        const batchPromises = completed.map(t => deleteDoc(doc(db, "users", user.uid, "todos", t.id)));
+        await Promise.all(batchPromises);
       }
       triggerHaptic(50);
       setGlobalActionConfig(prev => ({ ...prev, isOpen: false }));
@@ -546,7 +544,7 @@ export default function App() {
       if (bill.isInstallment) newPaidAmount = Math.max(0, (bill.paidAmount || 0) - (bill.amount || 0));
 
       if (isDemoMode) {
-        setBills(bills.map(b => b.id === id ? { ...b, isPaid: false, paidAmount: newPaidAmount, paidFromAccountId: null, linkedTxId: null } : b));
+        setBills(bills.map(b => b.id === id ? { ...b, isPaid: false, paidAmount: newPaidAmt, paidFromAccountId: null, linkedTxId: null } : b));
         if (targetAcc) setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: a.balance + (bill.amount || 0) } : a));
         if (bill.linkedTxId) setTransactions(transactions.filter(t => t.id !== bill.linkedTxId));
       } else {
@@ -686,7 +684,7 @@ export default function App() {
     else setTransferAmount(transferAmount + btn);
   };
 
-  // === UPGRADED: TRANSFER TRANSACTION CELEBRATION INTERCEPTOR ===
+  // === EXECUTING PATCHED TRANSFER ENGINE MATRIX ===
   const executeTransfer = async () => {
     const amt = parseFloat(transferAmount);
     if (isNaN(amt) || amt <= 0 || !transferFrom || !transferTo) return;
@@ -730,7 +728,6 @@ export default function App() {
     setIsTransferOpen(false); setTransferAmount("0"); setTransferFrom(""); setTransferTo("");
   };
 
-  // === NEW: VISUAL GOAL CASH OUT LEDGER SUBMIT ENGINE ===
   const handleCashOutGoalSubmit = async (e) => {
     if (e) e.preventDefault();
     const amt = parseFloat(cashOutAmount);
@@ -780,7 +777,6 @@ export default function App() {
       }
     }
   };
-
   const updateAccountBalance = async () => {
     const newBal = parseFloat(editAccountBalance);
     if (isNaN(newBal) || !selectedAccount) return;
@@ -830,180 +826,6 @@ export default function App() {
     });
   };
 
-  const clearPaydayConfig = () => { setEditPaydayConfig({ frequency: "Weekly", "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } });
-    triggerHaptic(50); };
-  const savePaydayConfig = async () => {
-    setPaydayConfig(editPaydayConfig);
-    if (!isDemoMode) { await setDoc(doc(db, "users", user.uid, "settings", "paydayConfig"), editPaydayConfig); }
-    setIsPaydaySetupOpen(false); triggerVictory();
-  };
-  
-  const todayForDynamic = new Date(); todayForDynamic.setHours(0, 0, 0, 0);
-  
-  const calculatePaydayGroup = (dateString) => {
-    if (!dateString) return "Unscheduled";
-    const billDate = new Date(dateString);
-    if (isNaN(billDate.getTime())) return "Unscheduled";
-
-    const todayLocal = new Date(); todayLocal.setHours(0, 0, 0, 0);
-    const localBillDate = new Date(billDate.getUTCFullYear(), billDate.getUTCMonth(), billDate.getUTCDate());
-    if (localBillDate < todayLocal || localBillDate.getTime() === todayLocal.getTime()) return "Due Now";
-    const activePaydays = [];
-    for (let i = 1; i <= 5; i++) {
-      const pdId = `Payday ${i}`;
-      if (paydayConfig && paydayConfig[pdId] && paydayConfig[pdId].date) {
-        const d = new Date(paydayConfig[pdId].date);
-        if (!isNaN(d.getTime())) activePaydays.push({ id: pdId, date: d });
-      }
-    }
-    if (activePaydays.length === 0) return "Unscheduled";
-    activePaydays.sort((a, b) => a.date - b.date);
-    const lastPayday = activePaydays[activePaydays.length - 1].date;
-    const horizonDate = new Date(lastPayday);
-    horizonDate.setDate(horizonDate.getDate() + 7);
-    if (localBillDate > horizonDate) return "Unscheduled";
-    if (billDate < activePaydays[0].date) return activePaydays[0].id;
-    let assignedPd = activePaydays[0].id;
-    for (let i = 0; i < activePaydays.length; i++) {
-      if (billDate >= activePaydays[i].date) assignedPd = activePaydays[i].id;
-      else break;
-    }
-    return assignedPd;
-  };
-  
-  const dynamicBills = bills.map(bill => {
-    let currentPayday = bill.payday;
-    let isOverdue = bill.isOverdue || false;
-    if (bill.rawDate && !bill.isPaid) {
-      const bDate = new Date(bill.rawDate);
-      if (!isNaN(bDate.getTime())) {
-          const localBDate = new Date(bDate.getUTCFullYear(), bDate.getUTCMonth(), bDate.getUTCDate());
-
-          if (localBDate < todayForDynamic) {
-              currentPayday = "Due Now";
-              isOverdue = true;
-          } else if (localBDate.getTime() === todayForDynamic.getTime()) {
-              currentPayday = "Due Now";
-              isOverdue = false;
-          } else {
-              currentPayday = calculatePaydayGroup(bill.rawDate);
-              isOverdue = false;
-          }
-      }
-    }
-    return { ...bill, payday: currentPayday || "Unscheduled", isOverdue: isOverdue };
-  }).sort((a, b) => {
-    if (a.isOverdue && !b.isOverdue) return -1;
-    if (!a.isOverdue && b.isOverdue) return 1;
-    if (a.payday === "Due Now" && b.payday !== "Due Now") return -1;
-    if (a.payday !== "Due Now" && b.payday === "Due Now") return 1;
-    if (!a.rawDate) return 1; if (!b.rawDate) return -1;
-    return new Date(a.rawDate || 0) - new Date(b.rawDate || 0);
-  });
-
-  const generateAlerts = () => {
-    const currentAlerts = [];
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    if (needsRefresh) {
-      currentAlerts.unshift({
-        id: 'refresh-required',
-        type: 'danger',
-        icon: <RefreshCw size={20} className="text-red-500 animate-[spin_3s_linear_infinite]" />,
-        title: 'System Update',
-        message: 'New month detected. Refresh to initialize the new vault.',
-        time: 'REQUIRED',
-        action: () => window.location.reload()
-      });
-    }
-    const actionBills = dynamicBills.filter(b => b.isOverdue || (!b.isPaid && b.payday === "Due Now"));
-    actionBills.forEach(b => { currentAlerts.push({ id: `action-${b.id}`, type: 'danger', icon: <AlertCircle size={20} className="text-red-500" />, title: 'Action Required', message: `Your ${b.name || "Bill"} is ${b.isOverdue ? 'past due' : 'due now'}.`, amount: b.amount || 0, time: b.isOverdue ? 'URGENT' : 'TODAY', action: () => { setIsNotificationsOpen(false); changeTab("bills"); } }); });
-    const upcomingRecurring = dynamicBills.filter(b => !b.isPaid && b.isRecurring && !b.isOverdue && b.payday !== "Due Now" && b.payday !== "Unscheduled");
-    upcomingRecurring.forEach(b => { if (b.rawDate) { const bDate = new Date(b.rawDate); if (!isNaN(bDate.getTime())) { const diffDays = Math.ceil((bDate - today) / (1000 * 60 * 60 * 24)); if (diffDays >= 0 && diffDays <= 2) { currentAlerts.push({ id: `sub-${b.id}`, type: 'info', icon: <RefreshCw size={20} className="text-[#10B981]" />, title: 'Subscription Nudge', message: `${b.name || "Subscription"} is recurring in ${diffDays} day(s).`, amount: b.amount || 0, time: `${diffDays}D`, action: () => { setIsNotificationsOpen(false); changeTab("bills"); } }); } } } });
-    ["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].forEach(pdId => {
-      const config = paydayConfig?.[pdId];
-      if (config && config.date) {
-        const pdDate = new Date(config.date);
-        if (!isNaN(pdDate.getTime())) {
-            pdDate.setUTCHours(0, 0, 0, 0);
-            const diffDays = Math.ceil((pdDate - today) / (1000 * 60 * 60 * 24));
-            if (diffDays >= 0 && diffDays <= 3) { currentAlerts.push({ id: `payday-${pdId}`, type: 'info', icon: <CalendarIcon size={20} className="text-[#1877F2]" />, title: 'Upcoming Payday', message: `${pdId} is approaching.`, time: `${diffDays}D`, action: () => { setIsNotificationsOpen(false); handleOpenPaydaySetup(); } });
-            }
-            const pdBills = bills.filter(b => b.payday === pdId && !b.isPaid);
-            const pdTotal = pdBills.reduce((sum, b) => sum + (b.amount || 0), 0);
-            const pdIncome = parseFloat(config.income) || 0;
-            if (pdTotal > pdIncome && pdIncome > 0) { currentAlerts.push({ id: `gap-${pdId}`, type: 'warning', icon: <ArrowDown size={20} className="text-orange-500" />, title: 'Liquidity Gap', message: `${pdId} is $${(pdTotal - pdIncome).toFixed(2)} short.`, time: 'WARNING', action: () => { setIsNotificationsOpen(false); changeTab("bills"); } });
-            }
-        }
-      }
-    });
-    const liquidCash = accounts.filter(a => !a.isGoal && (a.type === "Checking" || a.type === "Cash")).reduce((sum, acc) => sum + (acc.balance || 0), 0);
-    const upcomingBills = bills.filter(b => !b.isPaid && !b.isOverdue);
-    const upcomingBurn = upcomingBills.reduce((sum, b) => sum + (b.amount || 0), 0);
-    const safeToSpend = liquidCash - upcomingBurn;
-    if (safeToSpend < 100 && safeToSpend >= 0) { currentAlerts.push({ id: `redline`, type: 'danger', icon: <AlertCircle size={20} className="text-red-500" />, title: 'Redline', message: `Buffer critically low ($${safeToSpend.toFixed(2)}).`, time: 'ALERT', action: () => { setIsNotificationsOpen(false); changeTab("home"); } });
-    }
-
-    const recentTransfers = transactions.filter(tx => tx.category === "Transfers (Venmo/Zelle)" && tx.type === "Income");
-    if (recentTransfers.length > 0) { const latestTransfer = recentTransfers[0]; currentAlerts.push({ id: `transfer-${latestTransfer.id}`, type: 'success', icon: <CheckCircle2 size={20} className="text-[#10B981]" />, title: 'Transfer Complete', message: `$${(latestTransfer.amount || 0).toFixed(2)} was successfully moved.`, time: latestTransfer.date?.split(',')[0] || "Recent", action: () => { setIsNotificationsOpen(false); changeTab("activity"); } });
-    }
-    return currentAlerts;
-  };
-  const activeAlerts = generateAlerts();
-  const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
-
-  // === UPGRADED: BILL PAYMENT TRANSACTION CELEBRATION INTERCEPTOR ===
-  const confirmPaymentRoute = async () => {
-    const bill = bills.find(b => b.id === paymentModalConfig.billId);
-    const targetAcc = accounts.find(a => a.id === paymentModalConfig.accountId);
-    if (!bill || !targetAcc) return;
-    const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
-    const remainingBalance = (bill.totalAmount || 0) - (bill.paidAmount || 0);
-    const amountToPay = paymentModalConfig.isPayInFull ? remainingBalance : (bill.amount || 0);
-
-    const oldTargetBalance = targetAcc.balance || 0;
-    const newTargetBalance = oldTargetBalance - amountToPay;
-    const isGoalCompleted = targetAcc.isGoal && oldTargetBalance < (targetAcc.targetAmount || 0) && newTargetBalance >= (targetAcc.targetAmount || 0);
-
-    if (isDemoMode) {
-      const txId = `tx_demo_${Date.now()}`;
-      setTransactions([{ id: txId, name: bill.name || "Bill", icon: bill.icon || "🧾", amount: amountToPay, date: autoTimeStamp, type: "Expense", category: bill.category || "Bill Payment", accountId: targetAcc.id, isBillPayment: true }, ...transactions]);
-      setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: (a.balance || 0) - amountToPay } : a));
-      if (bill.isInstallment) {
-        const newPaidAmt = (bill.paidAmount || 0) + amountToPay;
-        if (newPaidAmt >= (bill.totalAmount || 0) || paymentModalConfig.isPayInFull) {
-          setBills(bills.map(b => b.id === bill.id ? { ...b, isPaid: true, paidAmount: newPaidAmt, paidFromAccountId: targetAcc.id, linkedTxId: txId } : b));
-          if (isGoalCompleted) triggerVictory(); else triggerHaptic(50);
-          setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false });
-        } else {
-          setBills(bills.map(b => b.id === bill.id ? { ...b, paidAmount: newPaidAmt, isOverdue: false } : b));
-          triggerHaptic(50); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false }); setInstallmentPromptConfig({ isOpen: true, billId: bill.id, nextDate: "" });
-        }
-      } else {
-        setBills(bills.map(b => b.id === bill.id ? { ...b, isPaid: true, paidAmount: 0, paidFromAccountId: targetAcc.id, linkedTxId: txId } : b));
-        if (isGoalCompleted) triggerVictory(); else triggerHaptic(50);
-        setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false });
-      }
-    } else {
-      const txRef = await addDoc(collection(db, "users", user.uid, "transactions"), { name: bill.name || "Bill", icon: bill.icon || "🧾", amount: amountToPay, date: autoTimeStamp, type: "Expense", category: bill.category || "Bill Payment", accountId: targetAcc.id, isBillPayment: true, createdAt: serverTimestamp() });
-      await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: (targetAcc.balance || 0) - amountToPay });
-      if (bill.isInstallment) {
-        const newPaidAmt = (bill.paidAmount || 0) + amountToPay;
-        if (newPaidAmt >= (bill.totalAmount || 0) || paymentModalConfig.isPayInFull) {
-          await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: true, paidAmount: newPaidAmt, paidFromAccountId: targetAcc.id, linkedTxId: txRef.id });
-          if (isGoalCompleted) triggerVictory(); else triggerHaptic(50);
-          setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false });
-        } else {
-          await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { paidAmount: newPaidAmt, isOverdue: false });
-          triggerHaptic(50); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false }); setInstallmentPromptConfig({ isOpen: true, billId: bill.id, nextDate: "" });
-        }
-      } else {
-        await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: true, paidAmount: 0, paidFromAccountId: targetAcc.id, linkedTxId: txRef.id });
-        if (isGoalCompleted) triggerVictory(); else triggerHaptic(50);
-        setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false });
-      }
-    }
-  };
-
   const handleSaveNextInstallmentDate = async () => {
     if (!installmentPromptConfig.nextDate) return;
     const bill = bills.find(b => b.id === installmentPromptConfig.billId);
@@ -1030,7 +852,6 @@ export default function App() {
     else if (inputValue === "0" && btn !== ".") setInputValue(btn); else setInputValue(inputValue + btn);
   };
 
-  // === UPGRADED: QUICK ADD TRANSACTION CELEBRATION INTERCEPTOR ===
   const handleConfirmAction = () => {
     const amountToProcess = parseFloat(inputValue);
     if (isNaN(amountToProcess) || (drawerTab === "bills" ? amountToProcess < 0 : amountToProcess <= 0)) return;
@@ -1093,6 +914,7 @@ export default function App() {
       closeQab();
     }
   };
+
   const qabActiveText = drawerTab === "bills" ? "text-[#1877F2]" : drawerTab === "income" ? "text-[#10B981]" : "text-[#F97316]";
   const qabActiveBg = drawerTab === "bills" ? "bg-[#1877F2]" : drawerTab === "income" ? "bg-[#10B981]" : "bg-[#F97316]";
   const qabActiveShadow = drawerTab === "bills" ? "shadow-[0_8px_16px_rgba(24,119,242,0.3)]" : drawerTab === "income" ? "shadow-[0_8px_16px_rgba(16,185,129,0.3)]" : "shadow-[0_8px_16px_rgba(249,115,22,0.3)]";
@@ -1122,7 +944,6 @@ export default function App() {
     return "text-[#1877F2]";
   };
 
-  // === UPDATE #2: UNIFIED HEADER HERO SHELL (lg:hidden REMOVED FROM ACTION BARS) ===
   const renderHeroShell = (title, graphicContent) => {
     const hasOverdueOrDueNow = dynamicBills.some(b => !b.isPaid && (b.isOverdue || b.payday === "Due Now"));
     const hours = new Date().getHours();
@@ -1156,7 +977,6 @@ export default function App() {
             <img src="/login-logo.png" alt="Ledger Planner" className={`relative z-10 w-16 h-16 rounded-full shadow-[0_12px_24px_rgba(24,119,242,0.3)] object-cover border-[3px] transition-colors ${isDarkMode ? "border-slate-800" : "border-white"}`} />
           </div>
           
-          {/* CONVERGED HEAD NAVIGATION FLEX CLUSTER (lg:hidden REMOVED FOR DESKTOP HEAD CONVERGENCE) */}
           <div className="flex items-center gap-2 relative z-30">
             <button onClick={() => { setEditName(userName || ""); setIsSettingsOpen(true); }} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ?
               "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
@@ -1181,7 +1001,7 @@ export default function App() {
       </header>
     );
   };
-// === THE SECURITY GUARDRAILS ===
+
   if (!isMounted) return <div className={`min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}></div>;
   if (isAuthLoading && !isDemoMode) {
     return (
@@ -1202,7 +1022,7 @@ export default function App() {
       />
     );
   }
-return (
+  return (
     <div 
       onContextMenu={(e) => e.preventDefault()} 
       className={`h-screen w-full font-sans relative flex transition-colors duration-500 select-none [-webkit-touch-callout:none] ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}
@@ -1221,13 +1041,12 @@ return (
       
       <div className={`w-full h-full relative flex flex-col lg:flex-row transition-colors duration-500 overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
         
-        {/* === UPDATE #2: SIDEBAR PURIFICATION CONTAINER PANEL === */}
+        {/* SIDEBAR PANEL */}
         <div className={`hidden lg:flex w-[280px] flex-col border-r z-40 p-6 transition-colors duration-500 shrink-0 ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-100"}`}>
           <div className="flex items-center gap-4 mb-8 mt-4 shrink-0">
             <img src="/login-logo.png" alt="Ledger Planner" className={`w-12 h-12 rounded-full object-cover border-[2px] transition-colors ${isDarkMode ? "border-slate-700" : "border-slate-100"}`} />
             <div>
               <h1 className={`font-black tracking-tighter text-lg leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>Ledger Planner</h1>
-              {/* UPDATE #1: SIDEBAR ENGINE STATUS INDICATOR */}
               <div className="flex items-center gap-1.5 mt-0.5">
                 <div className={`w-2 h-2 rounded-full animate-pulse ${isDemoMode ? "bg-[#F97316]" : "bg-[#10B981]"}`}></div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{isDemoMode ? "Demo Mode" : "Master Engine"}</p>
@@ -1235,7 +1054,6 @@ return (
             </div>
           </div>
           
-          {/* UPDATE #2: REMOVED INNER SCROLLING OVERFLOW LOGIC WRAPPERS FOR NATURAL LAYOUT ANCHORING */}
           <div className="space-y-2">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 ml-2">Navigation</p>
             {[{ id: "home", icon: Home, label: "Dashboard" }, { id: "accounts", icon: Wallet, label: "Accounts" }, { id: "bills", icon: CalendarIcon, label: "Bills & Plans" }, { id: "activity", icon: CreditCard, label: "Activity" }, { id: "todo", icon: CheckSquare, label: "To-Do List" }].map((tab) => (
@@ -1245,7 +1063,6 @@ return (
             ))}
           </div>
           
-          {/* UPDATE #2: SIDEBAR ACTION FOOTER PURIFIED (SETTINGS AND LOGOUT REMOVED, QUICK ADD INSULATED) */}
           <div className="mt-auto pt-4 shrink-0">
             <button onClick={() => setIsQabOpen(true)} className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-white bg-[#1877F2] font-black uppercase tracking-widest text-xs transition-transform active:scale-95 hover:-translate-y-1`}><Plus size={18} /> Quick Add</button>
           </div>
@@ -1260,7 +1077,8 @@ return (
             {activeTab === "activity" && <Activity userName={userName} transactions={transactions} activitySearch={activitySearch} setActivitySearch={setActivitySearch} activityFilter={activityFilter} setActivityFilter={setActivityFilter} isDarkMode={isDarkMode} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} />}
             {activeTab === "todo" && <Todo userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} newTodoType={newTodoType} setNewTodoType={setNewTodoType} isDarkMode={isDarkMode} handleAddTodo={async (e) => { e.preventDefault(); if(!newTodoText.trim()) return; if (isDemoMode) { setTodos([{ id: `todo_demo_${Date.now()}`, text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false }, ...todos]); } else { await addDoc(collection(db, "users", user.uid, "todos"), { text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() }); } triggerVictory(); setNewTodoText(""); setNewTodoPriority(3); }} toggleTodoStatus={async (id) => { triggerHaptic(50); const todo = todos.find(t => t.id === id); if (isDemoMode) { setTodos(todos.map(t => t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)); } else { await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); } }} setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} clearCompletedTodos={clearCompletedTodos} openGlobalAction={openGlobalAction} />}
           </div>
-{/* MOBILE QUICK ACTION BUTTON */}
+
+          {/* MOBILE QUICK ACTION BUTTON */}
           <div className={`fixed lg:hidden ${isDemoMode ? "bottom-[200px]" : "bottom-28"} right-6 z-50`}>
             <button onClick={() => { triggerHaptic(20); setIsQabOpen(true); }} className={`w-14 h-14 rounded-full flex items-center justify-center text-white bg-[#1877F2] shadow-[0_12px_24px_rgba(24,119,242,0.4)] border-4 ${isDarkMode ? "border-[#0F172A]" : "border-white"}`}><Plus size={28} /></button>
           </div>
@@ -1333,7 +1151,7 @@ return (
           </div>
         )}
 
-        {/* COMMAND CENTER NOTIFICATIONS POPUP */}
+        {/* COMMAND CENTER POPUP */}
         {isNotificationsOpen && (() => {
           const hasOverdueOrDueNow = dynamicBills.some(b => !b.isPaid && (b.isOverdue || b.payday === "Due Now"));
           const hours = new Date().getHours();
@@ -1553,7 +1371,7 @@ return (
                 <div className="relative">
                   <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Goal Amount</label>
                   <div className="relative w-full flex items-center">
-                    <span className={`absolute left-5 top-[22px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
+                    <span className={`absolute left-5 top-[22px] lg:top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
                     <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={newGoalAmount} onChange={(e) => setNewGoalAmount(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(newGoalAmount)) && newGoalAmount !== "") setNewGoalAmount(parseFloat(newGoalAmount).toFixed(2)) }} className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl border transition-colors focus:border-[#F97316] outline-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                   </div>
                 </div>
@@ -1571,7 +1389,7 @@ return (
           </div>
         )}
 
-        {/* === UPDATE #5: TRANSFER DRAWER REFACTOR (PREMIUM CALCULATOR NUMPAD DESIGN) === */}
+        {/* INTERNAL TRANSFER DRAWER WITH DROPDOWN TRAP REMOVALS */}
         {isTransferOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsTransferOpen(false)}></div>
@@ -1589,7 +1407,12 @@ return (
                     <span className="text-xl leading-none mb-1">{accounts.find(a => a.id === transferFrom)?.icon || "🏦"}</span>
                     <span className={`text-xs font-black truncate max-w-full leading-tight uppercase tracking-wider ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>{accounts.find(a => a.id === transferFrom)?.name || "Select Account"}</span>
                     <span className="text-[10px] font-extrabold text-[#10B981] mt-0.5">${(accounts.find(a => a.id === transferFrom)?.balance || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
-                    <select value={transferFrom} onChange={(e) => setTransferFrom(e.target.value)} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-20">{accounts.map(a => (<option key={a.id} value={a.id}>{a.name}</option>))}</select>
+                    
+                    {/* === PATH A: INJECTED STATE ALIGNMENT ROW === */}
+                    <select value={transferFrom} onChange={(e) => setTransferFrom(e.target.value)} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-20">
+                      <option value="">Select Account...</option>
+                      {accounts.map(a => (<option key={a.id} value={a.id}>{a.name}</option>))}
+                    </select>
                   </div>
                   <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full border flex items-center justify-center z-10 shadow-md transform bg-white text-slate-500 border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400">
                     <ArrowRightLeft size={14} className="animate-[spin_4s_linear_infinite]" />
@@ -1599,7 +1422,12 @@ return (
                     <span className="text-xl leading-none mb-1">{accounts.find(a => a.id === transferTo)?.icon || "🏦"}</span>
                     <span className={`text-xs font-black truncate max-w-full leading-tight uppercase tracking-wider ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>{accounts.find(a => a.id === transferTo)?.name || "Select Account"}</span>
                     <span className="text-[10px] font-extrabold text-[#10B981] mt-0.5">${(accounts.find(a => a.id === transferTo)?.balance || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
-                    <select value={transferTo} onChange={(e) => setTransferTo(e.target.value)} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-20">{accounts.map(a => (<option key={a.id} value={a.id}>{a.name}</option>))}</select>
+                    
+                    {/* === PATH A: INJECTED STATE ALIGNMENT ROW === */}
+                    <select value={transferTo} onChange={(e) => setTransferTo(e.target.value)} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-20">
+                      <option value="">Select Account...</option>
+                      {accounts.map(a => (<option key={a.id} value={a.id}>{a.name}</option>))}
+                    </select>
                   </div>
                 </div>
 
@@ -1625,7 +1453,7 @@ return (
           </div>
         )}
 
-        {/* === UPDATE #3: GOAL CASH OUT DRAWER STATE (HARD-CAPPED & VISUAL FILTERED) === */}
+        {/* GOAL CASH OUT DRAWER */}
         {isCashOutOpen && cashOutGoal && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => { setIsCashOutOpen(false); setCashOutGoal(null); }}></div>
@@ -1639,7 +1467,7 @@ return (
               </div>
 
               <div className="p-6 flex flex-col flex-1">
-                {/* STEP 1: DESTINATION SELECTION */}
+                {/* DESTINATION SELECTION */}
                 <div className="relative mb-4">
                   <label className={`absolute left-4 top-2 text-[9px] font-black uppercase tracking-widest z-10 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Liquid Destination Account</label>
                   <select value={cashOutToAccount} onChange={(e) => setCashOutToAccount(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border font-bold text-sm appearance-none transition-colors outline-none focus:border-[#1877F2] ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900 shadow-sm"}`}>
@@ -1650,7 +1478,7 @@ return (
                   </select>
                 </div>
 
-                {/* STEP 2: HARD-CAPPED INPUT DISPLAY */}
+                {/* HARD-CAPPED INPUT DISPLAY */}
                 <div className="text-center relative flex justify-center items-center mb-4 min-h-[64px] border border-dashed rounded-2xl dark:border-slate-800 border-slate-200/80 px-4 bg-slate-50/20 dark:bg-slate-900/10">
                   <span className="text-4xl font-black tracking-tighter text-[#10B981]">${cashOutAmount}</span>
                   <div className="absolute right-4 flex items-center gap-2">
@@ -1659,21 +1487,21 @@ return (
                   </div>
                 </div>
 
-                {/* NUMPAD BUTTON STRUCTURE FOR BALANCED ACCURACY */}
+                {/* NUMPAD */}
                 <div className="grid grid-cols-3 gap-2">
                   {["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0"].map((num) => (
                     <button key={num} onClick={() => handleCashOutNumpad(num)} className={`h-11 rounded-xl text-lg font-bold flex items-center justify-center transition-all border active:scale-95 ${isDarkMode ? "bg-slate-800/40 border-slate-700/50 text-slate-200 hover:bg-slate-700" : "bg-slate-100 border-slate-200/60 text-slate-800 hover:bg-slate-200"}`}>{num}</button>
                   ))}
                 </div>
 
-                {/* RUNWAY ACCOUNT ROUTER PROCESS TRIGGER */}
+                {/* SUBMIT ENGINE */}
                 <button onClick={handleCashOutGoalSubmit} disabled={parseFloat(cashOutAmount) <= 0 || parseFloat(cashOutAmount) > cashOutGoal.balance || !cashOutToAccount} className={`w-full mt-4 h-14 shrink-0 rounded-2xl font-black uppercase tracking-widest text-xs text-white shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 ${parseFloat(cashOutAmount) <= 0 || parseFloat(cashOutAmount) > cashOutGoal.balance || !cashOutToAccount ? "bg-slate-300 opacity-40 shadow-none cursor-not-allowed" : "bg-[#10B981] shadow-[0_8px_20px_rgba(16,185,129,0.35)]"}`}>Disburse Funds <CheckCircle2 size={16} /></button>
               </div>
             </div>
           </div>
         )}
 
-        {/* ACCOUNT & EDIT PANEL CONTROL SYSTEMS */}
+        {/* ACCOUNT EDIT MODALS */}
         {selectedAccount && !isAddAccountOpen && !isTransferOpen && !isAddGoalOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedAccount(null)}></div>
@@ -1790,7 +1618,7 @@ return (
           );
         })()}
 
-        {/* LEDGER ENTRY ANALYSIS OVERLAYS */}
+        {/* LEDGER DRAWER EDIT DETAILS OVERLAYS */}
         {selectedEntry && !selectedAccount && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={closeEntryDrawer}></div>
@@ -1888,11 +1716,11 @@ return (
                         </div>
                       </div>
                       <div className="relative">
-                         <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Category</label>
-                         <select value={editEntryData.category || ""} onChange={(e) => setEditEntryData({...editEntryData, category: e.target.value})} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
-                            <option value="" disabled>Select Category</option>
-                            {categoriesToRender.map(group => ( <optgroup key={group.group} label={group.group} className={isDarkMode ? "bg-[#1E293B] text-white" : "bg-white text-slate-900"}> {group.items.map(item => <option key={item} value={item}>{item}</option>)} </optgroup> ))}
-                         </select>
+                          <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Category</label>
+                          <select value={editEntryData.category || ""} onChange={(e) => setEditEntryData({...editEntryData, category: e.target.value})} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
+                             <option value="" disabled>Select Category</option>
+                             {categoriesToRender.map(group => ( <optgroup key={group.group} label={group.group} className={isDarkMode ? "bg-[#1E293B] text-white" : "bg-white text-slate-900"}> {group.items.map(item => <option key={item} value={item}>{item}</option>)} </optgroup> ))}
+                          </select>
                       </div>
                       {selectedEntry.fullDate !== undefined && (
                         <>
@@ -2030,7 +1858,7 @@ return (
                          <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Amount</label>
                          <div className="relative w-full flex items-center">
                            <span className={`absolute left-5 top-[22px] lg:top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
-                           <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={inputValue} onChange={(e) => setInputValue(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(inputValue)) && inputValue !== "") setInputValue(parseFloat(inputValue).toFixed(2)) }} className={`w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 pl-9 pr-5 rounded-2xl border  font-bold text-base transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                           <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={inputValue} onChange={(e) => setInputValue(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(inputValue)) && inputValue !== "") setInputValue(parseFloat(inputValue).toFixed(2)) }} className={`w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 pl-9 pr-5 rounded-2xl border   font-bold text-base transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                          </div>
                       </div>
                       <div className="relative cursor-pointer" onClick={() => setIsIconSelectorOpen(true)}>
@@ -2073,13 +1901,13 @@ return (
                                <div className="flex items-center justify-between">
                                   <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Recurring Bill</span>
                                   <button onClick={() => { triggerHaptic(20); setEntryIsRecurring(!entryIsRecurring); }} className={`w-12 h-6 rounded-full transition-colors relative ${entryIsRecurring ? qabActiveBg : "bg-slate-300 dark:bg-slate-700"}`}>
-                                     <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${entryIsRecurring ? "translate-x-7" : "translate-x-1"}`}></div>
+                                      <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${entryIsRecurring ? "translate-x-7" : "translate-x-1"}`}></div>
                                   </button>
                                </div>
                                <div className="flex items-center justify-between">
                                   <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Installment Plan</span>
                                   <button onClick={() => { triggerHaptic(20); setEntryIsInstallment(!entryIsInstallment); }} className={`w-12 h-6 rounded-full transition-colors relative ${entryIsInstallment ? qabActiveBg : "bg-slate-300 dark:bg-slate-700"}`}>
-                                     <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${entryIsInstallment ? "translate-x-7" : "translate-x-1"}`}></div>
+                                      <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${entryIsInstallment ? "translate-x-7" : "translate-x-1"}`}></div>
                                   </button>
                                </div>
                                {entryIsInstallment && (
@@ -2117,7 +1945,7 @@ return (
                   )}
                 </div>
 
-                {/* MODAL NESTED SELECTION FILTERS */}
+                {/* CATEGORY & ICON SELECTION FILTERS */}
                 {isCategorySelectorOpen && (
                    <div className={`absolute inset-0 z-[140] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
                       <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
@@ -2137,7 +1965,7 @@ return (
                       </div>
                    </div>
                 )}
-                {isIconSelectorOpen && !isEditingEntry && (
+                {isIconSelectorOpen && !isPhotoSelectorOpen && !isEditingEntry && (
                    <div className={`absolute inset-0 z-[150] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
                       <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
                          <h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Icon</h3><button onClick={() => setIsIconSelectorOpen(false)} className={closeButtonClass}><X size={18}/></button>
@@ -2155,7 +1983,7 @@ return (
           </div>
         )}
 
-        {/* CONFIRMED DUAL-CANNY CELEBRATION DISPATCH MATRIX */}
+        {/* GLOBAL ACTION POPUPS */}
         {globalActionConfig.isOpen && (
            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
              <div className={`w-full max-w-sm p-6 rounded-3xl shadow-2xl ${isDarkMode ? "bg-[#1E293B] border border-slate-700" : "bg-white"}`}>
@@ -2177,7 +2005,7 @@ return (
           </div>
         )}
         
-        {/* PREMIUM CONFETTI ENGINE */}
+        {/* CONFETTI CELEBRATION DISPATCH MATRIX */}
         {showConfetti && (
           <div className="absolute inset-0 z-[200] pointer-events-none flex items-center justify-center overflow-hidden">
             {[...Array(200)].map((_, i) => (

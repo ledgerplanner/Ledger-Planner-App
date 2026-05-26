@@ -270,8 +270,8 @@ export default function Dashboard({
                   <p className={`text-2xl font-black tracking-tighter leading-none mb-1 ${isDeficit ? "text-red-500" : "text-[#10B981]"}`}>
                     ${Math.abs(waterfallBalance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                   </p>
-                  {/* === FIX #2 & #3: "AVAILABLE THIS WEEK" LIGHT/DARK OVERRIDES === */}
-                  <span className={`text-[8px] font-black uppercase tracking-[0.15em] ${isDarkMode ? "text-black" : "text-white"} leading-none block`}>
+                  {/* === "AVAILABLE THIS WEEK" PRECISION LIGHT/DARK SHIFT === */}
+                  <span className={`text-[8px] font-black uppercase tracking-[0.15em] ${isDarkMode ? "text-white" : "text-black"} leading-none block`}>
                     {subLabelStr}
                   </span>
                 </div>
@@ -285,15 +285,15 @@ export default function Dashboard({
                   {pd === "Due Now" ? (
                     <div className="flex flex-col flex-1"></div> 
                   ) : (
-                    /* === FIX #2 & #3: "EXPECTED PAY" LIGHT/DARK OVERRIDES === */
+                    /* === "EXPECTED PAY" PRECISION LIGHT/DARK SHIFT === */
                     <div className="flex flex-col flex-1">
-                      <span className={`text-[7px] font-black uppercase tracking-widest mb-0.5 ${isDarkMode ? "text-black" : "text-white"}`}>Expected Pay</span>
+                      <span className={`text-[7px] font-black uppercase tracking-widest mb-0.5 ${isDarkMode ? "text-white" : "text-black"}`}>Expected Pay</span>
                       <span className={`text-[10px] font-black ${isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>+${totalExpectedIncome.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
                     </div>
                   )}
                   <div className="flex flex-col items-end shrink-0">
-                    {/* === FIX #2 & #3: "X BILLS OUT" LIGHT/DARK OVERRIDES === */}
-                    <span className={`text-[7px] font-black uppercase tracking-widest mb-0.5 ${isDarkMode ? "text-black" : "text-white"}`}>
+                    {/* === "X BILLS OUT" PRECISION LIGHT/DARK SHIFT === */}
+                    <span className={`text-[7px] font-black uppercase tracking-widest mb-0.5 ${isDarkMode ? "text-white" : "text-black"}`}>
                       {unpaidCount === 1 ? `${unpaidCount} Bill Out` : `${unpaidCount} Bills Out`}
                     </span>
                     <span className="text-[10px] font-black text-[#1877F2]">-${unpaidTotal.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>

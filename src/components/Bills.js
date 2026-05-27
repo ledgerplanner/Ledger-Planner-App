@@ -64,14 +64,14 @@ export default function Bills({
       {/* 👑 MASTER FLOATING PROGRESS SUMMARY CARD */}
       <div className={`relative p-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-white via-slate-50/90 to-slate-100/60 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.3),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
         
-        {/* INNER HERO CARD TITLE */}
-        <div className="mb-4">
-          <h4 className={`text-xs font-black uppercase tracking-tight ${isDarkMode ? "text-white" : "text-slate-700"}`}>
+        {/* LAYOUT HEADER ARCHITECTURE: POSITIONED DEAD CENTER AT THE ABSOLUTE TOP */}
+        <div className="w-full text-center mb-4">
+          <h4 className={`text-xs font-black uppercase tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>
             Master Bills List
           </h4>
         </div>
 
-        {/* METRICS CONTENT CONTAINER */}
+        {/* METRICS ROW CONTENT CONTAINER */}
         <div className="flex items-center justify-between w-full">
           {/* PROGRESS RING */}
           <div className="relative w-28 h-28 flex-shrink-0">
@@ -151,7 +151,7 @@ export default function Bills({
                       <div className="flex justify-between items-start w-full">
                         <div className="flex flex-col">
                           <div className="flex items-center gap-2 mb-1">
-                            <h3 className={`text-sm font-black uppercase tracking-widest ${isDueNow ? "text-red-500" : "isDarkMode" ? "text-white" : "text-slate-900"}`}>{payday}</h3>
+                            <h3 className={`text-sm font-black uppercase tracking-widest ${isDueNow ? "text-red-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>{payday}</h3>
                             <div className="text-slate-500">{isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}</div>
                           </div>
                           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">

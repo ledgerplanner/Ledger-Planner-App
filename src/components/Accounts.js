@@ -150,8 +150,8 @@ export default function Accounts({
           </span>
         </div>
  
-        {/* 2️⃣ POINT 2 ANIMATION: TEXT SCROLLS UP (Net worth digits shift upward smoothly) */}
-        <div className={`flex justify-between items-end mb-4 transform transition-all duration-700 delay-200 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+        {/* 2️⃣ POINT 2 ANIMATION: TEXT SCROLLS UP */}
+        <div className={`flex justify-between items-end mb-4 transform transition-all duration-700 delay-200 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           <div>
             <p className="text-[10px] font-black uppercase tracking-widest mb-1 text-slate-400">Liquid Net Worth • <span className={`${isNetWorthNegative ? "text-red-500" : "text-[#1877F2]"}`}>{activeDataPoint?.label} {activeDataPoint?.year}</span></p>
             <p className={`text-4xl font-black tracking-tighter transition-colors duration-300 ${isNetWorthNegative ? "text-red-500" : activeDataPoint?.val > 0 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
@@ -160,8 +160,8 @@ export default function Accounts({
           </div>
         </div>
  
-        {/* 3️⃣ POINT 3 ANIMATION: TEXT SCROLLS FROM SIDE (Timeframe filter bubbles glide in horizontally) */}
-        <div className={`flex gap-2 transform transition-all duration-700 delay-400 cubic-bezier(0.16, 1, 0.3, 1) ${showContent ? "opacity-100 translate-x-0" : "opacity-0 translate-x-12"}`}>
+        {/* 3️⃣ POINT 3 ANIMATION: TEXT SCROLLS FROM SIDE */}
+        <div className={`flex gap-2 transform transition-all duration-700 delay-400 cubic-bezier(0.16, 1, 0.3, 1) ${showContent ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8"}`}>
           {["1M", "3M", "6M", "YTD"].map((tf) => (
             <button
               key={tf}
@@ -174,7 +174,7 @@ export default function Accounts({
         </div>
       </div>
  
-      {/* 1️⃣ POINT 1 ANIMATION: THE GRAPHIC ANIMATES (100% Unaltered signature spline and bar engine) */}
+      {/* 1️⃣ POINT 1 ANIMATION: THE GRAPHIC ANIMATES (Custom stretched 4.5s draw profile execution) */}
       <div className={`relative flex items-end justify-between h-28 gap-2 border-b border-dashed border-slate-200 dark:border-slate-700 pb-2 mt-4 transform transition-all duration-1000 ease-out origin-bottom ${showChart ? "opacity-100 scale-y-100" : "opacity-0 scale-y-95"}`}>
         <svg className="absolute inset-0 w-full h-full pointer-events-none drop-shadow-md z-20" preserveAspectRatio="none" viewBox="0 0 100 100">
           <style>{`
@@ -185,7 +185,7 @@ export default function Accounts({
             .animate-trend-line {
               stroke-dasharray: 1000;
               stroke-dashoffset: 1000;
-              animation: drawTrendLine 2.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+              animation: drawTrendLine 4.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
             }
           `}</style>
           {showChart && (

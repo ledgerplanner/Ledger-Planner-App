@@ -234,7 +234,6 @@ export default function Accounts({
   );
  
   return (
-    {/* 🎨 MASTER LAYOUT CHASSIS */}
     <div className={`pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
        
       {/* PAGE TITLE COLOR PASS: FORCED PURE CRISP WHITE IN DARK MODE / CRISP BLACK IN LIGHT MODE */}

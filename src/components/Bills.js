@@ -109,7 +109,7 @@ export default function Bills({
  
         {/* METRICS ROW CONTENT CONTAINER */}
         <div className="flex items-center justify-between w-full">
-          {/* 1️⃣ POINT 1 ANIMATION: THE GRAPHIC ANIMATES (Unaltered, radial progress stroke animation) */}
+          {/* 1️⃣ POINT 1 ANIMATION: THE GRAPHIC ANIMATES */}
           <div className="relative w-28 h-28 flex-shrink-0">
             <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
               <defs>
@@ -122,15 +122,20 @@ export default function Bills({
               <circle cx="50" cy="50" r="40" fill="transparent" stroke="url(#billGlow)" strokeWidth="12" strokeLinecap="round" strokeDasharray={251.2} strokeDashoffset={isMounted ? (251.2 - (251.2 * progressPercentage) / 100) : 251.2} className="transition-all duration-1000 ease-out" />
             </svg>
             <div className={`absolute inset-0 flex flex-col items-center justify-center transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
-              <span className={`text-xl font-black ${isDarkMode ? "text-white" : "text-slate-900"}`}>{Math.round(progressPercentage)}%</span>
+              <span className={`textxl font-black ${isDarkMode ? "text-white" : "text-slate-900"}`}>{Math.round(progressPercentage)}%</span>
               <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">Paid</span>
             </div>
           </div>
    
-          {/* 2️⃣ POINT 2 ANIMATION: TEXT SCROLLS UP (Original wrapper styles completely preserved, typography drifts up inside) */}
-          <div className={`flex-1 pl-4 text-right transform transition-all duration-700 delay-200 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-            <p className="text-[10px] font-black uppercase tracking-widest mb-1 text-slate-400">Total Bills Paid</p>
-            <p className="font-black tracking-tighter mb-0 leading-none sm:leading-tight">
+          {/* DATA METRICS CONTAINER CONTAINER */}
+          <div className="flex-1 pl-4 text-right overflow-hidden">
+            {/* 2️⃣ POINT 2 ANIMATION: "Total Bills Paid" TEXT SCROLLS UP */}
+            <p className={`text-[10px] font-black uppercase tracking-widest mb-1 text-slate-400 transform transition-all duration-700 delay-200 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+              Total Bills Paid
+            </p>
+            
+            {/* 3️⃣ POINT 3 ANIMATION: THE DOLLAR AMOUNTS SCROLL HORIZONTALLY */}
+            <p className={`font-black tracking-tighter mb-0 leading-none sm:leading-tight transform transition-all duration-700 delay-400 cubic-bezier(0.16, 1, 0.3, 1) ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-12"}`}>
               <span className={`text-2xl min-[380px]:text-3xl sm:text-4xl block sm:inline ${activeMetrics.totalPaid === 0 ? "text-red-500" : "text-[#10B981]"}`}>
                 ${activeMetrics.totalPaid.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
@@ -168,8 +173,8 @@ export default function Bills({
         {renderHeroShell(`${userName}'s Bills`, graphicContent)}
       </div>
       
-      {/* 3️⃣ POINT 3 ANIMATION: TEXT SCROLLS FROM SIDE (12-month scrollbar glides in horizontally with spring timing) */}
-      <div className={`w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-6 relative z-10 transform transition-all duration-700 delay-400 cubic-bezier(0.16, 1, 0.3, 1) ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-12"}`}>
+      {/* HORIZONTAL CALENDAR SCROLL BAR (Completely untouched layout framework) */}
+      <div className="w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-6 relative z-10">
         <div className="flex gap-4 pr-6 pb-2 min-h-[170px]">
           {monthsData.map((m) => {
             const { totalDue, totalPaid } = getMonthMetrics(m.idx);

@@ -149,16 +149,23 @@ export default function Activity({
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
       {/* 👑 MASTER FLOATING CASH FLOW SUMMARY CARD */}
-      <div className={`relative p-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-white via-slate-50/90 to-slate-100/60 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.3),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
-        
-        {/* TEXT LINE ANIMATION (BOTTOM TO TOP DRIFT LIKE DASHBOARD) */}
+      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-white via-slate-50/90 to-slate-100/60 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.3),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
+         
+        {/* INNER HERO CARD TITLE: PERFECT COMPLIANCE BLUEPRINT POSITIONING */}
+        <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
+          <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-black"}`}>
+            Net Cash Flow
+          </span>
+        </div>
+ 
+        {/* TEXT LINE ANIMATION */}
         <div className={`text-center w-full transform transition-all duration-700 delay-100 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Net Cash Flow</p>
           <p className={`text-5xl font-black tracking-tighter transition-all duration-300 mb-6 ${netCashFlow >= 0 ? "text-[#10B981]" : "text-red-500"}`}>
             {netCashFlow >= 0 ? "+" : "-"}${Math.abs(netCashFlow).toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </p>
         </div>
-
+ 
         {/* HORIZONTAL GRAPHIC FLUID FILL ANIMATION */}
         <div className={`w-full transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           <div className={`w-full h-10 rounded-full flex overflow-hidden shadow-inner ${isDarkMode ? "bg-[#1E293B]" : "bg-slate-100"}`}>
@@ -182,7 +189,19 @@ export default function Activity({
  
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
-      {renderHeroShell(`${userName}'s Activities`, graphicContent)}
+       
+      {/* PAGE TITLE COLOR PASS: FORCED PURE CRISP WHITE IN DARK MODE / CRISP BLACK IN LIGHT MODE */}
+      <div className="relative z-10 Activity-Master-Header">
+        <style>{`
+          .Activity-Master-Header h1, 
+          .Activity-Master-Header h2,
+          .Activity-Master-Header h3 { 
+            color: ${isDarkMode ? "#FFFFFF" : "#000000"} !important; 
+            font-weight: 900 !important;
+          }
+        `}</style>
+        {renderHeroShell(`${userName}'s Activities`, graphicContent)}
+      </div>
  
       <main className="px-6 space-y-6 mt-4">
  
@@ -234,7 +253,7 @@ export default function Activity({
              className={`flex-1 flex flex-col items-center justify-center py-3 rounded-2xl transition-all ${
                activityFilter === "Income" 
                  ? "bg-[#10B981] text-white shadow-[0_8px_20px_rgba(16,185,129,0.3)] transform -translate-y-0.5" 
-                 : isDarkMode ? "bg-[#1E293B] text-slate-400 border border-slate-800" : "bg-white text-slate-400 border border-slate-100"
+                 : isDarkMode ? "bg-[#1E293B] text-slate-400 border border-slate-888" : "bg-white text-slate-400 border border-slate-100"
              }`}
            >
              <span className="font-black text-xs uppercase tracking-widest">Income</span>
@@ -247,7 +266,7 @@ export default function Activity({
              className={`flex-1 flex flex-col items-center justify-center py-3 rounded-2xl transition-all ${
                activityFilter === "Expense" 
                  ? "bg-[#F97316] text-white shadow-[0_8px_20px_rgba(249,115,22,0.3)] transform -translate-y-0.5" 
-                 : isDarkMode ? "bg-[#1E293B] text-slate-400 border border-slate-800" : "bg-white text-slate-400 border border-slate-100"
+                 : isDarkMode ? "bg-[#1E293B] text-slate-400 border border-slate-888" : "bg-white text-slate-400 border border-slate-100"
              }`}
            >
              <span className="font-black text-xs uppercase tracking-widest">Expenses</span>
@@ -263,9 +282,9 @@ export default function Activity({
           <div className={`flex-1 flex items-center px-4 rounded-2xl border shadow-sm transition-colors ${isDarkMode ? "bg-[#1E293B] border-slate-800 text-white focus-within:border-slate-600" : "bg-white border-slate-100 text-slate-900 focus-within:border-[#1877F2]"}`}>
             <Search size={18} className="text-slate-400 shrink-0" />
             <input 
-             type="text" placeholder="Search transactions..."
-             value={activitySearch} onChange={(e) => setActivitySearch(e.target.value)}
-             className="w-full py-4 px-3 bg-transparent text-sm font-bold outline-none placeholder-slate-400"
+              type="text" placeholder="Search transactions..."
+              value={activitySearch} onChange={(e) => setActivitySearch(e.target.value)}
+              className="w-full py-4 px-3 bg-transparent text-sm font-bold outline-none placeholder-slate-400"
             />
           </div>
         </div>
@@ -283,7 +302,6 @@ export default function Activity({
                 return (
                  <div key={group.label} className="space-y-2">
                     
-                   {/* 2.0 STRIKE: Z-FOLD ULTRA-NARROW RESPONSIVE HEADER */}
                    <div className="flex flex-col px-2 py-2 cursor-pointer transition-colors" onClick={() => toggleMonth(group.label)}>
                      <div className="flex justify-between items-start min-[360px]:items-end w-full gap-2">
                         <div className="flex items-center gap-2 mb-1 shrink-0">
@@ -292,11 +310,11 @@ export default function Activity({
                         </div>
                         <div className="flex flex-col min-[360px]:flex-row min-[360px]:items-center items-end gap-0.5 min-[360px]:gap-2 shrink-0">
                            <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-500">
-                              +${group.inflow.toLocaleString("en-US", { minimumFractionDigits: 2 })} In
+                             +${group.inflow.toLocaleString("en-US", { minimumFractionDigits: 2 })} In
                            </span>
                            <span className={`hidden min-[360px]:inline text-[10px] ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>|</span>
                            <span className="text-[10px] font-bold uppercase tracking-widest text-[#F97316]">
-                              -${group.outflow.toLocaleString("en-US", { minimumFractionDigits: 2 })} Out
+                             -${group.outflow.toLocaleString("en-US", { minimumFractionDigits: 2 })} Out
                            </span>
                         </div>
                      </div>
@@ -319,7 +337,7 @@ export default function Activity({
                                 </div>
                                 <button 
                                   onClick={(e) => { e.stopPropagation(); setSelectedEntry(tx); }}
-                                 className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
+                                  className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
                                 >
                                   <Edit2 size={16} strokeWidth={2.5} />
                                 </button>

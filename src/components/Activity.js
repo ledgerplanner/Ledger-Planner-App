@@ -160,7 +160,6 @@ export default function Activity({
  
         {/* TEXT LINE ANIMATION */}
         <div className={`text-center w-full transform transition-all duration-700 delay-100 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Net Cash Flow</p>
           <p className={`text-5xl font-black tracking-tighter transition-all duration-300 mb-6 ${netCashFlow >= 0 ? "text-[#10B981]" : "text-red-500"}`}>
             {netCashFlow >= 0 ? "+" : "-"}${Math.abs(netCashFlow).toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </p>
@@ -253,7 +252,7 @@ export default function Activity({
              className={`flex-1 flex flex-col items-center justify-center py-3 rounded-2xl transition-all ${
                activityFilter === "Income" 
                  ? "bg-[#10B981] text-white shadow-[0_8px_20px_rgba(16,185,129,0.3)] transform -translate-y-0.5" 
-                 : isDarkMode ? "bg-[#1E293B] text-slate-400 border border-slate-888" : "bg-white text-slate-400 border border-slate-100"
+                 : isDarkMode ? "bg-[#1E293B] text-slate-400 border border-slate-800" : "bg-white text-slate-400 border border-slate-100"
              }`}
            >
              <span className="font-black text-xs uppercase tracking-widest">Income</span>
@@ -266,7 +265,7 @@ export default function Activity({
              className={`flex-1 flex flex-col items-center justify-center py-3 rounded-2xl transition-all ${
                activityFilter === "Expense" 
                  ? "bg-[#F97316] text-white shadow-[0_8px_20px_rgba(249,115,22,0.3)] transform -translate-y-0.5" 
-                 : isDarkMode ? "bg-[#1E293B] text-slate-400 border border-slate-888" : "bg-white text-slate-400 border border-slate-100"
+                 : isDarkMode ? "bg-[#1E293B] text-slate-400 border border-slate-800" : "bg-white text-slate-400 border border-slate-100"
              }`}
            >
              <span className="font-black text-xs uppercase tracking-widest">Expenses</span>

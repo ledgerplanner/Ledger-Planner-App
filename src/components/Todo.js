@@ -27,14 +27,12 @@ export default function Todo({
     setIsMounted(true);
   }, []);
  
-  // === DATA SORTING & PRIORITY LOGIC ===
   const sortTasks = (tasks) => tasks.sort((a, b) => parseInt(b.priority || 1) - parseInt(a.priority || 1));
  
   const pendingActions = sortTasks(todos.filter(t => !t.isCompleted && t.type === "task"));
   const pendingShopping = sortTasks(todos.filter(t => !t.isCompleted && t.type === "shopping"));
   const completedTasks = sortTasks(todos.filter(t => t.isCompleted));
  
-  // === MOMENTUM MATH (MASSIVE RING) ===
   const totalTasks = todos.length;
   const completedCount = completedTasks.length;
   const momentumPct = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
@@ -47,7 +45,6 @@ export default function Todo({
     if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) window.navigator.vibrate(50); 
   };
  
-  // Surgical Delete Function (Upgraded to Premium Modal)
   const handleDeleteTask = () => {
     if (!auth.currentUser || !activeModalTodo) return;
     
@@ -55,14 +52,13 @@ export default function Todo({
       "Delete Task", 
       "Are you sure you want to permanently delete this task?", 
       "Delete", 
-      true, // isDanger = true (Red Button)
+      true, 
       async () => {
         try {
           await deleteDoc(doc(db, "users", auth.currentUser.uid, "todos", activeModalTodo.id));
           triggerHaptic();
           setActiveModalTodo(null);
           
-          // Failsafe to auto-close the global modal since Todo.js doesn't have direct access to setGlobalActionConfig
           setTimeout(() => {
             const cancelBtns = Array.from(document.querySelectorAll('button')).filter(btn => btn.textContent.trim().toUpperCase() === "CANCEL");
             if (cancelBtns.length > 0) cancelBtns[0].click();
@@ -74,7 +70,6 @@ export default function Todo({
     );
   };
  
-  // 🔥 NEW: Surgical Edit Function
   const handleSaveEdit = async () => {
     if (!auth.currentUser || !activeModalTodo || !editTaskData.text.trim()) return;
     
@@ -85,9 +80,8 @@ export default function Todo({
     });
     
     triggerHaptic();
-    // Locally update the active modal so it reflects the new data immediately
     setActiveModalTodo({ ...activeModalTodo, ...editTaskData });
-    setActiveModalTodo(null); // Close the drawer after saving
+    setActiveModalTodo(null);
   };
  
   const renderStars = (priorityNum) => {
@@ -101,12 +95,18 @@ export default function Todo({
     );
   };
  
-  // === PREMIUM HERO CONTENT ===
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
       {/* 👑 MASTER FLOATING OPERATIONS SUMMARY CARD */}
-      <div className={`relative p-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-white via-slate-50/90 to-slate-100/60 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.3),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
-        
+      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-white via-slate-50/90 to-slate-100/60 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.3),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
+         
+        {/* INNER HERO CARD TITLE: RELOCATED FROM RIGHT COLUMN TO TOP BLUEPRINT CENTER */}
+        <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
+          <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-black"}`}>
+            Daily Operations
+          </span>
+        </div>
+ 
         {/* MOMENTUM PROGRESS RING */}
         <div className="relative w-28 h-28 flex-shrink-0">
           <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90 drop-shadow-xl">
@@ -125,9 +125,9 @@ export default function Todo({
           </div>
         </div>
         
-        {/* DAILY OPERATIONS DATA CONTAINER (BOTTOM TO TOP DRIFT) */}
+        {/* DAILY OPERATIONS DATA CONTAINER */}
         <div className={`flex-1 flex flex-col items-end text-right space-y-1 transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-          <p className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>DAILY OPERATIONS</p>
+          {/* OLD SECONDARY LABEL REMOVED TO PREVENT DUPLICATES */}
           <div className="flex items-baseline gap-1.5 pt-1">
             <p className="text-6xl font-black tracking-tighter leading-none transition-all duration-300 text-[#1877F2]">{completedCount}</p>
             <p className={`text-3xl font-black tracking-tighter leading-none opacity-50 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>/ {totalTasks}</p>
@@ -148,8 +148,8 @@ export default function Todo({
         }}
         className={`relative flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all active:scale-[0.98] shadow-sm border
           ${task.isCompleted 
-             ? isDarkMode ? "bg-slate-800 border-transparent" : "bg-white border-transparent" 
-             : isDarkMode ? "bg-[#1E293B] border-slate-700/50" : "bg-white border-slate-100"
+              ? isDarkMode ? "bg-slate-800 border-transparent" : "bg-white border-transparent" 
+              : isDarkMode ? "bg-[#1E293B] border-slate-700/50" : "bg-white border-slate-100"
           }
         `}
       >
@@ -193,8 +193,19 @@ export default function Todo({
  
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
-      
-      {renderHeroShell(`${userName}'s Tasks`, graphicContent)}
+       
+      {/* PAGE TITLE COLOR PASS: FORCED PURE CRISP WHITE IN DARK MODE / CRISP BLACK IN LIGHT MODE */}
+      <div className="relative z-10 Todo-Master-Header">
+        <style>{`
+          .Todo-Master-Header h1, 
+          .Todo-Master-Header h2,
+          .Todo-Master-Header h3 { 
+            color: ${isDarkMode ? "#FFFFFF" : "#000000"} !important; 
+            font-weight: 900 !important;
+          }
+        `}</style>
+        {renderHeroShell(`${userName}'s Tasks`, graphicContent)}
+      </div>
  
       <main className="px-6 space-y-6 mt-4">
         
@@ -218,7 +229,7 @@ export default function Todo({
             >
               <Plus size={20} strokeWidth={3} />
            </button>
-         </form>
+          </form>
           
           <div className="flex items-center justify-between mt-4 px-2">
              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Priority Level</span>
@@ -253,8 +264,8 @@ export default function Todo({
            </div>
             <div className="space-y-2">
               {pendingActions.map(renderTaskCard)}
-           </div>
-         </section>
+            </div>
+          </section>
         )}
  
         {pendingShopping.length > 0 && (
@@ -265,8 +276,8 @@ export default function Todo({
            </div>
             <div className="space-y-2">
               {pendingShopping.map(renderTaskCard)}
-           </div>
-         </section>
+            </div>
+          </section>
         )}
  
         {completedTasks.length > 0 && (
@@ -281,18 +292,15 @@ export default function Todo({
                className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all active:scale-95 ${isDarkMode ? "bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30" : "bg-orange-100 text-orange-600 border-orange-200 hover:bg-orange-200"}`}
               >
                 Delete All
-             </button>
+              </button>
            </div>
             <div className="space-y-2">
               {completedTasks.map(renderTaskCard)}
-           </div>
-         </section>
+            </div>
+          </section>
         )}
       </main>
  
-      {/* ========================================================= */}
-      {/* 🔥 REBUILT: UNIFIED TASK COMMAND DRAWER 🔥 */}
-      {/* ========================================================= */}
       {activeModalTodo && (
         <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setActiveModalTodo(null)}></div>

@@ -96,7 +96,7 @@ export default function Bills({
   const baseMonthlyIncome = Object.values(paydayConfig || {}).reduce((sum, slot) => sum + (Number(slot?.income) || 0), 0);
  
   const graphicContent = (
-    <div className="flex flex-col relative z-10 mb-2 w-full overflow-hidden">
+    <div className="flex flex-col relative z-10 mb-2 w-full">
       {/* 👑 MASTER FLOATING PROGRESS SUMMARY CARD */}
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-white via-slate-50/90 to-slate-100/60 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.3),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
           
@@ -109,7 +109,7 @@ export default function Bills({
  
         {/* METRICS ROW CONTENT CONTAINER */}
         <div className="flex items-center justify-between w-full">
-          {/* 1️⃣ POINT 1 ANIMATION: THE GRAPHIC ANIMATES (Radial progress stroke fills gracefully) */}
+          {/* 1️⃣ POINT 1 ANIMATION: THE GRAPHIC ANIMATES (Unaltered, radial progress stroke animation) */}
           <div className="relative w-28 h-28 flex-shrink-0">
             <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
               <defs>
@@ -127,8 +127,8 @@ export default function Bills({
             </div>
           </div>
    
-          {/* 2️⃣ POINT 2 ANIMATION: TEXT SCROLLS UP (Total settled / due balances lift upward into frame) */}
-          <div className={`flex-1 pl-4 text-right transform transition-all duration-700 delay-200 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+          {/* 2️⃣ POINT 2 ANIMATION: TEXT SCROLLS UP (Original wrapper styles completely preserved, typography drifts up inside) */}
+          <div className={`flex-1 pl-4 text-right transform transition-all duration-700 delay-200 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
             <p className="text-[10px] font-black uppercase tracking-widest mb-1 text-slate-400">Total Bills Paid</p>
             <p className="font-black tracking-tighter mb-0 leading-none sm:leading-tight">
               <span className={`text-2xl min-[380px]:text-3xl sm:text-4xl block sm:inline ${activeMetrics.totalPaid === 0 ? "text-red-500" : "text-[#10B981]"}`}>
@@ -168,7 +168,7 @@ export default function Bills({
         {renderHeroShell(`${userName}'s Bills`, graphicContent)}
       </div>
       
-      {/* 3️⃣ POINT 3 ANIMATION: TEXT SCROLLS FROM SIDE (12-month timeline ribbon glides horizontally from right edge) */}
+      {/* 3️⃣ POINT 3 ANIMATION: TEXT SCROLLS FROM SIDE (12-month scrollbar glides in horizontally with spring timing) */}
       <div className={`w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-6 relative z-10 transform transition-all duration-700 delay-400 cubic-bezier(0.16, 1, 0.3, 1) ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-12"}`}>
         <div className="flex gap-4 pr-6 pb-2 min-h-[170px]">
           {monthsData.map((m) => {

@@ -152,54 +152,71 @@ export default function Dashboard({
   }
 
   const graphicContent = (
-    <div className="flex flex-col relative z-10 mb-6 w-full">
-      {/* 👑 PREMIUM GRADIENT HERO */}
-      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-100 via-white via-25% to-white border-white/80 border-t-white shadow-[inset_0_2px_4px_rgba(255,255,255,0.8),0_12px_24px_rgba(24,119,242,0.3),0_4px_12px_rgba(0,0,0,0.05)]"}`}>
-        
+    <div className="flex flex-col relative z-10 mb-2 w-full">
+      {/* 👑 MASTER FLOATING HEALTH SUMMARY CARD */}
+      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-white via-slate-50/90 to-slate-100/60 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.3),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
+         
+        {/* INNER HERO CARD TITLE: PERFECT COMPLIANCE BLUEPRINT POSITIONING */}
         <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
-          <span className={`text-[10px] font-black uppercase tracking-widest opacity-80 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+          <span className={`text-[10px] font-black uppercase tracking-widest opacity-80 ${isDarkMode ? "text-white" : "text-black"}`}>
             {currentMonthName}'s Monthly Snapshot
           </span>
         </div>
-        
+ 
+        {/* DEBT LOAD PROGRESS RING (Surgically Repaired Animation Keyframe System) */}
         <div className="relative w-28 h-28 flex-shrink-0">
           <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
             <style>{`
               @keyframes drawTrendLine {
-                from { stroke-dashoffset: 1000; }
-                to { stroke-dashoffset: 0; }
+                from { stroke-dashoffset: 251.2; }
               }
               .animate-trend-line {
-                stroke-dasharray: 1000;
-                stroke-dashoffset: 1000;
+                stroke-dasharray: 251.2;
                 animation: drawTrendLine 2.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
               }
             `}</style>
             <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "rgba(51, 65, 85, 0.5)" : "rgba(255, 255, 255, 0.6)"} strokeWidth="12" />
-            <circle cx="50" cy="50" r="40" fill="transparent" stroke={safeToSpend < 0 ? "#EF4444" : "#3B82F6"} strokeWidth="12" strokeLinecap="round" strokeDasharray={strokeDasharray} strokeDashoffset={isMounted ? targetDashoffset : strokeDasharray} className="transition-all duration-1000 delay-150 ease-out animate-trend-line" />
+            <circle 
+              cx="50" 
+              cy="50" 
+              r="40" 
+              fill="transparent" 
+              stroke={safeToSpend < 0 ? "#EF4444" : "#1877F2"} 
+              strokeWidth="12" 
+              strokeLinecap="round" 
+              strokeDasharray={strokeDasharray} 
+              strokeDashoffset={isMounted ? targetDashoffset : strokeDasharray} 
+              className="transition-all duration-1000 delay-150 ease-out animate-trend-line" 
+            />
           </svg>
           <div className={`absolute inset-0 flex flex-col items-center justify-center transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
             <span className={`text-[8px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Debt Load</span>
             <span className={`text-xl font-black ${safeToSpend < 0 ? "text-red-500" : "text-[#1877F2]"}`}>{Math.round(debtRatio)}%</span>
           </div>
         </div>
-        
-        {/* 🛍️ SAFE TO SPEND VALUE AREA */}
-        <div className={`flex-1 pl-4 flex flex-col items-end transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
-          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border mb-2 shadow-sm ${isDarkMode ? "bg-slate-800/80 border-slate-700 text-slate-300" : "bg-white/80 border-white text-slate-600"}`}>
+   
+        {/* DAILY METRICS DATA CONTAINER */}
+        <div className="flex-1 text-right flex flex-col justify-center items-end">
+          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border mb-2 shadow-sm ${isDarkMode ? "bg-slate-800/80 border-slate-700 text-slate-300" : "bg-white/80 border-slate-200 text-slate-600"}`}>
             <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${safeToSpend < 0 ? "bg-red-500" : "bg-emerald-500 animate-pulse"}`}></div>
-            <span className="text-[9px] font-black uppercase tracking-wider">SAFE TO SPEND</span>
+            <span className="text-[9px] font-black uppercase tracking-wider">Safe to Spend</span>
           </div>
           
           <p className={`text-2xl min-[360px]:text-3xl min-[400px]:text-4xl font-black tracking-tighter mb-3 w-full text-right break-words leading-none ${safeToSpend < 0 ? "text-red-500" : "text-[#10B981]"}`}>
             {safeToSpend < 0 ? "-" : ""}${Math.abs(safeToSpend).toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </p>
           
+          {/* 🗓️ SURGICALLY RESTORED DYNAMIC PAYDAY COUNTDOWN ROW */}
           {nextPaydayDayName && (
-            <div className={`flex flex-col items-end gap-1 w-full mt-1 transform transition-all duration-700 delay-500 ease-out ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"}`}>
-               <span className={`text-[9px] font-black uppercase tracking-widest text-right leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                  NEXT PAYDAY: {nextPaydayDayName} <span className="text-[#10B981]">(IN {daysUntilNext} {daysUntilNext === 1 ? "DAY" : "DAYS"})</span>
-               </span>
+            <div className={`mt-2 transform transition-all duration-700 delay-500 ease-out w-full text-right ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
+              <span className={`text-[9px] font-black uppercase tracking-widest block leading-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                Next Payday: {nextPaydayDayName}{" "}
+                <span className="text-[#10B981]">
+                  {daysUntilNext === 0 && "(TODAY)"}
+                  {daysUntilNext === 1 && "(IN 1 DAY)"}
+                  {daysUntilNext > 1 && `(IN ${daysUntilNext} DAYS)`}
+                </span>
+              </span>
             </div>
           )}
         </div>
@@ -228,7 +245,15 @@ export default function Dashboard({
     // 🎨 MASTER LAYOUT CHASSIS
     <div className={`pb-32 transition-colors duration-500 min-h-screen relative overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-gradient-to-b from-slate-50 via-[#F8FAFC] to-blue-50/40"}`}>
       
-      <div className="relative z-10">
+      <div className="relative z-10 Dashboard-Master-Header">
+        <style>{`
+          .Dashboard-Master-Header h1, 
+          .Dashboard-Master-Header h2,
+          .Dashboard-Master-Header h3 { 
+            color: ${isDarkMode ? "#FFFFFF" : "#000000"} !important; 
+            font-weight: 900 !important;
+          }
+        `}</style>
         {renderHeroShell(greetingStr, graphicContent)}
       </div>
 
@@ -268,15 +293,13 @@ export default function Dashboard({
 
                 <div className="text-center pt-1.5 pb-1">
                   <p className={`text-2xl font-black tracking-tighter leading-none mb-1 ${isDeficit ? "text-red-500" : "text-[#10B981]"}`}>
-                    ${Math.abs(waterfallBalance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    ${} {Math.abs(waterfallBalance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                   </p>
-                  {/* === "AVAILABLE THIS WEEK" PRECISION LIGHT/DARK SHIFT === */}
                   <span className={`text-[8px] font-black uppercase tracking-[0.15em] ${isDarkMode ? "text-white" : "text-black"} leading-none block`}>
                     {subLabelStr}
                   </span>
                 </div>
 
-                {/* === LOCKED TO SOLID SIGNATURE BLUE WITH WHITE TEXT === */}
                 <div className="w-full py-1.5 rounded-xl text-center font-black text-[9px] tracking-wider transition-all uppercase bg-[#1877F2] text-white shadow-md">
                   VIEW DETAILS
                 </div>
@@ -285,14 +308,12 @@ export default function Dashboard({
                   {pd === "Due Now" ? (
                     <div className="flex flex-col flex-1"></div> 
                   ) : (
-                    /* === "EXPECTED PAY" PRECISION LIGHT/DARK SHIFT === */
                     <div className="flex flex-col flex-1">
                       <span className={`text-[7px] font-black uppercase tracking-widest mb-0.5 ${isDarkMode ? "text-white" : "text-black"}`}>Expected Pay</span>
                       <span className={`text-[10px] font-black ${isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>+${totalExpectedIncome.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
                     </div>
                   )}
                   <div className="flex flex-col items-end shrink-0">
-                    {/* === "X BILLS OUT" PRECISION LIGHT/DARK SHIFT === */}
                     <span className={`text-[7px] font-black uppercase tracking-widest mb-0.5 ${isDarkMode ? "text-white" : "text-black"}`}>
                       {unpaidCount === 1 ? `${unpaidCount} Bill Out` : `${unpaidCount} Bills Out`}
                     </span>
@@ -318,7 +339,6 @@ export default function Dashboard({
           {["Due Now", "Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].map((payday) => {
             const groupBills = billsByPayday[payday] || [];
             
-            // === DUAL-PASS MONTH FILTER ===
             const filteredVerticalBills = groupBills.filter((bill) => {
               if (bill.isOverdue || bill.payday === "Due Now") return true;
               if (bill.rawDate) {
@@ -374,9 +394,15 @@ export default function Dashboard({
                                   <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
                                      {bill?.icon || "🧾"}
                                   </div>
-                                  <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                                     {bill?.name || "Unnamed"}
-                                  </p>
+                                  {/* 🔄 RECURRING ICON FLEX ALIGN PASS */}
+                                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                    <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                                       {bill?.name || "Unnamed"}
+                                    </p>
+                                    {bill?.isRecurring && (
+                                      <RefreshCw size={12} strokeWidth={2.5} className="text-[#10B981] shrink-0" />
+                                    )}
+                                  </div>
                                </div>
                                <button 
                                  onClick={(e) => { e.stopPropagation(); setSelectedEntry(bill); }} 

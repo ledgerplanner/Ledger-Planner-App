@@ -210,7 +210,7 @@ export default function Dashboard({
           {nextPaydayDayName && (
             <div className={`mt-2 transform transition-all duration-700 delay-500 ease-out w-full text-right ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
               <span className={`text-[9px] font-black uppercase tracking-widest block leading-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-                Next Payday: {nextPaydayDayName}{" "}
+                NEXT PAYDAY: {nextPaydayDayName}{" "}
                 <span className="text-[#10B981]">
                   {daysUntilNext === 0 && "(TODAY)"}
                   {daysUntilNext === 1 && "(IN 1 DAY)"}
@@ -293,7 +293,7 @@ export default function Dashboard({
 
                 <div className="text-center pt-1.5 pb-1">
                   <p className={`text-2xl font-black tracking-tighter leading-none mb-1 ${isDeficit ? "text-red-500" : "text-[#10B981]"}`}>
-                    ${} {Math.abs(waterfallBalance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    ${Math.abs(waterfallBalance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                   </p>
                   <span className={`text-[8px] font-black uppercase tracking-[0.15em] ${isDarkMode ? "text-white" : "text-black"} leading-none block`}>
                     {subLabelStr}
@@ -394,7 +394,6 @@ export default function Dashboard({
                                   <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
                                      {bill?.icon || "🧾"}
                                   </div>
-                                  {/* 🔄 RECURRING ICON FLEX ALIGN PASS */}
                                   <div className="flex items-center gap-1.5 min-w-0 flex-1">
                                     <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                                        {bill?.name || "Unnamed"}

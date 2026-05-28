@@ -99,10 +99,10 @@ export default function Bills({
     <div className="flex flex-col relative z-10 mb-2 w-full">
       {/* 👑 MASTER FLOATING PROGRESS SUMMARY CARD */}
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-white via-slate-50/90 to-slate-100/60 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.3),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
-        
-        {/* ABSOLUTE POSITIONED OVERLAY HEADER ARCHITECTURE */}
+         
+        {/* INNER HERO CARD TITLE: PERFECT COMPLIANCE BLUEPRINT POSITIONING */}
         <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
-          <span className={`text-xs font-black uppercase tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>
+          <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-black"}`}>
             Master Bills List
           </span>
         </div>
@@ -154,7 +154,19 @@ export default function Bills({
  
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
-      {renderHeroShell(`${userName}'s Bills`, graphicContent)}
+       
+      {/* PAGE TITLE COLOR PASS: FORCED PURE CRISP WHITE IN DARK MODE / CRISP BLACK IN LIGHT MODE */}
+      <div className="relative z-10 Bills-Master-Header">
+        <style>{`
+          .Bills-Master-Header h1, 
+          .Bills-Master-Header h2,
+          .Bills-Master-Header h3 { 
+            color: ${isDarkMode ? "#FFFFFF" : "#000000"} !important; 
+            font-weight: 900 !important;
+          }
+        `}</style>
+        {renderHeroShell(`${userName}'s Bills`, graphicContent)}
+      </div>
       
       {/* 3.) HORIZONTAL CALENDAR SCROLL BAR */}
       <div className="w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-6 relative z-10">
@@ -207,7 +219,7 @@ export default function Bills({
       <div className={`mx-6 mb-6 border-t ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}></div>
  
       <main className="px-6 space-y-8 mt-2">
-        
+         
         {/* 5.) SECTION TITLE */}
         <div className="space-y-4">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Unpaid Bills</h3>

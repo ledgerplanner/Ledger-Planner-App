@@ -134,7 +134,8 @@ export default function Bills({
               <span className={`text-2xl min-[380px]:text-3xl sm:text-4xl block sm:inline ${activeMetrics.totalPaid === 0 ? "text-red-500" : "text-[#10B981]"}`}>
                 ${activeMetrics.totalPaid.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
-              <span className="text-sm min-[380px]:text-base sm:text-xl text-slate-400 opacity-60 block sm:inline sm:ml-1 mt-1 sm:mt-0">
+              {/* === SIGNATURE BLUE OVERRIDE PASS ON LOGGED MASTER DENOMINATOR === */}
+              <span className="text-sm min-[380px]:text-base sm:text-xl text-[#1877F2] block sm:inline sm:ml-1 mt-1 sm:mt-0 font-black">
                  / ${activeMetrics.totalDue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </p>
@@ -153,6 +154,7 @@ export default function Bills({
   };
  
   return (
+    {/* 🎨 MASTER LAYOUT CHASSIS */}
     <div className={`animate-fade-in pb-32 transition-colors duration-500 min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
        
       {/* PAGE TITLE COLOR PASS: FORCED PURE CRISP WHITE IN DARK MODE / CRISP BLACK IN LIGHT MODE */}

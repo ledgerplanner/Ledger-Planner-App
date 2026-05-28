@@ -163,7 +163,7 @@ export default function Dashboard({
           </span>
         </div>
  
-        {/* DEBT LOAD PROGRESS RING (Surgically Repaired Animation Keyframe System) */}
+        {/* 1️⃣ POINT 1 ANIMATION: THE GRAPHIC ANIMATES (SVG Ring Canvas System Drawing Live) */}
         <div className="relative w-28 h-28 flex-shrink-0">
           <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
             <style>{`
@@ -195,20 +195,24 @@ export default function Dashboard({
           </div>
         </div>
    
-        {/* DAILY METRICS DATA CONTAINER */}
-        <div className="flex-1 text-right flex flex-col justify-center items-end">
-          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border mb-2 shadow-sm ${isDarkMode ? "bg-slate-800/80 border-slate-700 text-slate-300" : "bg-white/80 border-slate-200 text-slate-600"}`}>
-            <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${safeToSpend < 0 ? "bg-red-500" : "bg-emerald-500 animate-pulse"}`}></div>
-            <span className="text-[9px] font-black uppercase tracking-wider">Safe to Spend</span>
+        {/* RIGHT COLUMN CONTENT HOLDER BLOCK */}
+        <div className="flex-1 text-right flex flex-col justify-center items-end overflow-hidden">
+          
+          {/* 2️⃣ POINT 2 ANIMATION: TEXT SCROLLS UP (Safe To Spend badge and value drift upwards) */}
+          <div className={`flex flex-col items-end transform transition-all duration-700 delay-200 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border mb-2 shadow-sm ${isDarkMode ? "bg-slate-800/80 border-slate-700 text-slate-300" : "bg-white/80 border-slate-200 text-slate-600"}`}>
+              <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${safeToSpend < 0 ? "bg-red-500" : "bg-emerald-500 animate-pulse"}`}></div>
+              <span className="text-[9px] font-black uppercase tracking-wider">Safe to Spend</span>
+            </div>
+            
+            <p className={`text-2xl min-[360px]:text-3xl min-[400px]:text-4xl font-black tracking-tighter mb-1 w-full text-right break-words leading-none transition-colors duration-300 ${safeToSpend < 0 ? "text-red-500" : "text-[#10B981]"}`}>
+              {safeToSpend < 0 ? "-" : ""}${Math.abs(safeToSpend).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+            </p>
           </div>
           
-          <p className={`text-2xl min-[360px]:text-3xl min-[400px]:text-4xl font-black tracking-tighter mb-3 w-full text-right break-words leading-none ${safeToSpend < 0 ? "text-red-500" : "text-[#10B981]"}`}>
-            {safeToSpend < 0 ? "-" : ""}${Math.abs(safeToSpend).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-          </p>
-          
-          {/* 🗓️ SURGICALLY RESTORED DYNAMIC PAYDAY COUNTDOWN ROW */}
+          {/* 3️⃣ POINT 3 ANIMATION: TEXT SCROLLS FROM SIDE (Countdown container glides horizontally from right boundary edge) */}
           {nextPaydayDayName && (
-            <div className={`mt-2 transform transition-all duration-700 delay-500 ease-out w-full text-right ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
+            <div className={`mt-2 transform transition-all duration-700 delay-500 cubic-bezier(0.16, 1, 0.3, 1) w-full text-right ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-12"}`}>
               <span className={`text-[9px] font-black uppercase tracking-widest block leading-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                 NEXT PAYDAY: {nextPaydayDayName}{" "}
                 <span className="text-[#10B981]">

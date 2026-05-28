@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ArrowRightLeft, PlusCircle, Edit2, Target, CheckCircle2, Calendar as CalendarIcon, ArrowDown, X } from "lucide-react";
-
+ 
 export default function Accounts({
   userName,
   accounts = [],
@@ -23,16 +23,16 @@ export default function Accounts({
   // Animation Triggers
   const [showContent, setShowContent] = useState(false);
   const [showChart, setShowChart] = useState(false);
-
+ 
   // QAB Icon Selector State (for Goal Drawer)
   const [isIconSelectorOpen, setIsIconSelectorOpen] = useState(false);
   const [selectedGoalIcon, setSelectedGoalIcon] = useState("🎯");
   const categoryEmojis = ["🎯", "🏖️", "🚗", "🏠", "💍", "🎓", "👶", "🐶", "🏥", "🛡️", "💰", "🚀", "📱", "💻", "🎮", "✈️", "🏍️", "🎸", "🚲", "⛵"];
-
+ 
   // === ARCHITECTURAL ACCOUNT BOUNDARY SEPARATION ===
   const liquidAccounts = accounts.filter(a => !a.isGoal);
   const goalAccounts = accounts.filter(a => a.isGoal);
-
+ 
   // === ITEM #1: PURE LIQUID NET WORTH CALCULATION MATRIX ===
   const netWorth = liquidAccounts.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
   
@@ -55,16 +55,16 @@ export default function Accounts({
       inceptionDate = new Date(Math.min(...validDates));
     }
   }
-
+ 
   let monthsToGenerate = 6;
   if (timeframe === "1M") monthsToGenerate = 2;
   if (timeframe === "3M") monthsToGenerate = 3;
   if (timeframe === "6M") monthsToGenerate = 6;
   if (timeframe === "YTD") monthsToGenerate = today.getMonth() + 1;
-
+ 
   const historyData = [];
   let currentCalcNW = netWorth;
-
+ 
   for(let i = 0; i < monthsToGenerate; i++) {
     const targetDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
     const monthName = targetDate.toLocaleString('default', { month: 'short' });
@@ -92,12 +92,12 @@ export default function Accounts({
           }, 0);
           
           currentCalcNW -= netCashFlowMonthAhead;
-
+ 
           let displayVal = currentCalcNW;
           if (tYear < inceptionDate.getFullYear() || (tYear === inceptionDate.getFullYear() && tMonth < inceptionDate.getMonth())) {
               displayVal = 0;
           }
-
+ 
           historyData.unshift({ label: monthName, val: displayVal, month: tMonth, year: tYear });
         }
     }
@@ -106,18 +106,18 @@ export default function Accounts({
   useEffect(() => {
     setActiveChartNode(historyData.length - 1);
   }, [timeframe, historyData.length]);
-
+ 
   // Entrance Animation Sequence
   useEffect(() => {
     const t1 = setTimeout(() => setShowContent(true), 100);
     const t2 = setTimeout(() => setShowChart(true), 300);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
-
+ 
   const maxChartVal = Math.max(...historyData.map((d) => Math.abs(d.val)), 1);
   const activeDataPoint = historyData[activeChartNode] || historyData[historyData.length - 1];
   const isNetWorthNegative = activeDataPoint?.val < 0;
-
+ 
   const createSpline = (data, maxVal) => {
     if (data.length < 2) return "";
     let path = "";
@@ -135,14 +135,21 @@ export default function Accounts({
     });
     return path;
   };
-
+ 
   const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
-
+ 
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
       {/* 👑 MASTER FLOATING NET WORTH SUMMARY CARD */}
-      <div className={`relative p-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-white via-slate-50/90 to-slate-100/60 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.3),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
-        
+      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-white via-slate-50/90 to-slate-100/60 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.3),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
+         
+        {/* INNER HERO CARD TITLE: PERFECT COMPLIANCE BLUEPRINT POSITIONING */}
+        <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
+          <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-black"}`}>
+            Total Wealth Blueprint
+          </span>
+        </div>
+ 
         <div className={`flex justify-between items-end mb-4 transform transition-all duration-700 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           <div>
             <p className="text-[10px] font-black uppercase tracking-widest mb-1 text-slate-400">Liquid Net Worth • <span className={`${isNetWorthNegative ? "text-red-500" : "text-[#1877F2]"}`}>{activeDataPoint?.label} {activeDataPoint?.year}</span></p>
@@ -151,7 +158,7 @@ export default function Accounts({
             </p>
           </div>
         </div>
-
+ 
         <div className={`flex gap-2 transform transition-all duration-700 delay-100 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           {["1M", "3M", "6M", "YTD"].map((tf) => (
             <button
@@ -164,11 +171,10 @@ export default function Accounts({
           ))}
         </div>
       </div>
-
+ 
       {/* 📊 CHART CANVAS CONTAINER */}
       <div className={`relative flex items-end justify-between h-28 gap-2 border-b border-dashed border-slate-200 dark:border-slate-700 pb-2 mt-4 transform transition-all duration-1000 ease-out origin-bottom ${showChart ? "opacity-100 scale-y-100" : "opacity-0 scale-y-95"}`}>
         <svg className="absolute inset-0 w-full h-full pointer-events-none drop-shadow-md z-20" preserveAspectRatio="none" viewBox="0 0 100 100">
-          {/* === ITEM #3: CINEMATIC SPLINE LINE SLOWDOWN REFACTOR (1.2s ➔ 2.2s) === */}
           <style>{`
             @keyframes drawTrendLine {
               from { stroke-dashoffset: 1000; }
@@ -194,42 +200,56 @@ export default function Accounts({
             />
           )}
         </svg>
-
+ 
         {historyData.map((item, i) => {
           const heightPct = (Math.abs(item.val) / maxChartVal) * 100;
           const isActive = activeChartNode === i;
           
-          const isItemZero = item.val === 0;
-          const isItemPositive = item.val > 0;
-          const isItemNegative = item.val < 0;
-
+          const isSampleZero = item.val === 0;
+          const isSamplePositive = item.val > 0;
+          const isSampleNegative = item.val < 0;
+ 
           let barBgClass = "";
           if (isActive) {
-            if (isItemZero) barBgClass = isDarkMode ? "bg-slate-500 shadow-[0_0_15px_rgba(100,116,139,0.4)]" : "bg-slate-300 shadow-[0_0_15px_rgba(203,213,225,0.6)]";
-            else if (isItemPositive) barBgClass = "bg-[#10B981] shadow-[0_0_15px_rgba(16,185,129,0.4)]";
+            if (isSampleZero) barBgClass = isDarkMode ? "bg-slate-500 shadow-[0_0_15px_rgba(100,116,139,0.4)]" : "bg-slate-300 shadow-[0_0_15px_rgba(203,213,225,0.6)]";
+            else if (isSamplePositive) barBgClass = "bg-[#10B981] shadow-[0_0_15px_rgba(16,185,129,0.4)]";
             else barBgClass = "bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.4)]";
           } else {
-            if (isItemZero) barBgClass = isDarkMode ? "bg-slate-800 group-hover:bg-slate-700" : "bg-slate-100 group-hover:bg-slate-200";
-            else if (isItemPositive) barBgClass = isDarkMode ? "bg-emerald-900/20 group-hover:bg-emerald-900/40 opacity-50" : "bg-emerald-50 group-hover:bg-emerald-100 opacity-60";
+            if (isSampleZero) barBgClass = isDarkMode ? "bg-slate-800 group-hover:bg-slate-700" : "bg-slate-100 group-hover:bg-slate-200";
+            else if (isSamplePositive) barBgClass = isDarkMode ? "bg-emerald-900/20 group-hover:bg-emerald-900/40 opacity-50" : "bg-emerald-50 group-hover:bg-emerald-100 opacity-60";
             else barBgClass = isDarkMode ? "bg-red-900/20 group-hover:bg-red-900/40 opacity-50" : "bg-red-50 group-hover:bg-red-100 opacity-60";
           }
-
+ 
           return (
             <div key={i} onClick={() => setActiveChartNode(i)} className="flex flex-col items-center justify-end h-full flex-1 cursor-pointer group relative z-10">
               <div className="w-full relative flex justify-center h-full items-end">
                 <div className={`w-full max-w-[32px] rounded-t-xl transition-all duration-500 ease-out ${barBgClass}`} style={{ height: `${heightPct}%`, minHeight: Math.abs(item.val) > 0 ? "12px" : "4px" }}></div>
               </div>
-              <span className={`text-[9px] font-black mt-3 uppercase tracking-wider transition-colors duration-300 ${isActive ? (isItemZero ? (isDarkMode ? "text-slate-300" : "text-slate-500") : isItemNegative ? "text-red-500" : "text-[#10B981]") : "text-slate-400"}`}>{item.label}</span>
+              <span className={`text-[9px] font-black mt-3 uppercase tracking-wider transition-colors duration-300 ${isActive ? (isSampleZero ? (isDarkMode ? "text-slate-300" : "text-slate-500") : isSampleNegative ? "text-red-500" : "text-[#10B981]") : "text-slate-400"}`}>{item.label}</span>
             </div>
           );
         })}
       </div>
     </div>
   );
-
+ 
   return (
+    {/* 🎨 MASTER LAYOUT CHASSIS */}
     <div className={`pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
-      {renderHeroShell(`${userName}'s Accounts`, graphicContent)}
+       
+      {/* PAGE TITLE COLOR PASS: FORCED PURE CRISP WHITE IN DARK MODE / CRISP BLACK IN LIGHT MODE */}
+      <div className="relative z-10 Accounts-Master-Header">
+        <style>{`
+          .Accounts-Master-Header h1, 
+          .Accounts-Master-Header h2,
+          .Accounts-Master-Header h3 { 
+            color: ${isDarkMode ? "#FFFFFF" : "#000000"} !important; 
+            font-weight: 900 !important;
+          }
+        `}</style>
+        {renderHeroShell(`${userName}'s Accounts`, graphicContent)}
+      </div>
+ 
       <main className="px-6 space-y-8 mt-4">
         
         {/* LIQUID BANK ASSET ROW */}
@@ -262,7 +282,7 @@ export default function Accounts({
                               <Edit2 size={16} strokeWidth={2.5} />
                            </button>
                         </div>
-
+ 
                         <div className="flex items-center justify-between gap-2">
                            <div className="flex flex-col shrink-0">
                               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
@@ -279,7 +299,7 @@ export default function Accounts({
                                {isNegative ? "-" : ""}${Math.abs(acc.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                            </div>
                         </div>
-
+ 
                     </div>
                     );
                 })}
@@ -287,9 +307,9 @@ export default function Accounts({
             )}
           </div>
         </div>
-
+ 
         <div className={`border-t ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}></div>
-
+ 
         {/* TARGET OBJECTIVE GOAL ROW */}
         <div className="space-y-4">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">My Goals</h3>
@@ -306,7 +326,7 @@ export default function Accounts({
                     
                     const isPositive = balanceAmt > 0;
                     const isNegative = balanceAmt < 0;
-
+ 
                     // === ITEM #4: REAL-TIME SMART INTERCEPTOR RENDER GUARD EVENT ===
                     if (!goal.hasCelebratedOnce && isComplete) {
                       goal.hasCelebratedOnce = true;
@@ -314,7 +334,7 @@ export default function Accounts({
                         setTimeout(() => triggerCelebration(), 250);
                       }
                     }
-
+ 
                     return (
                     <div key={goal.id} className={`flex flex-col p-5 rounded-[1.5rem] border shadow-sm transition-all ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
                         
@@ -337,7 +357,7 @@ export default function Accounts({
                               <Edit2 size={16} strokeWidth={2.5} />
                            </button>
                         </div>
-
+ 
                         <div className="flex items-end justify-between gap-2 mb-3">
                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Current Balance</span>
                            {/* === ITEM #2: PREMIUM UNIQUE ORANGE GLOW THEME UPGRADE CHASSIS === */}
@@ -353,19 +373,18 @@ export default function Accounts({
                                ${balanceAmt.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                            </div>
                         </div>
-
+ 
                         {/* === REVERTED FROM ORANGE BACK TO SIGNATURE BRAND BLUE TO CRUSH ORANGE OVERLOAD === */}
                         <div className={`w-full h-2.5 rounded-full overflow-hidden border mb-2 ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-slate-100 border-slate-200"}`}>
                              <div className="h-full transition-all duration-1000 bg-[#1877F2]" style={{ width: `${progressPct}%` }}></div>
                         </div>
-
+ 
                         {goal.targetDate && (
                            <div className="flex justify-center items-center mt-2 mb-2 w-full">
                               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Target Goal Date: {new Date(goal.targetDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}</span>
                            </div>
                         )}
-
-                        {/* === LIQUIDITY RELEASE VALVE ENGINE: SHOW BUTTON FOR ANY AVAILABLE CASH ASSETRANGE === */}
+ 
                         {balanceAmt > 0 && (
                           <button 
                             onClick={(e) => {
@@ -378,7 +397,7 @@ export default function Accounts({
                             <CheckCircle2 size={14} strokeWidth={3} /> Cash Out From This Goal
                           </button>
                         )}
-
+ 
                     </div>
                     );
                 })}
@@ -386,7 +405,7 @@ export default function Accounts({
             )}
           </div>
         </div>
-
+ 
         {/* PLATFORM METRIC ACCELERATORS */}
         <div className="flex flex-col gap-3">
           <div className="grid grid-cols-2 gap-3">
@@ -401,9 +420,9 @@ export default function Accounts({
             <Target size={18} /> Add Goal
           </button>
         </div>
-
+ 
       </main>
-
+ 
       {/* ICON DRAWER WRAPPER */}
       {isIconSelectorOpen && (
          <div className={`absolute inset-0 z-[150] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>

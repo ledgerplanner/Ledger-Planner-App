@@ -14,15 +14,19 @@ export default function Bills({
   toggleCollapse
 }) {
   const [isMounted, setIsMounted] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState(4); // Default to May 2026
-  const [expandedMonths, setExpandedMonths] = useState({ 4: true }); // Expand May 2026 by default
+  const [selectedMonth, setSelectedMonth] = useState(4); // Default to May (Index 4)
+  const [expandedMonthIdx, setExpandedMonthIdx] = useState(4); // Default to open May (Index 4)
  
   useEffect(() => {
     setIsMounted(true);
+    const today = new Date();
+    const currentMonthIndex = today.getMonth(); // Natively shifts default mount to current local month
+    setSelectedMonth(currentMonthIndex);
+    setExpandedMonthIdx(currentMonthIndex);
   }, []);
  
   const currentYear = 2026;
-  const currentMonthIndex = 4; // May 2026
+  const currentMonthIndex = new Date().getMonth();
  
   const monthsData = [
     { name: "January", short: "Jan", idx: 0 },
@@ -61,14 +65,14 @@ export default function Bills({
  
   const handleMonthCardClick = (mIdx) => {
     setSelectedMonth(mIdx);
-    setExpandedMonths((prev) => ({ ...prev, [mIdx]: true }));
+    setExpandedMonthIdx(mIdx); // Automatically syncs single accordion body visibility
     setTimeout(() => {
       document.getElementById(`month-accordion-${mIdx}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 150);
   };
  
   const toggleMonthAccordion = (mIdx) => {
-    setExpandedMonths((prev) => ({ ...prev, [mIdx]: !prev[mIdx] }));
+    setExpandedMonthIdx(expandedMonthIdx === mIdx ? -1 : mIdx); // Enforces strict single-open accordion constraint
   };
  
   const sortBillsSurgically = (billList) => {
@@ -100,7 +104,7 @@ export default function Bills({
       {/* 👑 MASTER FLOATING PROGRESS SUMMARY CARD */}
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-white via-slate-50/90 to-slate-100/60 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.3),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
           
-        {/* INNER HERO CARD TITLE: PERFECT COMPLIANCE BLUEPRINT POSITIONING */}
+        {/* INNER HERO CARD TITLE */}
         <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
           <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-black"}`}>
             Master Bills List
@@ -109,7 +113,6 @@ export default function Bills({
  
         {/* METRICS ROW CONTENT CONTAINER */}
         <div className="flex items-center justify-between w-full">
-          {/* 1️⃣ POINT 1 ANIMATION: THE GRAPHIC ANIMATES */}
           <div className="relative w-28 h-28 flex-shrink-0">
             <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
               <defs>
@@ -122,19 +125,16 @@ export default function Bills({
               <circle cx="50" cy="50" r="40" fill="transparent" stroke="url(#billGlow)" strokeWidth="12" strokeLinecap="round" strokeDasharray={251.2} strokeDashoffset={isMounted ? (251.2 - (251.2 * progressPercentage) / 100) : 251.2} className="transition-all duration-1000 ease-out" />
             </svg>
             <div className={`absolute inset-0 flex flex-col items-center justify-center transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
-              <span className={`textxl font-black ${isDarkMode ? "text-white" : "text-slate-900"}`}>{Math.round(progressPercentage)}%</span>
+              <span className={`text-xl font-black ${isDarkMode ? "text-white" : "text-slate-900"}`}>{Math.round(progressPercentage)}%</span>
               <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">Paid</span>
             </div>
           </div>
    
           {/* DATA METRICS CONTAINER CONTAINER */}
           <div className="flex-1 pl-4 text-right overflow-hidden">
-            {/* 2️⃣ POINT 2 ANIMATION: "Total Bills Paid" TEXT SCROLLS UP */}
             <p className={`text-[10px] font-black uppercase tracking-widest mb-1 text-slate-400 transform transition-all duration-700 delay-200 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
               Total Bills Paid
             </p>
-            
-            {/* 3️⃣ POINT 3 ANIMATION: THE DOLLAR AMOUNTS SCROLL HORIZONTALLY */}
             <p className={`font-black tracking-tighter mb-0 leading-none sm:leading-tight transform transition-all duration-700 delay-400 cubic-bezier(0.16, 1, 0.3, 1) ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-12"}`}>
               <span className={`text-2xl min-[380px]:text-3xl sm:text-4xl block sm:inline ${activeMetrics.totalPaid === 0 ? "text-red-500" : "text-[#10B981]"}`}>
                 ${activeMetrics.totalPaid.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -160,7 +160,7 @@ export default function Bills({
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
         
-      {/* PAGE TITLE COLOR PASS: FORCED PURE CRISP WHITE IN DARK MODE / CRISP BLACK IN LIGHT MODE */}
+      {/* PAGE TITLE COLOR PASS */}
       <div className="relative z-10 Bills-Master-Header">
         <style>{`
           .Bills-Master-Header h1, 
@@ -173,8 +173,8 @@ export default function Bills({
         {renderHeroShell(`${userName}'s Bills`, graphicContent)}
       </div>
       
-      {/* HORIZONTAL CALENDAR SCROLL BAR (Completely untouched layout framework) */}
-      <div className="w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-6 relative z-10">
+      {/* HORIZONTAL CALENDAR SCROLL BAR */}
+      <div className="w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-6 relative z-10 pt-2">
         <div className="flex gap-4 pr-6 pb-2 min-h-[170px]">
           {monthsData.map((m) => {
             const { totalDue, totalPaid } = getMonthMetrics(m.idx);
@@ -192,10 +192,10 @@ export default function Bills({
                 </div>
  
                 <div className="text-center pt-1.5 pb-1">
-                  <p className={`text-2xl font-black tracking-tighter leading-none mb-1 ${totalDue === 0 ? "text-slate-400" : isDarkMode ? "text-white" : "text-slate-900"}`}>
+                  <p className={`text-2xl font-black tracking-tighter leading-none mb-1 ${totalDue === 0 ? "text-slate-400" : "text-[#1877F2]"}`}>
                     ${totalDue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
-                  <span className={`text-[8px] font-black uppercase tracking-[0.15em] ${isDarkMode ? "text-slate-400" : "text-slate-500"} leading-none block`}>
+                  <span className={`text-[8px] font-black uppercase tracking-[0.15em] ${isDarkMode ? "text-white" : "text-slate-900"} leading-none block`}>
                     {m.idx > currentMonthIndex ? "PROJECTED DUE" : "TOTAL DUE"}
                   </span>
                 </div>
@@ -309,7 +309,7 @@ export default function Bills({
           <div className="space-y-4">
             {monthsData.map((m) => {
               const { monthBills, totalDue } = getMonthMetrics(m.idx);
-              const isCollapsed = !expandedMonths[m.idx];
+              const isCollapsed = expandedMonthIdx !== m.idx; // Evaluates state against single open tracker
               const sortedBills = sortBillsSurgically(monthBills.filter((b) => !b.isPaid));
  
               return (

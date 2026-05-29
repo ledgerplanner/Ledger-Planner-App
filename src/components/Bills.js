@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { CheckCircle2, RefreshCw, ChevronUp, ChevronDown, RotateCcw, Edit2, AlertCircle } from "lucide-react";
  
 export default function Bills({
@@ -16,6 +16,9 @@ export default function Bills({
   const [isMounted, setIsMounted] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(4); // Default to May (Index 4)
   const [expandedMonthIdx, setExpandedMonthIdx] = useState(4); // Default to open May (Index 4)
+  
+  // Ref for the horizontal card track container to control layout focus positioning
+  const horizontalScrollRef = useRef(null);
  
   useEffect(() => {
     setIsMounted(true);
@@ -23,6 +26,21 @@ export default function Bills({
     const currentMonthIndex = today.getMonth(); // Natively shifts default mount to current local month
     setSelectedMonth(currentMonthIndex);
     setExpandedMonthIdx(currentMonthIndex);
+
+    // Center the current month card inside the horizontal track container immediately on mount
+    setTimeout(() => {
+      if (horizontalScrollRef.current) {
+        const container = horizontalScrollRef.current;
+        // Each month card is roughly 224px wide (w-52 = 208px + 16px gap)
+        const cardWidth = 224; 
+        const targetScrollPosition = (currentMonthIndex * cardWidth) - (container.clientWidth / 2) + (cardWidth / 2);
+        
+        container.scrollTo({
+          left: Math.max(0, targetScrollPosition),
+          behavior: "smooth"
+        });
+      }
+    }, 300);
   }, []);
  
   const currentYear = 2026;
@@ -173,8 +191,8 @@ export default function Bills({
         {renderHeroShell(`${userName}'s Bills`, graphicContent)}
       </div>
       
-      {/* HORIZONTAL CALENDAR SCROLL BAR */}
-      <div className="w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-6 relative z-10 pt-2">
+      {/* HORIZONTAL CALENDAR SCROLL BAR - WITH ANCHOR REF FOR AUTO-CENTER FOCUS */}
+      <div ref={horizontalScrollRef} className="w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-6 relative z-10 pt-2">
         <div className="flex gap-4 pr-6 pb-2 min-h-[170px]">
           {monthsData.map((m) => {
             const { totalDue, totalPaid } = getMonthMetrics(m.idx);

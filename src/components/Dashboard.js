@@ -547,7 +547,7 @@ export default function Dashboard({
                           <span className={`text-[10px] font-semibold uppercase tracking-widest mt-0.5 truncate w-full ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>{tx?.date || "Recent"}</span>
                          </div>
                          <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 ${txColorStr} ${txBgBorderStr} ${txShadowStr} whitespace-nowrap`}>
-                            {txPrefix}${...((Number(tx?.amount) || 0).toFixed(2))}
+                            {txPrefix}{(Number(tx?.amount) || 0).toFixed(2)}
                          </div>
                       </div>
 

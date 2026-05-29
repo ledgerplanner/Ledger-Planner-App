@@ -42,16 +42,6 @@ export default function Dashboard({
     return new Date(dateStr).getTime();
   };
 
-  const sortBillsSurgically = (billList) => {
-    return [...billList].sort((a, b) => {
-      if (a.isOverdue && !b.isOverdue) return -1;
-      if (!a.isOverdue && b.isOverdue) return 1;
-      if (a.payday === "Due Now" && b.payday !== "Due Now") return -1;
-      if (a.payday !== "Due Now" && b.payday === "Due Now") return 1;
-      return parseLocalDate(a.rawDate) - parseLocalDate(b.rawDate);
-    });
-  };
-
   const currentHour = new Date().getHours();
   let greetingStr = `Evening, ${userName}`;
   if (currentHour >= 5 && currentHour < 12) { greetingStr = `Morning, ${userName}`; }
@@ -64,42 +54,10 @@ export default function Dashboard({
   const currentMonthIdx = todayForMath.getMonth(); 
   const currentYearIdx = todayForMath.getFullYear(); 
 
-  // === PURE LIQUID NET WORTH HERO CARD CALIBRATION ===
-  const liquidAccounts = accounts.filter(a => !a.isGoal);
-  const totalIncomeBalance = liquidAccounts.reduce((sum, a) => sum + (Number(a?.balance) || 0), 0);
-  
-  // === FIXED OBLIGATIONS MONTH BOUNDARY ENGINE REPAIR ===
-  const scopedUnpaidBillsAmount = bills.reduce((sum, bill) => {
-    if (bill.isPaid) return sum;
-    let include = false;
-    if (bill.isOverdue || bill.payday === "Due Now") {
-      include = true;
-    } else if (bill.rawDate) {
-      const parts = bill.rawDate.split("-");
-      if (parts.length === 3) {
-        const bMonth = parseInt(parts[1], 10) - 1;
-        const bYear = parseInt(parts[0], 10);
-        if (bMonth === currentMonthIdx && bYear === currentYearIdx) {
-          include = true;
-        }
-      }
-    }
-    return include ? sum + (Number(bill.amount) || 0) : sum;
-  }, 0);
-  
-  const safeToSpend = totalIncomeBalance < 0 
-    ? -(Math.abs(scopedUnpaidBillsAmount) - Math.abs(totalIncomeBalance))
-    : totalIncomeBalance - scopedUnpaidBillsAmount;
+  const todayParts = [todayForMath.getFullYear(), todayForMath.getMonth(), todayForMath.getDate()];
+  const todayMidnightMillis = new Date(todayParts[0], todayParts[1], todayParts[2]).getTime();
 
-  const debtRatio = totalIncomeBalance > 0 ? Math.max(0, Math.min((scopedUnpaidBillsAmount / totalIncomeBalance) * 100, 100)) : (scopedUnpaidBillsAmount > 0 ? 100 : 0);
-  
-  const strokeDasharray = 251.2;
-  const targetDashoffset = strokeDasharray - (strokeDasharray * debtRatio) / 100;
-
-  const billsByPayday = {};
-  ["Due Now", "Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].forEach((pd) => { billsByPayday[pd] = []; });
-  bills.forEach((bill) => { if (bill?.payday && billsByPayday[bill.payday]) billsByPayday[bill.payday].push(bill); });
-
+  // === PAYDAY INTERVAL RANGE ENGINE SYSTEM ===
   const freq = paydayConfig?.frequency || "Weekly";
   let allowedPaydays = [];
   if (freq === "Monthly") allowedPaydays = ["Payday 1"];
@@ -109,11 +67,95 @@ export default function Dashboard({
   
   const hzPaydays = ["Due Now", ...allowedPaydays];
 
+  // Map chronological windows for each scheduled tracking key block
+  const paydayWindows = {};
+  
+  const activePaydaysWithDates = allowedPaydays
+    .filter(pd => paydayConfig?.[pd]?.date)
+    .map(pd => ({ key: pd, date: paydayConfig[pd].date, millis: parseLocalDate(paydayConfig[pd].date) }))
+    .sort((a, b) => a.millis - b.millis);
+
+  activePaydaysWithDates.forEach((pd, idx) => {
+    const startMillis = pd.millis;
+    let endMillis = 0;
+
+    if (idx < activePaydaysWithDates.length - 1) {
+      endMillis = activePaydaysWithDates[idx + 1].millis - 1;
+    } else {
+      const lastDateObj = new Date(pd.date.split("-")[0], parseInt(pd.date.split("-")[1], 10) - 1, pd.date.split("-")[2]);
+      if (freq === "Weekly") lastDateObj.setDate(lastDateObj.getDate() + 7);
+      else if (freq === "Bi-Weekly") lastDateObj.setDate(lastDateObj.getDate() + 14);
+      else if (freq === "Semi-Monthly") lastDateObj.setDate(lastDateObj.getDate() + 15);
+      else lastDateObj.setMonth(lastDateObj.getMonth() + 1);
+      endMillis = lastDateObj.getTime() - 1;
+    }
+
+    paydayWindows[pd.key] = { start: startMillis, end: endMillis };
+  });
+
+  // Dynamic runway assigner for single reference map sorting
+  const getBillRunwayGroup = (bill) => {
+    if (bill.isOverdue || bill.payday === "Due Now") return "Due Now";
+    if (!bill.rawDate) return null;
+    
+    const billMillis = parseLocalDate(bill.rawDate);
+    
+    for (let i = 0; i < activePaydaysWithDates.length; i++) {
+      const pdKey = activePaydaysWithDates[i].key;
+      const window = paydayWindows[pdKey];
+      if (window && billMillis >= window.start && billMillis <= window.end) {
+        return pdKey;
+      }
+    }
+    return null;
+  };
+
+  // Group bills natively by dynamic runways
+  const billsByRunwayGroup = { "Due Now": [] };
+  hzPaydays.forEach(pd => { billsByRunwayGroup[pd] = []; });
+  
+  bills.forEach(bill => {
+    const assignedGroup = getBillRunwayGroup(bill);
+    if (assignedGroup && billsByRunwayGroup[assignedGroup]) {
+      billsByRunwayGroup[assignedGroup].push(bill);
+    }
+  });
+
+  const sortBillsSurgically = (billList) => {
+    return [...billList].sort((a, b) => {
+      if (a.isOverdue && !b.isOverdue) return -1;
+      if (!a.isOverdue && b.isOverdue) return 1;
+      if (a.payday === "Due Now" && b.payday !== "Due Now") return -1;
+      if (a.payday !== "Due Now" && b.payday === "Due Now") return 1;
+      return parseLocalDate(a.rawDate) - parseLocalDate(b.rawDate);
+    });
+  };
+
+  // === PURE LIQUID NET WORTH HERO CARD CALIBRATION ===
+  const liquidAccounts = accounts.filter(a => !a.isGoal);
+  const totalIncomeBalance = liquidAccounts.reduce((sum, a) => sum + (Number(a?.balance) || 0), 0);
+  
+  // Scheduled Unpaid Bills Total inside dynamic active runways
+  const scheduledUnpaidBillsTotal = hzPaydays.reduce((sum, pd) => {
+    const groupUnpaid = (billsByRunwayGroup[pd] || []).filter(b => !b.isPaid);
+    return sum + groupUnpaid.reduce((innerSum, b) => innerSum + (Number(b.amount) || 0), 0);
+  }, 0);
+
+  const safeToSpend = totalIncomeBalance < 0 
+    ? -(Math.abs(scheduledUnpaidBillsTotal) - Math.abs(totalIncomeBalance))
+    : totalIncomeBalance - scheduledUnpaidBillsTotal;
+
+  const debtRatio = totalIncomeBalance > 0 ? Math.max(0, Math.min((scheduledUnpaidBillsTotal / totalIncomeBalance) * 100, 100)) : (scheduledUnpaidBillsTotal > 0 ? 100 : 0);
+  
+  const strokeDasharray = 251.2;
+  const targetDashoffset = strokeDasharray - (strokeDasharray * debtRatio) / 100;
+
+  // === WATERFALL BALANCE COMPILATION ENGINE ===
   let runningBalance = totalIncomeBalance;
   const hzBalances = {};
 
   hzPaydays.forEach((pd) => {
-    const groupBills = billsByPayday[pd] || [];
+    const groupBills = billsByRunwayGroup[pd] || [];
     const pdSettings = paydayConfig?.[pd] || {};
 
     if (pd !== "Due Now" && !pdSettings?.date) {
@@ -131,39 +173,29 @@ export default function Dashboard({
     hzBalances[pd] = runningBalance;
   });
 
-  const todayParts = [todayForMath.getFullYear(), todayForMath.getMonth(), todayForMath.getDate()];
-  const todayMidnightMillis = new Date(todayParts[0], todayParts[1], todayParts[2]).getTime();
-  
   let daysUntilNext = 0;
   let nextPaydayDayName = "";
 
-  const futurePaydays = Object.entries(paydayConfig)
-    .filter(([key, config]) => config.date && parseLocalDate(config.date) >= todayMidnightMillis)
-    .sort((a, b) => parseLocalDate(a[1].date) - parseLocalDate(b[1].date));
-
-  if (futurePaydays.length > 0) {
-      const nextDateStr = futurePaydays[0][1].date;
-      const nextDateMillis = parseLocalDate(nextDateStr);
-      daysUntilNext = Math.ceil((nextDateMillis - todayMidnightMillis) / (1000 * 60 * 60 * 24));
-      
-      const parts = nextDateStr.split("-");
+  if (activePaydaysWithDates.length > 0) {
+    const upcoming = activePaydaysWithDates.filter(pd => pd.millis >= todayMidnightMillis);
+    if (upcoming.length > 0) {
+      daysUntilNext = Math.ceil((upcoming[0].millis - todayMidnightMillis) / (1000 * 60 * 60 * 24));
+      const parts = upcoming[0].date.split("-");
       const localDateObj = new Date(parts[0], parseInt(parts[1], 10) - 1, parts[2]);
       nextPaydayDayName = localDateObj.toLocaleDateString("en-US", { weekday: 'long' }).toUpperCase();
+    }
   }
 
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
-      {/* 👑 MASTER FLOATING HEALTH SUMMARY CARD */}
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-white via-slate-50/90 to-slate-100/60 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.3),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
          
-        {/* INNER HERO CARD TITLE: PERFECT COMPLIANCE BLUEPRINT POSITIONING */}
         <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
           <span className={`text-[10px] font-black uppercase tracking-widest opacity-80 ${isDarkMode ? "text-white" : "text-black"}`}>
             {currentMonthName}'s Monthly Snapshot
           </span>
         </div>
  
-        {/* 1️⃣ POINT 1 ANIMATION: THE GRAPHIC ANIMATES (SVG Ring Canvas System Drawing Live) */}
         <div className="relative w-28 h-28 flex-shrink-0">
           <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
             <style>{`
@@ -195,10 +227,8 @@ export default function Dashboard({
           </div>
         </div>
    
-        {/* RIGHT COLUMN CONTENT HOLDER BLOCK */}
         <div className="flex-1 text-right flex flex-col justify-center items-end overflow-hidden">
           
-          {/* 2️⃣ POINT 2 ANIMATION: TEXT SCROLLS UP (Safe To Spend badge and value drift upwards) */}
           <div className={`flex flex-col items-end transform transition-all duration-700 delay-200 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
             <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border mb-2 shadow-sm ${isDarkMode ? "bg-slate-800/80 border-slate-700 text-slate-300" : "bg-white/80 border-slate-200 text-slate-600"}`}>
               <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${safeToSpend < 0 ? "bg-red-500" : "bg-emerald-500 animate-pulse"}`}></div>
@@ -210,7 +240,6 @@ export default function Dashboard({
             </p>
           </div>
           
-          {/* 3️⃣ POINT 3 ANIMATION: TEXT SCROLLS FROM SIDE (Countdown container glides horizontally from right boundary edge) */}
           {nextPaydayDayName && (
             <div className={`mt-2 transform transition-all duration-700 delay-500 cubic-bezier(0.16, 1, 0.3, 1) w-full text-right ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-12"}`}>
               <span className={`text-[9px] font-black uppercase tracking-widest block leading-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
@@ -228,6 +257,7 @@ export default function Dashboard({
     </div>
   );
 
+  // Rigid calendar cutoff tracking calculations for currentMonthBillsTotal summary block
   const currentMonthBillsTotal = bills.reduce((sum, bill) => {
     if (bill.isPaid) return sum;
     let include = false;
@@ -246,7 +276,6 @@ export default function Dashboard({
   }, 0);
 
   return (
-    // 🎨 MASTER LAYOUT CHASSIS
     <div className={`pb-32 transition-colors duration-500 min-h-screen relative overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-gradient-to-b from-slate-50 via-[#F8FAFC] to-blue-50/40"}`}>
       
       <div className="relative z-10 Dashboard-Master-Header">
@@ -271,7 +300,7 @@ export default function Dashboard({
         <div className="flex gap-4 pr-6 pb-2 min-h-[170px]">
           {hzPaydays.map((pd) => {
             const pdSettings = paydayConfig?.[pd] || {};
-            const groupBills = billsByPayday[pd] || [];
+            const groupBills = billsByRunwayGroup[pd] || [];
             if (pd !== "Due Now" && !pdSettings?.date) return null;
 
             const unpaidBills = groupBills.filter(b => !b.isPaid);
@@ -340,23 +369,9 @@ export default function Dashboard({
         </h3>
 
         <div className="space-y-4">
-          {["Due Now", "Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].map((payday) => {
-            const groupBills = billsByPayday[payday] || [];
-            
-            const filteredVerticalBills = groupBills.filter((bill) => {
-              if (bill.isOverdue || bill.payday === "Due Now") return true;
-              if (bill.rawDate) {
-                const parts = bill.rawDate.split("-");
-                if (parts.length === 3) {
-                  const bMonth = parseInt(parts[1], 10) - 1;
-                  const bYear = parseInt(parts[0], 10);
-                  return bMonth === currentMonthIdx && bYear === currentYearIdx;
-                }
-              }
-              return false;
-            });
-
-            const activeGroupBills = filteredVerticalBills.filter(b => !b.isPaid); 
+          {["Due Now", ...allowedPaydays].map((payday) => {
+            const groupBills = billsByRunwayGroup[payday] || [];
+            const activeGroupBills = groupBills.filter(b => !b.isPaid); 
             const pdSettings = paydayConfig?.[payday] || {};
             const isDueNow = payday === "Due Now";
             
@@ -469,7 +484,7 @@ export default function Dashboard({
         <div className={`mt-6 py-4 px-5 rounded-[1.5rem] border flex flex-col items-center justify-center gap-2 transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-800 shadow-sm" : "bg-white/80 backdrop-blur-md border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]"}`}>
            <span className={`text-[11px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Total Bills for {currentMonthName}</span>
            <div className={`px-3 py-1.5 rounded-[8px] border font-black text-lg tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"}`}>
-              ${currentMonthBillsTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+             ${currentMonthBillsTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
            </div>
         </div>
 
@@ -486,20 +501,20 @@ export default function Dashboard({
                   let txPrefix = "";
 
                   if (tx?.type === "Income") {
-                      txColorStr = "text-emerald-500";
-                      txBgBorderStr = isDarkMode ? "bg-emerald-900/20 border-emerald-500/30" : "bg-emerald-50 border-emerald-200";
-                      txShadowStr = "drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]";
-                      txPrefix = "+";
+                    txColorStr = "text-emerald-500";
+                    txBgBorderStr = isDarkMode ? "bg-emerald-900/20 border-emerald-500/30" : "bg-emerald-50 border-emerald-200";
+                    txShadowStr = "drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]";
+                    txPrefix = "+";
                   } else if (isBillTx) {
-                      txColorStr = "text-[#1877F2]";
-                      txBgBorderStr = isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200";
-                      txShadowStr = "drop-shadow-[0_0_12px_rgba(24,119,242,0.7)]";
-                      txPrefix = "-";
+                    txColorStr = "text-[#1877F2]";
+                    txBgBorderStr = isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200";
+                    txShadowStr = "drop-shadow-[0_0_12px_rgba(24,119,242,0.7)]";
+                    txPrefix = "-";
                   } else {
-                      txColorStr = "text-orange-500";
-                      txBgBorderStr = isDarkMode ? "bg-orange-900/20 border-orange-500/30" : "bg-orange-50 border-orange-200";
-                      txShadowStr = "drop-shadow-[0_0_12px_rgba(249,115,22,0.7)]";
-                      txPrefix = "-";
+                    txColorStr = "text-orange-500";
+                    txBgBorderStr = isDarkMode ? "bg-orange-900/20 border-orange-500/30" : "bg-orange-50 border-orange-200";
+                    txShadowStr = "drop-shadow-[0_0_12px_rgba(249,115,22,0.7)]";
+                    txPrefix = "-";
                   }
 
                   return (
@@ -532,7 +547,7 @@ export default function Dashboard({
                           <span className={`text-[10px] font-semibold uppercase tracking-widest mt-0.5 truncate w-full ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>{tx?.date || "Recent"}</span>
                          </div>
                          <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 ${txColorStr} ${txBgBorderStr} ${txShadowStr} whitespace-nowrap`}>
-                            {txPrefix}${(Number(tx?.amount) || 0).toFixed(2)}
+                            {txPrefix}${...((Number(tx?.amount) || 0).toFixed(2))}
                          </div>
                       </div>
 

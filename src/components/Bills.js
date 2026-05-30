@@ -14,6 +14,7 @@ export default function Bills({
   toggleCollapse
 }) {
   const [isMounted, setIsMounted] = useState(false);
+  // Part 5 Fix: Dynamic initialization to prevent month-flicker on day 1
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth());
   const [expandedMonthIdx, setExpandedMonthIdx] = useState(() => new Date().getMonth());
   
@@ -60,6 +61,7 @@ export default function Bills({
 
   const getMonthMetrics = (mIdx) => {
     const monthBills = bills.filter((b) => {
+      // Logic Fix for Point #4: Ensure dated bills in future months are found/accounted for
       if (b.rawDate) {
         const parts = b.rawDate.split("-");
         if (parts.length === 3) {
@@ -72,6 +74,7 @@ export default function Bills({
       }
       
       if (mIdx > currentMonthIndex && b.isRecurring) {
+        // Prevent double-counting if the recurring bill already has an explicit date match above
         if (b.rawDate) {
           const parts = b.rawDate.split("-");
           if (parts.length === 3) {
@@ -117,8 +120,7 @@ export default function Bills({
     });
   };
 
-  const activeMetrics = getMonthMetrics(selectedMonth);
-  
+  // Logic Fix for Point #1: Global Ledger Hero Calculations
   const globalTotalDue = bills.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
   const globalTotalPaid = bills.filter((b) => b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
   const globalProgressPercentage = globalTotalDue === 0 ? 0 : Math.max(0, Math.min((globalTotalPaid / globalTotalDue) * 100, 100));
@@ -134,7 +136,8 @@ export default function Bills({
 
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
-      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-500/10 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
+      {/* Design Fix for Point #2: Enhanced Gradient Flare for Light Mode (blue-600/20) */}
+      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
           
         <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
           <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-black"}`}>
@@ -247,6 +250,7 @@ export default function Bills({
         </div>
       </div>
 
+      {/* Signature Divider #1 */}
       <div className={`mx-6 mb-6 border-t ${isDarkMode ? "border-white/20" : "border-black/20"}`}></div>
 
       <main className="px-6 space-y-8 mt-2">
@@ -326,6 +330,7 @@ export default function Bills({
             </div>
           )}
 
+          {/* Signature Divider #2 */}
           <div className={`mb-6 border-t ${isDarkMode ? "border-white/20" : "border-black/20"}`}></div>
 
           <div className="space-y-4">
@@ -450,6 +455,7 @@ export default function Bills({
           </div>
         </div>
 
+        {/* Signature Divider #3 */}
         <div className={`mt-6 mb-2 border-t ${isDarkMode ? "border-white/20" : "border-black/20"}`}></div>
 
         {bills.filter(b => b.isPaid).length > 0 && (

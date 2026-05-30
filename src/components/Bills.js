@@ -31,8 +31,12 @@ export default function Bills({
         const container = horizontalScrollRef.current;
         const cardWidth = 224; 
         
-        // Viewport-calibrated alignment math to match the page logo center axis perfectly
-        const targetScrollPosition = (currentMonthIndex * cardWidth) - (window.innerWidth / 2) + (cardWidth / 2) - 24;
+        const headerElement = document.querySelector(".Bills-Master-Header");
+        const centerAxis = headerElement 
+          ? headerElement.getBoundingClientRect().left + (headerElement.clientWidth / 2)
+          : window.innerWidth / 2;
+
+        const targetScrollPosition = (currentMonthIndex * cardWidth) - centerAxis + (cardWidth / 2) - 24;
         
         container.scrollTo({
           left: Math.max(0, targetScrollPosition),

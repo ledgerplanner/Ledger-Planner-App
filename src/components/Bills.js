@@ -63,6 +63,36 @@ export default function Bills({
     { name: "December", short: "Dec", idx: 11 }
   ];
 
+  const getHistoricalIncomeForMonth = (mIdx) => {
+    // If it's a future month, always return the live configuration template income
+    if (mIdx > currentMonthIndex) {
+      return Object.values(paydayConfig || {}).reduce((sum, slot) => sum + (Number(slot?.income) || 0), 0);
+    }
+
+    // Historical Vault Logic: Filter actual historical income transactions logged up to 11:59 PM of that month
+    const historicalDeposits = bills.filter((b) => {
+      if (!b.isIncome || !b.rawDate) return false;
+      const parts = b.rawDate.split("-");
+      if (parts.length !== 3) return false;
+      const bMonth = parseInt(parts[1], 10) - 1;
+      const bYear = parseInt(parts[0], 10);
+      return bMonth === mIdx && bYear === currentYear;
+    });
+
+    // If transactions exist for that month, return their real cumulative historical sum
+    if (historicalDeposits.length > 0) {
+      return historicalDeposits.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+    }
+
+    // Fallback alignment context: if the user hasn't explicitly entered past deposits but it's the current month, show live configuration template income
+    if (mIdx === currentMonthIndex) {
+      return Object.values(paydayConfig || {}).reduce((sum, slot) => sum + (Number(slot?.income) || 0), 0);
+    }
+
+    // Otherwise, past months with no documented historical ledger records return absolute 0.00 balance context
+    return 0;
+  };
+
   const getMonthMetrics = (mIdx) => {
     const monthBills = bills.filter((b) => {
       if (b.rawDate) {
@@ -213,10 +243,9 @@ export default function Bills({
             const isSelected = selectedMonth === m.idx;
             const isPastMonth = m.idx < currentMonthIndex;
 
-            // Past, current, and future cards now consistently use brand blue for Total Due Amount
+            // Total due amount is locked to primary brand blue across past, current, and future cards
             const amountColorClass = "text-[#1877F2]";
 
-            // Determine background wrappers and styles based on selection state and month position
             let cardBackgroundClass = "";
             let buttonText = "";
             let buttonStyleClass = "";
@@ -224,13 +253,15 @@ export default function Bills({
             let displayIncomeValue = "";
 
             if (isPastMonth) {
-              // Income section checks for configured data slots; defaults to a greyed-out $0.00 profile if missing
-              if (baseMonthlyIncome === 0) {
+              const historicalIncome = getHistoricalIncomeForMonth(m.idx);
+              
+              if (historicalIncome === 0) {
+                // If past month has no data, apply greyed out profile layout
                 incomeTextClass = "text-slate-400 dark:text-slate-500 font-bold";
                 displayIncomeValue = "$0.00";
               } else {
                 incomeTextClass = isDarkMode ? "text-emerald-400 font-black" : "text-emerald-600 font-black";
-                displayIncomeValue = `+$${baseMonthlyIncome.toLocaleString("en-US", { minimumFractionDigits: 0 })}`;
+                displayIncomeValue = `+$${historicalIncome.toLocaleString("en-US", { minimumFractionDigits: 0 })}`;
               }
 
               if (isSelected) {
@@ -243,7 +274,7 @@ export default function Bills({
                 buttonStyleClass = isDarkMode ? "bg-slate-800 text-slate-400 font-bold" : "bg-slate-100 text-slate-500 font-bold";
               }
             } else {
-              // Layout engine configurations for Current & Future Month Cards
+              // Layout structures for Current & Future Month Cards
               incomeTextClass = isDarkMode ? "text-emerald-400 font-black" : "text-emerald-600 font-black";
               displayIncomeValue = `+$${baseMonthlyIncome.toLocaleString("en-US", { minimumFractionDigits: 0 })}`;
               
@@ -298,6 +329,7 @@ export default function Bills({
         </div>
       </div>
 
+      {/* Signature Line Section Divider #1 */}
       <div className={`mx-6 mb-6 border-t ${isDarkMode ? "border-white/20" : "border-black/20"}`}></div>
 
       <main className="px-6 space-y-8 mt-2">
@@ -377,6 +409,7 @@ export default function Bills({
             </div>
           )}
 
+          {/* Signature Line Section Divider #2 */}
           <div className={`mb-6 border-t ${isDarkMode ? "border-white/20" : "border-black/20"}`}></div>
 
           <div className="space-y-4">
@@ -501,13 +534,7 @@ export default function Bills({
           </div>
         </div>
 
-        <div className={`mt-6 py-4 px-5 rounded-[1.5rem] border flex flex-col items-center justify-center gap-2 transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-800 shadow-sm" : "bg-white/80 backdrop-blur-md border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]"}`}>
-           <span className={`text-[11px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Total Bills for {monthsData[selectedMonth]?.name || "Selected Month"}</span>
-           <div className={`px-3 py-1.5 rounded-[8px] border font-black text-lg tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"}`}>
-             ${activeMetrics.totalDue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-           </div>
-        </div>
-
+        {/* Signature Line Section Divider #3 */}
         <div className={`mt-6 mb-2 border-t ${isDarkMode ? "border-white/20" : "border-black/20"}`}></div>
 
         {bills.filter(b => b.isPaid).length > 0 && (

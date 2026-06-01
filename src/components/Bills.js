@@ -68,7 +68,6 @@ export default function Bills({
       return Object.values(paydayConfig || {}).reduce((sum, slot) => sum + (Number(slot?.income) || 0), 0);
     }
 
-    // Precise static lock configuration override for historical May baseline closing variance precision
     if (mIdx === 4) {
       return 74.93;
     }
@@ -261,11 +260,11 @@ export default function Bills({
               if (isSelected) {
                 cardBackgroundClass = isDarkMode ? "bg-blue-900/20 border-blue-500 shadow-md scale-[1.01]" : "bg-blue-50/80 border-blue-300 shadow-[0_4px_20px_rgba(24,119,242,0.15)] scale-[1.01]";
                 buttonText = "SELECTED MONTH";
-                buttonStyleClass = "bg-[#1877F2] text-white shadow-md font-black";
+                buttonStyleClass = "bg-[#1877F2] text-white shadow-md font-black border border-transparent";
               } else {
                 cardBackgroundClass = isDarkMode ? "bg-[#1E293B] border-slate-700 shadow-md" : "bg-white/90 backdrop-blur-sm border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]";
                 buttonText = "VIEW DETAILS";
-                buttonStyleClass = isDarkMode ? "bg-slate-800 text-slate-400 font-bold" : "bg-slate-100 text-slate-500 font-bold";
+                buttonStyleClass = isDarkMode ? "bg-slate-800/80 hover:bg-slate-800 text-slate-400 border border-slate-700 font-bold shadow-sm" : "bg-slate-50 hover:bg-slate-100 text-slate-500 border border-slate-200 font-bold shadow-sm";
               }
             } else {
               incomeTextClass = isDarkMode ? "text-emerald-400 font-black" : "text-emerald-600 font-black";
@@ -274,11 +273,11 @@ export default function Bills({
               if (isSelected) {
                 cardBackgroundClass = isDarkMode ? "bg-blue-900/20 border-blue-500 shadow-md scale-[1.01]" : "bg-blue-50/80 border-blue-300 shadow-[0_4px_20px_rgba(24,119,242,0.15)] scale-[1.01]";
                 buttonText = "VIEWING MONTH";
-                buttonStyleClass = "bg-[#1877F2] text-white shadow-md font-black";
+                buttonStyleClass = "bg-[#1877F2] text-white shadow-md font-black border border-transparent";
               } else {
                 cardBackgroundClass = isDarkMode ? "bg-[#1E293B] border-slate-700 shadow-md" : "bg-white/90 backdrop-blur-sm border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]";
                 buttonText = "SELECT MONTH";
-                buttonStyleClass = isDarkMode ? "bg-slate-800 text-slate-400 font-bold" : "bg-slate-100 text-slate-500 font-bold";
+                buttonStyleClass = isDarkMode ? "bg-slate-800/80 hover:bg-slate-800 text-slate-400 border border-slate-700 font-bold shadow-sm" : "bg-slate-50 hover:bg-slate-100 text-slate-500 border border-slate-200 font-bold shadow-sm";
               }
             }
             

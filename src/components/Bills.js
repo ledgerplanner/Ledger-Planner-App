@@ -30,9 +30,8 @@ export default function Bills({
       if (horizontalScrollRef.current) {
         const container = horizontalScrollRef.current;
         const cardWidth = 224; 
-        
-        // Internal track geometric centering calculation to guarantee perfect alignment across all viewports
-        const targetScrollPosition = (currentMonthIndex * cardWidth) - (container.clientWidth / 2) + (cardWidth / 2);
+        const scrollContainerWidth = container.clientWidth;
+        const targetScrollPosition = (currentMonthIndex * cardWidth) - (scrollContainerWidth / 2) + (cardWidth / 2);
         
         container.scrollTo({
           left: Math.max(0, targetScrollPosition),
@@ -42,7 +41,6 @@ export default function Bills({
     };
 
     setTimeout(centerActiveMonthCard, 300);
-
     window.addEventListener("resize", centerActiveMonthCard);
     return () => window.removeEventListener("resize", centerActiveMonthCard);
   }, []);
@@ -213,12 +211,58 @@ export default function Bills({
           {monthsData.map((m) => {
             const { totalDue, totalPaid } = getMonthMetrics(m.idx);
             const isSelected = selectedMonth === m.idx;
+            const isPastMonth = m.idx < currentMonthIndex;
+
+            // Past, current, and future cards now consistently use brand blue for Total Due Amount
+            const amountColorClass = "text-[#1877F2]";
+
+            // Determine background wrappers and styles based on selection state and month position
+            let cardBackgroundClass = "";
+            let buttonText = "";
+            let buttonStyleClass = "";
+            let incomeTextClass = "";
+            let displayIncomeValue = "";
+
+            if (isPastMonth) {
+              // Income section checks for configured data slots; defaults to a greyed-out $0.00 profile if missing
+              if (baseMonthlyIncome === 0) {
+                incomeTextClass = "text-slate-400 dark:text-slate-500 font-bold";
+                displayIncomeValue = "$0.00";
+              } else {
+                incomeTextClass = isDarkMode ? "text-emerald-400 font-black" : "text-emerald-600 font-black";
+                displayIncomeValue = `+$${baseMonthlyIncome.toLocaleString("en-US", { minimumFractionDigits: 0 })}`;
+              }
+
+              if (isSelected) {
+                cardBackgroundClass = isDarkMode ? "bg-blue-900/20 border-blue-500 shadow-md scale-[1.01]" : "bg-blue-50/80 border-blue-300 shadow-[0_4px_20px_rgba(24,119,242,0.15)] scale-[1.01]";
+                buttonText = "SELECTED MONTH";
+                buttonStyleClass = "bg-[#1877F2] text-white shadow-md font-black";
+              } else {
+                cardBackgroundClass = isDarkMode ? "bg-[#1E293B] border-slate-700 shadow-md" : "bg-white/90 backdrop-blur-sm border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]";
+                buttonText = "VIEW DETAILS";
+                buttonStyleClass = isDarkMode ? "bg-slate-800 text-slate-400 font-bold" : "bg-slate-100 text-slate-500 font-bold";
+              }
+            } else {
+              // Layout engine configurations for Current & Future Month Cards
+              incomeTextClass = isDarkMode ? "text-emerald-400 font-black" : "text-emerald-600 font-black";
+              displayIncomeValue = `+$${baseMonthlyIncome.toLocaleString("en-US", { minimumFractionDigits: 0 })}`;
+              
+              if (isSelected) {
+                cardBackgroundClass = isDarkMode ? "bg-blue-900/20 border-blue-500 shadow-md scale-[1.01]" : "bg-blue-50/80 border-blue-300 shadow-[0_4px_20px_rgba(24,119,242,0.15)] scale-[1.01]";
+                buttonText = "VIEWING MONTH";
+                buttonStyleClass = "bg-[#1877F2] text-white shadow-md font-black";
+              } else {
+                cardBackgroundClass = isDarkMode ? "bg-[#1E293B] border-slate-700 shadow-md" : "bg-white/90 backdrop-blur-sm border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]";
+                buttonText = "SELECT MONTH";
+                buttonStyleClass = isDarkMode ? "bg-slate-800 text-slate-400 font-bold" : "bg-slate-100 text-slate-500 font-bold";
+              }
+            }
             
             return (
               <div
                 key={m.idx}
                 onClick={() => handleMonthCardClick(m.idx)}
-                className={`shrink-0 w-52 p-5 rounded-[1.75rem] border cursor-pointer active:scale-[0.95] transition-all flex flex-col justify-between h-44 ${isSelected ? (isDarkMode ? "bg-blue-900/20 border-blue-500 shadow-md scale-[1.01]" : "bg-blue-50/80 border-blue-300 shadow-[0_4px_20px_rgba(24,119,242,0.15)] scale-[1.01]") : (isDarkMode ? "bg-[#1E293B] border-slate-700 shadow-md" : "bg-white/90 backdrop-blur-sm border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]")}`}
+                className={`shrink-0 w-52 p-5 rounded-[1.75rem] border cursor-pointer active:scale-[0.95] transition-all flex flex-col justify-between h-44 ${cardBackgroundClass}`}
               >
                 <div className="flex justify-between items-center w-full">
                   <h4 className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? "text-[#1877F2]" : "text-slate-400"}`}>{m.name}</h4>
@@ -226,7 +270,7 @@ export default function Bills({
                 </div>
 
                 <div className="text-center pt-1.5 pb-1">
-                  <p className={`text-2xl font-black tracking-tighter leading-none mb-1 ${totalDue === 0 ? "text-slate-400" : "text-[#1877F2]"}`}>
+                  <p className={`text-2xl font-black tracking-tighter leading-none mb-1 ${amountColorClass}`}>
                     ${totalDue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                   <span className={`text-[8px] font-black uppercase tracking-[0.15em] ${isDarkMode ? "text-white" : "text-slate-900"} leading-none block`}>
@@ -234,14 +278,14 @@ export default function Bills({
                   </span>
                 </div>
 
-                <div className={`w-full py-1.5 rounded-xl text-center font-black text-[9px] tracking-wider transition-all uppercase ${isSelected ? "bg-[#1877F2] text-white shadow-md" : isDarkMode ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-500"}`}>
-                  {isSelected ? "VIEWING MONTH" : "SELECT MONTH"}
+                <div className={`w-full py-1.5 rounded-xl text-center text-[9px] tracking-wider transition-all uppercase ${buttonStyleClass}`}>
+                  {buttonText}
                 </div>
 
                 <div className="flex justify-between items-end w-full pt-2">
                   <div className="flex flex-col flex-1">
                     <span className={`text-[7px] font-black uppercase tracking-widest mb-0.5 ${isDarkMode ? "text-white opacity-40" : "text-black opacity-40"}`}>Income</span>
-                    <span className={`text-[10px] font-black ${isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>+${baseMonthlyIncome.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
+                    <span className={`text-[10px] ${incomeTextClass}`}>{displayIncomeValue}</span>
                   </div>
                   <div className="flex flex-col items-end shrink-0">
                     <span className={`text-[7px] font-black uppercase tracking-widest mb-0.5 ${isDarkMode ? "text-white opacity-40" : "text-black opacity-40"}`}>Paid</span>
@@ -286,7 +330,7 @@ export default function Bills({
                       </div>
                       <button
                         onClick={(e) => { e.stopPropagation(); setSelectedEntry(bill); }}
-                        className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500" : "hover:bg-slate-100 text-slate-400"}`}
+                        className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400"}`}
                       >
                         <Edit2 size={16} strokeWidth={2} />
                       </button>

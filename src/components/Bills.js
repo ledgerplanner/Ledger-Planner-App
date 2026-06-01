@@ -64,12 +64,10 @@ export default function Bills({
   ];
 
   const getClosingBalanceForMonth = (mIdx) => {
-    // If it's a future or current month, default to the configuration baseline template income value
     if (mIdx >= currentMonthIndex) {
       return Object.values(paydayConfig || {}).reduce((sum, slot) => sum + (Number(slot?.income) || 0), 0);
     }
 
-    // Vault Query Logic: Aggregates historical ledger transactions matching the target month context
     const historicalDeposits = bills.filter((b) => {
       if (!b.rawDate) return false;
       const parts = b.rawDate.split("-");
@@ -80,11 +78,9 @@ export default function Bills({
     });
 
     if (historicalDeposits.length > 0) {
-      // Extract the closing income balance as logged inside the system vault at month-end closing
       return historicalDeposits.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
     }
 
-    // Historical months with absolutely no data entries default to a pure zero baseline state
     return 0;
   };
 
@@ -154,6 +150,61 @@ export default function Bills({
   const globalProgressPercentage = globalTotalDue === 0 ? 0 : Math.max(0, Math.min((globalTotalPaid / globalTotalDue) * 100, 100));
 
   const urgentBills = bills.filter((b) => !b.isPaid && (b.isOverdue || b.payday === "Due Now"));
+  const horizonBills = bills.filter((b) => {
+    if (!b.rawDate) return false;
+    const parts = b.rawDate.split("-");
+    return parts.length === 3 && parseInt(parts[0], 10) >= 2027;
+  });
+
+  const baseMonthlyIncome = Object.values(paydayConfig || {}).reduce((sum, slot) => sum + (Number(slot?.income) || 0), 0);
+
+  // FIXED ORDER: Moved graphicContent definition here, safely below all calculation lines
+  const graphicContent = (
+    <div className="flex flex-col relative z-10 mb-2 w-full">
+      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
+          
+        <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
+          <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-black"}`}>
+            Master Bills List
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between w-full">
+          <div className="relative w-28 h-28 flex-shrink-0">
+            <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
+              <defs>
+                <linearGradient id="billGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#10B981" />
+                  <stop offset="100%" stopColor="#059669" />
+                </linearGradient>
+              </defs>
+              <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "#1E293B" : "rgba(226, 232, 240, 0.9)"} strokeWidth="12" />
+              <circle cx="50" cy="50" r="40" fill="transparent" stroke="url(#billGlow)" strokeWidth="12" strokeLinecap="round" strokeDasharray={251.2} strokeDashoffset={isMounted ? (251.2 - (251.2 * globalProgressPercentage) / 100) : 251.2} className="transition-all duration-1000 ease-out" />
+            </svg>
+            <div className={`absolute inset-0 flex flex-col items-center justify-center transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
+              <span className={`text-xl font-black ${isDarkMode ? "text-white" : "text-slate-900"}`}>{Math.round(globalProgressPercentage)}%</span>
+              <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">Paid</span>
+            </div>
+          </div>
+   
+          <div className="flex-1 pl-4 text-right overflow-hidden">
+            <p className={`text-[10px] font-black uppercase tracking-widest mb-1 text-slate-400 transform transition-all duration-700 delay-200 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+              Total Bills Paid
+            </p>
+            <p className={`font-black tracking-tighter mb-0 leading-none sm:leading-tight transform transition-all duration-700 delay-400 cubic-bezier(0.16, 1, 0.3, 1) ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-12"}`}>
+              <span className={`text-2xl min-[380px]:text-3xl sm:text-4xl block sm:inline ${globalTotalPaid === 0 ? "text-red-500" : "text-[#10B981]"}`}>
+                ${globalTotalPaid.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+              <span className="text-sm min-[380px]:text-base sm:text-xl text-[#1877F2] block sm:inline sm:ml-1 mt-1 sm:mt-0 font-black">
+                 / ${globalTotalDue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
 
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
@@ -177,7 +228,6 @@ export default function Bills({
             const isSelected = selectedMonth === m.idx;
             const isPastMonth = m.idx < currentMonthIndex;
 
-            // Brand blue enforcement rule for Total Due across all cards
             const amountColorClass = "text-[#1877F2]";
 
             let cardBackgroundClass = "";
@@ -207,7 +257,6 @@ export default function Bills({
                 buttonStyleClass = isDarkMode ? "bg-slate-800 text-slate-400 font-bold" : "bg-slate-100 text-slate-500 font-bold";
               }
             } else {
-              // Current & Future Cards matching the layout parameters
               incomeTextClass = isDarkMode ? "text-emerald-400 font-black" : "text-emerald-600 font-black";
               displayIncomeValue = `+$${baseMonthlyIncome.toLocaleString("en-US", { minimumFractionDigits: 0 })}`;
               
@@ -242,7 +291,6 @@ export default function Bills({
                   </span>
                 </div>
 
-                {/* All 12 Horizontal Cards now permanently render a structured tracking button */}
                 <div className={`w-full py-1.5 rounded-xl text-center text-[9px] tracking-wider transition-all uppercase ${buttonStyleClass}`}>
                   {buttonText}
                 </div>
@@ -466,7 +514,6 @@ export default function Bills({
           </div>
         </div>
 
-        {/* Signature Line Section Divider #3 - Replaced generic summary layout block */}
         <div className={`mt-6 mb-2 border-t ${isDarkMode ? "border-white/20" : "border-black/20"}`}></div>
 
         {bills.filter(b => b.isPaid).length > 0 && (

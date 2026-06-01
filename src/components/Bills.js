@@ -26,24 +26,25 @@ export default function Bills({
     setSelectedMonth(currentMonthIndex);
     setExpandedMonthIdx(currentMonthIndex);
 
-    setTimeout(() => {
+    const centerActiveMonthCard = () => {
       if (horizontalScrollRef.current) {
         const container = horizontalScrollRef.current;
         const cardWidth = 224; 
         
-        const headerElement = document.querySelector(".Bills-Master-Header");
-        const centerAxis = headerElement 
-          ? headerElement.getBoundingClientRect().left + (headerElement.clientWidth / 2)
-          : window.innerWidth / 2;
-
-        const targetScrollPosition = (currentMonthIndex * cardWidth) - centerAxis + (cardWidth / 2) - 24;
+        // Internal track geometric centering calculation to guarantee perfect alignment across all viewports
+        const targetScrollPosition = (currentMonthIndex * cardWidth) - (container.clientWidth / 2) + (cardWidth / 2);
         
         container.scrollTo({
           left: Math.max(0, targetScrollPosition),
           behavior: "smooth"
         });
       }
-    }, 300);
+    };
+
+    setTimeout(centerActiveMonthCard, 300);
+
+    window.addEventListener("resize", centerActiveMonthCard);
+    return () => window.removeEventListener("resize", centerActiveMonthCard);
   }, []);
 
   const currentYear = 2026;
@@ -483,7 +484,7 @@ export default function Bills({
                       </div>
                       <button
                         onClick={(e) => { e.stopPropagation(); setSelectedEntry(bill); }}
-                        className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500" : "hover:bg-slate-100 text-slate-400"}`}
+                        className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400"}`}
                       >
                         <Edit2 size={16} strokeWidth={2} />
                       </button>

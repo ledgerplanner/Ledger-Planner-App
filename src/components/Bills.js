@@ -22,6 +22,12 @@ export default function Bills({
   
   const horizontalScrollRef = useRef(null);
 
+  // FIX 1: Capture the dynamic parent properties passed down from the top level layout wrapper
+  const rawLiveIncomeValue = typeof liveHeroBalance !== "undefined" && liveHeroBalance !== null ? liveHeroBalance 
+    : typeof accountsHeroBalance !== "undefined" && accountsHeroBalance !== null ? accountsHeroBalance 
+    : typeof totalLiveIncome !== "undefined" && totalLiveIncome !== null ? totalLiveIncome 
+    : null;
+
   useEffect(() => {
     setIsMounted(true);
     const today = new Date();
@@ -78,8 +84,13 @@ export default function Bills({
   ];
 
   const getClosingBalanceForMonth = (mIdx) => {
-    // FIX 1: Compute true active income local to the current month to bypass parent prop tunneling issues
     if (mIdx === currentMonthIndex) {
+      // FIX 1: Verify if the resolved balance object exists. If it parses to absolute 0 or null,
+      // dynamically fall back to scanning transaction arrays for real-time items to ensure it never renders as blank $0.00
+      if (rawLiveIncomeValue !== null && Number(rawLiveIncomeValue) !== 0) {
+        return Number(rawLiveIncomeValue);
+      }
+
       const activeMonthIncome = bills.filter((b) => {
         if (!b.isIncome || !b.rawDate) return false;
         const parts = b.rawDate.split("-");
@@ -254,7 +265,6 @@ export default function Bills({
       </div>
       
       <div ref={horizontalScrollRef} className="w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-6 relative z-10 pt-2">
-        {/* FIX 2: Added visual scroll-padding snap property to lock alignment natively at the viewport center axis layout */}
         <div className="flex gap-4 pr-6 pb-2 min-h-[170px] snap-x snap-mandatory">
           {monthsData.map((m) => {
             const { totalDue, totalPaid } = getMonthMetrics(m.idx);
@@ -294,7 +304,6 @@ export default function Bills({
             } else if (isCurrentMonth) {
               customIdAttribute = "current-month-scroll-anchor";
               
-              // FIX 1: Run calculations locally via the transaction database ledger array to fetch accurate down-to-the-penny details
               const currentLiveBalance = getClosingBalanceForMonth(m.idx);
               incomeTextClass = isDarkMode ? "text-emerald-400 font-black" : "text-emerald-600 font-black";
               displayIncomeValue = `+$${currentLiveBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

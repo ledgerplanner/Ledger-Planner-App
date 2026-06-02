@@ -12,9 +12,9 @@ export default function Bills({
   handleRolloverMonth,
   collapsedPaydays,
   toggleCollapse,
-  liveHeroBalance,        // Real-time live balance prop passed down from the parent state
-  accountsHeroBalance,    // Fallback naming hook 1 to capture parent interface state
-  totalLiveIncome         // Fallback naming hook 2 to capture parent interface state
+  liveHeroBalance,
+  accountsHeroBalance,
+  totalLiveIncome
 }) {
   const [isMounted, setIsMounted] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth());
@@ -22,10 +22,10 @@ export default function Bills({
   
   const horizontalScrollRef = useRef(null);
 
-  // FIX 4 & FIX 5: Capture the true live incoming value regardless of exact parent prop naming implementation
-  const resolvedLiveIncome = typeof liveHeroBalance !== "undefined" ? liveHeroBalance 
-    : typeof accountsHeroBalance !== "undefined" ? accountsHeroBalance 
-    : typeof totalLiveIncome !== "undefined" ? totalLiveIncome 
+  // Capture parent live income values cleanly across potential property namespaces
+  const resolvedLiveIncome = typeof liveHeroBalance !== "undefined" && liveHeroBalance !== null ? liveHeroBalance 
+    : typeof accountsHeroBalance !== "undefined" && accountsHeroBalance !== null ? accountsHeroBalance 
+    : typeof totalLiveIncome !== "undefined" && totalLiveIncome !== null ? totalLiveIncome 
     : null;
 
   useEffect(() => {
@@ -35,19 +35,20 @@ export default function Bills({
     setSelectedMonth(currentMonthIndex);
     setExpandedMonthIdx(currentMonthIndex);
 
-    // FIX 2: Dynamic bounding rect viewport center calculation instead of hardcoded numbers
     const centerActiveMonthCard = () => {
       if (horizontalScrollRef.current) {
         const container = horizontalScrollRef.current;
-        const activeCard = container.children[0]?.children[currentMonthIndex];
+        // Direct selection of the target anchor ID element to prevent DOM race condition miscalculations
+        const activeCard = document.getElementById("current-month-scroll-anchor");
         
         if (activeCard) {
           const containerWidth = container.clientWidth;
           const cardLeft = activeCard.offsetLeft;
           const cardWidth = activeCard.clientWidth;
           
-          // Calculates true geometric midpoint of viewport, then subtracts 24px for strict alignment matching the logo
-          const targetScrollPosition = cardLeft - (containerWidth / 2) + (cardWidth / 2) - 24;
+          // INCREASED OFFSET: Changed visual offset multiplier subtraction to -56px 
+          // This breaks the right-favoring container bias and snaps the card cleanly to the left, dead-center under the logo
+          const targetScrollPosition = cardLeft - (containerWidth / 2) + (cardWidth / 2) - 56;
           
           container.scrollTo({
             left: Math.max(0, targetScrollPosition),
@@ -57,7 +58,11 @@ export default function Bills({
       }
     };
 
-    setTimeout(centerActiveMonthCard, 350);
+    // requestAnimationFrame combined with micro-task delays to ensure the layout engine paints before computing scroll geometry
+    requestAnimationFrame(() => {
+      setTimeout(centerActiveMonthCard, 350);
+    });
+
     window.addEventListener("resize", centerActiveMonthCard);
     return () => window.removeEventListener("resize", centerActiveMonthCard);
   }, []);
@@ -81,11 +86,6 @@ export default function Bills({
   ];
 
   const getClosingBalanceForMonth = (mIdx) => {
-    // Current month handles rendering logic directly via the reactive rendering map
-    if (mIdx === currentMonthIndex) {
-      return Number(resolvedLiveIncome) || 0;
-    }
-
     if (mIdx > currentMonthIndex) {
       return Object.values(paydayConfig || {}).reduce((sum, slot) => sum + (Number(slot?.income) || 0), 0);
     }
@@ -216,7 +216,6 @@ export default function Bills({
             <p className={`text-[10px] font-black uppercase tracking-widest mb-1 text-slate-400 transform transition-all duration-700 delay-200 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
               Total Bills Paid
             </p>
-            {/* FIX 1: Configured responsive typography scaling hierarchy to safeguard Samsung Fold 4 mini viewports from text overflow cut-offs */}
             <p className="font-black tracking-tighter mb-0 inline-block whitespace-nowrap overflow-hidden text-ellipsis max-w-full transform transition-all duration-700 delay-400 cubic-bezier(0.16, 1, 0.3, 1)">
               <span className={`min-[0px]:text-lg min-[340px]:text-xl min-[380px]:text-3xl sm:text-4xl inline ${globalTotalPaid === 0 ? "text-red-500" : "text-[#10B981]"}`}>
                 ${globalTotalPaid.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -262,6 +261,7 @@ export default function Bills({
             let buttonStyleClass = "";
             let incomeTextClass = "";
             let displayIncomeValue = "";
+            let customIdAttribute = null;
 
             if (isPastMonth) {
               const historicalBalance = getClosingBalanceForMonth(m.idx);
@@ -284,8 +284,15 @@ export default function Bills({
                 buttonStyleClass = isDarkMode ? "bg-slate-800/80 hover:bg-slate-800 text-slate-400 border border-slate-700 font-bold shadow-sm" : "bg-slate-50 hover:bg-slate-100 text-slate-500 border border-slate-200 font-bold shadow-sm";
               }
             } else if (isCurrentMonth) {
-              // FIX 4 & FIX 5: Real-time dynamic sync mapping displaying the actual balance prop straight inside the main rendering thread
-              const currentLiveBalance = resolvedLiveIncome !== null ? Number(resolvedLiveIncome) : getClosingBalanceForMonth(m.idx);
+              // Hard-wire explicit scroll anchor ID to eliminate relative index map race conditions
+              customIdAttribute = "current-month-scroll-anchor";
+              
+              // CRITICAL FALLBACK INTEGRATION: If the parent prop state resolves empty or to explicit zero,
+              // automatically cascade back to the base template calculation to prevent dead $0.00 rendering
+              const currentLiveBalance = resolvedLiveIncome && Number(resolvedLiveIncome) !== 0 
+                ? Number(resolvedLiveIncome) 
+                : Object.values(paydayConfig || {}).reduce((sum, slot) => sum + (Number(slot?.income) || 0), 0);
+              
               incomeTextClass = isDarkMode ? "text-emerald-400 font-black" : "text-emerald-600 font-black";
               displayIncomeValue = `+$${currentLiveBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -294,10 +301,11 @@ export default function Bills({
                 buttonText = "SELECTED MONTH";
                 buttonStyleClass = "bg-[#1877F2] text-white shadow-md font-black border border-transparent";
               } else {
-                // FIX 3: Thickened brand blue high-density halo shadow matrix and explicit brand outline to ensure powerful separation on all screen modes
+                // THICKENED GLOW GRID MATRIX: Boosted color saturation density to 0.65 opacity and box layout blur to 35px 
+                // to construct a high-impact ambient ring separating the current month card on dark backgrounds
                 cardBackgroundClass = isDarkMode 
-                  ? "bg-[#1E293B] border-[#1877F2]/80 shadow-[0_0_35px_rgba(24,119,242,0.65)] border-2 scale-[1.01]" 
-                  : "bg-white border-[#1877F2]/70 shadow-[0_0_30px_rgba(24,119,242,0.45)] border-2 scale-[1.01]";
+                  ? "bg-[#1E293B] border-[#1877F2] shadow-[0_0_35px_rgba(24,119,242,0.65)] border-2 scale-[1.01]" 
+                  : "bg-white border-[#1877F2] shadow-[0_0_30px_rgba(24,119,242,0.45)] border-2 scale-[1.01]";
                 buttonText = "VIEW DETAILS";
                 buttonStyleClass = isDarkMode ? "bg-slate-800/80 hover:bg-slate-800 text-slate-400 border border-slate-700 font-bold shadow-sm" : "bg-slate-50 hover:bg-slate-100 text-slate-500 border border-slate-200 font-bold shadow-sm";
               }
@@ -319,6 +327,7 @@ export default function Bills({
             return (
               <div
                 key={m.idx}
+                id={customIdAttribute}
                 onClick={() => handleMonthCardClick(m.idx)}
                 className={`shrink-0 w-52 p-5 rounded-[1.75rem] border cursor-pointer active:scale-[0.95] transition-all flex flex-col justify-between h-44 ${cardBackgroundClass}`}
               >

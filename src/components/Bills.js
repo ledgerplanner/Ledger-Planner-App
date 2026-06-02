@@ -11,7 +11,8 @@ export default function Bills({
   renderHeroShell,
   handleRolloverMonth,
   collapsedPaydays,
-  toggleCollapse
+  toggleCollapse,
+  liveHeroBalance // Injected live state variable from Accounts page hero section
 }) {
   const [isMounted, setIsMounted] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth());
@@ -31,7 +32,10 @@ export default function Bills({
         const container = horizontalScrollRef.current;
         const cardWidth = 224; 
         const scrollContainerWidth = container.clientWidth;
-        const targetScrollPosition = (currentMonthIndex * cardWidth) - (scrollContainerWidth / 2) + (cardWidth / 2);
+        
+        // UPDATE 1: Added negative pixel visual offset (-24) to nudge the card perfectly left
+        // aligning it symmetrically with the website logo in the Hero shell across all breakpoints
+        const targetScrollPosition = (currentMonthIndex * cardWidth) - (scrollContainerWidth / 2) + (cardWidth / 2) - 24;
         
         container.scrollTo({
           left: Math.max(0, targetScrollPosition),
@@ -64,7 +68,12 @@ export default function Bills({
   ];
 
   const getClosingBalanceForMonth = (mIdx) => {
-    if (mIdx >= currentMonthIndex) {
+    // UPDATE 5: Current month bypasses layout math templates to sync live data directly
+    if (mIdx === currentMonthIndex) {
+      return Number(liveHeroBalance) || 0;
+    }
+
+    if (mIdx > currentMonthIndex) {
       return Object.values(paydayConfig || {}).reduce((sum, slot) => sum + (Number(slot?.income) || 0), 0);
     }
 
@@ -73,7 +82,7 @@ export default function Bills({
     }
 
     const historicalDeposits = bills.filter((b) => {
-      if (!b.rawDate) return false;
+      if (!b.isIncome || !b.rawDate) return false;
       const parts = b.rawDate.split("-");
       if (parts.length !== 3) return false;
       const bMonth = parseInt(parts[1], 10) - 1;
@@ -209,13 +218,6 @@ export default function Bills({
     </div>
   );
 
-  const formatAccordionDateStr = (dateString) => {
-    if (!dateString) return "TBD";
-    const parts = dateString.split("-");
-    if (parts.length === 3) return new Date(parts[0], parts[1] - 1, parts[2]).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-    return dateString;
-  };
-
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
         
@@ -237,6 +239,7 @@ export default function Bills({
             const { totalDue, totalPaid } = getMonthMetrics(m.idx);
             const isSelected = selectedMonth === m.idx;
             const isPastMonth = m.idx < currentMonthIndex;
+            const isCurrentMonth = m.idx === currentMonthIndex;
 
             const amountColorClass = "text-[#1877F2]";
 
@@ -254,7 +257,7 @@ export default function Bills({
                 displayIncomeValue = "$0.00";
               } else {
                 incomeTextClass = isDarkMode ? "text-emerald-400 font-black" : "text-emerald-600 font-black";
-                displayIncomeValue = `+$${historicalBalance.toLocaleString("en-US", { minimumFractionDigits: 0 })}`;
+                displayIncomeValue = `+$${historicalBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
               }
 
               if (isSelected) {
@@ -266,7 +269,28 @@ export default function Bills({
                 buttonText = "VIEW DETAILS";
                 buttonStyleClass = isDarkMode ? "bg-slate-800/80 hover:bg-slate-800 text-slate-400 border border-slate-700 font-bold shadow-sm" : "bg-slate-50 hover:bg-slate-100 text-slate-500 border border-slate-200 font-bold shadow-sm";
               }
+            } else if (isCurrentMonth) {
+              // UPDATE 5: Dynamic calculation path down to the penny for the current month
+              const currentLiveBalance = getClosingBalanceForMonth(m.idx);
+              incomeTextClass = isDarkMode ? "text-emerald-400 font-black" : "text-emerald-600 font-black";
+              displayIncomeValue = `+$${currentLiveBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+              if (isSelected) {
+                cardBackgroundClass = isDarkMode ? "bg-blue-900/20 border-blue-500 shadow-md scale-[1.01]" : "bg-blue-50/80 border-blue-300 shadow-[0_4px_20px_rgba(24,119,242,0.15)] scale-[1.01]";
+                // UPDATE 4: Changed button text to "SELECTED MONTH" when current month is active
+                buttonText = "SELECTED MONTH";
+                buttonStyleClass = "bg-[#1877F2] text-white shadow-md font-black border border-transparent";
+              } else {
+                // UPDATE 2: Added custom drop-shadow grid matrix configuration to create an elegant elevation hover pop
+                cardBackgroundClass = isDarkMode 
+                  ? "bg-[#1E293B] border-slate-600 shadow-[0_10px_25px_rgba(24,119,242,0.18)] scale-[1.005]" 
+                  : "bg-white/90 backdrop-blur-sm border-slate-300 shadow-[0_12px_30px_rgba(24,119,242,0.12)] scale-[1.005]";
+                // UPDATE 3: Changed unselected button text to "VIEW DETAILS"
+                buttonText = "VIEW DETAILS";
+                buttonStyleClass = isDarkMode ? "bg-slate-800/80 hover:bg-slate-800 text-slate-400 border border-slate-700 font-bold shadow-sm" : "bg-slate-50 hover:bg-slate-100 text-slate-500 border border-slate-200 font-bold shadow-sm";
+              }
             } else {
+              // Future month structural configurations
               incomeTextClass = isDarkMode ? "text-emerald-400 font-black" : "text-emerald-600 font-black";
               displayIncomeValue = `+$${baseMonthlyIncome.toLocaleString("en-US", { minimumFractionDigits: 0 })}`;
               

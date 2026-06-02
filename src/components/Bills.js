@@ -12,7 +12,7 @@ export default function Bills({
   handleRolloverMonth,
   collapsedPaydays,
   toggleCollapse,
-  liveHeroBalance // Injected live state variable from Accounts page hero section
+  liveHeroBalance // Injected dynamic real-time live balance prop from Accounts component
 }) {
   const [isMounted, setIsMounted] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth());
@@ -33,8 +33,8 @@ export default function Bills({
         const cardWidth = 224; 
         const scrollContainerWidth = container.clientWidth;
         
-        // UPDATE 1: Added negative pixel visual offset (-24) to nudge the card perfectly left
-        // aligning it symmetrically with the website logo in the Hero shell across all breakpoints
+        // FIX 1: Nudged calculation loop inside structural container viewport math (-24)
+        // This forces an intentional optical shift left to guarantee symmetrical alignment beneath the Hero Logo
         const targetScrollPosition = (currentMonthIndex * cardWidth) - (scrollContainerWidth / 2) + (cardWidth / 2) - 24;
         
         container.scrollTo({
@@ -68,11 +68,6 @@ export default function Bills({
   ];
 
   const getClosingBalanceForMonth = (mIdx) => {
-    // UPDATE 5: Current month bypasses layout math templates to sync live data directly
-    if (mIdx === currentMonthIndex) {
-      return Number(liveHeroBalance) || 0;
-    }
-
     if (mIdx > currentMonthIndex) {
       return Object.values(paydayConfig || {}).reduce((sum, slot) => sum + (Number(slot?.income) || 0), 0);
     }
@@ -171,6 +166,7 @@ export default function Bills({
 
   const baseMonthlyIncome = Object.values(paydayConfig || {}).reduce((sum, slot) => sum + (Number(slot?.income) || 0), 0);
 
+  // FIXED LAYOUT STRUCTURE: Placed safely down here below calculation dependencies to avert White Screen crashes
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
@@ -203,11 +199,12 @@ export default function Bills({
             <p className={`text-[10px] font-black uppercase tracking-widest mb-1 text-slate-400 transform transition-all duration-700 delay-200 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
               Total Bills Paid
             </p>
-            <p className={`font-black tracking-tighter mb-0 leading-none sm:leading-tight transform transition-all duration-700 delay-400 cubic-bezier(0.16, 1, 0.3, 1) ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-12"}`}>
-              <span className={`text-2xl min-[380px]:text-3xl sm:text-4xl block sm:inline ${globalTotalPaid === 0 ? "text-red-500" : "text-[#10B981]"}`}>
+            {/* FIX 4: Removed block elements and forced amount structures to stay locked inline on a single line across tablet and mobile viewports */}
+            <p className="font-black tracking-tighter mb-0 inline-block whitespace-nowrap transform transition-all duration-700 delay-400 cubic-bezier(0.16, 1, 0.3, 1) opacity-100 translate-x-0">
+              <span className={`text-2xl min-[380px]:text-3xl sm:text-4xl inline ${globalTotalPaid === 0 ? "text-red-500" : "text-[#10B981]"}`}>
                 ${globalTotalPaid.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
-              <span className="text-sm min-[380px]:text-base sm:text-xl text-[#1877F2] block sm:inline sm:ml-1 mt-1 sm:mt-0 font-black">
+              <span className="text-sm min-[380px]:text-base sm:text-xl text-[#1877F2] inline ml-1 font-black">
                  / ${globalTotalDue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </p>
@@ -270,27 +267,24 @@ export default function Bills({
                 buttonStyleClass = isDarkMode ? "bg-slate-800/80 hover:bg-slate-800 text-slate-400 border border-slate-700 font-bold shadow-sm" : "bg-slate-50 hover:bg-slate-100 text-slate-500 border border-slate-200 font-bold shadow-sm";
               }
             } else if (isCurrentMonth) {
-              // UPDATE 5: Dynamic calculation path down to the penny for the current month
-              const currentLiveBalance = getClosingBalanceForMonth(m.idx);
+              // FIX 3: Dynamic parsing straight inside the wrapper engine loop from the parent prop down to the penny context
+              const currentLiveBalance = Number(liveHeroBalance) || 0;
               incomeTextClass = isDarkMode ? "text-emerald-400 font-black" : "text-emerald-600 font-black";
               displayIncomeValue = `+$${currentLiveBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
               if (isSelected) {
                 cardBackgroundClass = isDarkMode ? "bg-blue-900/20 border-blue-500 shadow-md scale-[1.01]" : "bg-blue-50/80 border-blue-300 shadow-[0_4px_20px_rgba(24,119,242,0.15)] scale-[1.01]";
-                // UPDATE 4: Changed button text to "SELECTED MONTH" when current month is active
                 buttonText = "SELECTED MONTH";
                 buttonStyleClass = "bg-[#1877F2] text-white shadow-md font-black border border-transparent";
               } else {
-                // UPDATE 2: Added custom drop-shadow grid matrix configuration to create an elegant elevation hover pop
+                // FIX 2: Configured custom semi-transparent blue brand spread glow matrix to produce vibrant high-end ambient depth
                 cardBackgroundClass = isDarkMode 
-                  ? "bg-[#1E293B] border-slate-600 shadow-[0_10px_25px_rgba(24,119,242,0.18)] scale-[1.005]" 
-                  : "bg-white/90 backdrop-blur-sm border-slate-300 shadow-[0_12px_30px_rgba(24,119,242,0.12)] scale-[1.005]";
-                // UPDATE 3: Changed unselected button text to "VIEW DETAILS"
+                  ? "bg-[#1E293B] border-slate-600 shadow-[0_0_25px_rgba(24,119,242,0.25)] scale-[1.005]" 
+                  : "bg-white/90 backdrop-blur-sm border-slate-300 shadow-[0_0_25px_rgba(24,119,242,0.15)] scale-[1.005]";
                 buttonText = "VIEW DETAILS";
                 buttonStyleClass = isDarkMode ? "bg-slate-800/80 hover:bg-slate-800 text-slate-400 border border-slate-700 font-bold shadow-sm" : "bg-slate-50 hover:bg-slate-100 text-slate-500 border border-slate-200 font-bold shadow-sm";
               }
             } else {
-              // Future month structural configurations
               incomeTextClass = isDarkMode ? "text-emerald-400 font-black" : "text-emerald-600 font-black";
               displayIncomeValue = `+$${baseMonthlyIncome.toLocaleString("en-US", { minimumFractionDigits: 0 })}`;
               
@@ -548,6 +542,7 @@ export default function Bills({
           </div>
         </div>
 
+        {/* Signature Line Section Divider #3 */}
         <div className={`mt-6 mb-2 border-t ${isDarkMode ? "border-white/20" : "border-black/20"}`}></div>
 
         {bills.filter(b => b.isPaid).length > 0 && (

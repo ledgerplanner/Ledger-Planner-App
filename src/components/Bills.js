@@ -12,13 +12,21 @@ export default function Bills({
   handleRolloverMonth,
   collapsedPaydays,
   toggleCollapse,
-  liveHeroBalance // Injected dynamic real-time live balance prop from Accounts component
+  liveHeroBalance,        // Real-time live balance prop passed down from the parent state
+  accountsHeroBalance,    // Fallback naming hook 1 to capture parent interface state
+  totalLiveIncome         // Fallback naming hook 2 to capture parent interface state
 }) {
   const [isMounted, setIsMounted] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth());
   const [expandedMonthIdx, setExpandedMonthIdx] = useState(() => new Date().getMonth());
   
   const horizontalScrollRef = useRef(null);
+
+  // FIX 4 & FIX 5: Capture the true live incoming value regardless of exact parent prop naming implementation
+  const resolvedLiveIncome = typeof liveHeroBalance !== "undefined" ? liveHeroBalance 
+    : typeof accountsHeroBalance !== "undefined" ? accountsHeroBalance 
+    : typeof totalLiveIncome !== "undefined" ? totalLiveIncome 
+    : null;
 
   useEffect(() => {
     setIsMounted(true);
@@ -27,24 +35,29 @@ export default function Bills({
     setSelectedMonth(currentMonthIndex);
     setExpandedMonthIdx(currentMonthIndex);
 
+    // FIX 2: Dynamic bounding rect viewport center calculation instead of hardcoded numbers
     const centerActiveMonthCard = () => {
       if (horizontalScrollRef.current) {
         const container = horizontalScrollRef.current;
-        const cardWidth = 224; 
-        const scrollContainerWidth = container.clientWidth;
+        const activeCard = container.children[0]?.children[currentMonthIndex];
         
-        // FIX 1: Nudged calculation loop inside structural container viewport math (-24)
-        // This forces an intentional optical shift left to guarantee symmetrical alignment beneath the Hero Logo
-        const targetScrollPosition = (currentMonthIndex * cardWidth) - (scrollContainerWidth / 2) + (cardWidth / 2) - 24;
-        
-        container.scrollTo({
-          left: Math.max(0, targetScrollPosition),
-          behavior: "smooth"
-        });
+        if (activeCard) {
+          const containerWidth = container.clientWidth;
+          const cardLeft = activeCard.offsetLeft;
+          const cardWidth = activeCard.clientWidth;
+          
+          // Calculates true geometric midpoint of viewport, then subtracts 24px for strict alignment matching the logo
+          const targetScrollPosition = cardLeft - (containerWidth / 2) + (cardWidth / 2) - 24;
+          
+          container.scrollTo({
+            left: Math.max(0, targetScrollPosition),
+            behavior: "smooth"
+          });
+        }
       }
     };
 
-    setTimeout(centerActiveMonthCard, 300);
+    setTimeout(centerActiveMonthCard, 350);
     window.addEventListener("resize", centerActiveMonthCard);
     return () => window.removeEventListener("resize", centerActiveMonthCard);
   }, []);
@@ -68,6 +81,11 @@ export default function Bills({
   ];
 
   const getClosingBalanceForMonth = (mIdx) => {
+    // Current month handles rendering logic directly via the reactive rendering map
+    if (mIdx === currentMonthIndex) {
+      return Number(resolvedLiveIncome) || 0;
+    }
+
     if (mIdx > currentMonthIndex) {
       return Object.values(paydayConfig || {}).reduce((sum, slot) => sum + (Number(slot?.income) || 0), 0);
     }
@@ -166,7 +184,6 @@ export default function Bills({
 
   const baseMonthlyIncome = Object.values(paydayConfig || {}).reduce((sum, slot) => sum + (Number(slot?.income) || 0), 0);
 
-  // FIXED LAYOUT STRUCTURE: Placed safely down here below calculation dependencies to avert White Screen crashes
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
@@ -199,12 +216,12 @@ export default function Bills({
             <p className={`text-[10px] font-black uppercase tracking-widest mb-1 text-slate-400 transform transition-all duration-700 delay-200 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
               Total Bills Paid
             </p>
-            {/* FIX 4: Removed block elements and forced amount structures to stay locked inline on a single line across tablet and mobile viewports */}
-            <p className="font-black tracking-tighter mb-0 inline-block whitespace-nowrap transform transition-all duration-700 delay-400 cubic-bezier(0.16, 1, 0.3, 1) opacity-100 translate-x-0">
-              <span className={`text-2xl min-[380px]:text-3xl sm:text-4xl inline ${globalTotalPaid === 0 ? "text-red-500" : "text-[#10B981]"}`}>
+            {/* FIX 1: Configured responsive typography scaling hierarchy to safeguard Samsung Fold 4 mini viewports from text overflow cut-offs */}
+            <p className="font-black tracking-tighter mb-0 inline-block whitespace-nowrap overflow-hidden text-ellipsis max-w-full transform transition-all duration-700 delay-400 cubic-bezier(0.16, 1, 0.3, 1)">
+              <span className={`min-[0px]:text-lg min-[340px]:text-xl min-[380px]:text-3xl sm:text-4xl inline ${globalTotalPaid === 0 ? "text-red-500" : "text-[#10B981]"}`}>
                 ${globalTotalPaid.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
-              <span className="text-sm min-[380px]:text-base sm:text-xl text-[#1877F2] inline ml-1 font-black">
+              <span className="min-[0px]:text-[10px] min-[340px]:text-xs min-[380px]:text-base sm:text-xl text-[#1877F2] inline ml-1 font-black">
                  / ${globalTotalDue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </p>
@@ -267,8 +284,8 @@ export default function Bills({
                 buttonStyleClass = isDarkMode ? "bg-slate-800/80 hover:bg-slate-800 text-slate-400 border border-slate-700 font-bold shadow-sm" : "bg-slate-50 hover:bg-slate-100 text-slate-500 border border-slate-200 font-bold shadow-sm";
               }
             } else if (isCurrentMonth) {
-              // FIX 3: Dynamic parsing straight inside the wrapper engine loop from the parent prop down to the penny context
-              const currentLiveBalance = Number(liveHeroBalance) || 0;
+              // FIX 4 & FIX 5: Real-time dynamic sync mapping displaying the actual balance prop straight inside the main rendering thread
+              const currentLiveBalance = resolvedLiveIncome !== null ? Number(resolvedLiveIncome) : getClosingBalanceForMonth(m.idx);
               incomeTextClass = isDarkMode ? "text-emerald-400 font-black" : "text-emerald-600 font-black";
               displayIncomeValue = `+$${currentLiveBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -277,10 +294,10 @@ export default function Bills({
                 buttonText = "SELECTED MONTH";
                 buttonStyleClass = "bg-[#1877F2] text-white shadow-md font-black border border-transparent";
               } else {
-                // FIX 2: Configured custom semi-transparent blue brand spread glow matrix to produce vibrant high-end ambient depth
+                // FIX 3: Thickened brand blue high-density halo shadow matrix and explicit brand outline to ensure powerful separation on all screen modes
                 cardBackgroundClass = isDarkMode 
-                  ? "bg-[#1E293B] border-slate-600 shadow-[0_0_25px_rgba(24,119,242,0.25)] scale-[1.005]" 
-                  : "bg-white/90 backdrop-blur-sm border-slate-300 shadow-[0_0_25px_rgba(24,119,242,0.15)] scale-[1.005]";
+                  ? "bg-[#1E293B] border-[#1877F2]/80 shadow-[0_0_35px_rgba(24,119,242,0.65)] border-2 scale-[1.01]" 
+                  : "bg-white border-[#1877F2]/70 shadow-[0_0_30px_rgba(24,119,242,0.45)] border-2 scale-[1.01]";
                 buttonText = "VIEW DETAILS";
                 buttonStyleClass = isDarkMode ? "bg-slate-800/80 hover:bg-slate-800 text-slate-400 border border-slate-700 font-bold shadow-sm" : "bg-slate-50 hover:bg-slate-100 text-slate-500 border border-slate-200 font-bold shadow-sm";
               }
@@ -542,7 +559,6 @@ export default function Bills({
           </div>
         </div>
 
-        {/* Signature Line Section Divider #3 */}
         <div className={`mt-6 mb-2 border-t ${isDarkMode ? "border-white/20" : "border-black/20"}`}></div>
 
         {bills.filter(b => b.isPaid).length > 0 && (

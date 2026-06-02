@@ -22,12 +22,6 @@ export default function Bills({
   
   const horizontalScrollRef = useRef(null);
 
-  // Capture parent live income values cleanly across potential property namespaces
-  const resolvedLiveIncome = typeof liveHeroBalance !== "undefined" && liveHeroBalance !== null ? liveHeroBalance 
-    : typeof accountsHeroBalance !== "undefined" && accountsHeroBalance !== null ? accountsHeroBalance 
-    : typeof totalLiveIncome !== "undefined" && totalLiveIncome !== null ? totalLiveIncome 
-    : null;
-
   useEffect(() => {
     setIsMounted(true);
     const today = new Date();
@@ -35,10 +29,10 @@ export default function Bills({
     setSelectedMonth(currentMonthIndex);
     setExpandedMonthIdx(currentMonthIndex);
 
+    // FIX 2: Bulletproof structural centering using explicit DOM element coordinates
     const centerActiveMonthCard = () => {
       if (horizontalScrollRef.current) {
         const container = horizontalScrollRef.current;
-        // Direct selection of the target anchor ID element to prevent DOM race condition miscalculations
         const activeCard = document.getElementById("current-month-scroll-anchor");
         
         if (activeCard) {
@@ -46,9 +40,8 @@ export default function Bills({
           const cardLeft = activeCard.offsetLeft;
           const cardWidth = activeCard.clientWidth;
           
-          // INCREASED OFFSET: Changed visual offset multiplier subtraction to -56px 
-          // This breaks the right-favoring container bias and snaps the card cleanly to the left, dead-center under the logo
-          const targetScrollPosition = cardLeft - (containerWidth / 2) + (cardWidth / 2) - 56;
+          // Computes geometric viewport midpoint and centers the card element precisely
+          const targetScrollPosition = cardLeft - (containerWidth / 2) + (cardWidth / 2);
           
           container.scrollTo({
             left: Math.max(0, targetScrollPosition),
@@ -58,7 +51,6 @@ export default function Bills({
       }
     };
 
-    // requestAnimationFrame combined with micro-task delays to ensure the layout engine paints before computing scroll geometry
     requestAnimationFrame(() => {
       setTimeout(centerActiveMonthCard, 350);
     });
@@ -86,6 +78,21 @@ export default function Bills({
   ];
 
   const getClosingBalanceForMonth = (mIdx) => {
+    // FIX 1: Compute true active income local to the current month to bypass parent prop tunneling issues
+    if (mIdx === currentMonthIndex) {
+      const activeMonthIncome = bills.filter((b) => {
+        if (!b.isIncome || !b.rawDate) return false;
+        const parts = b.rawDate.split("-");
+        if (parts.length !== 3) return false;
+        return (parseInt(parts[1], 10) - 1) === currentMonthIndex && parseInt(parts[0], 10) === currentYear;
+      });
+
+      if (activeMonthIncome.length > 0) {
+        return activeMonthIncome.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+      }
+      return 0;
+    }
+
     if (mIdx > currentMonthIndex) {
       return Object.values(paydayConfig || {}).reduce((sum, slot) => sum + (Number(slot?.income) || 0), 0);
     }
@@ -247,7 +254,8 @@ export default function Bills({
       </div>
       
       <div ref={horizontalScrollRef} className="w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-6 relative z-10 pt-2">
-        <div className="flex gap-4 pr-6 pb-2 min-h-[170px]">
+        {/* FIX 2: Added visual scroll-padding snap property to lock alignment natively at the viewport center axis layout */}
+        <div className="flex gap-4 pr-6 pb-2 min-h-[170px] snap-x snap-mandatory">
           {monthsData.map((m) => {
             const { totalDue, totalPaid } = getMonthMetrics(m.idx);
             const isSelected = selectedMonth === m.idx;
@@ -284,15 +292,10 @@ export default function Bills({
                 buttonStyleClass = isDarkMode ? "bg-slate-800/80 hover:bg-slate-800 text-slate-400 border border-slate-700 font-bold shadow-sm" : "bg-slate-50 hover:bg-slate-100 text-slate-500 border border-slate-200 font-bold shadow-sm";
               }
             } else if (isCurrentMonth) {
-              // Hard-wire explicit scroll anchor ID to eliminate relative index map race conditions
               customIdAttribute = "current-month-scroll-anchor";
               
-              // CRITICAL FALLBACK INTEGRATION: If the parent prop state resolves empty or to explicit zero,
-              // automatically cascade back to the base template calculation to prevent dead $0.00 rendering
-              const currentLiveBalance = resolvedLiveIncome && Number(resolvedLiveIncome) !== 0 
-                ? Number(resolvedLiveIncome) 
-                : Object.values(paydayConfig || {}).reduce((sum, slot) => sum + (Number(slot?.income) || 0), 0);
-              
+              // FIX 1: Run calculations locally via the transaction database ledger array to fetch accurate down-to-the-penny details
+              const currentLiveBalance = getClosingBalanceForMonth(m.idx);
               incomeTextClass = isDarkMode ? "text-emerald-400 font-black" : "text-emerald-600 font-black";
               displayIncomeValue = `+$${currentLiveBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -301,8 +304,6 @@ export default function Bills({
                 buttonText = "SELECTED MONTH";
                 buttonStyleClass = "bg-[#1877F2] text-white shadow-md font-black border border-transparent";
               } else {
-                // THICKENED GLOW GRID MATRIX: Boosted color saturation density to 0.65 opacity and box layout blur to 35px 
-                // to construct a high-impact ambient ring separating the current month card on dark backgrounds
                 cardBackgroundClass = isDarkMode 
                   ? "bg-[#1E293B] border-[#1877F2] shadow-[0_0_35px_rgba(24,119,242,0.65)] border-2 scale-[1.01]" 
                   : "bg-white border-[#1877F2] shadow-[0_0_30px_rgba(24,119,242,0.45)] border-2 scale-[1.01]";
@@ -329,7 +330,7 @@ export default function Bills({
                 key={m.idx}
                 id={customIdAttribute}
                 onClick={() => handleMonthCardClick(m.idx)}
-                className={`shrink-0 w-52 p-5 rounded-[1.75rem] border cursor-pointer active:scale-[0.95] transition-all flex flex-col justify-between h-44 ${cardBackgroundClass}`}
+                className={`shrink-0 w-52 p-5 rounded-[1.75rem] border cursor-pointer active:scale-[0.95] snap-center transition-all flex flex-col justify-between h-44 ${cardBackgroundClass}`}
               >
                 <div className="flex justify-between items-center w-full">
                   <h4 className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? "text-[#1877F2]" : "text-slate-400"}`}>{m.name}</h4>

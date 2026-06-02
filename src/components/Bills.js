@@ -14,7 +14,8 @@ export default function Bills({
   toggleCollapse,
   liveHeroBalance,
   accountsHeroBalance,
-  totalLiveIncome
+  totalLiveIncome,
+  accounts = [] // Injected accounts array data bridge
 }) {
   const [isMounted, setIsMounted] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth());
@@ -22,7 +23,6 @@ export default function Bills({
   
   const horizontalScrollRef = useRef(null);
 
-  // FIX 1: Capture the dynamic parent properties passed down from the top level layout wrapper
   const rawLiveIncomeValue = typeof liveHeroBalance !== "undefined" && liveHeroBalance !== null ? liveHeroBalance 
     : typeof accountsHeroBalance !== "undefined" && accountsHeroBalance !== null ? accountsHeroBalance 
     : typeof totalLiveIncome !== "undefined" && totalLiveIncome !== null ? totalLiveIncome 
@@ -35,7 +35,6 @@ export default function Bills({
     setSelectedMonth(currentMonthIndex);
     setExpandedMonthIdx(currentMonthIndex);
 
-    // FIX 2: Bulletproof structural centering using explicit DOM element coordinates
     const centerActiveMonthCard = () => {
       if (horizontalScrollRef.current) {
         const container = horizontalScrollRef.current;
@@ -46,7 +45,6 @@ export default function Bills({
           const cardLeft = activeCard.offsetLeft;
           const cardWidth = activeCard.clientWidth;
           
-          // Computes geometric viewport midpoint and centers the card element precisely
           const targetScrollPosition = cardLeft - (containerWidth / 2) + (cardWidth / 2);
           
           container.scrollTo({
@@ -85,8 +83,15 @@ export default function Bills({
 
   const getClosingBalanceForMonth = (mIdx) => {
     if (mIdx === currentMonthIndex) {
-      // FIX 1: Verify if the resolved balance object exists. If it parses to absolute 0 or null,
-      // dynamically fall back to scanning transaction arrays for real-time items to ensure it never renders as blank $0.00
+      // Direct local calculation from the accounts data array mirroring Accounts.js Net Worth math
+      const liveAccountsTotal = accounts
+        .filter(a => !a.isGoal)
+        .reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
+
+      if (liveAccountsTotal !== 0) {
+        return liveAccountsTotal;
+      }
+
       if (rawLiveIncomeValue !== null && Number(rawLiveIncomeValue) !== 0) {
         return Number(rawLiveIncomeValue);
       }

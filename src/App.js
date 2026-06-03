@@ -203,6 +203,29 @@ export default function App() {
   const triggerVictory = () => { triggerHaptic([30, 50, 30]); setShowConfetti(true); setTimeout(() => setShowConfetti(false), 3000); };
   const triggerWarning = () => { triggerHaptic([50, 100, 50]); };
 
+  // FIX 1: Embedded missing operational push notification method declaration to securely bridge the Command Center layout trigger
+  const enablePushNotifications = async () => {
+    triggerHaptic(50);
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        setIsPushEnabled(true);
+        if (messaging) {
+          const token = await getToken(messaging, { vapidKey: "YOUR_PUBLIC_VAPID_KEY" });
+          if (token && user) {
+            await setDoc(doc(db, "users", user.uid, "settings", "push"), { token, updatedAt: serverTimestamp() }, { merge: true });
+          }
+        }
+        openGlobalAction("Notifications On", "The structural system channel bridges are live.", "Close", false, () => setGlobalActionConfig(prev => ({...prev, isOpen: false})), true);
+      } else {
+        setIsPushEnabled(false);
+      }
+    } catch (e) {
+      console.error("Push system activation fault:", e);
+    }
+  };
+
   // === BASELINE MOUNT & DEMO MODE INITIALIZATION ===
   useEffect(() => {
     setIsMounted(true);
@@ -232,6 +255,7 @@ export default function App() {
     });
     return () => unsubscribeAuth();
   }, [isMounted, isDemoMode]);
+
   // === FIRESTORE LIVE REAL-TIME DATA VAULT SYNCHRONIZER ===
   useEffect(() => {
     if (!isMounted || isDemoMode || !user) return;
@@ -243,7 +267,6 @@ export default function App() {
     const unsubConfig = onSnapshot(doc(db, "users", user.uid, "settings", "paydayConfig"), (docSnap) => { if (docSnap.exists()) setPaydayConfig({ frequency: "Weekly", ...docSnap.data() }); });
     return () => { unsubAcc(); unsubBills(); unsubTxs(); unsubTodos(); unsubConfig(); };
   }, [isMounted, isDemoMode, user]);
-
   // === AUTOMATED SILENT AUTOROLLOVER BALANCER ===
   useEffect(() => {
     if (!isMounted || isDemoMode || !user || hasCheckedRollover || bills.length === 0) return;
@@ -630,7 +653,6 @@ export default function App() {
     }
     triggerVictory(); setIsAddAccountOpen(false); setNewAccName(""); setNewAccBalance(""); setNewAccDesc(""); setNewAccType("Checking"); setNewAccIsNegative(false);
   };
-
   const handleAddGoal = async () => {
     const targetBal = parseFloat(newGoalAmount);
     if (!newGoalName.trim() || isNaN(targetBal) || targetBal <= 0 || !newGoalDate || !newGoalIcon) return;
@@ -667,7 +689,6 @@ export default function App() {
     else setTransferAmount(transferAmount + btn);
   };
 
-  // === UPGRADED: TRANSFER TRANSACTION CELEBRATION INTERCEPTOR ===
   const executeTransfer = async () => {
     const amt = parseFloat(transferAmount);
     if (isNaN(amt) || amt <= 0 || !transferFrom || !transferTo) return;
@@ -711,7 +732,6 @@ export default function App() {
     setIsTransferOpen(false); setTransferAmount("0"); setTransferFrom(""); setTransferTo("");
   };
 
-  // === NEW: VISUAL GOAL CASH OUT LEDGER SUBMIT ENGINE ===
   const handleCashOutGoalSubmit = async (e) => {
     if (e) e.preventDefault();
     const amt = parseFloat(cashOutAmount);
@@ -932,7 +952,6 @@ export default function App() {
   const activeAlerts = generateAlerts();
   const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
 
-  // === UPGRADED: BILL PAYMENT TRANSACTION CELEBRATION INTERCEPTOR ===
   const confirmPaymentRoute = async () => {
     const bill = bills.find(b => b.id === paymentModalConfig.billId);
     const targetAcc = accounts.find(a => a.id === paymentModalConfig.accountId);
@@ -1009,7 +1028,6 @@ export default function App() {
     else if (inputValue === "0" && btn !== ".") setInputValue(btn); else setInputValue(inputValue + btn);
   };
 
-  // === UPGRADED: QUICK ADD TRANSACTION CELEBRATION INTERCEPTOR ===
   const handleConfirmAction = () => {
     const amountToProcess = parseFloat(inputValue);
     if (isNaN(amountToProcess) || (drawerTab === "bills" ? amountToProcess < 0 : amountToProcess <= 0)) return;
@@ -1101,7 +1119,6 @@ export default function App() {
     return "text-[#1877F2]";
   };
 
-  // === UPDATE #2: UNIFIED HEADER HERO SHELL (lg:hidden REMOVED FROM ACTION BARS) ===
   const renderHeroShell = (title, graphicContent) => {
     const hasOverdueOrDueNow = dynamicBills.some(b => !b.isPaid && (b.isOverdue || b.payday === "Due Now"));
     const hours = new Date().getHours();
@@ -1135,7 +1152,6 @@ export default function App() {
             <img src="/login-logo.png" alt="Ledger Planner" className={`relative z-10 w-16 h-16 rounded-full shadow-[0_12px_24px_rgba(24,119,242,0.3)] object-cover border-[3px] transition-colors ${isDarkMode ? "border-slate-800" : "border-white"}`} />
           </div>
           
-          {/* CONVERGED HEAD NAVIGATION FLEX CLUSTER (lg:hidden REMOVED FOR DESKTOP HEAD CONVERGENCE) */}
           <div className="flex items-center gap-2 relative z-30">
             <button onClick={() => { setEditName(userName || ""); setIsSettingsOpen(true); }} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ?
               "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
@@ -1160,7 +1176,7 @@ export default function App() {
       </header>
     );
   };
-// === THE SECURITY GUARDRAILS ===
+
   if (!isMounted) return <div className={`min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}></div>;
   if (isAuthLoading && !isDemoMode) {
     return (
@@ -1181,7 +1197,8 @@ export default function App() {
       />
     );
   }
-return (
+
+  return (
     <div 
       onContextMenu={(e) => e.preventDefault()} 
       className={`h-screen w-full font-sans relative flex transition-colors duration-500 select-none [-webkit-touch-callout:none] ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}
@@ -1200,13 +1217,11 @@ return (
       
       <div className={`w-full h-full relative flex flex-col lg:flex-row transition-colors duration-500 overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
         
-        {/* === UPDATE #2: SIDEBAR PURIFICATION CONTAINER PANEL === */}
         <div className={`hidden lg:flex w-[280px] flex-col border-r z-40 p-6 transition-colors duration-500 shrink-0 ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-100"}`}>
           <div className="flex items-center gap-4 mb-8 mt-4 shrink-0">
             <img src="/login-logo.png" alt="Ledger Planner" className={`w-12 h-12 rounded-full object-cover border-[2px] transition-colors ${isDarkMode ? "border-slate-700" : "border-slate-100"}`} />
             <div>
               <h1 className={`font-black tracking-tighter text-lg leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>Ledger Planner</h1>
-              {/* UPDATE #1: SIDEBAR ENGINE STATUS INDICATOR */}
               <div className="flex items-center gap-1.5 mt-0.5">
                 <div className={`w-2 h-2 rounded-full animate-pulse ${isDemoMode ? "bg-[#F97316]" : "bg-[#10B981]"}`}></div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{isDemoMode ? "Demo Mode" : "Master Engine"}</p>
@@ -1214,7 +1229,6 @@ return (
             </div>
           </div>
           
-          {/* UPDATE #2: REMOVED INNER SCROLLING OVERFLOW LOGIC WRAPPERS FOR NATURAL LAYOUT ANCHORING */}
           <div className="space-y-2">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 ml-2">Navigation</p>
             {[{ id: "home", icon: Home, label: "Dashboard" }, { id: "accounts", icon: Wallet, label: "Accounts" }, { id: "bills", icon: CalendarIcon, label: "Bills & Plans" }, { id: "activity", icon: CreditCard, label: "Activity" }, { id: "todo", icon: CheckSquare, label: "To-Do List" }].map((tab) => (
@@ -1224,27 +1238,25 @@ return (
             ))}
           </div>
           
-          {/* UPDATE #2: SIDEBAR ACTION FOOTER PURIFIED (SETTINGS AND LOGOUT REMOVED, QUICK ADD INSULATED) */}
           <div className="mt-auto pt-4 shrink-0">
             <button onClick={() => setIsQabOpen(true)} className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-white bg-[#1877F2] font-black uppercase tracking-widest text-xs transition-transform active:scale-95 hover:-translate-y-1`}><Plus size={18} /> Quick Add</button>
           </div>
         </div>
-{/* MAIN ROUTER CONTENT */}
+
         <div className="flex-1 flex flex-col relative h-full overflow-hidden">
           <div className={`flex-1 overflow-y-auto hide-scrollbar lg:pb-0 ${isDemoMode ? "pb-[220px]" : "pb-28"}`} ref={scrollRef} onScroll={handleScroll}>
             {activeTab === "home" && <Dashboard userName={userName} accounts={accounts} bills={dynamicBills} transactions={transactions} paydayConfig={paydayConfig} setEditPaydayConfig={setEditPaydayConfig} setIsPaydaySetupOpen={handleOpenPaydaySetup} setIsNotificationsOpen={setIsNotificationsOpen} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} isDarkMode={isDarkMode} formatPaydayDateStr={formatPaydayDateStr} renderHeroShell={renderHeroShell} changeTab={changeTab} hasConsumedAMBriefing={hasConsumedAMBriefing} setHasConsumedAMBriefing={setHasConsumedAMBriefing} hasConsumedPMBriefing={hasConsumedPMBriefing} setHasConsumedPMBriefing={setHasConsumedPMBriefing} />}
             {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setIsAddGoalOpen={setIsAddGoalOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} isDemoMode={isDemoMode} triggerCelebration={triggerVictory} setIsCashOutOpen={setIsCashOutOpen} setCashOutGoal={setCashOutGoal} />}
-            {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} paydayConfig={paydayConfig} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} handleRolloverMonth={handleRolloverMonth} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} />}
+            {/* FIX 2: Passed raw accounts state variable directly over the prop connection bridge slot inside the main tab switch engine */}
+            {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} paydayConfig={paydayConfig} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} handleRolloverMonth={handleRolloverMonth} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} accounts={accounts} />}
             {activeTab === "activity" && <Activity userName={userName} transactions={transactions} activitySearch={activitySearch} setActivitySearch={setActivitySearch} activityFilter={activityFilter} setActivityFilter={setActivityFilter} isDarkMode={isDarkMode} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} />}
             {activeTab === "todo" && <Todo userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} newTodoType={newTodoType} setNewTodoType={setNewTodoType} isDarkMode={isDarkMode} handleAddTodo={async (e) => { e.preventDefault(); if(!newTodoText.trim()) return; if (isDemoMode) { setTodos([{ id: `todo_demo_${Date.now()}`, text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false }, ...todos]); } else { await addDoc(collection(db, "users", user.uid, "todos"), { text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() }); } triggerVictory(); setNewTodoText(""); setNewTodoPriority(3); }} toggleTodoStatus={async (id) => { triggerHaptic(50); const todo = todos.find(t => t.id === id); if (isDemoMode) { setTodos(todos.map(t => t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)); } else { await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); } }} setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} clearCompletedTodos={clearCompletedTodos} openGlobalAction={openGlobalAction} />}
           </div>
 
-          {/* MOBILE QUICK ACTION BUTTON */}
           <div className={`fixed lg:hidden ${isDemoMode ? "bottom-[200px]" : "bottom-28"} right-6 z-50`}>
             <button onClick={() => { triggerHaptic(20); setIsQabOpen(true); }} className={`w-14 h-14 rounded-full flex items-center justify-center text-white bg-[#1877F2] shadow-[0_12px_24px_rgba(24,119,242,0.4)] border-4 ${isDarkMode ? "border-[#0F172A]" : "border-white"}`}><Plus size={28} /></button>
           </div>
 
-          {/* MOBILE BOTTOM NAVIGATION FOOTER */}
           <div className={`lg:hidden fixed ${isDemoMode ? "bottom-[120px]" : "bottom-0"} left-0 w-full backdrop-blur-md border-t px-2 h-[88px] pb-4 pt-2 flex justify-between items-center z-[100] ${isDarkMode ? "bg-[#1E293B]/95 border-slate-800" : "bg-white/95 border-slate-100"}`}>
             {[{ id: "home", icon: Home, label: "Home" }, { id: "accounts", icon: Wallet, label: "Accounts" }, { id: "bills", icon: CalendarIcon, label: "Bills" }, { id: "activity", icon: CreditCard, label: "Activity" }, { id: "todo", icon: CheckSquare, label: "To-Do" }].map((tab) => (
               <button key={tab.id} onClick={() => changeTab(tab.id)} className="flex-1 flex flex-col items-center justify-center gap-1 group h-full">
@@ -1255,7 +1267,6 @@ return (
           </div>
         </div>
         
-        {/* SETTINGS MODAL VAULT */}
         {isSettingsOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsSettingsOpen(false)}></div>
@@ -1312,7 +1323,6 @@ return (
           </div>
         )}
 
-        {/* COMMAND CENTER NOTIFICATIONS POPUP */}
         {isNotificationsOpen && (() => {
           const hasOverdueOrDueNow = dynamicBills.some(b => !b.isPaid && (b.isOverdue || b.payday === "Due Now"));
           const hours = new Date().getHours();
@@ -1419,7 +1429,6 @@ return (
           );
         })()}
 
-        {/* PAYDAY ROUTING POPUP */}
         {isPaydaySetupOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsPaydaySetupOpen(false)}></div>
@@ -1457,7 +1466,7 @@ return (
                         <label className={`absolute top-2 left-0 w-full text-center text-[8px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Pay Date</label>
                         <div className="flex items-center justify-between w-full relative z-10">
                            <span className={`font-bold text-sm text-left truncate flex-1 ${!editPaydayConfig?.[pd]?.date ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{editPaydayConfig?.[pd]?.date ? formatDisplayDate(editPaydayConfig?.[pd]?.date) : "mm/dd/yy"}</span>
-                           <CalendarIcon size={16} className="text-[#1877F2] shrink-0" ml-1 />
+                           <CalendarIcon size={16} className="text-[#1877F2] shrink-0" />
                         </div>
                         <input type="date" value={editPaydayConfig?.[pd]?.date || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), date: e.target.value}})} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" />
                       </div>
@@ -1481,7 +1490,6 @@ return (
           </div>
         )}
 
-        {/* ADD ACCOUNT WINDOW */}
         {isAddAccountOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsAddAccountOpen(false)}></div>
@@ -1507,13 +1515,12 @@ return (
                 </div>
                 <div className="relative mt-2"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Type</label><select value={newAccType} onChange={(e) => setNewAccType(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}><option>Checking</option><option>Savings</option><option>Credit Card</option><option>Cash</option><option>401k / Retirement</option></select></div>
                 <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Details</label><input type="text" placeholder={newAccType} value={newAccDesc} onChange={(e) => setNewAccDesc(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white placeholder-slate-600" : "bg-white border-slate-200 text-slate-900 placeholder-slate-300"}`} /></div>
-                <button onClick={handleAddAccount} disabled={!newAccName.trim() || isNaN(parseFloat(newAccBalance))} className={`w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${!newAccName.trim() || isNaN(parseFloat(newAccBalance)) ? "bg-slate-300 opacity-50 cursor-not-allowed" : "bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] active:scale-95"}`}>Save Account <CheckCircle2 size={16} /></button>
+                <button onClick={handleAddAccount} disabled={!newAccName.trim() || isNaN(parseFloat(newAccBalance))} className={`w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${!newAccName.trim() || isNaN(parseFloat(newAccBalance)) ? "bg-slate-300 opacity-50 cursor-not-allowed shadow-none" : "bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] active:scale-95"}`}>Save Account <CheckCircle2 size={16} /></button>
               </div>
             </div>
           </div>
         )}
 
-        {/* GOAL CREATION WINDOW */}
         {isAddGoalOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsAddGoalOpen(false)}></div>
@@ -1555,7 +1562,6 @@ return (
           </div>
         )}
 
-        {/* === UPDATE #5: TRANSFER DRAWER REFACTOR (PREMIUM CALCULATOR NUMPAD DESIGN) === */}
         {isTransferOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsTransferOpen(false)}></div>
@@ -1566,9 +1572,8 @@ return (
               </div>
               
               <div className="p-6 flex flex-col flex-1">
-                {/* DUAL ACCOUNT STAGE */}
                 <div className="grid grid-cols-2 gap-3 mb-4 items-center relative">
-                  <div className={`p-3.5 rounded-2xl border text-center flex flex-col items-center justify-center min-h-[82px] transition-colors relative focus-within:ring-2 focus-within:ring-[#1877F2]/50 ${isDarkMode ? "bg-slate-800/60 border-slate-700/50" : "bg-slate-50 border-slate-100 shadow-inner"}`}>
+                  <div className={`p-3.5 rounded-2xl border text-center flex flex-col items-center justify-center min-h-[82px] transition-colors relative focus-within:ring-2 focus-within:ring-2 focus-within:ring-[#1877F2]/50 ${isDarkMode ? "bg-slate-800/60 border-slate-700/50" : "bg-slate-50 border-slate-100 shadow-inner"}`}>
                     <span className="text-[9px] font-black text-slate-400 tracking-widest uppercase mb-1">Source</span>
                     <span className="text-xl leading-none mb-1">{accounts.find(a => a.id === transferFrom)?.icon || "🏦"}</span>
                     <span className={`text-xs font-black truncate max-w-full leading-tight uppercase tracking-wider ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>{accounts.find(a => a.id === transferFrom)?.name || "Select Account..."}</span>
@@ -1593,13 +1598,11 @@ return (
                   </div>
                 </div>
 
-                {/* TRANSFER NUMERIC ENTRY SCREEN */}
                 <div className="text-center relative flex justify-center items-center mb-4 min-h-[70px] border border-dashed rounded-2xl dark:border-slate-800 border-slate-200/80 px-4 bg-slate-50/20 dark:bg-slate-900/10">
                   <span className="text-5xl font-black tracking-tighter text-[#1877F2] drop-shadow-[0_0_15px_rgba(24,119,242,0.15)]">${transferAmount}</span>
                   <button onClick={() => { triggerHaptic(15); setTransferAmount(transferAmount.slice(0, -1) || "0"); }} className={`absolute right-4 p-3 rounded-full text-2xl active:scale-90 transition-all text-slate-400 hover:text-red-500`}> ⌫ </button>
                 </div>
 
-                {/* GLASSMORPHISM NUMPAD KEY GRID */}
                 <div className="grid grid-cols-4 gap-2">
                   {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", ".", "0", "=", "+"].map((btn) => (
                     <button key={btn} onClick={() => handleTransferNumpad(btn)} className={`w-full h-12 rounded-xl text-xl font-bold flex items-center justify-center transition-all border active:scale-95 touch-manipulation ${isDarkMode ? "bg-slate-800/40 border-slate-700/50 text-slate-200 hover:bg-slate-700/40" : "bg-slate-100 border-slate-200/60 text-slate-800 hover:bg-slate-200/50"}`}>
@@ -1608,14 +1611,12 @@ return (
                   ))}
                 </div>
 
-                {/* LAUNCH ENGINE TRIGGER */}
                 <button onClick={executeTransfer} disabled={parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo} className={`w-full mt-4 h-14 shrink-0 rounded-2xl font-black uppercase tracking-widest text-xs text-white shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 ${parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo ? "bg-slate-300 opacity-40 shadow-none cursor-not-allowed" : "bg-[#1877F2] shadow-[0_8px_20px_rgba(24,119,242,0.35)]"}`}>Execute Transfer <ArrowRightLeft size={16} /></button>
               </div>
             </div>
           </div>
         )}
 
-        {/* === UPDATE #3: GOAL CASH OUT DRAWER STATE (HARD-CAPPED & VISUAL FILTERED) === */}
         {isCashOutOpen && cashOutGoal && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => { setIsCashOutOpen(false); setCashOutGoal(null); }}></div>
@@ -1629,7 +1630,6 @@ return (
               </div>
 
               <div className="p-6 flex flex-col flex-1">
-                {/* STEP 1: DESTINATION SELECTION */}
                 <div className="relative mb-4">
                   <label className={`absolute left-4 top-2 text-[9px] font-black uppercase tracking-widest z-10 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Liquid Destination Account</label>
                   <select value={cashOutToAccount} onChange={(e) => setCashOutToAccount(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border font-bold text-sm appearance-none transition-colors outline-none focus:border-[#1877F2] ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900 shadow-sm"}`}>
@@ -1640,7 +1640,6 @@ return (
                   </select>
                 </div>
 
-                {/* STEP 2: HARD-CAPPED INPUT DISPLAY */}
                 <div className="text-center relative flex justify-center items-center mb-4 min-h-[64px] border border-dashed rounded-2xl dark:border-slate-800 border-slate-200/80 px-4 bg-slate-50/20 dark:bg-slate-900/10">
                   <span className="text-4xl font-black tracking-tighter text-[#10B981]">${cashOutAmount}</span>
                   <div className="absolute right-4 flex items-center gap-2">
@@ -1649,21 +1648,18 @@ return (
                   </div>
                 </div>
 
-                {/* NUMPAD BUTTON STRUCTURE FOR BALANCED ACCURACY */}
                 <div className="grid grid-cols-3 gap-2">
                   {["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0"].map((num) => (
                     <button key={num} onClick={() => handleCashOutNumpad(num)} className={`h-11 rounded-xl text-lg font-bold flex items-center justify-center transition-all border active:scale-95 ${isDarkMode ? "bg-slate-800/40 border-slate-700/50 text-slate-200 hover:bg-slate-700" : "bg-slate-100 border-slate-200/60 text-slate-800 hover:bg-slate-200"}`}>{num}</button>
                   ))}
                 </div>
 
-                {/* RUNWAY ACCOUNT ROUTER PROCESS TRIGGER */}
                 <button onClick={handleCashOutGoalSubmit} disabled={parseFloat(cashOutAmount) <= 0 || parseFloat(cashOutAmount) > cashOutGoal.balance || !cashOutToAccount} className={`w-full mt-4 h-14 shrink-0 rounded-2xl font-black uppercase tracking-widest text-xs text-white shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 ${parseFloat(cashOutAmount) <= 0 || parseFloat(cashOutAmount) > cashOutGoal.balance || !cashOutToAccount ? "bg-slate-300 opacity-40 shadow-none cursor-not-allowed" : "bg-[#10B981] shadow-[0_8px_20px_rgba(16,185,129,0.35)]"}`}>Disburse Funds <CheckCircle2 size={16} /></button>
               </div>
             </div>
           </div>
         )}
 
-        {/* ACCOUNT & EDIT PANEL CONTROL SYSTEMS */}
         {selectedAccount && !isAddAccountOpen && !isTransferOpen && !isAddGoalOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedAccount(null)}></div>
@@ -1741,7 +1737,6 @@ return (
           </div>
         )}
         
-        {/* PAYMENT MODAL WRAPPERS */}
         {paymentModalConfig.isOpen && (() => {
           const activeBill = bills.find(b => b.id === paymentModalConfig.billId);
           const remainingBal = activeBill?.isInstallment ? (activeBill.totalAmount || 0) - (activeBill.paidAmount || 0) : 0;
@@ -1780,7 +1775,6 @@ return (
           );
         })()}
 
-        {/* LEDGER ENTRY ANALYSIS OVERLAYS */}
         {selectedEntry && !selectedAccount && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={closeEntryDrawer}></div>
@@ -1956,7 +1950,6 @@ return (
           </div>
         )}
 
-        {/* INSTALLMENT PLAN SCHEDULER POPUP */}
         {installmentPromptConfig.isOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setInstallmentPromptConfig({ isOpen: false, billId: null, nextDate: "" })}></div>
@@ -1984,16 +1977,15 @@ return (
           </div>
         )}
 
-        {/* QUICK ADD BOARD (QAB) DRAWER ENGINE */}
         {isQabOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={closeQab}></div>
-            <div className={`w-full lg:max-w-md h-auto max-h-[95vh] rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+            <div className={`w-full lg:max-w-md h-[95vh] rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
                <div className={`p-6 border-b flex justify-between items-center shrink-0 ${isDarkMode ? "border-slate-800" : "border-slate-100"}`}>
                   <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{qabActiveLabel}</h3>
                   <button onClick={closeQab} className={closeButtonClass}><X size={18} /></button>
                </div>
-               <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] flex flex-col ${isDemoMode ? "pb-[140px] lg:pb-0" : ""}`}>
+               <div className={`flex-1 overflow-y-auto hide-scrollbar flex flex-col ${isDemoMode ? "pb-[140px] lg:pb-0" : ""}`}>
                  {qabStep === 1 ? (
                    <div className="p-6 lg:p-5 flex flex-col h-full min-h-[300px] lg:min-h-[360px]">
                      <div className={`flex p-1.5 rounded-2xl mb-4 lg:mb-3 ${isDarkMode ? "bg-slate-800" : "bg-slate-100"}`}>
@@ -2024,7 +2016,7 @@ return (
                           <span className={`absolute left-5 top-[22px] lg:top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
                           <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={inputValue} onChange={(e) => setInputValue(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(inputValue)) && inputValue !== "") setInputValue(parseFloat(inputValue).toFixed(2)) }} className={`w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 pl-9 pr-5 rounded-2xl border font-bold text-base transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                         </div>
-                     </div>
+                      </div>
                      <div className="relative cursor-pointer" onClick={() => setIsIconSelectorOpen(true)}>
                         <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Icon</label>
                         <div className={`w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
@@ -2035,7 +2027,7 @@ return (
                      {currentRecentCategories.length > 0 && (
                          <div className="mb-2 mt-2">
                              <label className={`block text-[9px] font-bold uppercase tracking-widest mb-1 px-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Recent Categories</label>
-                             <div className="flex gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] pb-2">
+                             <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
                                   {currentRecentCategories.map(cat => (
                                      <button key={cat} onClick={() => setEntryCategory(cat)} className={`px-4 py-2 shrink-0 rounded-xl text-[10px] font-bold whitespace-nowrap border transition-colors ${entryCategory === cat ? `${qabActiveBg} text-white border-transparent shadow-md` : isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-700"}`}>
                                          {cat}
@@ -2056,42 +2048,42 @@ return (
                            <div className="relative">
                               <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Due Date</label>
                               <div className={`relative w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
-                                <span className={`font-bold text-base ${!entryDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{entryDate ? formatDisplayDate(entryDate) : "mm/dd/yyyy"}</span>
-                                <CalendarIcon size={18} className="text-[#1877F2] shrink-0" />
-                                <input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                                 <span className={`font-bold text-base ${!entryDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{entryDate ? formatDisplayDate(entryDate) : "mm/dd/yyyy"}</span>
+                                 <CalendarIcon size={18} className="text-[#1877F2] shrink-0" />
+                                 <input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                               </div>
                            </div>
                            <div className="space-y-4 lg:space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                              <div className="flex items-center justify-between">
-                                <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Recurring Bill</span>
-                                <button onClick={() => { triggerHaptic(20); setEntryIsRecurring(!entryIsRecurring); }} className={`w-12 h-6 rounded-full transition-colors relative ${entryIsRecurring ? qabActiveBg : "bg-slate-300 dark:bg-slate-700"}`}>
-                                    <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${entryIsRecurring ? "translate-x-7" : "translate-x-1"}`}></div>
-                                </button>
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Installment Plan</span>
-                                <button onClick={() => { triggerHaptic(20); setEntryIsInstallment(!entryIsInstallment); }} className={`w-12 h-6 rounded-full transition-colors relative ${entryIsInstallment ? qabActiveBg : "bg-slate-300 dark:bg-slate-700"}`}>
-                                    <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${entryIsInstallment ? "translate-x-7" : "translate-x-1"}`}></div>
-                                </button>
-                              </div>
-                              {entryIsInstallment && (
-                                 <div className="grid grid-cols-2 gap-3 animate-fade-in mt-2">
-                                    <div className="relative">
-                                       <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Total Amount</label>
-                                       <div className="relative w-full flex items-center">
-                                          <span className={`absolute left-4 top-[22px] lg:top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
-                                          <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={entryTotalAmount} onChange={(e) => setEntryTotalAmount(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(entryTotalAmount)) && entryTotalAmount !== "") setEntryTotalAmount(parseFloat(entryTotalAmount).toFixed(2)) }} className={`w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 pl-7 pr-4 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
-                                       </div>
-                                    </div>
-                                    <div className="relative">
-                                       <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Already Paid</label>
-                                       <div className="relative w-full flex items-center">
-                                          <span className={`absolute left-4 top-[22px] lg:top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
-                                          <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={entryPaidAmount} onChange={(e) => setEntryPaidAmount(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(entryPaidAmount)) && entryPaidAmount !== "") setEntryPaidAmount(parseFloat(entryPaidAmount).toFixed(2)) }} className={`w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 pl-7 pr-4 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
-                                       </div>
-                                    </div>
-                                 </div>
-                              )}
+                             <div className="flex items-center justify-between">
+                               <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Recurring Bill</span>
+                               <button onClick={() => { triggerHaptic(20); setEntryIsRecurring(!entryIsRecurring); }} className={`w-12 h-6 rounded-full transition-colors relative ${entryIsRecurring ? qabActiveBg : "bg-slate-300 dark:bg-slate-700"}`}>
+                                   <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${entryIsRecurring ? "translate-x-7" : "translate-x-1"}`}></div>
+                               </button>
+                             </div>
+                             <div className="flex items-center justify-between">
+                               <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Installment Plan</span>
+                               <button onClick={() => { triggerHaptic(20); setEntryIsInstallment(!entryIsInstallment); }} className={`w-12 h-6 rounded-full transition-colors relative ${entryIsInstallment ? qabActiveBg : "bg-slate-300 dark:bg-slate-700"}`}>
+                                   <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${entryIsInstallment ? "translate-x-7" : "translate-x-1"}`}></div>
+                               </button>
+                             </div>
+                             {entryIsInstallment && (
+                                <div className="grid grid-cols-2 gap-3 animate-fade-in mt-2">
+                                   <div className="relative">
+                                      <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Total Amount</label>
+                                      <div className="relative w-full flex items-center">
+                                         <span className={`absolute left-4 top-[22px] lg:top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
+                                         <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={entryTotalAmount} onChange={(e) => setEntryTotalAmount(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(entryTotalAmount)) && entryTotalAmount !== "") setEntryTotalAmount(parseFloat(entryTotalAmount).toFixed(2)) }} className={`w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 pl-7 pr-4 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                                      </div>
+                                   </div>
+                                   <div className="relative">
+                                      <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Already Paid</label>
+                                      <div className="relative w-full flex items-center">
+                                         <span className={`absolute left-4 top-[22px] lg:top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
+                                         <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={entryPaidAmount} onChange={(e) => setEntryPaidAmount(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(entryPaidAmount)) && entryPaidAmount !== "") setEntryPaidAmount(parseFloat(entryPaidAmount).toFixed(2)) }} className={`w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 pl-7 pr-4 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                                      </div>
+                                   </div>
+                                </div>
+                             )}
                            </div>
                         </>
                      )}
@@ -2113,7 +2105,7 @@ return (
                      <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
                         <h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Category</h3><button onClick={() => setIsCategorySelectorOpen(false)} className={closeButtonClass}><X size={18}/></button>
                      </div>
-                     <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] p-4 space-y-6 ${isDemoMode ? "pb-[140px] lg:pb-6" : "pb-20 lg:pb-6"}`}>
+                     <div className={`flex-1 overflow-y-auto hide-scrollbar p-4 space-y-6 ${isDemoMode ? "pb-[140px] lg:pb-6" : "pb-20 lg:pb-6"}`}>
                         {categoriesToRender.map(group => (
                             <div key={group.group}>
                               <p className="text-[10px] font-black uppercase text-slate-400 mb-3">{group.group}</p>
@@ -2132,7 +2124,7 @@ return (
                      <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
                         <h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Icon</h3><button onClick={() => setIsIconSelectorOpen(false)} className={closeButtonClass}><X size={18}/></button>
                      </div>
-                     <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] p-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : "pb-20 lg:pb-6"}`}>
+                     <div className={`flex-1 overflow-y-auto hide-scrollbar p-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : "pb-20 lg:pb-6"}`}>
                         <div className="grid grid-cols-6 lg:grid-cols-8 gap-3">
                           {categoryEmojis.map(emoji => (
                             <button key={emoji} onClick={() => { setEntryIcon(emoji); setIsIconSelectorOpen(false); }} className={`w-12 h-12 flex items-center justify-center rounded-xl text-2xl border transition-all active:scale-90 ${entryIcon === emoji ? `${qabActiveBg} border-transparent shadow-md` : isDarkMode ? "bg-slate-800 border-slate-700 hover:bg-slate-700" : "bg-slate-50 border-slate-200 hover:bg-slate-100"}`}>{emoji}</button>
@@ -2141,12 +2133,11 @@ return (
                      </div>
                   </div>
                )}
-           </div>
-         </div>
-       )}
+            </div>
+          </div>
+        )}
 
-       {/* CONFIRMED DUAL-CANNY CELEBRATION DISPATCH MATRIX */}
-       {globalActionConfig.isOpen && (
+        {globalActionConfig.isOpen && (
            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
              <div className={`w-full max-w-sm p-6 rounded-3xl shadow-2xl ${isDarkMode ? "bg-[#1E293B] border border-slate-700" : "bg-white"}`}>
                 <h3 className={`text-xl font-black mb-2 flex items-center gap-2 ${globalActionConfig.isDanger ? "text-red-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>
@@ -2165,34 +2156,32 @@ return (
                 </div>
              </div>
           </div>
-       )}
+        )}
        
-       {/* PREMIUM CONFETTI ENGINE */}
-       {showConfetti && (
+        {showConfetti && (
          <div className="absolute inset-0 z-[200] pointer-events-none flex items-center justify-center overflow-hidden">
-           {[...Array(200)].map((_, i) => (
-             <div key={i} className="absolute w-3 h-3 rounded-sm animate-[explode_3s_ease-out_forwards]" style={{ backgroundColor: ['#1877F2', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#FFFFFF', '#FFD700', '#059669'][Math.floor(Math.random() * 8)], left: '50%', top: '50%', transform: `translate(-50%, -50%)`, '--tx': `${(Math.random() - 0.5) * 1500}px`, '--ty': `${(Math.random() - 0.3) * 1200 - 400}px`, '--rot': `${Math.random() * 720}deg` }} />
-           ))}
-           <style>{`@keyframes explode { 0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); opacity: 1; } 100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) rotate(calc(var(--rot))) scale(0); opacity: 0; } }`}</style>
-         </div>
-       )}
-     </div>
+            {[...Array(200)].map((_, i) => (
+              <div key={i} className="absolute w-3 h-3 rounded-sm animate-[explode_3s_ease-out_forwards]" style={{ backgroundColor: ['#1877F2', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#FFFFFF', '#FFD700', '#059669'][Math.floor(Math.random() * 8)], left: '50%', top: '50%', transform: `translate(-50%, -50%)`, '--tx': `${(Math.random() - 0.5) * 1500}px`, '--ty': `${(Math.random() - 0.3) * 1200 - 400}px`, '--rot': `${Math.random() * 720}deg` }} />
+            ))}
+            <style>{`@keyframes explode { 0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); opacity: 1; } 100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) rotate(calc(var(--rot))) scale(0); opacity: 0; } }`}</style>
+          </div>
+        )}
+      </div>
 
-     {/* DEMO BOTTOM BANNER HUD */}
-     {isDemoMode && (
-       <div className="fixed bottom-0 left-0 w-full h-[120px] lg:h-[80px] bg-[#1877F2] text-white p-4 flex flex-col lg:flex-row justify-center lg:justify-between items-center z-[150] shadow-[0_-10px_40px_rgba(24,119,242,0.3)] gap-3 lg:gap-0">
-         <div className="flex flex-col text-center lg:text-left w-full lg:w-auto">
-           <span className="font-black text-sm lg:text-lg tracking-tight uppercase flex items-center justify-center lg:justify-start gap-2">
-            <span className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span></span>
-             STOP GUESSING. START PLANNING.
-           </span>
-           <span className="text-[10px] lg:text-xs font-bold text-blue-200 mt-0.5">Demo Mode Active. Changes will not be saved.</span>
-         </div>
-         <button onClick={() => window.location.href = "https://ledgerplanner.com"} className="bg-white text-[#1877F2] px-6 py-2.5 rounded-xl font-black text-xs lg:text-sm uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg border-2 border-transparent hover:border-white hover:bg-transparent hover:text-white w-full lg:w-auto">
-           Start your FREE 14 day trial today!
-         </button>
-       </div>
-     )}
-   </div>
+      {isDemoMode && (
+        <div className="fixed bottom-0 left-0 w-full h-[120px] lg:h-[80px] bg-[#1877F2] text-white p-4 flex flex-col lg:flex-row justify-center lg:justify-between items-center z-[150] shadow-[0_-10px_40px_rgba(24,119,242,0.3)] gap-3 lg:gap-0">
+          <div className="flex flex-col text-center lg:text-left w-full lg:w-auto">
+            <span className="font-black text-sm lg:text-lg tracking-tight uppercase flex items-center justify-center lg:justify-start gap-2">
+             <span className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span></span>
+              STOP GUESSING. START PLANNING.
+            </span>
+            <span className="text-[10px] lg:text-xs font-bold text-blue-200 mt-0.5">Demo Mode Active. Changes will not be saved.</span>
+          </div>
+          <button onClick={() => window.location.href = "https://ledgerplanner.com"} className="bg-white text-[#1877F2] px-6 py-2.5 rounded-xl font-black text-xs lg:text-sm uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg border-2 border-transparent hover:border-white hover:bg-transparent hover:text-white w-full lg:w-auto">
+            Start your FREE 14 day trial today!
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

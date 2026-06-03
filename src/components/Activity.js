@@ -146,7 +146,6 @@ export default function Activity({
     return "text-[#F97316]";
   };
  
-  // FIX 1 & 2: Applied softer shadow container blueprint configurations alongside the light mode mesh layout styles
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
@@ -271,7 +270,6 @@ export default function Activity({
           </button>
         </div>
  
-        {/* FIX 3a: Restored blueprint line parameters positioned accurately ABOVE the search bar input arena wrapper */}
         <div className={`border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
  
         <div className="flex gap-2">
@@ -284,9 +282,6 @@ export default function Activity({
             />
           </div>
         </div>
-
-        {/* FIX 3b: Implemented new matching blueprint divider line breaking directly UNDERNEATH the search layout field */}
-        <div className={`border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
  
         <div className="space-y-4">
          {groupedTransactions.length === 0 ? (
@@ -339,7 +334,7 @@ export default function Activity({
                                   className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
                                 >
                                   <Edit2 size={16} strokeWidth={2.5} />
-                                </button>
+                               </button>
                              </div>
  
                              <div className={`mt-3 pt-3 border-t flex items-center justify-between gap-2 ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
@@ -350,7 +345,7 @@ export default function Activity({
                                   <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest truncate leading-tight mt-0.5">
                                     {formatActivityDate(tx.date, group.label)}
                                   </span>
-                                </div>
+                               </div>
                                 
                                 <div className="shrink-0 flex justify-end">
                                   <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight whitespace-nowrap transition-colors ${getTxAmountClasses(tx, isDarkMode)}`}>

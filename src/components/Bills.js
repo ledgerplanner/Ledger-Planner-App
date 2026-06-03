@@ -15,7 +15,7 @@ export default function Bills({
   liveHeroBalance,
   accountsHeroBalance,
   totalLiveIncome,
-  accounts = [] // FIX 1: Explicit account array input hook injected straight into the master prop blueprint
+  accounts = []
 }) {
   const [isMounted, setIsMounted] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth());
@@ -83,7 +83,6 @@ export default function Bills({
 
   const getClosingBalanceForMonth = (mIdx) => {
     if (mIdx === currentMonthIndex) {
-      // FIX 2: Live mirror execution compiling exact checking + cash holdings with a safety fallback pattern
       const liveAccountsTotal = accounts
         .filter(a => !a.isGoal)
         .reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
@@ -110,10 +109,9 @@ export default function Bills({
     }
 
     if (mIdx > currentMonthIndex) {
-      return 0; // FIX 2: Standardized future blocks to sit cleanly at $0.00 baseline parameter configurations
+      return 0;
     }
 
-    // FIX 4: Erased May hardcoded baseline rule statement block to ensure full factory data resets are respected
     const historicalDeposits = bills.filter((b) => {
       if (!b.isIncome || !b.rawDate) return false;
       const parts = b.rawDate.split("-");
@@ -131,7 +129,6 @@ export default function Bills({
   };
 
   const getMonthMetrics = (mIdx) => {
-    // FIX 5: Custom filter logic array segregating past items, active windows, and forward schedules
     const monthBills = bills.filter((b) => {
       if (!b.rawDate) return false;
       const parts = b.rawDate.split("-");
@@ -141,7 +138,6 @@ export default function Bills({
 
       if (bYear !== currentYear) return false;
 
-      // Option B Rolling logic: push historical un-settled debts up into the active current view container
       if (mIdx === currentMonthIndex) {
         const isPastUnpaidDebt = bMonth < currentMonthIndex && !b.isPaid;
         const isCurrentMonthItem = bMonth === currentMonthIndex;
@@ -160,7 +156,6 @@ export default function Bills({
       return false;
     });
 
-    // FIX 3: Option A dynamic melting calculation logic filtering paid accounts items out in real-time
     const totalDue = monthBills
       .filter((b) => !b.isPaid)
       .reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
@@ -204,7 +199,6 @@ export default function Bills({
 
   const urgentBills = bills.filter((b) => !b.isPaid && (b.isOverdue || b.payday === "Due Now"));
   
-  // FIX 8: Clean isolated timeline array targeting scheduled itemization blocks beyond current layout boundaries
   const horizonBills = bills.filter((b) => {
     if (!b.rawDate) return false;
     const parts = b.rawDate.split("-");
@@ -290,8 +284,7 @@ export default function Bills({
             const isPastMonth = m.idx < currentMonthIndex;
             const isCurrentMonth = m.idx === currentMonthIndex;
 
-            // FIX 5: Set dynamic typography alert coloring based on unresolved leftover historical tracking balance entries
-            const amountColorClass = isPastMonth && totalDue > 0 ? "text-red-500 font-black" : "text-[#1877F2]";
+            const amountColorClass = "text-[#1877F2]";
 
             let cardBackgroundClass = "";
             let buttonText = "";
@@ -340,7 +333,7 @@ export default function Bills({
               }
             } else {
               incomeTextClass = "text-slate-400 dark:text-slate-500 font-bold";
-              displayIncomeValue = "$0.00"; // FIX 2: Rest baseline variables clean for forward tracking months
+              displayIncomeValue = "$0.00";
               
               if (isSelected) {
                 cardBackgroundClass = isDarkMode ? "bg-blue-900/20 border-blue-500 shadow-md scale-[1.01]" : "bg-blue-50/80 border-blue-300 shadow-[0_4px_20px_rgba(24,119,242,0.15)] scale-[1.01]";
@@ -392,7 +385,7 @@ export default function Bills({
             );
           })}
 
-          {/* FIX 8: Render stylized 2027 calendar horizontal future horizon container segment tracking element layout block */}
+          {/* DYNAMIC HORIZONTAL ANCHOR CARD: Transformed header mapping layout elements to perfectly center "BILLS IN 2027" */}
           <div
             onClick={() => {
               setSelectedMonth(12);
@@ -403,9 +396,10 @@ export default function Bills({
             }}
             className={`shrink-0 w-52 p-5 rounded-[1.75rem] border cursor-pointer active:scale-[0.95] snap-center transition-all flex flex-col justify-between h-44 ${selectedMonth === 12 ? (isDarkMode ? "bg-blue-900/20 border-blue-500 shadow-md scale-[1.01]" : "bg-blue-50/80 border-blue-300 shadow-[0_4px_20px_rgba(24,119,242,0.15)] scale-[1.01]") : (isDarkMode ? "bg-[#1E293B] border-slate-700 shadow-md" : "bg-white/90 backdrop-blur-sm border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]")}`}
           >
-            <div className="flex justify-between items-center w-full">
-              <h4 className={`text-[10px] font-black uppercase tracking-widest ${selectedMonth === 12 ? "text-[#1877F2]" : "text-slate-400"}`}>Future Horizon</h4>
-              <span className={`text-[9px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>2027</span>
+            <div className="w-full flex justify-center items-center">
+              <h4 className={`text-[10px] font-black uppercase tracking-widest text-center ${selectedMonth === 12 ? "text-[#1877F2]" : "text-slate-400"}`}>
+                BILLS IN 2027
+              </h4>
             </div>
             <div className="text-center pt-1.5 pb-1">
               <p className="text-2xl font-black tracking-tighter leading-none mb-1 text-[#1877F2]">
@@ -514,7 +508,6 @@ export default function Bills({
 
           <div className={`mb-6 border-t ${isDarkMode ? "border-white/20" : "border-black/20"}`}></div>
 
-          {/* FIX 6: Injected typography styled segment header line dividing out the main sequential calendar horizon */}
           <div className="space-y-4">
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">
               BILL SCHEDULE FOR {currentYear}
@@ -544,7 +537,6 @@ export default function Bills({
                           </h3>
                           <div className="text-slate-500">{isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}</div>
                         </div>
-                        {/* FIX 7: Standardized future and recurring subtitle fields to compile uniform metrics across all rows */}
                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                           {monthBills.filter(b => b.isPaid).length} Settled / {monthBills.length} Total
                         </span>
@@ -553,7 +545,6 @@ export default function Bills({
                         <span className={`text-sm font-black mb-1 ${headerTextColor}`}>
                           ${totalDue.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                         </span>
-                        {/* FIX 7: Altered right aligned label token string parameters to read uniform Total Due definitions */}
                         <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
                           Total Due
                         </span>
@@ -646,7 +637,6 @@ export default function Bills({
               );
             })}
 
-            {/* FIX 8: Injected 13th master accordion framework tracking calendar liabilities slated for 2027 */}
             <div id="month-accordion-12" className="space-y-2 scroll-mt-24">
               <div
                 className="flex flex-col px-2 py-4 cursor-pointer transition-colors"

@@ -145,6 +145,7 @@ export default function Dashboard({
   const strokeDasharray = 251.2;
   const targetDashoffset = strokeDasharray - (strokeDasharray * debtRatio) / 100;
 
+  let runningBalance = totalIncomeBalance;
   const hzBalances = {};
 
   hzPaydays.forEach((pd) => {
@@ -166,8 +167,6 @@ export default function Dashboard({
     hzBalances[pd] = runningBalance;
   });
 
-  let runningBalance = totalIncomeBalance;
-
   let daysUntilNext = 0;
   let nextPaydayDayName = "";
 
@@ -181,7 +180,6 @@ export default function Dashboard({
     }
   }
 
-  // SWEEP FIX: Applied signature layout mesh gradients and standardized dynamic shadowing filters
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
@@ -352,7 +350,6 @@ export default function Dashboard({
         </div>
       </div>
 
-      {/* SWEEP FIX: Re-calibrated structural separating timeline accent lines across both display properties */}
       <div className={`mx-6 mb-6 border-t relative z-10 ${isDarkMode ? "border-white/20" : "border-slate-300"}`}></div>
 
       <main className="px-6 space-y-4 relative z-10">
@@ -481,7 +478,6 @@ export default function Dashboard({
            </div>
         </div>
 
-        {/* SWEEP FIX: Re-calibrated recent activity divider boundary parameters */}
         <div className={`space-y-4 pt-4 border-t mt-8 ${isDarkMode ? "border-white/20" : "border-slate-300"}`}>
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Recent Activity</h3>
           <div className={`rounded-[2rem] p-4 border shadow-sm transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white/80 backdrop-blur-md border-white/60 shadow-sm"}`}>
@@ -501,7 +497,7 @@ export default function Dashboard({
                     txPrefix = "+";
                   } else if (isBillTx) {
                     txColorStr = "text-[#1877F2]";
-                    txBgBorderStr = isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200";
+                    txBgBorderStr = isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-emerald-200";
                     txShadowStr = "drop-shadow-[0_0_12px_rgba(24,119,242,0.7)]";
                     txPrefix = "-";
                   } else {
@@ -516,7 +512,7 @@ export default function Dashboard({
                       
                       <div className="flex items-start justify-between w-full mb-3 gap-2">
                          <div className="flex items-start gap-3 flex-1 min-w-0">
-                            <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                            <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
                                {tx?.icon || "💳"}
                             </div>
                             <div className="flex flex-col flex-1 min-w-0 pt-1">
@@ -533,7 +529,6 @@ export default function Dashboard({
                          </button>
                       </div>
 
-                      {/* SWEEP FIX: Re-calibrated activity item inner line divider */}
                       <div className={`w-full border-t mb-3 ${isDarkMode ? "border-white/20" : "border-slate-300"}`}></div>
 
                       <div className="flex items-center justify-between gap-2 w-full">

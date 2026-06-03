@@ -199,8 +199,9 @@ export default function Activity({
  
       <main className="px-6 space-y-6 mt-4">
  
+        {/* ITEMS 2 & 3: Infused blueprint mesh gradients and softer card depth directly onto the toggleable breakdown ring card container */}
         {activityFilter !== "All" && totalTargetAmount > 0 && (
-          <div className={`p-6 rounded-3xl border shadow-sm flex items-center gap-6 ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
+          <div className={`p-6 rounded-[2rem] border flex items-center gap-6 ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
             <div className="relative w-40 h-40 shrink-0">
               <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90 drop-shadow-2xl">
                 <circle cx="50" cy="50" r={radius} fill="transparent" stroke={isDarkMode ? "#334155" : "#F1F5F9"} strokeWidth="12" />
@@ -214,7 +215,7 @@ export default function Activity({
                 ))}
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                    {isIncomeView ? "Inflow" : "Outflow"}
                 </span>
               </div>
@@ -334,7 +335,7 @@ export default function Activity({
                                   className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
                                 >
                                   <Edit2 size={16} strokeWidth={2.5} />
-                               </button>
+                                </button>
                              </div>
  
                              <div className={`mt-3 pt-3 border-t flex items-center justify-between gap-2 ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
@@ -345,7 +346,7 @@ export default function Activity({
                                   <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest truncate leading-tight mt-0.5">
                                     {formatActivityDate(tx.date, group.label)}
                                   </span>
-                               </div>
+                                </div>
                                 
                                 <div className="shrink-0 flex justify-end">
                                   <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight whitespace-nowrap transition-colors ${getTxAmountClasses(tx, isDarkMode)}`}>

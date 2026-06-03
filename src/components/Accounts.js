@@ -33,7 +33,7 @@ export default function Accounts({
   const liquidAccounts = accounts.filter(a => !a.isGoal);
   const goalAccounts = accounts.filter(a => a.isGoal);
  
-  // === ITEM #1: PURE LIQUID NET WORTH CALCULATION MATRIX ===
+  // === ITEM #1: PURE NET WORTH CALCULATION MATRIX ===
   const netWorth = liquidAccounts.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
   
   const today = new Date();
@@ -138,29 +138,26 @@ export default function Accounts({
  
   const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
  
+  // FIX 1: Activated the blueprint mesh gradient on light mode configuration
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
-      {/* 👑 MASTER FLOATING NET WORTH SUMMARY CARD */}
-      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-white via-slate-50/90 to-slate-100/60 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.3),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
+      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
           
-        {/* INNER HERO CARD TITLE: PERFECT COMPLIANCE BLUEPRINT POSITIONING */}
         <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
           <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-black"}`}>
             Total Wealth Blueprint
           </span>
         </div>
  
-        {/* 2️⃣ POINT 2 ANIMATION: TEXT SCROLLS UP */}
         <div className={`flex justify-between items-end mb-4 transform transition-all duration-700 delay-200 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest mb-1 text-slate-400">Liquid Net Worth • <span className={`${isNetWorthNegative ? "text-red-500" : "text-[#1877F2]"}`}>{activeDataPoint?.label} {activeDataPoint?.year}</span></p>
+            <p className="text-[10px] font-black uppercase tracking-widest mb-1 text-slate-400">Net Worth • <span className={`${isNetWorthNegative ? "text-red-500" : "text-[#1877F2]"}`}>{activeDataPoint?.label} {activeDataPoint?.year}</span></p>
             <p className={`text-4xl font-black tracking-tighter transition-colors duration-300 ${isNetWorthNegative ? "text-red-500" : activeDataPoint?.val > 0 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
               {isNetWorthNegative ? "-" : ""}${Math.abs(activeDataPoint?.val || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
         </div>
  
-        {/* 3️⃣ POINT 3 ANIMATION: TEXT SCROLLS FROM SIDE */}
         <div className={`flex gap-2 transform transition-all duration-700 delay-400 cubic-bezier(0.16, 1, 0.3, 1) ${showContent ? "opacity-100 translate-x-0" : "opacity-0 translate-x-12"}`}>
           {["1M", "3M", "6M", "YTD"].map((tf) => (
             <button
@@ -174,7 +171,6 @@ export default function Accounts({
         </div>
       </div>
  
-      {/* 1️⃣ POINT 1 ANIMATION: THE GRAPHIC ANIMATES (Custom stretched 3.5s smooth trace execution) */}
       <div className={`relative flex items-end justify-between h-28 gap-2 border-b border-dashed border-slate-200 dark:border-slate-700 pb-2 mt-4 transform transition-all duration-1000 ease-out origin-bottom ${showChart ? "opacity-100 scale-y-100" : "opacity-0 scale-y-95"}`}>
         <svg className="absolute inset-0 w-full h-full pointer-events-none drop-shadow-md z-20" preserveAspectRatio="none" viewBox="0 0 100 100">
           <style>{`
@@ -218,8 +214,8 @@ export default function Accounts({
             else barBgClass = "bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.4)]";
           } else {
             if (isSampleZero) barBgClass = isDarkMode ? "bg-slate-800 group-hover:bg-slate-700" : "bg-slate-100 group-hover:bg-slate-200";
-            else if (isSamplePositive) barBgClass = isDarkMode ? "bg-emerald-900/20 group-hover:bg-emerald-900/40 opacity-50" : "bg-emerald-50 group-hover:bg-emerald-100 opacity-60";
-            else barBgClass = isDarkMode ? "bg-red-900/20 group-hover:bg-red-900/40 opacity-50" : "bg-red-50 group-hover:bg-red-100 opacity-60";
+            else if (isSamplePositive) barBgClass = "bg-[#10B981] opacity-20 group-hover:opacity-40";
+            else barBgClass = "bg-red-500 opacity-20 group-hover:opacity-40";
           }
  
           return (
@@ -238,7 +234,6 @@ export default function Accounts({
   return (
     <div className={`pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
        
-      {/* PAGE TITLE COLOR PASS: FORCED PURE CRISP WHITE IN DARK MODE / CRISP BLACK IN LIGHT MODE */}
       <div className="relative z-10 Accounts-Master-Header">
         <style>{`
           .Accounts-Master-Header h1, 
@@ -309,7 +304,8 @@ export default function Accounts({
           </div>
         </div>
  
-        <div className={`border-t ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}></div>
+        {/* FIX 3: Swept existing timeline divider line mapping above My Goals block header */}
+        <div className={`border-t ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
  
         {/* TARGET OBJECTIVE GOAL ROW */}
         <div className="space-y-4">
@@ -403,6 +399,9 @@ export default function Accounts({
             )}
           </div>
         </div>
+ 
+        {/* FIX 4: Integrated new blueprint timeline separator line under My Goals card matrix */}
+        <div className={`border-t ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
  
         {/* PLATFORM METRIC ACCELERATORS */}
         <div className="flex flex-col gap-3">

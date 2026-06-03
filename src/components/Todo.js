@@ -95,8 +95,6 @@ export default function Todo({
     );
   };
  
-  // FIX 1 & 2: Added light mode mesh gradient design and harmonized softer blueprint layout dropshadow parameters
-  // ANIMATION FIXES: Implemented cinematic 3-point entrance triggers (Ring Trace, Counter Lift, and Label Slide)
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
@@ -107,7 +105,6 @@ export default function Todo({
           </span>
         </div>
  
-        {/* ANIMATION POINT 1: Hero progress tracking line ring trace config */}
         <div className="relative w-28 h-28 flex-shrink-0">
           <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90 drop-shadow-xl">
             <circle cx="50" cy="50" r={radius} fill="transparent" stroke={isDarkMode ? "#334155" : "rgba(226, 232, 240, 0.9)"} strokeWidth="12" />
@@ -126,13 +123,11 @@ export default function Todo({
         </div>
         
         <div className="flex-1 flex flex-col items-end text-right space-y-1 overflow-hidden">
-          {/* ANIMATION POINT 2: Task counter momentum lift element tracking */}
           <div className={`flex items-baseline gap-1.5 pt-1 transform transition-all duration-700 delay-200 cubic-bezier(0.16, 1, 0.3, 1) ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
             <p className="text-6xl font-black tracking-tighter leading-none transition-all duration-300 text-[#1877F2]">{completedCount}</p>
             <p className={`text-3xl font-black tracking-tighter leading-none opacity-50 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>/ {totalTasks}</p>
           </div>
           
-          {/* ANIMATION POINT 3: Subordinate meta task complete description text horizontal slide element */}
           <div className={`transform transition-all duration-700 delay-500 cubic-bezier(0.16, 1, 0.3, 1) ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-12"}`}>
             <p className={`text-xs font-bold truncate pt-1 ${isDarkMode ? "text-slate-300" : "text-slate-500"}`}>Total completed tasks</p>
           </div>
@@ -141,15 +136,12 @@ export default function Todo({
     </div>
   );
  
+  // CLOCK DOWN EDIT ACTION: Removed active modal state setter from parent card container block to halt wide gap click triggers entirely
   const renderTaskCard = (task) => {
     return (
       <div 
         key={task.id} 
-        onClick={() => {
-            setActiveModalTodo(task);
-            setEditTaskData({ text: task.text, priority: task.priority, type: task.type }); 
-        }}
-        className={`relative flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all active:scale-[0.98] shadow-sm border
+        className={`relative flex items-center justify-between p-4 rounded-2xl shadow-sm border select-none
           ${task.isCompleted 
               ? isDarkMode ? "bg-slate-800 border-transparent" : "bg-white border-transparent" 
               : isDarkMode ? "bg-[#1E293B] border-slate-700/50" : "bg-white border-slate-100"
@@ -180,6 +172,7 @@ export default function Todo({
           </div>
         </div>
         
+        {/* PENCIL RUNWAY LOCK: This is now the singular isolated portal to open up your edit configurations modal layout */}
         <button 
           onClick={(e) => { 
               e.stopPropagation(); 
@@ -270,7 +263,6 @@ export default function Todo({
           </section>
         )}
  
-        {/* FIX 3a: Integrated blueprint line break directly BELOW the pending actions matrix container */}
         {pendingActions.length > 0 && (pendingShopping.length > 0 || completedTasks.length > 0) && (
           <div className={`border-t relative z-10 my-4 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
         )}
@@ -287,7 +279,6 @@ export default function Todo({
           </section>
         )}
  
-        {/* FIX 3b: Integrated blueprint line break directly BELOW the pending shopping card container boundary block */}
         {pendingShopping.length > 0 && completedTasks.length > 0 && (
           <div className={`border-t relative z-10 my-4 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
         )}

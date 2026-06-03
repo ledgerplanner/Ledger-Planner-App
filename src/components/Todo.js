@@ -95,19 +95,19 @@ export default function Todo({
     );
   };
  
+  // FIX 1 & 2: Added light mode mesh gradient design and harmonized softer blueprint layout dropshadow parameters
+  // ANIMATION FIXES: Implemented cinematic 3-point entrance triggers (Ring Trace, Counter Lift, and Label Slide)
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
-      {/* 👑 MASTER FLOATING OPERATIONS SUMMARY CARD */}
-      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-white via-slate-50/90 to-slate-100/60 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.3),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
+      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
          
-        {/* INNER HERO CARD TITLE: RELOCATED FROM RIGHT COLUMN TO TOP BLUEPRINT CENTER */}
         <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
           <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-black"}`}>
             Daily Operations
           </span>
         </div>
  
-        {/* MOMENTUM PROGRESS RING */}
+        {/* ANIMATION POINT 1: Hero progress tracking line ring trace config */}
         <div className="relative w-28 h-28 flex-shrink-0">
           <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90 drop-shadow-xl">
             <circle cx="50" cy="50" r={radius} fill="transparent" stroke={isDarkMode ? "#334155" : "rgba(226, 232, 240, 0.9)"} strokeWidth="12" />
@@ -125,14 +125,17 @@ export default function Todo({
           </div>
         </div>
         
-        {/* DAILY OPERATIONS DATA CONTAINER */}
-        <div className={`flex-1 flex flex-col items-end text-right space-y-1 transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-          {/* OLD SECONDARY LABEL REMOVED TO PREVENT DUPLICATES */}
-          <div className="flex items-baseline gap-1.5 pt-1">
+        <div className="flex-1 flex flex-col items-end text-right space-y-1 overflow-hidden">
+          {/* ANIMATION POINT 2: Task counter momentum lift element tracking */}
+          <div className={`flex items-baseline gap-1.5 pt-1 transform transition-all duration-700 delay-200 cubic-bezier(0.16, 1, 0.3, 1) ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
             <p className="text-6xl font-black tracking-tighter leading-none transition-all duration-300 text-[#1877F2]">{completedCount}</p>
             <p className={`text-3xl font-black tracking-tighter leading-none opacity-50 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>/ {totalTasks}</p>
           </div>
-          <p className={`text-xs font-bold truncate pt-1 ${isDarkMode ? "text-slate-300" : "text-slate-500"}`}>Total completed tasks</p>
+          
+          {/* ANIMATION POINT 3: Subordinate meta task complete description text horizontal slide element */}
+          <div className={`transform transition-all duration-700 delay-500 cubic-bezier(0.16, 1, 0.3, 1) ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-12"}`}>
+            <p className={`text-xs font-bold truncate pt-1 ${isDarkMode ? "text-slate-300" : "text-slate-500"}`}>Total completed tasks</p>
+          </div>
         </div>
       </div>
     </div>
@@ -164,7 +167,7 @@ export default function Todo({
             `}
           >
            {task.isCompleted ? <CheckCircle2 size={24} /> : <Circle size={24} />}
-         </button>
+          </button>
           
           <div className="truncate">
             <p className={`font-bold text-sm truncate transition-all ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
@@ -194,7 +197,6 @@ export default function Todo({
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
        
-      {/* PAGE TITLE COLOR PASS: FORCED PURE CRISP WHITE IN DARK MODE / CRISP BLACK IN LIGHT MODE */}
       <div className="relative z-10 Todo-Master-Header">
         <style>{`
           .Todo-Master-Header h1, 
@@ -261,11 +263,16 @@ export default function Todo({
             <div className="flex items-center gap-2 mb-4 px-2">
               <Zap size={16} className="text-[#1877F2]" />
               <h3 className="text-[10px] font-black uppercase tracking-widest text-[#1877F2]">Pending Actions</h3>
-           </div>
+            </div>
             <div className="space-y-2">
               {pendingActions.map(renderTaskCard)}
             </div>
           </section>
+        )}
+ 
+        {/* FIX 3a: Integrated blueprint line break directly BELOW the pending actions matrix container */}
+        {pendingActions.length > 0 && (pendingShopping.length > 0 || completedTasks.length > 0) && (
+          <div className={`border-t relative z-10 my-4 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
         )}
  
         {pendingShopping.length > 0 && (
@@ -273,11 +280,16 @@ export default function Todo({
             <div className="flex items-center gap-2 mb-4 px-2">
               <ShoppingBag size={16} className="text-[#10B981]" />
               <h3 className="text-[10px] font-black uppercase tracking-widest text-[#10B981]">Pending Shopping</h3>
-           </div>
+            </div>
             <div className="space-y-2">
               {pendingShopping.map(renderTaskCard)}
             </div>
           </section>
+        )}
+ 
+        {/* FIX 3b: Integrated blueprint line break directly BELOW the pending shopping card container boundary block */}
+        {pendingShopping.length > 0 && completedTasks.length > 0 && (
+          <div className={`border-t relative z-10 my-4 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
         )}
  
         {completedTasks.length > 0 && (
@@ -286,14 +298,14 @@ export default function Todo({
               <div className="flex items-center gap-2">
                 <CheckCircle2 size={16} className="text-[#F97316]" />
                 <h3 className="text-[10px] font-black uppercase tracking-widest text-[#F97316]">Completed Tasks</h3>
-             </div>
-             <button 
-               onClick={clearCompletedTodos}
-               className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all active:scale-95 ${isDarkMode ? "bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30" : "bg-orange-100 text-orange-600 border-orange-200 hover:bg-orange-200"}`}
-              >
-                Delete All
-              </button>
-           </div>
+              </div>
+              <button 
+                onClick={clearCompletedTodos}
+                className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all active:scale-95 ${isDarkMode ? "bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30" : "bg-orange-100 text-orange-600 border-orange-200 hover:bg-orange-200"}`}
+               >
+                 Delete All
+               </button>
+            </div>
             <div className="space-y-2">
               {completedTasks.map(renderTaskCard)}
             </div>
@@ -310,11 +322,11 @@ export default function Todo({
               <div className="flex items-center gap-2">
                 <CheckSquare size={20} className={activeModalTodo.isCompleted ? parseInt(activeModalTodo.priority) === 5 ? "text-[#FBBF24]" : "text-[#F97316]" : "text-[#1877F2]"} />
                 <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Edit Task</h3>
-             </div>
-             <button onClick={() => setActiveModalTodo(null)} className="p-2 rounded-full">
-                <X size={18} className={isDarkMode ? "text-slate-400" : "text-slate-500"} />
-             </button>
-           </div>
+              </div>
+              <button onClick={() => setActiveModalTodo(null)} className="p-2 rounded-full">
+                 <X size={18} className={isDarkMode ? "text-slate-400" : "text-slate-500"} />
+              </button>
+            </div>
             
             <div className="p-6 space-y-4 animate-fade-in pb-[120px] lg:pb-6">
               <div className="relative">
@@ -352,7 +364,7 @@ export default function Todo({
                     ))}
                   </div>
                 </div>
-             </div>
+              </div>
  
               <div className="pt-2 space-y-3">
                <button 
@@ -368,7 +380,7 @@ export default function Todo({
                  <Trash2 size={16} /> Delete Task
                </button>
              </div>
-           </div>
+            </div>
           </div>
         </div>
       )}

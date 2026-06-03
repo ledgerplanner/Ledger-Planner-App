@@ -146,26 +146,23 @@ export default function Activity({
     return "text-[#F97316]";
   };
  
+  // FIX 1 & 2: Applied softer shadow container blueprint configurations alongside the light mode mesh layout styles
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
-      {/* 👑 MASTER FLOATING CASH FLOW SUMMARY CARD */}
-      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-white via-slate-50/90 to-slate-100/60 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.3),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
+      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
          
-        {/* INNER HERO CARD TITLE: PERFECT COMPLIANCE BLUEPRINT POSITIONING */}
         <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
           <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-black"}`}>
             Net Cash Flow
           </span>
         </div>
  
-        {/* TEXT LINE ANIMATION */}
         <div className={`text-center w-full transform transition-all duration-700 delay-100 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           <p className={`text-5xl font-black tracking-tighter transition-all duration-300 mb-6 ${netCashFlow >= 0 ? "text-[#10B981]" : "text-red-500"}`}>
             {netCashFlow >= 0 ? "+" : "-"}${Math.abs(netCashFlow).toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </p>
         </div>
  
-        {/* HORIZONTAL GRAPHIC FLUID FILL ANIMATION */}
         <div className={`w-full transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           <div className={`w-full h-10 rounded-full flex overflow-hidden shadow-inner ${isDarkMode ? "bg-[#1E293B]" : "bg-slate-100"}`}>
             <div 
@@ -189,7 +186,6 @@ export default function Activity({
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
        
-      {/* PAGE TITLE COLOR PASS: FORCED PURE CRISP WHITE IN DARK MODE / CRISP BLACK IN LIGHT MODE */}
       <div className="relative z-10 Activity-Master-Header">
         <style>{`
           .Activity-Master-Header h1, 
@@ -275,7 +271,8 @@ export default function Activity({
           </button>
         </div>
  
-        <div className={`border-t ${isDarkMode ? "border-white" : "border-slate-200"}`}></div>
+        {/* FIX 3a: Restored blueprint line parameters positioned accurately ABOVE the search bar input arena wrapper */}
+        <div className={`border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
  
         <div className="flex gap-2">
           <div className={`flex-1 flex items-center px-4 rounded-2xl border shadow-sm transition-colors ${isDarkMode ? "bg-[#1E293B] border-slate-800 text-white focus-within:border-slate-600" : "bg-white border-slate-100 text-slate-900 focus-within:border-[#1877F2]"}`}>
@@ -287,6 +284,9 @@ export default function Activity({
             />
           </div>
         </div>
+
+        {/* FIX 3b: Implemented new matching blueprint divider line breaking directly UNDERNEATH the search layout field */}
+        <div className={`border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
  
         <div className="space-y-4">
          {groupedTransactions.length === 0 ? (

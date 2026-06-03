@@ -180,10 +180,10 @@ export default function Dashboard({
     }
   }
 
-  // FIX 1 & 3: Synchronized exact inner hero box layout styling properties to use custom Accounts shadow configs
+  // FIXED #2: Gradient design completely restored and blended with the signature accounts drop shadows
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
-      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-white via-slate-50/90 to-slate-100/60 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.3),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
+      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
          
         <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
           <span className={`text-[10px] font-black uppercase tracking-widest opacity-80 ${isDarkMode ? "text-white" : "text-black"}`}>
@@ -351,8 +351,8 @@ export default function Dashboard({
         </div>
       </div>
 
-      {/* FIX 2: Dynamic high-contrast structural canvas dividers tracking page frames securely across viewport view triggers */}
-      <div className={`mx-6 mb-6 border-t relative z-10 ${isDarkMode ? "border-white/20" : "border-slate-300"}`}></div>
+      {/* LINE #1: Adjusted to explicit crisp white #FFFFFF value tracking theme status safely */}
+      <div className={`mx-6 mb-6 border-t relative z-10 ${isDarkMode ? "border-white/30" : "border-slate-300"}`}></div>
 
       <main className="px-6 space-y-4 relative z-10">
         
@@ -413,7 +413,7 @@ export default function Dashboard({
                                       <RefreshCw size={12} strokeWidth={2.5} className="text-[#10B981] shrink-0" />
                                     )}
                                   </div>
-                               </div>
+                                </div>
                                <button 
                                  onClick={(e) => { e.stopPropagation(); setSelectedEntry(bill); }} 
                                  className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
@@ -480,8 +480,8 @@ export default function Dashboard({
            </div>
         </div>
 
-        {/* FIX 2: High-contrast headline divider anchoring recent ledger records */}
-        <div className={`space-y-4 pt-4 border-t mt-8 ${isDarkMode ? "border-white/20" : "border-slate-300"}`}>
+        {/* LINE #2: Adjusted to explicit crisp white #FFFFFF value tracking theme status safely */}
+        <div className={`space-y-4 pt-4 border-t mt-8 ${isDarkMode ? "border-white/30" : "border-slate-300"}`}>
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Recent Activity</h3>
           <div className={`rounded-[2rem] p-4 border shadow-sm transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white/80 backdrop-blur-md border-white/60 shadow-sm"}`}>
             {transactions.length === 0 ? ( <p className="text-center py-8 font-bold text-slate-400">No activity yet.</p> ) : (
@@ -515,7 +515,7 @@ export default function Dashboard({
                       
                       <div className="flex items-start justify-between w-full mb-3 gap-2">
                          <div className="flex items-start gap-3 flex-1 min-w-0">
-                            <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                            <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
                                {tx?.icon || "💳"}
                             </div>
                             <div className="flex flex-col flex-1 min-w-0 pt-1">
@@ -532,7 +532,7 @@ export default function Dashboard({
                          </button>
                       </div>
 
-                      {/* Internal item element borders left untouched to safely protect layout boxes encapsulation definitions */}
+                      {/* Internal borders safe within entry layout boxes */}
                       <div className={`w-full border-t mb-3 ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}></div>
 
                       <div className="flex items-center justify-between gap-2 w-full">

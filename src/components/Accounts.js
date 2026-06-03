@@ -138,7 +138,6 @@ export default function Accounts({
  
   const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
  
-  // FIX 1: Restored uncompromised hard-coded heavy signature drop shadows alongside the mesh gradient structure
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[0_12px_24px_rgba(24,119,242,0.15)]"}`}>
@@ -171,7 +170,6 @@ export default function Accounts({
         </div>
       </div>
  
-      {/* FIX 2: Engineered dedicated mobile responsive media triggers to slow down the trace animation velocity on small screen widths */}
       <div className={`relative flex items-end justify-between h-28 gap-2 border-b border-dashed border-slate-200 dark:border-slate-700 pb-2 mt-4 transform transition-all duration-1000 ease-out origin-bottom ${showChart ? "opacity-100 scale-y-100" : "opacity-0 scale-y-95"}`}>
         <svg className="absolute inset-0 w-full h-full pointer-events-none drop-shadow-md z-20" preserveAspectRatio="none" viewBox="0 0 100 100">
           <style>{`
@@ -254,7 +252,6 @@ export default function Accounts({
  
       <main className="px-6 space-y-8 mt-4">
         
-        {/* LIQUID BANK ASSET ROW */}
         <div className="space-y-4">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">All Accounts</h3>
           <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
@@ -312,7 +309,6 @@ export default function Accounts({
  
         <div className={`border-t ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
  
-        {/* TARGET OBJECTIVE GOAL ROW */}
         <div className="space-y-4">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">My Goals</h3>
           <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
@@ -389,7 +385,7 @@ export default function Accounts({
                             onClick={(e) => {
                               e.stopPropagation();
                               if (typeof setCashOutGoal === "function") setCashOutGoal(goal);
-                              if (typeof setIsCashOutOpen === "function") setIsCashOpen(true);
+                              if (typeof setIsCashOutOpen === "function") setIsCashOutOpen(true);
                             }}
                             className="w-full py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest text-white bg-[#F97316] hover:bg-[#EA580C] shadow-[0_8px_20px_rgba(249,115,22,0.3)] flex items-center justify-center gap-2 transition-all active:scale-95 mt-2 border border-transparent"
                           >
@@ -407,7 +403,6 @@ export default function Accounts({
  
         <div className={`border-t ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
  
-        {/* PLATFORM METRIC ACCELERATORS */}
         <div className="flex flex-col gap-3">
           <div className="grid grid-cols-2 gap-3">
             <button onClick={() => setIsAddAccountOpen(true)} className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#10B981] text-white shadow-emerald-900/20" : "bg-[#10B981] text-white shadow-emerald-500/30"}`}>
@@ -425,7 +420,7 @@ export default function Accounts({
       </main>
  
       {/* ICON DRAWER WRAPPER */}
-      {/* FIX 3: Substituted grid loop handler target to dynamic local form element state configurations */}
+      {/* FIXED PIPELINE: Removed the fragile document.querySelector input-scraping logic. Emojis now safely route directly through parent handler state updates */}
       {isIconSelectorOpen && (
          <div className={`absolute inset-0 z-[150] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
             <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
@@ -439,12 +434,6 @@ export default function Accounts({
                       key={emoji} 
                       onClick={() => { 
                           setSelectedGoalIcon(emoji); 
-                          const appIconElement = document.querySelector('input[placeholder="🎯"]') || { value: "" };
-                          if (appIconElement) {
-                            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
-                            nativeInputValueSetter.call(appIconElement, emoji);
-                            appIconElement.dispatchEvent(new Event('input', { bubbles: true }));
-                          }
                           setIsIconSelectorOpen(false); 
                       }} 
                       className={`w-12 h-12 flex items-center justify-center rounded-xl text-2xl border transition-all active:scale-90 ${selectedGoalIcon === emoji ? `bg-[#F97316] text-white border-transparent shadow-md` : isDarkMode ? "bg-slate-800 border-slate-700 hover:bg-slate-700" : "bg-slate-50 border-slate-200 hover:bg-slate-100"}`}

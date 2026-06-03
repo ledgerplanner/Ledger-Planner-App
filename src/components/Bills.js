@@ -385,7 +385,6 @@ export default function Bills({
             );
           })}
 
-          {/* DYNAMIC HORIZONTAL ANCHOR CARD: Transformed header mapping layout elements to perfectly center "BILLS IN 2027" */}
           <div
             onClick={() => {
               setSelectedMonth(12);
@@ -423,11 +422,11 @@ export default function Bills({
               </div>
             </div>
           </div>
-
         </div>
       </div>
 
-      <div className={`mx-6 mb-6 border-t ${isDarkMode ? "border-white/20" : "border-black/20"}`}></div>
+      {/* LINE #1 SWEEP: Adjusted to explicit crisp white #FFFFFF value tracking theme status safely */}
+      <div className={`mx-6 mb-6 border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
 
       <main className="px-6 space-y-8 mt-2">
           
@@ -506,7 +505,8 @@ export default function Bills({
             </div>
           )}
 
-          <div className={`mb-6 border-t ${isDarkMode ? "border-white/20" : "border-black/20"}`}></div>
+          {/* LINE #2 SWEEP: Adjusted to explicit crisp white #FFFFFF value tracking theme status safely */}
+          <div className={`mx-6 my-6 border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
 
           <div className="space-y-4">
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">
@@ -713,11 +713,11 @@ export default function Bills({
                 </div>
               )}
             </div>
-
           </div>
         </div>
 
-        <div className={`mt-6 mb-2 border-t ${isDarkMode ? "border-white/20" : "border-black/20"}`}></div>
+        {/* LINE #3 SWEEP: Adjusted to explicit crisp white #FFFFFF value tracking theme status safely */}
+        <div className={`mt-6 mb-2 border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
 
         {bills.filter(b => b.isPaid).length > 0 && (
           <div className="space-y-4 mt-6">

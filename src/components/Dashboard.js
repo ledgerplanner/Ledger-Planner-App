@@ -67,7 +67,6 @@ export default function Dashboard({
   
   const hzPaydays = ["Due Now", ...allowedPaydays];
 
-  // Map chronological windows for each scheduled tracking key block
   const paydayWindows = {};
   
   const activePaydaysWithDates = allowedPaydays
@@ -93,7 +92,6 @@ export default function Dashboard({
     paydayWindows[pd.key] = { start: startMillis, end: endMillis };
   });
 
-  // Dynamic runway assigner for single reference map sorting
   const getBillRunwayGroup = (bill) => {
     if (bill.isOverdue || bill.payday === "Due Now") return "Due Now";
     if (!bill.rawDate) return null;
@@ -110,7 +108,6 @@ export default function Dashboard({
     return null;
   };
 
-  // Group bills natively by dynamic runways
   const billsByRunwayGroup = { "Due Now": [] };
   hzPaydays.forEach(pd => { billsByRunwayGroup[pd] = []; });
   
@@ -131,11 +128,9 @@ export default function Dashboard({
     });
   };
 
-  // === PURE LIQUID NET WORTH HERO CARD CALIBRATION ===
   const liquidAccounts = accounts.filter(a => !a.isGoal);
   const totalIncomeBalance = liquidAccounts.reduce((sum, a) => sum + (Number(a?.balance) || 0), 0);
   
-  // Scheduled Unpaid Bills Total inside dynamic active runways
   const scheduledUnpaidBillsTotal = hzPaydays.reduce((sum, pd) => {
     const groupUnpaid = (billsByRunwayGroup[pd] || []).filter(b => !b.isPaid);
     return sum + groupUnpaid.reduce((innerSum, b) => innerSum + (Number(b.amount) || 0), 0);
@@ -150,8 +145,6 @@ export default function Dashboard({
   const strokeDasharray = 251.2;
   const targetDashoffset = strokeDasharray - (strokeDasharray * debtRatio) / 100;
 
-  // === WATERFALL BALANCE COMPILATION ENGINE ===
-  let runningBalance = totalIncomeBalance;
   const hzBalances = {};
 
   hzPaydays.forEach((pd) => {
@@ -173,6 +166,8 @@ export default function Dashboard({
     hzBalances[pd] = runningBalance;
   });
 
+  let runningBalance = totalIncomeBalance;
+
   let daysUntilNext = 0;
   let nextPaydayDayName = "";
 
@@ -186,9 +181,10 @@ export default function Dashboard({
     }
   }
 
+  // SWEEP FIX: Applied signature layout mesh gradients and standardized dynamic shadowing filters
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
-      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-white via-slate-50/90 to-slate-100/60 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.3),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
+      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
          
         <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
           <span className={`text-[10px] font-black uppercase tracking-widest opacity-80 ${isDarkMode ? "text-white" : "text-black"}`}>
@@ -198,27 +194,24 @@ export default function Dashboard({
  
         <div className="relative w-28 h-28 flex-shrink-0">
           <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
-            <style>{`
-              @keyframes drawTrendLine {
-                from { stroke-dashoffset: 251.2; }
-              }
-              .animate-trend-line {
-                stroke-dasharray: 251.2;
-                animation: drawTrendLine 2.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-              }
-            `}</style>
-            <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "rgba(51, 65, 85, 0.5)" : "rgba(255, 255, 255, 0.6)"} strokeWidth="12" />
+            <defs>
+              <linearGradient id="dashGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#1877F2" />
+                <stop offset="100%" stopColor="#0a56bd" />
+              </linearGradient>
+            </defs>
+            <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "rgba(51, 65, 85, 0.5)" : "rgba(226, 232, 240, 0.9)"} strokeWidth="12" />
             <circle 
               cx="50" 
               cy="50" 
               r="40" 
               fill="transparent" 
-              stroke={safeToSpend < 0 ? "#EF4444" : "#1877F2"} 
+              stroke={safeToSpend < 0 ? "#EF4444" : "url(#dashGlow)"} 
               strokeWidth="12" 
               strokeLinecap="round" 
               strokeDasharray={strokeDasharray} 
               strokeDashoffset={isMounted ? targetDashoffset : strokeDasharray} 
-              className="transition-all duration-1000 delay-150 ease-out animate-trend-line" 
+              className="transition-all duration-1000 delay-150 ease-out" 
             />
           </svg>
           <div className={`absolute inset-0 flex flex-col items-center justify-center transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
@@ -257,7 +250,6 @@ export default function Dashboard({
     </div>
   );
 
-  // Rigid calendar cutoff tracking calculations for currentMonthBillsTotal summary block
   const currentMonthBillsTotal = bills.reduce((sum, bill) => {
     if (bill.isPaid) return sum;
     let include = false;
@@ -276,7 +268,7 @@ export default function Dashboard({
   }, 0);
 
   return (
-    <div className={`pb-32 transition-colors duration-500 min-h-screen relative overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-gradient-to-b from-slate-50 via-[#F8FAFC] to-blue-50/40"}`}>
+    <div className={`pb-32 transition-colors duration-500 min-h-screen relative overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
       
       <div className="relative z-10 Dashboard-Master-Header">
         <style>{`
@@ -291,7 +283,7 @@ export default function Dashboard({
       </div>
 
       <div className="flex justify-center px-6 mb-5 -mt-2 relative z-10">
-         <button onClick={() => setIsPaydaySetupOpen(true)} className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border transition-all active:scale-95 ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#10B981] shadow-sm" : "bg-white/80 backdrop-blur-md border-white/60 text-[#10B981] shadow-[0_4px_20px_rgba(0,0,0,0.03)]"}`}>
+         <button onClick={() => setIsPaydaySetupOpen(true)} className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border transition-all active:scale-95 ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#10B981] shadow-sm" : "bg-white/80 backdrop-blur-md border-slate-200 text-[#10B981] shadow-[0_4px_20px_rgba(0,0,0,0.03)]"}`}>
             <Settings2 size={18} strokeWidth={2.5} /> Set {currentMonthName}'s Pay Dates & Amounts
          </button>
       </div>
@@ -360,7 +352,8 @@ export default function Dashboard({
         </div>
       </div>
 
-      <div className={`mx-6 mb-6 border-t relative z-10 ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}></div>
+      {/* SWEEP FIX: Re-calibrated structural separating timeline accent lines across both display properties */}
+      <div className={`mx-6 mb-6 border-t relative z-10 ${isDarkMode ? "border-white/20" : "border-slate-300"}`}></div>
 
       <main className="px-6 space-y-4 relative z-10">
         
@@ -410,7 +403,7 @@ export default function Dashboard({
                             
                             <div className="flex items-start justify-between w-full mb-4">
                                <div className="flex items-center gap-3 cursor-pointer flex-1 min-w-0" onClick={() => setSelectedEntry(bill)}>
-                                  <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                                  <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
                                      {bill?.icon || "🧾"}
                                   </div>
                                   <div className="flex items-center gap-1.5 min-w-0 flex-1">
@@ -442,7 +435,7 @@ export default function Dashboard({
                                
                                <div className="flex-1 flex justify-center px-1">
                                   {!bill?.isPaid ? (
-                                      <button onClick={(e) => { e.stopPropagation(); handleBillClick(bill?.id); }} className="px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0">
+                                      <button onClick={(e) => { e.stopPropagation(); handleBillClick(bill?.id); }} className="px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0" >
                                         <CheckCircle2 size={14} />
                                         <span className="hidden min-[360px]:inline">MARK AS PAID</span>
                                         <span className="min-[360px]:hidden">PAY</span>
@@ -488,7 +481,8 @@ export default function Dashboard({
            </div>
         </div>
 
-        <div className={`space-y-4 pt-4 border-t mt-8 ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}>
+        {/* SWEEP FIX: Re-calibrated recent activity divider boundary parameters */}
+        <div className={`space-y-4 pt-4 border-t mt-8 ${isDarkMode ? "border-white/20" : "border-slate-300"}`}>
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Recent Activity</h3>
           <div className={`rounded-[2rem] p-4 border shadow-sm transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white/80 backdrop-blur-md border-white/60 shadow-sm"}`}>
             {transactions.length === 0 ? ( <p className="text-center py-8 font-bold text-slate-400">No activity yet.</p> ) : (
@@ -522,13 +516,13 @@ export default function Dashboard({
                       
                       <div className="flex items-start justify-between w-full mb-3 gap-2">
                          <div className="flex items-start gap-3 flex-1 min-w-0">
-                            <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                            <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
                                {tx?.icon || "💳"}
                             </div>
                             <div className="flex flex-col flex-1 min-w-0 pt-1">
                                <p className={`font-black text-base leading-tight break-words whitespace-normal ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                                   {tx?.name || "Transaction"}
-                               </p>
+                                </p>
                             </div>
                          </div>
                          <button 
@@ -539,7 +533,8 @@ export default function Dashboard({
                          </button>
                       </div>
 
-                      <div className={`w-full border-t mb-3 ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}></div>
+                      {/* SWEEP FIX: Re-calibrated activity item inner line divider */}
+                      <div className={`w-full border-t mb-3 ${isDarkMode ? "border-white/20" : "border-slate-300"}`}></div>
 
                       <div className="flex items-center justify-between gap-2 w-full">
                          <div className="flex flex-col flex-1 min-w-0 pr-2">

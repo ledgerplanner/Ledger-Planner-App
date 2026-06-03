@@ -180,9 +180,10 @@ export default function Dashboard({
     }
   }
 
+  // FIX SHADOW & GRADIENT: Restored matching Accounts page layout parameters down to the drop shadow token strings
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
-      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[0_12px_24px_rgba(24,119,242,0.15)]"}`}>
+      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.3),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
          
         <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
           <span className={`text-[10px] font-black uppercase tracking-widest opacity-80 ${isDarkMode ? "text-white" : "text-black"}`}>
@@ -350,6 +351,7 @@ export default function Dashboard({
         </div>
       </div>
 
+      {/* LINE #1: Standardized pure hex white line break separation node */}
       <div className={`mx-6 mb-6 border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
 
       <main className="px-6 space-y-4 relative z-10">
@@ -478,6 +480,7 @@ export default function Dashboard({
            </div>
         </div>
 
+        {/* LINE #2: Standardized pure hex white line break separation node */}
         <div className={`space-y-4 pt-4 border-t mt-8 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}>
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Recent Activity</h3>
           <div className={`rounded-[2rem] p-4 border shadow-sm transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white/80 backdrop-blur-md border-white/60 shadow-sm"}`}>

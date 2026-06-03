@@ -13,6 +13,7 @@ export default function Activity({
   renderHeroShell 
 }) {
   const [collapsedMonths, setCollapsedMonths] = useState({});
+  const [isTodayCollapsed, setIsTodayCollapsed] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
  
   useEffect(() => {
@@ -25,17 +26,46 @@ export default function Activity({
     const matchesFilter = activityFilter === "All" || tx.type === activityFilter;
     return matchesSearch && matchesFilter;
   });
+
+  // UPDATE 2 Engine: Surgical parsing and extraction of today's real-time entries
+  const todayTransactions = useMemo(() => {
+    const todayObj = new Date();
+    const currentYear = todayObj.getFullYear();
+    const currentMonth = todayObj.getMonth();
+    const currentDate = todayObj.getDate();
+
+    return filteredTransactions.filter(tx => {
+      const d = new Date(tx.rawDate || tx.date || todayObj);
+      if (d.getFullYear() === 2001) d.setFullYear(currentYear);
+      
+      return d.getFullYear() === currentYear && d.getMonth() === currentMonth && d.getDate() === currentDate;
+    });
+  }, [filteredTransactions]);
+
+  const todayTotals = useMemo(() => {
+    let inflow = 0;
+    let outflow = 0;
+    todayTransactions.forEach(tx => {
+      if (tx.type === "Income") inflow += Number(tx.amount) || 0;
+      if (tx.type === "Expense") outflow += Number(tx.amount) || 0;
+    });
+    return { inflow, outflow };
+  }, [todayTransactions]);
  
   const groupedTransactions = useMemo(() => {
     const groups = {};
-    const today = new Date();
-    const currentYear = today.getFullYear();
+    const todayObj = new Date();
+    const currentYear = todayObj.getFullYear();
+    const currentMonth = todayObj.getMonth();
+    const currentDate = todayObj.getDate();
  
     filteredTransactions.forEach(tx => {
-      const d = new Date(tx.rawDate || tx.date || today);
-      
-      if (d.getFullYear() === 2001) {
-        d.setFullYear(currentYear);
+      const d = new Date(tx.rawDate || tx.date || todayObj);
+      if (d.getFullYear() === 2001) d.setFullYear(currentYear);
+
+      // Filter out today's transactions from the monthly buckets to prevent duplicate cards on screen
+      if (d.getFullYear() === currentYear && d.getMonth() === currentMonth && d.getDate() === currentDate) {
+        return;
       }
  
       const monthYear = d.toLocaleString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
@@ -62,24 +92,26 @@ export default function Activity({
     
     if (isSearching) {
       setCollapsedMonths({});
+      setIsTodayCollapsed(false);
     } else {
       if (groupedTransactions.length > 0) {
         const defaultCollapsed = {};
         groupedTransactions.forEach((group, index) => {
-          if (index !== 0) defaultCollapsed[group.label] = true;
+          if (index !== 0 || todayTransactions.length > 0) defaultCollapsed[group.label] = true;
         });
         setCollapsedMonths(defaultCollapsed);
       }
+      setIsTodayCollapsed(false);
     }
-  }, [activitySearch, activityFilter, groupedTransactions.length]); 
+  }, [activitySearch, activityFilter, groupedTransactions.length, todayTransactions.length]); 
  
   const toggleMonth = (monthLabel) => {
     setCollapsedMonths(prev => ({ ...prev, [monthLabel]: !prev[monthLabel] }));
   };
  
   const formatActivityDate = (dateStr, groupLabel) => {
-    if (!dateStr) return "TBD";
-    const groupYear = groupLabel.split(" ")[1] || new Date().getFullYear();
+    if (!dateStr) return "TODAY";
+    const groupYear = groupLabel ? (groupLabel.split(" ")[1] || new Date().getFullYear()) : new Date().getFullYear();
     return dateStr.replace(/2001/g, groupYear);
   };
  
@@ -199,7 +231,6 @@ export default function Activity({
  
       <main className="px-6 space-y-6 mt-4">
  
-        {/* ITEMS 2 & 3: Infused blueprint mesh gradients and softer card depth directly onto the toggleable breakdown ring card container */}
         {activityFilter !== "All" && totalTargetAmount > 0 && (
           <div className={`p-6 rounded-[2rem] border flex items-center gap-6 ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
             <div className="relative w-40 h-40 shrink-0">
@@ -285,29 +316,99 @@ export default function Activity({
         </div>
  
         <div className="space-y-4">
-         {groupedTransactions.length === 0 ? (
+         {groupedTransactions.length === 0 && todayTransactions.length === 0 ? (
             <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
                <div className="py-10 text-center text-slate-400 font-bold text-sm uppercase tracking-widest">No activities found.</div>
             </div>
           ) : (
             <div className="space-y-6">
+              
+              {/* UPDATE 2: Top-level dedicated TODAY transaction ledger section break out block */}
+              {todayTransactions.length > 0 && (
+                <div className="space-y-2">
+                  {/* FIX 1 & 2: Applied horizontal baseline row alignment (items-center) to perfectly baseline header row metrics */}
+                  <div className="flex flex-col px-2 py-2 cursor-pointer transition-colors" onClick={() => setIsTodayCollapsed(!isTodayCollapsed)}>
+                    <div className="flex justify-between items-center w-full gap-2">
+                      <div className="flex items-center gap-2 shrink-0">
+                        <h3 className="text-sm font-black uppercase tracking-widest text-[#1877F2]">TODAY</h3>
+                        <div className="text-slate-500 mb-0.5">{isTodayCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}</div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-500">
+                          +${todayTotals.inflow.toLocaleString("en-US", { minimumFractionDigits: 2 })} In
+                        </span>
+                        <span className={`text-[10px] ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>|</span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-[#F97316]">
+                          -${todayTotals.outflow.toLocaleString("en-US", { minimumFractionDigits: 2 })} Out
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {!isTodayCollapsed && (
+                    <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
+                      <div className="space-y-3">
+                        {todayTransactions.map((tx) => (
+                          <div key={tx.id} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
+                            <div className="flex items-start justify-between w-full mb-4">
+                              <div className="flex items-center gap-3 flex-1 cursor-pointer" onClick={() => setSelectedEntry(tx)}>
+                                <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                                  {tx.icon}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className={`font-bold text-sm break-words whitespace-normal leading-tight ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{tx.name}</p>
+                                </div>
+                              </div>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); setSelectedEntry(tx); }}
+                                className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
+                              >
+                                <Edit2 size={16} strokeWidth={2.5} />
+                              </button>
+                            </div>
+
+                            <div className={`mt-3 pt-3 border-t flex items-center justify-between gap-2 ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
+                              <div className="flex-1 min-w-0 flex flex-col">
+                                <span className={`text-[10px] font-black uppercase tracking-widest truncate leading-tight ${getTxCategoryColor(tx)}`}>
+                                  {tx.category || "Uncategorized"}
+                                </span>
+                                <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest truncate leading-tight mt-0.5">
+                                  {formatActivityDate(tx.date, null)}
+                                </span>
+                              </div>
+                              <div className="shrink-0 flex justify-end">
+                                <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight whitespace-nowrap transition-colors ${getTxAmountClasses(tx, isDarkMode)}`}>
+                                  {tx.type === "Income" ? "+" : "-"}${tx.amount.toFixed(2)}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* MONTHLY HISTORICAL TRANSACTION BUCKETS ROW DISPLAY */}
               {groupedTransactions.map((group) => {
                 const isCollapsed = collapsedMonths[group.label];
  
                 return (
                  <div key={group.label} className="space-y-2">
                     
+                   {/* FIX 1 & 2: Applied horizontal baseline row alignment (items-center) to perfectly baseline header row metrics */}
                    <div className="flex flex-col px-2 py-2 cursor-pointer transition-colors" onClick={() => toggleMonth(group.label)}>
-                     <div className="flex justify-between items-start min-[360px]:items-end w-full gap-2">
-                        <div className="flex items-center gap-2 mb-1 shrink-0">
+                     <div className="flex justify-between items-center w-full gap-2">
+                        <div className="flex items-center gap-2 shrink-0">
                            <h3 className={`text-sm font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{group.label}</h3>
                            <div className="text-slate-500 mb-0.5">{isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}</div>
                         </div>
-                        <div className="flex flex-col min-[360px]:flex-row min-[360px]:items-center items-end gap-0.5 min-[360px]:gap-2 shrink-0">
+                        <div className="flex items-center gap-2 shrink-0">
                            <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-500">
                              +${group.inflow.toLocaleString("en-US", { minimumFractionDigits: 2 })} In
                            </span>
-                           <span className={`hidden min-[360px]:inline text-[10px] ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>|</span>
+                           <span className={`text-[10px] ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>|</span>
                            <span className="text-[10px] font-bold uppercase tracking-widest text-[#F97316]">
                              -${group.outflow.toLocaleString("en-US", { minimumFractionDigits: 2 })} Out
                            </span>

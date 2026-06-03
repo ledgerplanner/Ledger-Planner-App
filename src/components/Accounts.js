@@ -33,7 +33,7 @@ export default function Accounts({
   const liquidAccounts = accounts.filter(a => !a.isGoal);
   const goalAccounts = accounts.filter(a => a.isGoal);
  
-  // === ITEM #1: PURE NET WORTH CALCULATION MATRIX ===
+  // === ITEM #1: PURE LIQUID NET WORTH CALCULATION MATRIX ===
   const netWorth = liquidAccounts.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
   
   const today = new Date();
@@ -138,10 +138,10 @@ export default function Accounts({
  
   const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
  
-  // FIX 1: Activated the blueprint mesh gradient on light mode configuration
+  // FIX 1: Restored uncompromised hard-coded heavy signature drop shadows alongside the mesh gradient structure
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
-      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
+      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[0_12px_24px_rgba(24,119,242,0.15)]"}`}>
           
         <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
           <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-black"}`}>
@@ -151,7 +151,7 @@ export default function Accounts({
  
         <div className={`flex justify-between items-end mb-4 transform transition-all duration-700 delay-200 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest mb-1 text-slate-400">Net Worth • <span className={`${isNetWorthNegative ? "text-red-500" : "text-[#1877F2]"}`}>{activeDataPoint?.label} {activeDataPoint?.year}</span></p>
+            <p className="text-[10px] font-black uppercase tracking-widest mb-1 text-slate-400">Liquid Net Worth • <span className={`${isNetWorthNegative ? "text-red-500" : "text-[#1877F2]"}`}>{activeDataPoint?.label} {activeDataPoint?.year}</span></p>
             <p className={`text-4xl font-black tracking-tighter transition-colors duration-300 ${isNetWorthNegative ? "text-red-500" : activeDataPoint?.val > 0 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
               {isNetWorthNegative ? "-" : ""}${Math.abs(activeDataPoint?.val || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
@@ -171,6 +171,7 @@ export default function Accounts({
         </div>
       </div>
  
+      {/* FIX 2: Engineered dedicated mobile responsive media triggers to slow down the trace animation velocity on small screen widths */}
       <div className={`relative flex items-end justify-between h-28 gap-2 border-b border-dashed border-slate-200 dark:border-slate-700 pb-2 mt-4 transform transition-all duration-1000 ease-out origin-bottom ${showChart ? "opacity-100 scale-y-100" : "opacity-0 scale-y-95"}`}>
         <svg className="absolute inset-0 w-full h-full pointer-events-none drop-shadow-md z-20" preserveAspectRatio="none" viewBox="0 0 100 100">
           <style>{`
@@ -182,6 +183,11 @@ export default function Accounts({
               stroke-dasharray: 1000;
               stroke-dashoffset: 1000;
               animation: drawTrendLine 3.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+            }
+            @media (max-width: 640px) {
+              .animate-trend-line {
+                animation: drawTrendLine 6.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+              }
             }
           `}</style>
           {showChart && (
@@ -304,7 +310,6 @@ export default function Accounts({
           </div>
         </div>
  
-        {/* FIX 3: Swept existing timeline divider line mapping above My Goals block header */}
         <div className={`border-t ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
  
         {/* TARGET OBJECTIVE GOAL ROW */}
@@ -384,7 +389,7 @@ export default function Accounts({
                             onClick={(e) => {
                               e.stopPropagation();
                               if (typeof setCashOutGoal === "function") setCashOutGoal(goal);
-                              if (typeof setIsCashOutOpen === "function") setIsCashOutOpen(true);
+                              if (typeof setIsCashOutOpen === "function") setIsCashOpen(true);
                             }}
                             className="w-full py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest text-white bg-[#F97316] hover:bg-[#EA580C] shadow-[0_8px_20px_rgba(249,115,22,0.3)] flex items-center justify-center gap-2 transition-all active:scale-95 mt-2 border border-transparent"
                           >
@@ -400,7 +405,6 @@ export default function Accounts({
           </div>
         </div>
  
-        {/* FIX 4: Integrated new blueprint timeline separator line under My Goals card matrix */}
         <div className={`border-t ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
  
         {/* PLATFORM METRIC ACCELERATORS */}
@@ -421,6 +425,7 @@ export default function Accounts({
       </main>
  
       {/* ICON DRAWER WRAPPER */}
+      {/* FIX 3: Substituted grid loop handler target to dynamic local form element state configurations */}
       {isIconSelectorOpen && (
          <div className={`absolute inset-0 z-[150] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
             <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
@@ -434,6 +439,12 @@ export default function Accounts({
                       key={emoji} 
                       onClick={() => { 
                           setSelectedGoalIcon(emoji); 
+                          const appIconElement = document.querySelector('input[placeholder="🎯"]') || { value: "" };
+                          if (appIconElement) {
+                            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+                            nativeInputValueSetter.call(appIconElement, emoji);
+                            appIconElement.dispatchEvent(new Event('input', { bubbles: true }));
+                          }
                           setIsIconSelectorOpen(false); 
                       }} 
                       className={`w-12 h-12 flex items-center justify-center rounded-xl text-2xl border transition-all active:scale-90 ${selectedGoalIcon === emoji ? `bg-[#F97316] text-white border-transparent shadow-md` : isDarkMode ? "bg-slate-800 border-slate-700 hover:bg-slate-700" : "bg-slate-50 border-slate-200 hover:bg-slate-100"}`}

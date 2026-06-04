@@ -1,8 +1,7 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { 
-  X, Search, User, CreditCard, RefreshCw, AlertCircle, Trash2, LogOut, 
-  ChevronRight, Sparkles, Globe, Palette, Users, Shield, Check, Info, HelpCircle
+  X, User, CreditCard, RefreshCw, AlertCircle, Trash2, LogOut, 
+  ChevronRight, Sparkles, Globe, Palette, Users, Shield, Check, HelpCircle
 } from "lucide-react";
 
 export default function Settings({
@@ -21,7 +20,6 @@ export default function Settings({
   currentCurrency = "USD ($)",
   setCurrentCurrency
 }) {
-  const [searchQuery, setSearchQuery] = useState("");
   const [editName, setEditName] = useState(userName || "");
 
   // Slide-up Drawers and Sub-Modals
@@ -63,37 +61,40 @@ export default function Settings({
     { name: "Rose Quartz", hex: "#EC4899" }
   ];
 
-  // Reusable Micro-Component for Settings Options Rows
+  // HIGH-PRECISION RE-ENGINEERED 2-LAYER STACKED ROW CARD COMPONENT
   const SettingRow = ({ icon: Icon, title, statusText, colorClass = "", onClick }) => {
-    // Dynamically filter options based on search parameters
-    if (searchQuery && !title.toLowerCase().includes(searchQuery.toLowerCase())) return null;
-
     return (
       <button
         onClick={onClick}
-        className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all active:scale-[0.99] border ${
+        className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left transition-all active:scale-[0.99] gap-3 ${
           isDarkMode 
             ? "bg-slate-800/40 border-slate-700/50 hover:bg-slate-800/80" 
-            : "bg-white border-slate-100 hover:bg-slate-50/80"
+            : "bg-white border-slate-100 hover:bg-slate-50/80 shadow-sm"
         }`}
       >
-        <div className="flex items-center gap-3 min-w-0">
+        {/* Layer 1: Comprehensive Label Block spanning complete horizontal track */}
+        <div className="flex items-center gap-3 w-full min-w-0">
           <div className={`p-2.5 rounded-xl shrink-0 ${isDarkMode ? "bg-slate-900/60" : "bg-slate-50"} ${colorClass}`}>
             <Icon size={16} strokeWidth={2.5} />
           </div>
-          <span className={`text-xs font-black uppercase tracking-wider text-left truncate ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
+          <span className={`text-xs font-black uppercase tracking-wider truncate flex-1 ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
             {title}
           </span>
         </div>
-        <div className="flex items-center gap-2 shrink-0 ml-4">
-          {statusText && (
-            <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border ${
-              isDarkMode ? "bg-slate-900/40 border-slate-700/80 text-slate-400" : "bg-slate-100/60 border-slate-200/60 text-slate-500"
-            }`}>
-              {statusText}
-            </span>
-          )}
-          <ChevronRight size={14} className="text-slate-400" strokeWidth={2.5} />
+
+        {/* Layer 2: Dedicated Interactive Action Utility Row Panel */}
+        <div className={`flex items-center justify-between w-full pt-2 border-t ${
+          isDarkMode ? "border-slate-800/60" : "border-slate-100"
+        }`}>
+          <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border ${
+            isDarkMode ? "bg-slate-900/40 border-slate-700/80 text-slate-400" : "bg-slate-100/60 border-slate-200/60 text-slate-500"
+          }`}>
+            {statusText}
+          </span>
+          <div className="flex items-center gap-1 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+            <span>Configure</span>
+            <ChevronRight size={12} strokeWidth={2.5} />
+          </div>
         </div>
       </button>
     );
@@ -113,39 +114,16 @@ export default function Settings({
         isDarkMode ? "bg-[#0F172A] border-slate-800" : "bg-[#F8FAFC] border-slate-100"
       }`}>
         
-        {/* Pinned Header Block with Interactive Search Input Field */}
-        <div className={`p-5 border-b flex flex-col gap-4 shrink-0 relative z-30 ${
+        {/* Pinned Title Bar Block */}
+        <div className={`p-5 border-b flex justify-between items-center shrink-0 relative z-30 ${
           isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-200/60 shadow-sm"
         }`}>
-          <div className="flex justify-between items-center">
-            <h3 className={`font-black uppercase tracking-widest text-sm flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-              <Shield size={16} style={{ color: signatureColor }} strokeWidth={2.5} /> Settings Vault
-            </h3>
-            <button onClick={() => setIsSettingsOpen(false)} className={closeButtonClass}>
-              <X size={18} strokeWidth={2.5} />
-            </button>
-          </div>
-          
-          {/* Sticky Top-Tier Input Filter Utility Field Element */}
-          <div className="relative w-full">
-            <Search className="absolute left-4 top-3.5 text-slate-400" size={16} strokeWidth={2.5} />
-            <input
-              type="text"
-              placeholder="SEARCH CONFIGURATIONS..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={`w-full py-3.5 pl-11 pr-5 rounded-2xl text-[11px] font-black uppercase tracking-wider focus:outline-none transition-all border ${
-                isDarkMode 
-                  ? "bg-[#0F172A] border-slate-700/80 text-white focus:border-slate-500" 
-                  : "bg-slate-50 border-slate-200/80 text-slate-900 focus:border-slate-400 shadow-inner"
-              }`}
-            />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery("")} className="absolute right-4 top-3.5 text-slate-400 hover:text-slate-600">
-                <X size={14} strokeWidth={2.5} />
-              </button>
-            )}
-          </div>
+          <h3 className={`font-black uppercase tracking-widest text-sm flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+            <Shield size={16} style={{ color: signatureColor }} strokeWidth={2.5} /> Settings Vault
+          </h3>
+          <button onClick={() => setIsSettingsOpen(false)} className={closeButtonClass}>
+            <X size={18} strokeWidth={2.5} />
+          </button>
         </div>
 
         {/* Dynamic Nested Scrolling Content Panel Base Segment */}
@@ -153,65 +131,53 @@ export default function Settings({
           isDemoMode ? "pb-[140px] lg:pb-6" : "pb-24 lg:pb-6"
         }`}>
           
-          {/* Section Apex Element: Premium Active Subscription Configuration Hero Block */}
-          {!searchQuery && (
-            <div className={`p-5 rounded-[2rem] border relative overflow-hidden transition-all transform hover:scale-[1.01] ${
-              isDarkMode 
-                ? "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-slate-700/60 shadow-[0_12px_24px_rgba(0,0,0,0.4)]" 
-                : "bg-gradient-to-br from-white via-slate-50 to-white border-slate-200/80 shadow-[0_12px_20px_rgba(24,119,242,0.05)]"
-            }`}>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-2xl rounded-full pointer-events-none"></div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-0.5">Account Status Portfolio</span>
-                  <p className={`text-base font-black ${isDarkMode ? "text-white" : "text-slate-900"}`}>Ledger Planner Pro</p>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse"></div>
-                    <p className="text-[10px] font-black text-[#10B981] uppercase tracking-widest">Active Sync Cloud</p>
-                  </div>
+          {/* Section Apex Element: High-Contrast Premium Dark-Canvas Subscription Hero Block */}
+          <div className="p-5 rounded-[2rem] border relative overflow-hidden transition-all transform hover:scale-[1.01] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.3)]">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-2xl rounded-full pointer-events-none"></div>
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 block mb-0.5">Account Status</span>
+                <p className="text-base font-black text-white">Ledger Planner Pro</p>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse"></div>
+                  <p className="text-[10px] font-black text-[#10B981] uppercase tracking-widest">Account Active</p>
                 </div>
-                <button 
-                  onClick={() => openGlobalAction("Subscription Portal", "Establishing secure handshakes to billing validation channels...", "Close", false, () => {}, true)}
-                  className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all active:scale-95 ${
-                    isDarkMode 
-                      ? "bg-slate-800 border-slate-700 text-white hover:bg-slate-700" 
-                      : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm"
-                  }`}
-                >
-                  Manage
-                </button>
               </div>
+              <button 
+                onClick={() => openGlobalAction("Subscription Portal", "Establishing secure handshakes to billing validation channels...", "Close", false, () => {}, true)}
+                className="px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all active:scale-95 bg-slate-800 border-slate-700 text-white hover:bg-slate-700 shadow-sm"
+              >
+                Manage
+              </button>
             </div>
-          )}
+          </div>
 
           {/* CLUSTER MODULE GROUP 1: Core Personal Metrics Management Cluster Card Block */}
           <div className="space-y-3">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 flex items-center gap-1.5">
-              <User size={12} strokeWidth={2.5} /> Account Boundaries & Sync
+              <User size={12} strokeWidth={2.5} /> Account Settings & Sync
             </h4>
             <div className={`p-4 rounded-[2rem] border space-y-3 ${isDarkMode ? "bg-slate-800/20 border-slate-800" : "bg-white border-slate-100 shadow-sm"}`}>
               
-              {/* Profile Identity Parameters Entry Slot Row Wrapper Block */}
+              {/* Profile Identity Parameters Entry Slot */}
               <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
                 <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-2">Preferred Profile Tag</label>
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2.5">
                   <input 
                     type="text" 
                     value={editName} 
                     onChange={(e) => setEditName(e.target.value)} 
-                    className={`flex-1 py-2 px-4 rounded-xl font-bold text-xs border focus:outline-none transition-colors ${
+                    className={`w-full py-3 px-4 rounded-xl font-bold text-xs border focus:outline-none transition-colors ${
                       isDarkMode ? "bg-[#0F172A] border-slate-700 text-white focus:border-slate-500" : "bg-white border-slate-200 text-slate-900 focus:border-slate-400"
                     }`} 
                   />
                   <button 
                     onClick={() => openGlobalAction("Identity Updated", "Local cache verification synchronized successfully.", "Close", false, () => {}, true)}
                     disabled={!editName.trim() || editName === userName}
-                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all ${
-                      (!editName.trim() || editName === userName) ? "bg-slate-300 dark:bg-slate-800 text-slate-400 cursor-not-allowed border transparent" : "text-white active:scale-95"
-                    }`}
-                    style={{ backgroundColor: (editName.trim() && editName !== userName) ? signatureColor : undefined }}
+                    className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-[0.98]"
+                    style={{ backgroundColor: (editName.trim() && editName !== userName) ? signatureColor : isDarkMode ? "#1E293B" : "#E2E8F0", color: (editName.trim() && editName !== userName) ? "#FFFFFF" : "#94A3B8" }}
                   >
-                    Save
+                    Update Tag Configuration
                   </button>
                 </div>
               </div>
@@ -230,18 +196,18 @@ export default function Settings({
           {/* CLUSTER MODULE GROUP 2: Aesthetic Preferences & Dynamic Format Optimization Parameters */}
           <div className="space-y-3">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 flex items-center gap-1.5">
-              <Palette size={12} strokeWidth={2.5} /> Application Workspace Customization
+              <Palette size={12} strokeWidth={2.5} /> Custom Settings
             </h4>
             <div className={`p-4 rounded-[2rem] border space-y-3 ${isDarkMode ? "bg-slate-800/20 border-slate-800" : "bg-white border-slate-100 shadow-sm"}`}>
               
-              {/* Dynamic Theme Shift Configuration Row Link Element */}
+              {/* Dynamic Theme Shift Configuration Card Component */}
               <button 
                 onClick={() => setIsDarkMode(!isDarkMode)}
-                className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all active:scale-[0.99] ${
-                  isDarkMode ? "bg-slate-800/40 border-slate-700/50 hover:bg-slate-800/80" : "bg-white border-slate-100 hover:bg-slate-50/80"
+                className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left transition-all active:scale-[0.99] gap-3 ${
+                  isDarkMode ? "bg-slate-800/40 border-slate-700/50 hover:bg-slate-800/80" : "bg-white border-slate-100 hover:bg-slate-50/80 shadow-sm"
                 }`}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 w-full">
                   <div className={`p-2.5 rounded-xl text-amber-400 ${isDarkMode ? "bg-slate-900/60" : "bg-slate-50"}`}>
                     <Sparkles size={16} strokeWidth={2.5} />
                   </div>
@@ -249,11 +215,11 @@ export default function Settings({
                     Matrix Visual Theme
                   </span>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className={`flex items-center justify-between w-full pt-2 border-t ${isDarkMode ? "border-slate-800/60" : "border-slate-100"}`}>
                   <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                     {isDarkMode ? "Dark Mode Active" : "Light Mode Active"}
                   </span>
-                  <div className={`w-10 h-5 rounded-full transition-colors relative ${isDarkMode ? "bg-emerald-500" : "bg-slate-300"}`}>
+                  <div className="w-10 h-5 rounded-full relative bg-slate-300 dark:bg-slate-700 transition-colors" style={{ backgroundColor: isDarkMode ? signatureColor : undefined }}>
                     <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-[3px] transition-transform ${isDarkMode ? "translate-x-5" : "translate-x-1"}`}></div>
                   </div>
                 </div>
@@ -261,9 +227,9 @@ export default function Settings({
 
               {/* Signature Accent Palette Element Color Swapper Engine Field */}
               <div className={`p-4 rounded-2xl border ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
-                <div className="flex justify-between items-center mb-3">
+                <div className="flex flex-col gap-1 mb-3 px-1">
                   <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400">Signature Element Accent Color</label>
-                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-500" style={{ color: signatureColor }}>
                     {premiumPalette.find(p => p.hex === signatureColor)?.name || "Custom Fluid Base"}
                   </span>
                 </div>
@@ -355,8 +321,8 @@ export default function Settings({
         </div>
 
         {/* REGULAR BOTTOM EMBEDDED BAR FOR NAVIGATION PERSISTENCE FILL OVERRIDE */}
-        <div className={`p-4 border-t shrink-0 flex gap-3 ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-100"}`}>
-          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center px-2">
+        <div className={`p-4 border-t shrink-0 flex justify-center ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-100"}`}>
+          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
             Engine Version 2.0.4 - Premium
           </div>
         </div>
@@ -415,12 +381,10 @@ export default function Settings({
             </div>
             
             <div className="p-6 overflow-y-auto space-y-6 flex-1">
-              
-              {/* Internal Step Routing Render Core Mapping Engine blocks */}
               {coOpStep === 1 && (
                 <div className="space-y-4">
                   <div className={`p-4 rounded-2xl border flex gap-3 ${isDarkMode ? "bg-slate-900/40 border-slate-800" : "bg-blue-50/50 border-blue-100"}`}>
-                    <Info size={16} className="text-blue-400 shrink-0 mt-0.5" strokeWidth={2.5} />
+                    <AlertCircle size={16} className="text-blue-400 shrink-0 mt-0.5" strokeWidth={2.5} />
                     <p className={`text-[11px] font-medium leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
                       Enter your partner or roommate's registry document email configuration coordinate below to map an outbound synchronization invitation thread payload vector.
                     </p>
@@ -443,10 +407,8 @@ export default function Settings({
                       setCoOpStep(2);
                     }}
                     disabled={!inviteEmail.trim()}
-                    className={`w-full py-4 rounded-xl font-black text-xs uppercase tracking-widest text-white transition-all ${
-                      !inviteEmail.trim() ? "bg-slate-300 dark:bg-slate-800 text-slate-400 cursor-not-allowed" : "active:scale-95 text-white shadow-md"
-                    }`}
-                    style={{ backgroundColor: inviteEmail.trim() ? signatureColor : undefined }}
+                    className="w-full py-4 rounded-xl font-black text-xs uppercase tracking-widest text-white transition-all active:scale-[0.98]"
+                    style={{ backgroundColor: inviteEmail.trim() ? signatureColor : isDarkMode ? "#1E293B" : "#E2E8F0", color: inviteEmail.trim() ? "#FFFFFF" : "#94A3B8" }}
                   >
                     Dispatch Vault Outbound Request
                   </button>

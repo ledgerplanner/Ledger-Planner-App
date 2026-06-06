@@ -131,8 +131,12 @@ export default function Settings({
           isDemoMode ? "pb-[140px] lg:pb-6" : "pb-12 lg:pb-6"
         }`}>
           
-          {/* Section Apex Element: High-Contrast Premium Dark-Canvas Subscription Hero Block (100% Identical Canvas Across Themes) */}
-          <div className="p-5 rounded-[2rem] border relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.3)]">
+          {/* Section Apex Element: High-Contrast Premium Dark-Canvas Subscription Hero Block */}
+          <div className={`p-5 rounded-[2rem] border relative overflow-hidden bg-gradient-to-br transition-all duration-300 ${
+            isDarkMode 
+              ? "from-slate-950 via-slate-900 to-slate-950 border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.3)]" 
+              : "from-slate-950 via-slate-950 to-slate-900 border-slate-950 shadow-[0_12px_30px_rgba(15,23,42,0.25)]"
+          }`}>
             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-2xl rounded-full pointer-events-none"></div>
             <div className="flex items-center justify-between">
               <div>
@@ -152,19 +156,67 @@ export default function Settings({
             </div>
           </div>
 
-          {/* SIGNATURE SEPARATION LINE TRACK */}
-          <div className={`border-b w-full my-2 ${isDarkMode ? "border-slate-800/80" : "border-slate-200/60"}`}></div>
+          {/* SIGNATURE SEPARATION LINE TRACK (Accounts-Ledger Calibration Style) */}
+          <div className={`border-t w-full my-2 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
 
-          {/* STANDALONE ROW BLOCK: Collaborative Access Gateway Module */}
-          <div className="space-y-3">
-            <SettingRow 
-              icon={Users} 
-              title="SHARE MY ACCOUNT" 
-              statusText={coOpStep === 3 ? "2 Users Linked" : "Inactive Setup"} 
-              colorClass="text-purple-400"
-              onClick={() => setIsCoOpOpen(true)}
-            />
-          </div>
+          {/* UPGRADED STANDALONE NODE: SHARE MY ACCOUNT Premium Dark Canvas Row Block */}
+          <button
+            onClick={() => setIsCoOpOpen(true)}
+            className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left transition-all active:scale-[0.99] gap-3 bg-gradient-to-br shadow-md ${
+              isDarkMode 
+                ? "from-slate-950 via-slate-900 to-slate-950 border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.3)]" 
+                : "from-slate-950 via-slate-950 to-slate-900 border-slate-950 shadow-[0_12px_30px_rgba(15,23,42,0.25)]"
+            }`}
+          >
+            {/* Layer 1: Label Block */}
+            <div className="flex items-center gap-3 w-full min-w-0">
+              <div className="p-2.5 rounded-xl shrink-0 bg-slate-900/60 text-purple-400">
+                <Users size={16} strokeWidth={2.5} />
+              </div>
+              <span className="text-xs font-black uppercase tracking-wider truncate flex-1 text-white">
+                SHARE MY ACCOUNT
+              </span>
+            </div>
+
+            {/* Layer 2: Action Utility Base */}
+            <div className="flex items-center justify-between w-full pt-2 border-t border-slate-800/60">
+              <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border bg-slate-900/40 border-slate-700/80 text-slate-400">
+                {coOpStep === 3 ? "2 Users Linked" : "Inactive Setup"}
+              </span>
+              <div className="flex items-center gap-1 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+                <span>Configure</span>
+                <ChevronRight size={12} strokeWidth={2.5} />
+              </div>
+            </div>
+          </button>
+
+          {/* SIGNATURE SEPARATION LINE TRACK (Accounts-Ledger Calibration Style) */}
+          <div className={`border-t w-full my-2 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
+
+          {/* INDEPENDENT WORKSPACE TOGGLE: Standalone Theme Switching Module */}
+          <button 
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            className={`w-full flex items-center justify-between p-4 rounded-[1.5rem] border text-left transition-all active:scale-[0.99] ${
+              isDarkMode ? "bg-slate-800/40 border-slate-700/50 hover:bg-slate-800/80" : "bg-white border-slate-100 hover:bg-slate-50/80 shadow-sm"
+            }`}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className={`p-2.5 rounded-xl text-amber-400 shrink-0 ${isDarkMode ? "bg-slate-900/60" : "bg-slate-50"}`}>
+                <Sparkles size={16} strokeWidth={2.5} />
+              </div>
+              <div className="flex flex-col">
+                <span className={`text-xs font-black uppercase tracking-wider ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
+                  THEME COLOR
+                </span>
+                <span className={`text-[9px] font-black uppercase tracking-widest mt-0.5 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
+                  {isDarkMode ? "Dark Mode Active" : "Light Mode Active"}
+                </span>
+              </div>
+            </div>
+            <div className="w-10 h-5 rounded-full relative bg-slate-300 dark:bg-slate-700 transition-colors shrink-0" style={{ backgroundColor: isDarkMode ? signatureColor : undefined }}>
+              <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-[3px] transition-transform ${isDarkMode ? "translate-x-5" : "translate-x-1"}`}></div>
+            </div>
+          </button>
 
           {/* CENTRAL MASTER MODULE GROUP: Personalization Parameters Layout Shell */}
           <div className="space-y-3">
@@ -173,7 +225,7 @@ export default function Settings({
             </h4>
             <div className={`p-4 rounded-[2rem] border space-y-3 ${isDarkMode ? "bg-slate-800/20 border-slate-800" : "bg-white border-slate-100 shadow-sm"}`}>
               
-              {/* [FIRST POSITION NODE]: User Profile Naming Vector Field Configuration Component */}
+              {/* [POSITION #1 NODE]: User Profile Naming Vector Field Configuration Component */}
               <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
                 <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-2">PREFERRED DISPLAY NAME</label>
                 <div className="flex flex-col gap-2.5">
@@ -196,59 +248,40 @@ export default function Settings({
                 </div>
               </div>
 
-              {/* Dynamic Theme Shift Configuration Card Component */}
-              <button 
-                onClick={() => setIsDarkMode(!isDarkMode)}
-                className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left transition-all active:scale-[0.99] gap-3 ${
-                  isDarkMode ? "bg-slate-800/40 border-slate-700/50 hover:bg-slate-800/80" : "bg-white border-slate-100 hover:bg-slate-50/80 shadow-sm"
-                }`}
-              >
-                <div className="flex items-center gap-3 w-full">
-                  <div className={`p-2.5 rounded-xl text-amber-400 ${isDarkMode ? "bg-slate-900/60" : "bg-slate-50"}`}>
-                    <Sparkles size={16} strokeWidth={2.5} />
+              {/* UNIFIED 2-LAYER SELECTION NODE: Palette Swapper Grid Interface */}
+              <div className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left gap-3 ${
+                isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-100 shadow-sm"
+              }`}>
+                <div className="flex items-center gap-3 w-full min-w-0">
+                  <div className={`p-2.5 rounded-xl shrink-0 ${isDarkMode ? "bg-slate-900/60" : "bg-slate-50"}`} style={{ color: signatureColor }}>
+                    <Palette size={16} strokeWidth={2.5} />
                   </div>
-                  <span className={`text-xs font-black uppercase tracking-wider ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
-                    THEME COLOR
+                  <span className={`text-xs font-black uppercase tracking-wider truncate flex-1 ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
+                    SELECT THEME COLOR
                   </span>
                 </div>
-                <div className={`flex items-center justify-between w-full pt-2 border-t ${isDarkMode ? "border-slate-800/60" : "border-slate-100"}`}>
-                  <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-                    {isDarkMode ? "Dark Mode Active" : "Light Mode Active"}
-                  </span>
-                  <div className="w-10 h-5 rounded-full relative bg-slate-300 dark:bg-slate-700 transition-colors" style={{ backgroundColor: isDarkMode ? signatureColor : undefined }}>
-                    <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-[3px] transition-transform ${isDarkMode ? "translate-x-5" : "translate-x-1"}`}></div>
+                <div className={`w-full pt-3 border-t ${isDarkMode ? "border-slate-800/60" : "border-slate-100"}`}>
+                  <div className="grid grid-cols-6 gap-2">
+                    {premiumPalette.map((color) => (
+                      <button
+                        key={color.name}
+                        onClick={() => setSignatureColor && setSignatureColor(color.hex)}
+                        className="h-8 rounded-xl relative transition-transform active:scale-90 flex items-center justify-center border shadow-sm"
+                        style={{ backgroundColor: color.hex, borderColor: signatureColor === color.hex ? "#FFFFFF" : "transparent" }}
+                      >
+                        {signatureColor === color.hex && (
+                          <Check size={14} className="text-white drop-shadow-md" strokeWidth={3} />
+                        )}
+                      </button>
+                    ))}
                   </div>
-                </div>
-              </button>
-
-              {/* Signature Accent Palette Element Color Swapper Engine Field */}
-              <div className={`p-4 rounded-2xl border ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
-                <div className="flex flex-col gap-1 mb-3 px-1">
-                  <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400">SELECT THEME COLOR</label>
-                  <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: signatureColor }}>
-                    {premiumPalette.find(p => p.hex === signatureColor)?.name || "Custom Fluid Base"}
-                  </span>
-                </div>
-                <div className="grid grid-cols-6 gap-2">
-                  {premiumPalette.map((color) => (
-                    <button
-                      key={color.name}
-                      onClick={() => setSignatureColor && setSignatureColor(color.hex)}
-                      className="h-8 rounded-xl relative transition-transform active:scale-90 flex items-center justify-center border shadow-sm"
-                      style={{ backgroundColor: color.hex, borderColor: signatureColor === color.hex ? "#FFFFFF" : "transparent" }}
-                    >
-                      {signatureColor === color.hex && (
-                        <Check size={14} className="text-white drop-shadow-md" strokeWidth={3} />
-                      )}
-                    </button>
-                  ))}
                 </div>
               </div>
 
               {/* Global Localization & Internationalization Currency Multi-Drawer Interface Link Row */}
               <SettingRow 
                 icon={Globe} 
-                title="International Currency Engine" 
+                title="SELECT CURRENCY" 
                 statusText={currentCurrency} 
                 colorClass="text-blue-400"
                 onClick={() => setIsCurrencyOpen(true)}
@@ -259,7 +292,7 @@ export default function Settings({
           {/* CLUSTER MODULE GROUP 3: Core Maintenance Tools & Critical Overrides */}
           <div className="space-y-3">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 flex items-center gap-1.5">
-              <RefreshCw size={12} strokeWidth={2.5} /> Platform Operation Vectors
+              <RefreshCw size={12} strokeWidth={2.5} /> SYSTEM SETTINGS
             </h4>
             <div className={`p-4 rounded-[2rem] border space-y-3 ${isDarkMode ? "bg-slate-800/20 border-slate-800" : "bg-white border-slate-100 shadow-sm"}`}>
               
@@ -318,7 +351,7 @@ export default function Settings({
       </div>
 
       {/* ========================================================================= */}
-      {/* SUBSYSTEM INTERACTIVE SLIDE-UP DRAWER LAYER 1: INTERNATIONAL CURRENCY DRAWER */}
+      {/* SUBSYSTEM INTERACTIVE SLIDE-UP DRAWER LAYER 1: SELECT CURRENCY DRAWER */}
       {/* ========================================================================= */}
       {isCurrencyOpen && (
         <div className="absolute inset-0 z-[140] flex items-end">

@@ -134,8 +134,8 @@ export default function Settings({
           {/* Section Apex Element: High-Contrast Premium Dark-Canvas Subscription Hero Block */}
           <div className={`p-5 rounded-[2rem] border relative overflow-hidden bg-gradient-to-br transition-all duration-300 ${
             isDarkMode 
-              ? "from-slate-950 via-slate-900 to-slate-950 border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.3)]" 
-              : "from-slate-950 via-slate-950 to-slate-900 border-slate-950 shadow-[0_12px_30px_rgba(15,23,42,0.25)]"
+              ? "from-slate-950 via-slate-900 to-slate-950 border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.4)]" 
+              : "from-black via-slate-950 to-black border-black shadow-[0_16px_36px_rgba(15,23,42,0.45)]"
           }`}>
             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-2xl rounded-full pointer-events-none"></div>
             <div className="flex items-center justify-between">
@@ -162,10 +162,10 @@ export default function Settings({
           {/* UPGRADED STANDALONE NODE: SHARE MY ACCOUNT Premium Dark Canvas Row Block */}
           <button
             onClick={() => setIsCoOpOpen(true)}
-            className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left transition-all active:scale-[0.99] gap-3 bg-gradient-to-br shadow-md ${
+            className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left transition-all active:scale-[0.99] gap-3 bg-gradient-to-br ${
               isDarkMode 
-                ? "from-slate-950 via-slate-900 to-slate-950 border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.3)]" 
-                : "from-slate-950 via-slate-950 to-slate-900 border-slate-950 shadow-[0_12px_30px_rgba(15,23,42,0.25)]"
+                ? "from-slate-950 via-slate-900 to-slate-950 border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.4)]" 
+                : "from-black via-slate-950 to-black border-black shadow-[0_16px_36px_rgba(15,23,42,0.45)]"
             }`}
           >
             {/* Layer 1: Label Block */}
@@ -192,31 +192,6 @@ export default function Settings({
 
           {/* SIGNATURE SEPARATION LINE TRACK (Accounts-Ledger Calibration Style) */}
           <div className={`border-t w-full my-2 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
-
-          {/* INDEPENDENT WORKSPACE TOGGLE: Standalone Theme Switching Module */}
-          <button 
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className={`w-full flex items-center justify-between p-4 rounded-[1.5rem] border text-left transition-all active:scale-[0.99] ${
-              isDarkMode ? "bg-slate-800/40 border-slate-700/50 hover:bg-slate-800/80" : "bg-white border-slate-100 hover:bg-slate-50/80 shadow-sm"
-            }`}
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className={`p-2.5 rounded-xl text-amber-400 shrink-0 ${isDarkMode ? "bg-slate-900/60" : "bg-slate-50"}`}>
-                <Sparkles size={16} strokeWidth={2.5} />
-              </div>
-              <div className="flex flex-col">
-                <span className={`text-xs font-black uppercase tracking-wider ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
-                  THEME COLOR
-                </span>
-                <span className={`text-[9px] font-black uppercase tracking-widest mt-0.5 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
-                  {isDarkMode ? "Dark Mode Active" : "Light Mode Active"}
-                </span>
-              </div>
-            </div>
-            <div className="w-10 h-5 rounded-full relative bg-slate-300 dark:bg-slate-700 transition-colors shrink-0" style={{ backgroundColor: isDarkMode ? signatureColor : undefined }}>
-              <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-[3px] transition-transform ${isDarkMode ? "translate-x-5" : "translate-x-1"}`}></div>
-            </div>
-          </button>
 
           {/* CENTRAL MASTER MODULE GROUP: Personalization Parameters Layout Shell */}
           <div className="space-y-3">
@@ -248,7 +223,32 @@ export default function Settings({
                 </div>
               </div>
 
-              {/* UNIFIED 2-LAYER SELECTION NODE: Palette Swapper Grid Interface */}
+              {/* [POSITION #2 NODE]: Nested Individual Theme Active Switch Toggle Card Module */}
+              <button 
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                className={`w-full flex items-center justify-between p-4 rounded-[1.5rem] border text-left transition-all active:scale-[0.99] ${
+                  isDarkMode ? "bg-slate-800/40 border-slate-700/50 hover:bg-slate-800/80" : "bg-white border-slate-100 hover:bg-slate-50/80 shadow-sm"
+                }`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`p-2.5 rounded-xl text-amber-400 shrink-0 ${isDarkMode ? "bg-slate-900/60" : "bg-slate-50"}`}>
+                    <Sparkles size={16} strokeWidth={2.5} />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className={`text-xs font-black uppercase tracking-wider ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
+                      THEME COLOR
+                    </span>
+                    <span className={`text-[9px] font-black uppercase tracking-widest mt-0.5 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
+                      {isDarkMode ? "Dark Mode Active" : "Light Mode Active"}
+                    </span>
+                  </div>
+                </div>
+                <div className="w-10 h-5 rounded-full relative bg-slate-300 dark:bg-slate-700 transition-colors shrink-0" style={{ backgroundColor: isDarkMode ? signatureColor : undefined }}>
+                  <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-[3px] transition-transform ${isDarkMode ? "translate-x-5" : "translate-x-1"}`}></div>
+                </div>
+              </button>
+
+              {/* [POSITION #3 NODE]: UNIFIED 2-LAYER SELECTION NODE: Palette Swapper Grid Interface */}
               <div className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left gap-3 ${
                 isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-100 shadow-sm"
               }`}>
@@ -278,7 +278,7 @@ export default function Settings({
                 </div>
               </div>
 
-              {/* Global Localization & Internationalization Currency Multi-Drawer Interface Link Row */}
+              {/* [POSITION #4 NODE]: Global Localization & Internationalization Currency Link Row */}
               <SettingRow 
                 icon={Globe} 
                 title="SELECT CURRENCY" 
@@ -296,13 +296,22 @@ export default function Settings({
             </h4>
             <div className={`p-4 rounded-[2rem] border space-y-3 ${isDarkMode ? "bg-slate-800/20 border-slate-800" : "bg-white border-slate-100 shadow-sm"}`}>
               
-              <SettingRow 
-                icon={RefreshCw} 
-                title="Force Synchronized Month Rollover" 
-                statusText="Auto Engine Loaded" 
-                colorClass="text-emerald-400"
+              {/* RE-ENGINEERED 1-LAYER INSTANT ACTION MONTH TRANSITION COMPONENT */}
+              <button
                 onClick={handleRolloverMonth}
-              />
+                className={`w-full flex items-center gap-3 p-4 rounded-[1.5rem] border text-left transition-all active:scale-[0.99] ${
+                  isDarkMode 
+                    ? "bg-slate-800/40 border-slate-700/50 hover:bg-slate-800/80 text-slate-200" 
+                    : "bg-white border-slate-100 hover:bg-slate-50/80 text-slate-800 shadow-sm"
+                }`}
+              >
+                <div className={`p-2.5 rounded-xl shrink-0 ${isDarkMode ? "bg-slate-900/60" : "bg-slate-50"} text-emerald-400`}>
+                  <RefreshCw size={16} strokeWidth={2.5} />
+                </div>
+                <span className="text-xs font-black uppercase tracking-wider truncate flex-1">
+                  START NEW MONTH
+                </span>
+              </button>
 
               <SettingRow 
                 icon={HelpCircle} 

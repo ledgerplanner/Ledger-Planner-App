@@ -128,11 +128,11 @@ export default function Settings({
 
         {/* Dynamic Nested Scrolling Content Panel Base Segment */}
         <div className={`p-6 overflow-y-auto space-y-6 flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${
-          isDemoMode ? "pb-[140px] lg:pb-6" : "pb-24 lg:pb-6"
+          isDemoMode ? "pb-[140px] lg:pb-6" : "pb-12 lg:pb-6"
         }`}>
           
-          {/* Section Apex Element: High-Contrast Premium Dark-Canvas Subscription Hero Block */}
-          <div className="p-5 rounded-[2rem] border relative overflow-hidden transition-all transform hover:scale-[1.01] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.3)]">
+          {/* Section Apex Element: High-Contrast Premium Dark-Canvas Subscription Hero Block (100% Identical Canvas Across Themes) */}
+          <div className="p-5 rounded-[2rem] border relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.3)]">
             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-2xl rounded-full pointer-events-none"></div>
             <div className="flex items-center justify-between">
               <div>
@@ -145,23 +145,37 @@ export default function Settings({
               </div>
               <button 
                 onClick={() => openGlobalAction("Subscription Portal", "Establishing secure handshakes to billing validation channels...", "Close", false, () => {}, true)}
-                className="px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all active:scale-95 bg-slate-800 border-slate-700 text-white hover:bg-slate-700 shadow-sm"
+                className="px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-700 bg-slate-800 text-white hover:bg-slate-700 shadow-sm transition-all active:scale-95"
               >
                 Manage
               </button>
             </div>
           </div>
 
-          {/* CLUSTER MODULE GROUP 1: Core Personal Metrics Management Cluster Card Block */}
+          {/* SIGNATURE SEPARATION LINE TRACK */}
+          <div className={`border-b w-full my-2 ${isDarkMode ? "border-slate-800/80" : "border-slate-200/60"}`}></div>
+
+          {/* STANDALONE ROW BLOCK: Collaborative Access Gateway Module */}
+          <div className="space-y-3">
+            <SettingRow 
+              icon={Users} 
+              title="SHARE MY ACCOUNT" 
+              statusText={coOpStep === 3 ? "2 Users Linked" : "Inactive Setup"} 
+              colorClass="text-purple-400"
+              onClick={() => setIsCoOpOpen(true)}
+            />
+          </div>
+
+          {/* CENTRAL MASTER MODULE GROUP: Personalization Parameters Layout Shell */}
           <div className="space-y-3">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 flex items-center gap-1.5">
-              <User size={12} strokeWidth={2.5} /> Account Settings & Sync
+              <Palette size={12} strokeWidth={2.5} /> Custom Settings
             </h4>
             <div className={`p-4 rounded-[2rem] border space-y-3 ${isDarkMode ? "bg-slate-800/20 border-slate-800" : "bg-white border-slate-100 shadow-sm"}`}>
               
-              {/* Profile Identity Parameters Entry Slot */}
+              {/* [FIRST POSITION NODE]: User Profile Naming Vector Field Configuration Component */}
               <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
-                <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-2">Preferred Profile Tag</label>
+                <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-2">PREFERRED DISPLAY NAME</label>
                 <div className="flex flex-col gap-2.5">
                   <input 
                     type="text" 
@@ -177,29 +191,11 @@ export default function Settings({
                     className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-[0.98]"
                     style={{ backgroundColor: (editName.trim() && editName !== userName) ? signatureColor : isDarkMode ? "#1E293B" : "#E2E8F0", color: (editName.trim() && editName !== userName) ? "#FFFFFF" : "#94A3B8" }}
                   >
-                    Update Tag Configuration
+                    UPDATE DISPLAY NAME
                   </button>
                 </div>
               </div>
 
-              {/* Collaborative Network Infrastructure Handshake Trigger Row Module Container */}
-              <SettingRow 
-                icon={Users} 
-                title="Co-Op Collaborative Sharing" 
-                statusText={coOpStep === 3 ? "2 Users Linked" : "Inactive Setup"} 
-                colorClass="text-purple-400"
-                onClick={() => setIsCoOpOpen(true)}
-              />
-            </div>
-          </div>
-
-          {/* CLUSTER MODULE GROUP 2: Aesthetic Preferences & Dynamic Format Optimization Parameters */}
-          <div className="space-y-3">
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 flex items-center gap-1.5">
-              <Palette size={12} strokeWidth={2.5} /> Custom Settings
-            </h4>
-            <div className={`p-4 rounded-[2rem] border space-y-3 ${isDarkMode ? "bg-slate-800/20 border-slate-800" : "bg-white border-slate-100 shadow-sm"}`}>
-              
               {/* Dynamic Theme Shift Configuration Card Component */}
               <button 
                 onClick={() => setIsDarkMode(!isDarkMode)}
@@ -212,7 +208,7 @@ export default function Settings({
                     <Sparkles size={16} strokeWidth={2.5} />
                   </div>
                   <span className={`text-xs font-black uppercase tracking-wider ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
-                    Matrix Visual Theme
+                    THEME COLOR
                   </span>
                 </div>
                 <div className={`flex items-center justify-between w-full pt-2 border-t ${isDarkMode ? "border-slate-800/60" : "border-slate-100"}`}>
@@ -228,8 +224,8 @@ export default function Settings({
               {/* Signature Accent Palette Element Color Swapper Engine Field */}
               <div className={`p-4 rounded-2xl border ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
                 <div className="flex flex-col gap-1 mb-3 px-1">
-                  <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400">Signature Element Accent Color</label>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-500" style={{ color: signatureColor }}>
+                  <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400">SELECT THEME COLOR</label>
+                  <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: signatureColor }}>
                     {premiumPalette.find(p => p.hex === signatureColor)?.name || "Custom Fluid Base"}
                   </span>
                 </div>
@@ -317,13 +313,6 @@ export default function Settings({
             >
               <Trash2 size={14} strokeWidth={2.5} /> Destroy Vault Architecture
             </button>
-          </div>
-        </div>
-
-        {/* REGULAR BOTTOM EMBEDDED BAR FOR NAVIGATION PERSISTENCE FILL OVERRIDE */}
-        <div className={`p-4 border-t shrink-0 flex justify-center ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-100"}`}>
-          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-            Engine Version 2.0.4 - Premium
           </div>
         </div>
       </div>

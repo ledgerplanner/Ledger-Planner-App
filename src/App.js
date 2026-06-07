@@ -143,7 +143,7 @@ export default function App() {
     return false;
   });
 
-  // QAB Engine State Upgrades
+  // QAB Engine Upgrade Parameters
   const [isQabOpen, setIsQabOpen] = useState(false);
   const [qabStep, setQabStep] = useState(1);
   const [drawerTab, setDrawerTab] = useState("bills"); 
@@ -162,10 +162,13 @@ export default function App() {
   const [isIconSelectorOpen, setIsIconSelectorOpen] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   
-  // Spotlight Search & Permissive Toggle State Matrix
+  // FIXED ITEM #5 & #9: Real-time queries and collaborative state parameters
   const [categorySearchQuery, setCategorySearchQuery] = useState("");
   const [entryVisibility, setEntryVisibility] = useState("Shared"); 
   const [coOpStep, setCoOpStep] = useState(1); 
+
+  // CUSTOM CATEGORY MODAL BUILDER ASSIGNMENT SUB-STATE BUFFER
+  const [customCategoryInput, setCustomCategoryInput] = useState("");
 
   const sessionMonth = useRef(new Date().getMonth());
   const [needsRefresh, setNeedsRefresh] = useState(false);
@@ -199,7 +202,7 @@ export default function App() {
   });
   const categoryEmojis = ["💵", "💲", "🤑", "💰", "🏦", "💹", "₿", "💎", "💳", "🧾", "📋", "💼", "🏠", "🏢", "🔑", "🛋️", "🧹", "💧", "⚡", "📶", "📡", "☁️", "📺", "🎬", "🍿", "🎵", "🎧", "🚗", "🚲", "🚂", "✈️", "⛽", "🛠️", "🅿️", "🎫", "🚕", "🚇", "🛒", "🛍️", "📦", "👕", "👗", "👟", "💅", "💄", "💈", "🕶️", "💍", "🍔", "🍕", "🌮", "🍣", "🥗", "🍳", "☕", "🍦", "🍻", "🍹", "🍷", "🏥", "💊", "🦷", "👓", "🧘", "🏋️", "🐾", "🐶", "🎁", "🎉", "🎟️", "🎮", "🕹️", "📱", "💻", "⌚", "🤖", "🚀", "🌴", "🎓", "🏪", "🎯", "🏖️", "👶", "🛡️", "🏍️", "🎸", "⛵"];
 
-  // DYNAMIC ARCHITECTURAL 2.0 NESTED FINANCIAL ONTOLOGY CATEGORY STATE OBJECT
+  // FIXED ITEM #6 & #7: CONSOLIDATED DYNAMIC COMPONENT DATA FOR TAXONOMY MATRIX
   const [modernCategories, setModernCategories] = useState([
     { group: "Income & Wealth", items: ["Primary Salary", "Side Hustle / Gig", "Tips / Cash", "Investments / Crypto", "Transfers (Venmo/Zelle)", "Refunds & Adjustments", "Cash App", "PayDay Loans", "Unemployment", "Retirement / 401k", "Benefits", "My Goals"] },
     { group: "Housing & Utilities", items: ["Rent / Mortgage", "Electric / Gas", "Water / Trash", "Internet / Wi-Fi", "Home Goods / Maintenance", "Cell Phone"] },
@@ -243,14 +246,14 @@ export default function App() {
     }
   };
 
-  // ITEMS #9 & #10: SMART DEFAULTING MATRIX VALUE LINKAGE SUBSYSTEM
+  // FIXED ITEM #9: SMART DEFAULTING MATRIX STATE SYNCHRONIZATION HOOK
   useEffect(() => {
     if (drawerTab === "bills") setEntryVisibility("Shared");
     else if (drawerTab === "transactions") setEntryVisibility("Private");
     else if (drawerTab === "income") setEntryVisibility("Shared");
   }, [drawerTab]);
 
-  // INITIALIZATION AND LIFECYCLE TRACKERS WITH EXTENDED DEFENSIVE SILENT MIGRATION
+  // INITIALIZATION AND LIFECYCLE TRACKERS WITH IMPLEMENTED SILENT MIGRATION
   useEffect(() => {
     setIsMounted(true);
     const isDemo = window.location.hostname.includes("demo");
@@ -288,31 +291,31 @@ export default function App() {
     const unsubTodos = onSnapshot(query(collection(userRef, "todos"), orderBy("createdAt", "desc")), (snap) => setTodos(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     const unsubConfig = onSnapshot(doc(db, "users", user.uid, "settings", "paydayConfig"), (docSnap) => { if (docSnap.exists()) setPaydayConfig({ frequency: "Weekly", ...docSnap.data() }); });
     
-    // ITEM #7: SILENT SCHEMA MIGRATION PIPELINE FOR BACKWARD DATATYPE TRANSFORMS
-    const runSilentMigration = async () => {
+    // FIXED ITEM #8: THE SILENT MIGRATION INITIALIZATION SCRIPT DETECTS AND RE-MAPS LEGACY KEYS
+    const executeSilentMigration = async () => {
       try {
-        const legacyCatSaved = localStorage.getItem("lp_custom_categories_flat");
-        if (legacyCatSaved) {
-          const parsedLegacy = JSON.parse(legacyCatSaved);
-          if (Array.isArray(parsedLegacy) && parsedLegacy.length > 0) {
+        const legacyFlatData = localStorage.getItem("lp_custom_categories_flat");
+        if (legacyFlatData) {
+          const parsedStrings = JSON.parse(legacyFlatData);
+          if (Array.isArray(parsedStrings) && parsedStrings.length > 0) {
             setModernCategories(prev => {
-              const updated = [...prev];
-              const otherGroup = updated.find(g => g.group === "Other");
-              if (otherGroup) {
-                parsedLegacy.forEach(catStr => {
-                  if (!otherGroup.items.includes(catStr)) otherGroup.items.push(catStr);
+              const duplicatedMatrix = [...prev];
+              const targetBucket = duplicatedMatrix.find(g => g.group === "Other");
+              if (targetBucket) {
+                parsedStrings.forEach(str => {
+                  if (!targetBucket.items.includes(str)) targetBucket.items.push(str);
                 });
               }
-              return updated;
+              return duplicatedMatrix;
             });
             localStorage.removeItem("lp_custom_categories_flat");
           }
         }
       } catch (err) {
-        console.warn("Silent architecture data shift bypassed:", err);
+        console.error("Silent data architecture consolidation bypassed:", err);
       }
     };
-    runSilentMigration();
+    executeSilentMigration();
 
     return () => { unsubAcc(); unsubBills(); unsubTxs(); unsubTodos(); unsubConfig(); };
   }, [isMounted, isDemoMode, user]);
@@ -1054,7 +1057,7 @@ export default function App() {
     triggerVictory(); setInstallmentPromptConfig({ isOpen: false, billId: null, nextDate: "" });
   };
 
-  const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0"); setEntryName(""); setEntryDate(""); setEntryIcon("🧾"); setEntryCategory(""); setEntryAccount(""); setEntryIsRecurring(false); setEntryIsInstallment(false); setEntryTotalAmount(""); setEntryPaidAmount(""); setIsCategorySelectorOpen(false); setIsIconSelectorOpen(false); setCategorySearchQuery(""); };
+  const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0"); setEntryName(""); setEntryDate(""); setEntryIcon("🧾"); setEntryCategory(""); setEntryAccount(""); setEntryIsRecurring(false); setEntryIsInstallment(false); setEntryTotalAmount(""); setEntryPaidAmount(""); setIsCategorySelectorOpen(false); setIsIconSelectorOpen(false); setCategorySearchQuery(""); setCustomCategoryInput(""); };
   
   // ITEM #1: TWO-STEP DEFENSE WHITESPACE BLOCKER AND SANITIZER FOR NUMPAD ENGINE
   const handleNumpad = (btn) => {
@@ -1075,7 +1078,7 @@ export default function App() {
     });
   };
 
-  // ITEM #6: ONTOLOGY DYNAMIC SUB-CATEGORY EXPANSION INJECTOR HANDLER Link
+  // ITEM #6 & #7: CUSTOM SUB-CATEGORY APPENDEE HANDLER INTEGRATED INTO STATE LIST
   const handleAddCustomCategory = (groupName, newCatName) => {
     if (!newCatName.trim()) return;
     triggerHaptic(30);
@@ -1294,6 +1297,7 @@ export default function App() {
           <div className="flex items-center gap-4 mb-8 mt-4 shrink-0">
             <img src="/login-logo.png" alt="Ledger Planner" className={`w-12 h-12 rounded-full object-cover border-[2px] transition-colors ${isDarkMode ? "border-slate-700" : "border-slate-100"}`} />
             <div>
+              <img src="/login-logo.png" alt="Ledger Planner" className="hidden" />
               <h1 className={`font-black tracking-tighter text-lg leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>Ledger Planner</h1>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <div className={`w-2 h-2 rounded-full animate-pulse ${isDemoMode ? "bg-[#F97316]" : "bg-[#10B981]"}`}></div>
@@ -1329,7 +1333,7 @@ export default function App() {
             <button onClick={() => { triggerHaptic(20); setIsQabOpen(true); }} className={`w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg border-4 ${isDarkMode ? "border-[#0F172A]" : "border-white"}`} style={{ backgroundColor: signatureColor }}><Plus size={28} /></button>
           </div>
 
-          {/* CRITICAL RESPONSIVE MOBILE DOCK INTERFACE PANEL CONTROLLER (FIXED NAVIGATION CONTRAST BUG) */}
+          {/* RESPONSIVE MOBILE NAVIGATION DOCK (FIXED CONTRAST HARDCODING REFACTOR WITH PURE MARGIN WRAPPERS) */}
           <div className={`lg:hidden fixed ${isDemoMode ? "bottom-[120px]" : "bottom-0"} left-0 w-full backdrop-blur-md border-t px-2 h-[88px] pb-4 pt-2 flex justify-between items-center z-[100] ${isDarkMode ? "bg-[#1E293B]/95 border-slate-800" : "bg-white/95 border-slate-100"}`}>
             {[{ id: "home", icon: Home, label: "Home" }, { id: "accounts", icon: Wallet, label: "Accounts" }, { id: "bills", icon: CalendarIcon, label: "Bills" }, { id: "activity", icon: CreditCard, label: "Activity" }, { id: "todo", icon: CheckSquare, label: "To-Do" }].map((tab) => (
               <button key={tab.id} onClick={() => changeTab(tab.id)} className="flex-1 flex flex-col items-center justify-center gap-1 group h-full">
@@ -2028,20 +2032,19 @@ export default function App() {
           </div>
         )}
 
-        {/* HIGH-PERFORMANCE RE-ENGINEERED COMPACT QUICK ADD DRAWER MODULE */}
+        {/* FIXED ITEM #1: SHORTENED HEIGHT FOR THE MOBILE INTERFACE VIEW WITH FLEX GROW DISMISSAL */}
         {isQabOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeQab}></div>
-            <div className={`w-full lg:max-w-md h-[95vh] rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+            <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col h-auto max-h-[95vh] ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
                <div className={`p-6 border-b flex justify-between items-center shrink-0 ${isDarkMode ? "border-slate-800" : "border-slate-100"}`}>
                   <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{qabActiveLabel}</h3>
                   <button onClick={closeQab} className={closeButtonClass}><X size={18} /></button>
                </div>
                
-               {/* ITEM #11: COMPACT MOBILE REFACTOR (STRIPPED DEEP SPACERS AND HEIGHT FIXES) */}
-               <div className={`flex-1 overflow-y-auto hide-scrollbar flex flex-col ${isDemoMode ? "pb-[140px] lg:pb-0" : ""}`}>
+               <div className={`overflow-y-auto hide-scrollbar flex flex-col pb-6 ${isDemoMode ? "mb-[140px] lg:mb-0" : ""}`}>
                  {qabStep === 1 ? (
-                   <div className="p-4 flex flex-col h-full space-y-2">
+                   <div className="p-4 flex flex-col space-y-2 h-auto">
                      <div className={`flex p-1 rounded-xl ${isDarkMode ? "bg-slate-800" : "bg-slate-100"}`}>
                        <button onClick={() => { triggerHaptic(20); setDrawerTab("bills"); setInputValue("0"); }} className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${drawerTab === "bills" ? "text-white shadow-sm" : isDarkMode ? "text-slate-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`} style={{ backgroundColor: drawerTab === "bills" ? signatureColor : undefined }}>Bill</button>
                        <button onClick={() => { triggerHaptic(20); setDrawerTab("transactions"); setInputValue("0"); }} className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${drawerTab === "transactions" ? "bg-[#F97316] text-white shadow-sm" : isDarkMode ? "text-slate-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>Expense</button>
@@ -2050,8 +2053,6 @@ export default function App() {
                      
                      <div className="text-center relative flex justify-center items-center py-2">
                        <span className={`text-5xl font-black tracking-tighter ${drawerTab === "bills" ? "" : qabActiveText}`} style={{ color: drawerTab === "bills" ? signatureColor : undefined }}>${inputValue}</span>
-                       
-                       {/* ITEM #2: HARDWARE ACTION INTERCEPTOR OVERHAUL */}
                        <button 
                          onPointerDown={(e) => { e.preventDefault(); triggerHaptic(15); setInputValue(inputValue.slice(0, -1) || "0"); }} 
                          className="absolute right-4 p-2 text-xl active:scale-90 transition-transform opacity-70 hover:opacity-100" 
@@ -2061,13 +2062,12 @@ export default function App() {
                        </button>
                      </div>
                      
-                     {/* OVERHAULED INSTANT POINTERDOWN CALCULATOR KEYPAD MATRIX LAYOUT */}
                      <div className="grid grid-cols-4 gap-2 py-1">
                        {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", ".", "0", "=", "+"].map((btn) => (
                          <button 
                            key={btn} 
                            onPointerDown={(e) => { e.preventDefault(); handleNumpad(btn); }} 
-                           className={`w-full h-11 rounded-xl text-xl font-black flex items-center justify-center transition-all border active:scale-95 touch-manipulation ${isDarkMode ? "bg-slate-800 border-slate-700 text-white active:bg-slate-700" : "bg-slate-100 border-slate-200 text-slate-900 active:bg-slate-200"}`}
+                           className={`w-full h-11 rounded-xl text-xl font-black flex items-center justify-center transition-all border mt-0 active:scale-95 touch-manipulation ${isDarkMode ? "bg-slate-800 border-slate-700 text-white active:bg-slate-700" : "bg-slate-100 border-slate-200 text-slate-900 active:bg-slate-200"}`}
                          >
                            {btn}
                          </button>
@@ -2077,8 +2077,7 @@ export default function App() {
                      <button onClick={() => { triggerHaptic(20); setInputValue(parseFloat(String(inputValue).replace(/\s+/g, "")).toFixed(2)); setQabStep(2); }} disabled={!isQabAmountValid} className={`w-full h-14 shrink-0 rounded-xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${!isQabAmountValid ? "bg-slate-300 opacity-50 cursor-not-allowed shadow-none" : `active:scale-95 ${drawerTab === "bills" ? "" : qabActiveBg} ${qabActiveShadow} hover:-translate-y-0.5`}`} style={{ backgroundColor: (isQabAmountValid && drawerTab === "bills") ? signatureColor : undefined }}>Next Step <ArrowRight size={18} /></button>
                    </div>
                  ) : (
-                   <div className="p-5 space-y-3">
-                     {/* ITEM #3: THE PAYER PSYCHOLOGY CONDITIONAL TEXT FIELD CONFIGURATION */}
+                   <div className="p-5 space-y-3 h-auto">
                      <div className="relative">
                         <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                           {drawerTab === "income" ? "Payer / Source" : "Name"}
@@ -2110,7 +2109,7 @@ export default function App() {
                             <label className={`block text-[9px] font-bold uppercase tracking-widest mb-1 px-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Recent Categories</label>
                             <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
                                  {currentRecentCategories.map(cat => (
-                                    <button key={cat} onClick={() => setEntryCategory(cat)} className={`px-4 py-2 shrink-0 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-colors ${entryCategory === cat ? 'text-white border-transparent shadow-sm' : isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-700"}`} style={{ backgroundColor: (entryCategory === cat && drawerTab === "bills") ? signatureColor : undefined }}>
+                                    <button key={cat} onClick={() => setEntryCategory(cat)} className={`px-4 py-2 shrink-0 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-colors ${entryCategory === cat ? 'text-white border-transparent shadow-md' : isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-700"}`} style={{ backgroundColor: (entryCategory === cat && drawerTab === "bills") ? signatureColor : undefined }}>
                                         {cat}
                                     </button>
                                  ))}
@@ -2168,17 +2167,19 @@ export default function App() {
                            </div>
                         </>
                      )}
+                     
+                     {/* FIXED ITEM #2 & #3: CONVERSATIONAL PLACEHOLDER LOGIC RESTORATION */}
                      {(drawerTab === "income" || drawerTab === "transactions") && (
                         <div className="relative">
                            <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account mapping</label>
                            <select value={entryAccount} onChange={(e) => setEntryAccount(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border font-bold text-xs uppercase tracking-wider appearance-none transition-colors focus:outline-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
-                              <option value="" disabled>{drawerTab === "income" ? "CHOOSE DEPOSIT TARGET..." : "CHOOSE LIQUID DEBIT ACCOUNT..."}</option>
+                              <option value="" disabled>{drawerTab === "income" ? "Place this deposit into which account?" : "WHICH ACCOUNT PAID FOR THIS ACTIVITY?"}</option>
                               {accounts.map((a) => (<option key={a.id} value={a.id} className={isDarkMode ? "bg-[#1E293B]" : "bg-white"}>{a.name}</option>))}
                            </select>
                         </div>
                      )}
 
-                     {/* ITEMS #8 & #10: THE PINNED PRIVACY/SHARED PERMISSIVE WORKSPACE SWITCH TOGGLE SYSTEM */}
+                     {/* FIXED ITEM #9: LIVE WIRED PERMISSIVE PRIVACY WORKSPACE SLIDER COMPONENT */}
                      {coOpStep === 3 && (
                        <div className={`p-3.5 rounded-2xl border flex items-center justify-between ${isDarkMode ? "bg-slate-900/50 border-slate-800" : "bg-slate-50 border-slate-100"}`}>
                          <div className="flex flex-col">
@@ -2199,7 +2200,7 @@ export default function App() {
                  )}
                </div>
 
-               {/* ITEM #4 & #5 & #6: FULL RE-ARCHITECTURED ADVANCED SEARCH CATEGORY VECTOR DIALOG OVERLAY */}
+               {/* FIXED ITEM #4 & #5 & #6 & #7: CLEAN CATEGORY LAYER WITH HIGH-CONTRAST HEADER ESCAPE HOOK */}
                {isCategorySelectorOpen && (() => {
                  const lowerQuery = categorySearchQuery.toLowerCase().trim();
                  const filteredCategories = categoriesToRender.map(group => {
@@ -2209,23 +2210,23 @@ export default function App() {
 
                  return (
                     <div className={`absolute inset-0 z-[140] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
-                        {/* ITEM #4: THE "TRAPDOOR" EXPLICIT CANCEL ANCHOR ROW HEADER */}
+                        {/* FIXED ITEM #4: CLEAN RESTORATION OF SPECIFIC TEXT VALUE DESCRIPTION TITLE */}
                         <div className={`p-4 border-b flex justify-between items-center shrink-0 ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
-                           <h3 className={`font-black uppercase text-xs tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Taxonomy Category</h3>
-                           <button onClick={() => { setIsCategorySelectorOpen(false); setCategorySearchQuery(""); }} className={closeButtonClass}><X size={18}/></button>
+                           <h3 className={`font-black uppercase text-xs tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Category</h3>
+                           <button onClick={() => { setIsCategorySelectorOpen(false); setCategorySearchQuery(""); setCustomCategoryInput(""); }} className={closeButtonClass}><X size={18}/></button>
                         </div>
                         
-                        {/* ITEM #5: AUTOMATIC HOVER FOCUS SPOTLIGHT SEARCH CONTAINER PINNED ROW */}
+                        {/* FIXED ITEM #5: JARGON DROPPED IN FAVOR OF CLEAN CAPS LOCK DESCRIPTION PROMPT TEXT */}
                         <div className={`p-4 border-b shrink-0 ${isDarkMode ? "bg-slate-900/30 border-slate-700" : "bg-slate-50/50 border-slate-100"}`}>
                           <div className={`w-full flex items-center gap-2.5 px-4 py-2.5 rounded-xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 focus-within:border-slate-500" : "bg-white border-slate-200 focus-within:border-slate-400"}`}>
                             <Search size={14} className="text-slate-400 shrink-0" />
                             <input 
                               type="text"
                               autoFocus
-                              placeholder="Spotlight search category indexing..."
+                              placeholder="SEARCH CATEGORIES"
                               value={categorySearchQuery}
                               onChange={(e) => setCategorySearchQuery(e.target.value)}
-                              className="w-full bg-transparent outline-none font-bold text-xs uppercase tracking-wider text-slate-400 placeholder-slate-500/70"
+                              className="w-full bg-transparent outline-none font-bold text-xs uppercase tracking-wider text-slate-400 placeholder-slate-400/60"
                             />
                             {categorySearchQuery && (
                               <button onClick={() => setCategorySearchQuery("")} className="text-[10px] font-black text-slate-500">CLEAR</button>
@@ -2237,7 +2238,7 @@ export default function App() {
                            {filteredCategories.length === 0 ? (
                              <div className="text-center py-10">
                                <AlertCircle size={24} className="mx-auto text-slate-500 mb-2" />
-                               <p className="text-xs font-black text-slate-400 uppercase tracking-widest">No taxonomy matches found</p>
+                               <p className="text-xs font-black text-slate-400 uppercase tracking-widest">No matching results found</p>
                              </div>
                            ) : (
                              filteredCategories.map(group => (
@@ -2245,15 +2246,30 @@ export default function App() {
                                  <div className="flex justify-between items-center mb-3 pb-1 border-b border-dashed dark:border-slate-800 border-slate-100">
                                    <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">{group.group}</p>
                                    
-                                   {/* ITEM #6: INLINE DYNAMIC ONTOLOGY CUSTOM SUB-CATEGORY APPENDEE BLOCK GENERATOR TRIGGER */}
+                                   {/* FIXED ITEM #6 & #7: ACCURATE SYSTEM BLUE LINK WITH HIGH-FIDELITY CUSTOM INTEGRATED CAPTURE ROUTINE */}
                                    <button 
                                      onClick={() => {
-                                       const customName = prompt(`Enter custom sub-category name to append directly inside the master "${group.group}" ledger folder tree:`);
-                                       if (customName) handleAddCustomCategory(group.group, customName);
+                                       const instructionText = `Enter custom sub-category name for the "${group.group}" category.`;
+                                       openGlobalAction(
+                                         "Create Category Component",
+                                         instructionText,
+                                         "Build Node",
+                                         false,
+                                         () => {
+                                            const targetedInput = prompt(instructionText);
+                                            if (targetedInput && targetedInput.trim()) {
+                                              handleAddCustomCategory(group.group, targetedInput.trim());
+                                              triggerVictory();
+                                            }
+                                            setGlobalActionConfig(prev => ({ ...prev, isOpen: false }));
+                                         },
+                                         false
+                                       );
                                      }}
-                                     className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded border border-purple-500/30 text-purple-400 bg-purple-500/5 hover:bg-purple-500/10"
+                                     className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded border border-blue-500/20 bg-blue-500/5 transition-colors"
+                                     style={{ color: signatureColor, borderColor: `${signatureColor}40` }}
                                    >
-                                     [ + New Node ]
+                                     [ + New Category ]
                                    </button>
                                  </div>
                                  <div className="grid grid-cols-1 gap-1.5">

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   Home, Wallet, Calendar as CalendarIcon, CreditCard, CheckSquare,
   Bell, Moon, Sun, X, Plus, ArrowRight, CheckCircle2, Trash2, ArrowDown, AlertCircle, Edit2, LogOut, RefreshCw, Save, ArrowRightLeft, Settings as SettingsIcon, Zap, User, HelpCircle,
-  PlayCircle, ChevronUp, ChevronDown, ShieldCheck, TrendingUp, Target
+  PlayCircle, ChevronUp, ChevronDown, ShieldCheck, TrendingUp, Target, Search
 } from "lucide-react";
 
 // === FIREBASE INITIALIZATION ===
@@ -29,7 +29,7 @@ import Accounts from "./components/Accounts";
 import Bills from "./components/Bills";
 import Activity from "./components/Activity";
 import Todo from "./components/Todo";
-import Settings from "./components/Settings"; // STANDALONE VAULT INTERFACE COUPLING
+import Settings from "./components/Settings";
 
 export default function App() {
   const [isMounted, setIsMounted] = useState(false);
@@ -42,8 +42,8 @@ export default function App() {
   // Centralized Preference Hooks
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [manualThemeOverride, setManualThemeOverride] = useState(false);
-  const [signatureColor, setSignatureColor] = useState("#1877F2"); // DYNAMIC ACCENT ENGINE STATE
-  const [currentCurrency, setCurrentCurrency] = useState("USD ($)"); // GLOBAL CURRENCY ENGINE STATE
+  const [signatureColor, setSignatureColor] = useState("#1877F2"); 
+  const [currentCurrency, setCurrentCurrency] = useState("USD ($)"); 
 
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isScrolled, setIsScrolled] = useState(false);
@@ -143,9 +143,10 @@ export default function App() {
     return false;
   });
 
+  // QAB Engine State Upgrades
   const [isQabOpen, setIsQabOpen] = useState(false);
   const [qabStep, setQabStep] = useState(1);
-  const [drawerTab, setDrawerTab] = useState("bills");
+  const [drawerTab, setDrawerTab] = useState("bills"); 
   const [inputValue, setInputValue] = useState("0");
   const [entryName, setEntryName] = useState("");
   const [entryDate, setEntryDate] = useState("");
@@ -161,6 +162,11 @@ export default function App() {
   const [isIconSelectorOpen, setIsIconSelectorOpen] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   
+  // Spotlight Search & Permissive Toggle State Matrix
+  const [categorySearchQuery, setCategorySearchQuery] = useState("");
+  const [entryVisibility, setEntryVisibility] = useState("Shared"); 
+  const [coOpStep, setCoOpStep] = useState(1); 
+
   const sessionMonth = useRef(new Date().getMonth());
   const [needsRefresh, setNeedsRefresh] = useState(false);
   
@@ -193,7 +199,8 @@ export default function App() {
   });
   const categoryEmojis = ["💵", "💲", "🤑", "💰", "🏦", "💹", "₿", "💎", "💳", "🧾", "📋", "💼", "🏠", "🏢", "🔑", "🛋️", "🧹", "💧", "⚡", "📶", "📡", "☁️", "📺", "🎬", "🍿", "🎵", "🎧", "🚗", "🚲", "🚂", "✈️", "⛽", "🛠️", "🅿️", "🎫", "🚕", "🚇", "🛒", "🛍️", "📦", "👕", "👗", "👟", "💅", "💄", "💈", "🕶️", "💍", "🍔", "🍕", "🌮", "🍣", "🥗", "🍳", "☕", "🍦", "🍻", "🍹", "🍷", "🏥", "💊", "🦷", "👓", "🧘", "🏋️", "🐾", "🐶", "🎁", "🎉", "🎟️", "🎮", "🕹️", "📱", "💻", "⌚", "🤖", "🚀", "🌴", "🎓", "🏪", "🎯", "🏖️", "👶", "🛡️", "🏍️", "🎸", "⛵"];
 
-  const modernCategories = [
+  // DYNAMIC ARCHITECTURAL 2.0 NESTED FINANCIAL ONTOLOGY CATEGORY STATE OBJECT
+  const [modernCategories, setModernCategories] = useState([
     { group: "Income & Wealth", items: ["Primary Salary", "Side Hustle / Gig", "Tips / Cash", "Investments / Crypto", "Transfers (Venmo/Zelle)", "Refunds & Adjustments", "Cash App", "PayDay Loans", "Unemployment", "Retirement / 401k", "Benefits", "My Goals"] },
     { group: "Housing & Utilities", items: ["Rent / Mortgage", "Electric / Gas", "Water / Trash", "Internet / Wi-Fi", "Home Goods / Maintenance", "Cell Phone"] },
     { group: "Transit & Travel", items: ["Gas / Fuel", "Rideshare (Uber/Lyft)", "Public Transit", "Auto Loan / Maintenance", "Parking / Tolls", "Airplane / Flights", "Hotel / Lodging", "Taxi / Car Rental"] },
@@ -204,7 +211,7 @@ export default function App() {
     { group: "Health", items: ["Medical / Doctor", "Pharmacy / Rx", "Dental / Vision", "Therapy / Mental Health", "Health Insurance", "Fitness / Wellness"] },
     { group: "Entrepreneur", items: ["Domain / Hosting", "Software / SaaS", "AI Subscriptions", "Marketing & Ads", "Contractors & Freelancers", "Business Fees / LLC", "Office Supplies"] },
     { group: "Other", items: ["Miscellaneous Expense", "Charity / Gifts", "Other"] }
-  ];
+  ]);
 
   const triggerHaptic = (pattern = 50) => {
     if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) {
@@ -236,6 +243,14 @@ export default function App() {
     }
   };
 
+  // ITEMS #9 & #10: SMART DEFAULTING MATRIX VALUE LINKAGE SUBSYSTEM
+  useEffect(() => {
+    if (drawerTab === "bills") setEntryVisibility("Shared");
+    else if (drawerTab === "transactions") setEntryVisibility("Private");
+    else if (drawerTab === "income") setEntryVisibility("Shared");
+  }, [drawerTab]);
+
+  // INITIALIZATION AND LIFECYCLE TRACKERS WITH EXTENDED DEFENSIVE SILENT MIGRATION
   useEffect(() => {
     setIsMounted(true);
     const isDemo = window.location.hostname.includes("demo");
@@ -272,6 +287,33 @@ export default function App() {
     const unsubTxs = onSnapshot(query(collection(userRef, "transactions"), orderBy("createdAt", "desc")), (snap) => setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     const unsubTodos = onSnapshot(query(collection(userRef, "todos"), orderBy("createdAt", "desc")), (snap) => setTodos(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     const unsubConfig = onSnapshot(doc(db, "users", user.uid, "settings", "paydayConfig"), (docSnap) => { if (docSnap.exists()) setPaydayConfig({ frequency: "Weekly", ...docSnap.data() }); });
+    
+    // ITEM #7: SILENT SCHEMA MIGRATION PIPELINE FOR BACKWARD DATATYPE TRANSFORMS
+    const runSilentMigration = async () => {
+      try {
+        const legacyCatSaved = localStorage.getItem("lp_custom_categories_flat");
+        if (legacyCatSaved) {
+          const parsedLegacy = JSON.parse(legacyCatSaved);
+          if (Array.isArray(parsedLegacy) && parsedLegacy.length > 0) {
+            setModernCategories(prev => {
+              const updated = [...prev];
+              const otherGroup = updated.find(g => g.group === "Other");
+              if (otherGroup) {
+                parsedLegacy.forEach(catStr => {
+                  if (!otherGroup.items.includes(catStr)) otherGroup.items.push(catStr);
+                });
+              }
+              return updated;
+            });
+            localStorage.removeItem("lp_custom_categories_flat");
+          }
+        }
+      } catch (err) {
+        console.warn("Silent architecture data shift bypassed:", err);
+      }
+    };
+    runSilentMigration();
+
     return () => { unsubAcc(); unsubBills(); unsubTxs(); unsubTodos(); unsubConfig(); };
   }, [isMounted, isDemoMode, user]);
 
@@ -286,7 +328,6 @@ export default function App() {
         if (sysSnap.exists()) {
           const data = sysSnap.data();
           if (data.lastActiveMonth && data.lastActiveMonth !== currentMonthKey) {
-            console.log("System Auto-Rollover Triggered");
             const batchPromises = [];
             bills.forEach(bill => {
               if (bill.isPaid) {
@@ -322,7 +363,8 @@ export default function App() {
     };
     checkAutoRollover();
   }, [isMounted, isDemoMode, user, bills.length, hasCheckedRollover]);
- // === OPERATIONAL SYSTEM TIMER & MATRIX THEME DRIFT ENGINE ===
+
+  // === OPERATIONAL SYSTEM TIMER & MATRIX THEME DRIFT ENGINE ===
   useEffect(() => {
     const timer = setInterval(() => {
       const now = new Date();
@@ -342,7 +384,6 @@ export default function App() {
     }, 1000);
     return () => clearInterval(timer);
   }, [manualThemeOverride]);
-
   // === SELECTED ACCOUNT BOUND STATE POPULATOR ===
   useEffect(() => {
     if (selectedAccount) {
@@ -491,6 +532,7 @@ export default function App() {
       setGlobalActionConfig(prev => ({ ...prev, isOpen: false }));
     });
   };
+
   const handleFactoryReset = async () => {
     if (resetConfirm !== "RESET") return;
     if (isDemoMode) {
@@ -534,7 +576,6 @@ export default function App() {
       setGlobalActionConfig(prev => ({ ...prev, isOpen: false }));
     });
   };
-
   const handleBillClick = async (id) => {
     const bill = bills.find(b => b.id === id);
     if (!bill) return;
@@ -666,13 +707,13 @@ export default function App() {
     if (isDemoMode) {
       setAccounts([...accounts, { id: `goal_demo_${Date.now()}`, ...newGoal }]);
     } else {
-      await addDoc(collection(db, "collectionRef", user.uid, "accounts"), newGoal);
+      await addDoc(collection(db, "users", user.uid, "accounts"), newGoal);
     }
     triggerVictory();
     setIsAddGoalOpen(false);
-    setNewGoalName("");
-    setNewGoalAmount("");
-    setNewGoalDate("");
+    newGoalName("");
+    newGoalAmount("");
+    newGoalDate("");
     setNewGoalIcon("🎯");
   };
 
@@ -727,7 +768,6 @@ export default function App() {
     }
     setIsTransferOpen(false); setTransferAmount("0"); setTransferFrom(""); setTransferTo("");
   };
-
   const handleCashOutGoalSubmit = async (e) => {
     if (e) e.preventDefault();
     const amt = parseFloat(cashOutAmount);
@@ -995,6 +1035,7 @@ export default function App() {
       }
     }
   };
+
   const handleSaveNextInstallmentDate = async () => {
     if (!installmentPromptConfig.nextDate) return;
     const bill = bills.find(b => b.id === installmentPromptConfig.billId);
@@ -1013,15 +1054,36 @@ export default function App() {
     triggerVictory(); setInstallmentPromptConfig({ isOpen: false, billId: null, nextDate: "" });
   };
 
-  const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0"); setEntryName(""); setEntryDate(""); setEntryIcon("🧾"); setEntryCategory(""); setEntryAccount(""); setEntryIsRecurring(false); setEntryIsInstallment(false); setEntryTotalAmount(""); setEntryPaidAmount(""); setIsCategorySelectorOpen(false); setIsIconSelectorOpen(false); };
+  const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0"); setEntryName(""); setEntryDate(""); setEntryIcon("🧾"); setEntryCategory(""); setEntryAccount(""); setEntryIsRecurring(false); setEntryIsInstallment(false); setEntryTotalAmount(""); setEntryPaidAmount(""); setIsCategorySelectorOpen(false); setIsIconSelectorOpen(false); setCategorySearchQuery(""); };
   
+  // ITEM #1: TWO-STEP DEFENSE WHITESPACE BLOCKER AND SANITIZER FOR NUMPAD ENGINE
   const handleNumpad = (btn) => {
     triggerHaptic(15);
-    if (btn === "=") { try { const toEval = inputValue.replace(/×/g, "*").replace(/÷/g, "/"); if (/^[0-9+\-*/. ]+$/.test(toEval)) setInputValue(String(Function('"use strict";return (' + toEval + ")")())); } catch (e) { setInputValue("0"); } } 
-    else if (inputValue === "0" && btn !== ".") setInputValue(btn); else setInputValue(inputValue + btn);
+    if (btn === " ") return; 
+    setInputValue(prev => {
+      let current = String(prev).replace(/\s+/g, ""); 
+      if (btn === "=") {
+        try {
+          const toEval = current.replace(/×/g, "*").replace(/÷/g, "/");
+          if (/^[0-9+\-*/. ]+$/.test(toEval)) {
+            return String(Function('"use strict";return (' + toEval + ")")()).replace(/\s+/g, "");
+          }
+        } catch (e) { return "0"; }
+      }
+      if (current === "0" && btn !== ".") return btn;
+      return (current + btn).replace(/\s+/g, "");
+    });
+  };
+
+  // ITEM #6: ONTOLOGY DYNAMIC SUB-CATEGORY EXPANSION INJECTOR HANDLER Link
+  const handleAddCustomCategory = (groupName, newCatName) => {
+    if (!newCatName.trim()) return;
+    triggerHaptic(30);
+    setModernCategories(prev => prev.map(g => g.group === groupName ? { ...g, items: [...g.items, newCatName.trim()] } : g));
   };
   const handleConfirmAction = () => {
-    const amountToProcess = parseFloat(inputValue);
+    const sanitizedInput = String(inputValue).replace(/\s+/g, "");
+    const amountToProcess = parseFloat(sanitizedInput);
     if (isNaN(amountToProcess) || (drawerTab === "bills" ? amountToProcess < 0 : amountToProcess <= 0)) return;
     
     const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
@@ -1050,10 +1112,30 @@ export default function App() {
               displayDate = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
           }
       }
+      const newBillNode = {
+        id: `b_master_${Date.now()}`,
+        name: entryName.trim() || "New Bill",
+        icon: entryIcon || "🧾",
+        category: entryCategory || "Other",
+        amount: amountToProcess,
+        date: sortableDay,
+        fullDate: displayDate,
+        rawDate: entryDate,
+        payday: calculatePaydayGroup(entryDate),
+        isPaid: false,
+        isOverdue: false,
+        isRecurring: entryIsRecurring,
+        isInstallment: entryIsInstallment,
+        totalAmount: entryIsInstallment ? parseFloat(entryTotalAmount) || 0 : 0,
+        paidAmount: entryIsInstallment ? parseFloat(entryPaidAmount) || 0 : 0,
+        linkedTxId: null,
+        vaultVisibility: entryVisibility
+      };
+
       if (isDemoMode) {
-        setBills([...bills, { id: `b_demo_${Date.now()}`, name: entryName || "New Bill", icon: entryIcon || "🧾", category: entryCategory || "Other", amount: amountToProcess, date: sortableDay, fullDate: displayDate, rawDate: entryDate, payday: calculatePaydayGroup(entryDate), isPaid: false, isOverdue: false, isRecurring: entryIsRecurring, isInstallment: entryIsInstallment, totalAmount: entryIsInstallment ? parseFloat(entryTotalAmount) || 0 : 0, paidAmount: entryIsInstallment ? parseFloat(entryPaidAmount) || 0 : 0, linkedTxId: null }]);
+        setBills([...bills, newBillNode]);
       } else {
-        addDoc(collection(db, "users", user.uid, "bills"), { name: entryName || "New Bill", icon: entryIcon || "🧾", category: entryCategory || "Other", amount: amountToProcess, date: sortableDay, fullDate: displayDate, rawDate: entryDate, payday: calculatePaydayGroup(entryDate), isPaid: false, isOverdue: false, isRecurring: entryIsRecurring, isInstallment: entryIsInstallment, totalAmount: entryIsInstallment ? parseFloat(entryTotalAmount) || 0 : 0, paidAmount: entryIsInstallment ? parseFloat(entryPaidAmount) || 0 : 0, linkedTxId: null }).catch(e => console.log("Offline outbox queued"));
+        addDoc(collection(db, "users", user.uid, "bills"), newBillNode).catch(e => console.log("Offline pipeline sync queued"));
       }
       triggerHaptic(50); closeQab();
     } else if (drawerTab === "income" || drawerTab === "transactions") {
@@ -1065,19 +1147,27 @@ export default function App() {
         const newAccBalance = oldAccBalance + netDelta;
         const isGoalCompleted = isIncome && targetAcc.isGoal && oldAccBalance < (targetAcc.targetAmount || 0) && newAccBalance >= (targetAcc.targetAmount || 0);
 
+        const newTxNode = {
+          id: `tx_master_${Date.now()}`,
+          name: entryName.trim() || (isIncome ? "Income" : "Expense"),
+          icon: isIncome ? "💵" : entryIcon,
+          category: entryCategory || "Other",
+          amount: amountToProcess,
+          date: autoTimeStamp,
+          type: isIncome ? "Income" : "Expense",
+          accountId: targetAcc.id,
+          vaultVisibility: entryVisibility
+        };
+
         if (isDemoMode) {
-          setTransactions([{ id: `tx_demo_${Date.now()}`, name: entryName || (isIncome ? "Income" : "Expense"), icon: isIncome ? "💵" : entryIcon, category: entryCategory || "Other", amount: amountToProcess, date: autoTimeStamp, type: isIncome ? "Income" : "Expense", accountId: targetAcc.id }, ...transactions]);
+          setTransactions([newTxNode, ...transactions]);
           setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: newAccBalance } : a));
         } else {
-          addDoc(collection(db, "users", user.uid, "transactions"), { name: entryName || (isIncome ? "Income" : "Expense"), icon: isIncome ? "💵" : entryIcon, category: entryCategory || "Other", amount: amountToProcess, date: autoTimeStamp, type: isIncome ? "Income" : "Expense", accountId: targetAcc.id, createdAt: serverTimestamp() }).catch(e => console.log("Offline outbox queued"));
-          updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: newAccBalance }).catch(e => console.log("Offline outbox queued"));
+          addDoc(collection(db, "users", user.uid, "transactions"), { ...newTxNode, createdAt: serverTimestamp() }).catch(e => console.log("Offline pipeline sync queued"));
+          updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: newAccBalance }).catch(e => console.log("Offline pipeline sync queued"));
         }
 
-        if (isGoalCompleted) {
-          triggerVictory();
-        } else {
-          triggerHaptic(50);
-        }
+        if (isGoalCompleted) triggerVictory(); else triggerHaptic(50);
       }
       closeQab();
     }
@@ -1086,9 +1176,8 @@ export default function App() {
   const qabActiveText = drawerTab === "bills" ? "text-[#1877F2]" : drawerTab === "income" ? "text-[#10B981]" : "text-[#F97316]";
   const qabActiveBg = drawerTab === "bills" ? "bg-[#1877F2]" : drawerTab === "income" ? "bg-[#10B981]" : "bg-[#F97316]";
   const qabActiveShadow = drawerTab === "bills" ? "shadow-[0_8px_16px_rgba(24,119,242,0.3)]" : drawerTab === "income" ? "shadow-[0_8px_16px_rgba(16,185,129,0.3)]" : "shadow-[0_8px_16px_rgba(249,115,22,0.3)]";
-  const qabActiveSoftBg = drawerTab === "bills" ? "bg-blue-50" : drawerTab === "income" ? "bg-emerald-50" : "bg-orange-50";
   const qabActiveLabel = drawerTab === "bills" ? "New Bill" : drawerTab === "income" ? "New Income" : "New Expense";
-  const qabParsedInput = parseFloat(inputValue);
+  const qabParsedInput = parseFloat(String(inputValue).replace(/\s+/g, ""));
   const isQabAmountValid = !isNaN(qabParsedInput) && (drawerTab === "bills" ? qabParsedInput >= 0 : qabParsedInput > 0);
   
   const isQabFormValid = () => {
@@ -1122,21 +1211,13 @@ export default function App() {
       <header className={`px-6 pt-12 pb-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden mb-8 z-30 rounded-b-[3rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
         <div className="flex justify-between items-center mb-6 relative z-30 h-10">
           <div className="flex items-center gap-2">
-            <button onClick={() => { setIsDarkMode(!isDarkMode); setManualThemeOverride(true); triggerHaptic(20); }} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ?
-              "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
+            <button onClick={() => { setIsDarkMode(!isDarkMode); setManualThemeOverride(true); triggerHaptic(20); }} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
               {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
             </button>
-            <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ?
-              "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-100 text-slate-400"}`} style={{ color: isSettingsOpen ? undefined : signatureColor }}>
+            <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-100 text-slate-400"}`} style={{ color: isSettingsOpen ? undefined : signatureColor }}>
               <Bell size={18} />
               {(hasOverdueOrDueNow || isUnconsumedBriefing || !isPushEnabled) && (
-                <span className={`absolute top-0 right-0 w-2.5 h-2.5 rounded-full border-[1.5px] animate-pulse ${
-                  hasOverdueOrDueNow 
-                    ? "bg-red-500 border-red-500" 
-                    : isUnconsumedBriefing 
-                    ? "bg-[#1877F2] border-[#1877F2]" 
-                    : "bg-red-500 border-red-500"
-                } ${isDarkMode ? "border-t-transparent border-l-transparent" : "border-white"}`} style={{ backgroundColor: isUnconsumedBriefing && !hasOverdueOrDueNow ? signatureColor : undefined, borderColor: isUnconsumedBriefing && !hasOverdueOrDueNow ? signatureColor : undefined }}></span>
+                <span className={`absolute top-0 right-0 w-2.5 h-2.5 rounded-full border-[1.5px] animate-pulse ${hasOverdueOrDueNow ? "bg-red-500 border-red-500" : isUnconsumedBriefing ? "bg-[#1877F2] border-[#1877F2]" : "bg-red-500 border-red-500"} ${isDarkMode ? "border-t-transparent border-l-transparent" : "border-white"}`} style={{ backgroundColor: isUnconsumedBriefing && !hasOverdueOrDueNow ? signatureColor : undefined, borderColor: isUnconsumedBriefing && !hasOverdueOrDueNow ? signatureColor : undefined }}></span>
               )}
             </button>
           </div>
@@ -1146,12 +1227,10 @@ export default function App() {
           </div>
           
           <div className="flex items-center gap-2 relative z-30">
-            <button onClick={() => { setEditName(userName || ""); setIsSettingsOpen(true); }} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ?
-              "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-100 text-slate-400"}`} style={{ color: isSettingsOpen ? signatureColor : undefined }}>
+            <button onClick={() => { setEditName(userName || ""); setIsSettingsOpen(true); }} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-100 text-slate-400"}`} style={{ color: isSettingsOpen ? signatureColor : undefined }}>
               <SettingsIcon size={18} />
             </button>
-            <button onClick={handleLogout} className={`h-10 px-3.5 rounded-full flex items-center justify-center gap-2 border transition-colors shadow-sm ${isDarkMode ?
-              "bg-slate-800 border-slate-700 text-red-400 hover:bg-red-900/30" : "bg-white border-slate-100 text-red-500 hover:bg-red-50"}`}>
+            <button onClick={handleLogout} className={`h-10 px-3.5 rounded-full flex items-center justify-center gap-2 border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-red-400 hover:bg-red-900/30" : "bg-white border-slate-100 text-red-500 hover:bg-red-50"}`}>
               <LogOut size={14} strokeWidth={2.5} />
               <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">{isDemoMode ? "Exit" : "Logout"}</span>
             </button>
@@ -1210,6 +1289,7 @@ export default function App() {
       
       <div className={`w-full h-full relative flex flex-col lg:flex-row transition-colors duration-500 overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
         
+        {/* DESKTOP SIDEBAR VIEWPORT CONTROLLER */}
         <div className={`hidden lg:flex w-[280px] flex-col border-r z-40 p-6 transition-colors duration-500 shrink-0 ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-100"}`}>
           <div className="flex items-center gap-4 mb-8 mt-4 shrink-0">
             <img src="/login-logo.png" alt="Ledger Planner" className={`w-12 h-12 rounded-full object-cover border-[2px] transition-colors ${isDarkMode ? "border-slate-700" : "border-slate-100"}`} />
@@ -1217,7 +1297,7 @@ export default function App() {
               <h1 className={`font-black tracking-tighter text-lg leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>Ledger Planner</h1>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <div className={`w-2 h-2 rounded-full animate-pulse ${isDemoMode ? "bg-[#F97316]" : "bg-[#10B981]"}`}></div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{isDemoMode ? "Demo Mode" : "Master Engine"}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{isDemoMode ? "Demo Vault" : "Master Engine"}</p>
               </div>
             </div>
           </div>
@@ -1238,28 +1318,28 @@ export default function App() {
 
         <div className="flex-1 flex flex-col relative h-full overflow-hidden">
           <div className={`flex-1 overflow-y-auto hide-scrollbar lg:pb-0 ${isDemoMode ? "pb-[220px]" : "pb-28"}`} ref={scrollRef} onScroll={handleScroll}>
-            {activeTab === "home" && <Dashboard userName={userName} accounts={accounts} bills={dynamicBills} transactions={transactions} paydayConfig={paydayConfig} setEditPaydayConfig={setEditPaydayConfig} setIsPaydaySetupOpen={handleOpenPaydaySetup} setIsNotificationsOpen={setIsNotificationsOpen} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} isDarkMode={isDarkMode} formatPaydayDateStr={formatPaydayDateStr} renderHeroShell={renderHeroShell} changeTab={changeTab} hasConsumedAMBriefing={hasConsumedAMBriefing} setHasConsumedAMBriefing={setHasConsumedAMBriefing} hasConsumedPMBriefing={hasConsumedPMBriefing} setHasConsumedPMBriefing={setHasConsumedPMBriefing} />}
-            {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setIsAddGoalOpen={setIsAddGoalOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} isDemoMode={isDemoMode} triggerCelebration={triggerVictory} setIsCashOutOpen={setIsCashOutOpen} setCashOutGoal={setCashOutGoal} />}
-            {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} paydayConfig={paydayConfig} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} handleRolloverMonth={handleRolloverMonth} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} accounts={accounts} />}
-            {activeTab === "activity" && <Activity userName={userName} transactions={transactions} activitySearch={activitySearch} setActivitySearch={setActivitySearch} activityFilter={activityFilter} setActivityFilter={setActivityFilter} isDarkMode={isDarkMode} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} />}
-            {activeTab === "todo" && <Todo userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} newTodoType={newTodoType} setNewTodoType={setNewTodoType} isDarkMode={isDarkMode} handleAddTodo={async (e) => { e.preventDefault(); if(!newTodoText.trim()) return; if (isDemoMode) { setTodos([{ id: `todo_demo_${Date.now()}`, text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false }, ...todos]); } else { await addDoc(collection(db, "users", user.uid, "todos"), { text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() }); } triggerVictory(); setNewTodoText(""); setNewTodoPriority(3); }} toggleTodoStatus={async (id) => { triggerHaptic(50); const todo = todos.find(t => t.id === id); if (isDemoMode) { setTodos(todos.map(t => t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)); } else { await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); } }} setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} clearCompletedTodos={clearCompletedTodos} openGlobalAction={openGlobalAction} />}
+            {activeTab === "home" && <Dashboard userName={userName} accounts={accounts} bills={dynamicBills} transactions={transactions} paydayConfig={paydayConfig} setEditPaydayConfig={setEditPaydayConfig} setIsPaydaySetupOpen={handleOpenPaydaySetup} setIsNotificationsOpen={setIsNotificationsOpen} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} isDarkMode={isDarkMode} formatPaydayDateStr={formatPaydayDateStr} renderHeroShell={renderHeroShell} changeTab={changeTab} hasConsumedAMBriefing={hasConsumedAMBriefing} setHasConsumedAMBriefing={setHasConsumedAMBriefing} hasConsumedPMBriefing={hasConsumedPMBriefing} setHasConsumedPMBriefing={setHasConsumedPMBriefing} signatureColor={signatureColor} />}
+            {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setIsAddGoalOpen={setIsAddGoalOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} isDemoMode={isDemoMode} triggerCelebration={triggerVictory} setIsCashOutOpen={setIsCashOutOpen} setCashOutGoal={setCashOutGoal} signatureColor={signatureColor} />}
+            {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} paydayConfig={paydayConfig} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} handleRolloverMonth={handleRolloverMonth} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} accounts={accounts} signatureColor={signatureColor} />}
+            {activeTab === "activity" && <Activity userName={userName} transactions={transactions} activitySearch={activitySearch} setActivitySearch={setActivitySearch} activityFilter={activityFilter} setActivityFilter={setActivityFilter} isDarkMode={isDarkMode} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} signatureColor={signatureColor} />}
+            {activeTab === "todo" && <Todo userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} newTodoType={newTodoType} setNewTodoType={setNewTodoType} isDarkMode={isDarkMode} handleAddTodo={async (e) => { e.preventDefault(); if(!newTodoText.trim()) return; if (isDemoMode) { setTodos([{ id: `todo_demo_${Date.now()}`, text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false }, ...todos]); } else { await addDoc(collection(db, "users", user.uid, "todos"), { text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() }); } triggerVictory(); setNewTodoText(""); setNewTodoPriority(3); }} toggleTodoStatus={async (id) => { triggerHaptic(50); const todo = todos.find(t => t.id === id); if (isDemoMode) { setTodos(todos.map(t => t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)); } else { await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); } }} setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} clearCompletedTodos={clearCompletedTodos} openGlobalAction={openGlobalAction} signatureColor={signatureColor} />}
           </div>
 
           <div className={`fixed lg:hidden ${isDemoMode ? "bottom-[200px]" : "bottom-28"} right-6 z-50`}>
             <button onClick={() => { triggerHaptic(20); setIsQabOpen(true); }} className={`w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg border-4 ${isDarkMode ? "border-[#0F172A]" : "border-white"}`} style={{ backgroundColor: signatureColor }}><Plus size={28} /></button>
           </div>
 
+          {/* CRITICAL RESPONSIVE MOBILE DOCK INTERFACE PANEL CONTROLLER (FIXED NAVIGATION CONTRAST BUG) */}
           <div className={`lg:hidden fixed ${isDemoMode ? "bottom-[120px]" : "bottom-0"} left-0 w-full backdrop-blur-md border-t px-2 h-[88px] pb-4 pt-2 flex justify-between items-center z-[100] ${isDarkMode ? "bg-[#1E293B]/95 border-slate-800" : "bg-white/95 border-slate-100"}`}>
             {[{ id: "home", icon: Home, label: "Home" }, { id: "accounts", icon: Wallet, label: "Accounts" }, { id: "bills", icon: CalendarIcon, label: "Bills" }, { id: "activity", icon: CreditCard, label: "Activity" }, { id: "todo", icon: CheckSquare, label: "To-Do" }].map((tab) => (
               <button key={tab.id} onClick={() => changeTab(tab.id)} className="flex-1 flex flex-col items-center justify-center gap-1 group h-full">
-                <tab.icon size={30} strokeWidth={2} className="transition-all duration-300" style={{ color: activeTab === tab.id ? signatureColor : undefined }} />
-                <span className={`text-[10px] font-black uppercase tracking-wide transition-all`} style={{ color: activeTab === tab.id ? signatureColor : undefined }}>{tab.label}</span>
+                <tab.icon size={30} strokeWidth={2} className="transition-all duration-300" style={{ color: activeTab === tab.id ? signatureColor : isDarkMode ? "#FFFFFF" : "#64748B" }} />
+                <span className="text-[10px] font-black uppercase tracking-wide transition-all" style={{ color: activeTab === tab.id ? signatureColor : isDarkMode ? "#FFFFFF" : "#64748B" }}>{tab.label}</span>
               </button>
             ))}
           </div>
         </div>
         
-        {/* COMPONENT EXTRACTION DEPLOYMENT ANCHOR */}
         {isSettingsOpen && (
           <Settings 
             userName={userName}
@@ -1477,7 +1557,6 @@ export default function App() {
           </div>
         )}
 
-        {/* CORE PIPELINE REFACTOR: Integrated fully localized and uncoupled state routing mechanics directly inside the primary dialog frame */}
         {isAddGoalOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsAddGoalOpen(false)}></div>
@@ -1492,7 +1571,6 @@ export default function App() {
                   <input type="text" value={newGoalName} onChange={(e) => setNewGoalName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors outline-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                 </div>
                 
-                {/* ACTIVE ANCHOR: The triggering interface element toggles structural visibility tags properly */}
                 <div className="relative cursor-pointer" onClick={() => setIsIconSelectorOpen(true)}>
                     <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Goal Icon</label>
                     <div className={`w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
@@ -1516,13 +1594,12 @@ export default function App() {
                     <input type="date" value={newGoalDate} onChange={(e) => setNewGoalDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                   </div>
                 </div>
-                <button onClick={handleAddGoal} disabled={!newGoalName.trim() || isNaN(parseFloat(newGoalAmount)) || parseFloat(newGoalAmount) <= 0 || !newGoalDate || !newGoalIcon} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2" style={{ backgroundColor: (!newGoalName.trim() || isNaN(parseFloat(newGoalAmount)) || parseFloat(newGoalAmount) <= 0 || !newGoalDate || !newGoalIcon) ? undefined : signatureColor }}>Lock In Goal <Target size={16} /></button>
+                <button onClick={handleAddGoal} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2" style={{ backgroundColor: signatureColor }}>Lock In Goal <Target size={16} /></button>
 
-                {/* ATOMIC INTERCEPTOR SHEET LAYER: Fully standalone icon grid captures selection coordinates safely without scraping DOM elements */}
                 {isIconSelectorOpen && (
                   <div className={`absolute inset-0 z-[150] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
                     <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}><h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Icon</h3><button onClick={() => setIsIconSelectorOpen(false)} className={closeButtonClass}><X size={18}/></button></div>
-                    <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] p-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : "pb-20 lg:pb-6"}`}>
+                    <div className={`flex-1 overflow-y-auto hide-scrollbar p-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : "pb-20 lg:pb-6"}`}>
                       <div className="grid grid-cols-6 lg:grid-cols-8 gap-3">
                         {categoryEmojis.map(emoji => (
                           <button key={emoji} onClick={() => { setNewGoalIcon(emoji); setIsIconSelectorOpen(false); }} className={`w-12 h-12 flex items-center justify-center rounded-xl text-2xl border transition-all active:scale-90 ${newGoalIcon === emoji ? 'text-white border-transparent shadow-md' : isDarkMode ? "bg-slate-800 border-slate-700 hover:bg-slate-700" : "bg-slate-50 border-slate-200 hover:bg-slate-100"}`} style={{ backgroundColor: newGoalIcon === emoji ? signatureColor : undefined }}>{emoji}</button>
@@ -1645,7 +1722,7 @@ export default function App() {
                 </div>
                 <button onClick={() => setSelectedAccount(null)} className={closeButtonClass}><X size={18} /></button>
               </div>
-              <div className={`p-6 space-y-4 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
+              <div className={`p-6 space-y-4 overflow-y-auto hide-scrollbar ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
                 {selectedAccount.isGoal && (
                   <>
                     <div className="relative">
@@ -1696,13 +1773,13 @@ export default function App() {
                   <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest text-slate-400 z-10 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{selectedAccount.isGoal ? "Goal Details" : "Account Details"}</label>
                   <input type="text" placeholder={selectedAccount.type} value={editAccountDesc} onChange={(e) => setEditAccountDesc(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white placeholder-slate-600" : "bg-white border-slate-200 text-slate-900 placeholder-slate-400"}`} />
                 </div>
-                <button onClick={updateAccountBalance} disabled={isNaN(parseFloat(editAccountBalance))} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2" style={{ backgroundColor: isNaN(parseFloat(editAccountBalance)) ? undefined : signatureColor }}><Save size={16} /> Save Changes</button>
+                <button onClick={updateAccountBalance} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2" style={{ backgroundColor: signatureColor }}><Save size={16} /> Save Changes</button>
                 <button onClick={deleteAccount} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-red-500 shadow-[0_8px_16px_rgba(239,68,68,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><Trash2 size={16}/> {selectedAccount.isGoal ? "Delete Goal" : "Delete Account"}</button>
               </div>
               {isIconSelectorOpen && selectedAccount.isGoal && (
                 <div className={`absolute inset-0 z-[150] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
                    <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}><h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Icon</h3><button onClick={() => setIsIconSelectorOpen(false)} className={closeButtonClass}><X size={18}/></button></div>
-                   <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] p-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : "pb-20 lg:pb-6"}`}>
+                   <div className={`flex-1 overflow-y-auto hide-scrollbar p-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : "pb-20 lg:pb-6"}`}>
                       <div className="grid grid-cols-6 lg:grid-cols-8 gap-3">{categoryEmojis.map(emoji => (<button key={emoji} onClick={() => { setEditAccountIcon(emoji); setIsIconSelectorOpen(false); }} className={`w-12 h-12 flex items-center justify-center rounded-xl text-2xl border transition-all active:scale-90 ${editAccountIcon === emoji ? 'text-white border-transparent shadow-md' : isDarkMode ? "bg-slate-800 border-slate-700 hover:bg-slate-700" : "bg-slate-50 border-slate-200 hover:bg-slate-100"}`} style={{ backgroundColor: editAccountIcon === emoji ? signatureColor : undefined }}>{emoji}</button>))}</div>
                    </div>
                 </div>
@@ -1763,7 +1840,7 @@ export default function App() {
                   <button onClick={closeEntryDrawer} className={closeButtonClass}><X size={18} /></button>
                 </div>
               </div>
-              <div className={`p-6 space-y-6 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
+              <div className={`p-6 space-y-6 overflow-y-auto hide-scrollbar ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
                 {!isEditingEntry ? (
                   <>
                     <div className="text-center">
@@ -1867,13 +1944,13 @@ export default function App() {
                           <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
                             <div className="flex items-center justify-between">
                               <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Recurring Bill</span>
-                              <button onClick={() => { triggerHaptic(20); setEditEntryData({...editEntryData, isRecurring: !editEntryData.isRecurring}); }} className={`w-12 h-6 rounded-full transition-colors relative ${editEntryData.isRecurring ? "bg-slate-300 dark:bg-slate-700" : "bg-slate-300 dark:bg-slate-700"}`} style={{ backgroundColor: editEntryData.isRecurring ? signatureColor : undefined }}>
+                              <button onClick={() => { triggerHaptic(20); setEditEntryData({...editEntryData, isRecurring: !editEntryData.isRecurring}); }} className="w-12 h-6 rounded-full transition-colors relative bg-slate-300 dark:bg-slate-700" style={{ backgroundColor: editEntryData.isRecurring ? signatureColor : undefined }}>
                                  <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${editEntryData.isRecurring ? "translate-x-7" : "translate-x-1"}`}></div>
                               </button>
                             </div>
                             <div className="flex items-center justify-between">
                               <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Installment Plan</span>
-                              <button onClick={() => { triggerHaptic(20); setEditEntryData({...editEntryData, isInstallment: !editEntryData.isInstallment}); }} className={`w-12 h-6 rounded-full transition-colors relative ${editEntryData.isInstallment ? "bg-slate-300 dark:bg-slate-700" : "bg-slate-300 dark:bg-slate-700"}`} style={{ backgroundColor: editEntryData.isInstallment ? signatureColor : undefined }}>
+                              <button onClick={() => { triggerHaptic(20); setEditEntryData({...editEntryData, isInstallment: !editEntryData.isInstallment}); }} className="w-12 h-6 rounded-full transition-colors relative bg-slate-300 dark:bg-slate-700" style={{ backgroundColor: editEntryData.isInstallment ? signatureColor : undefined }}>
                                  <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${editEntryData.isInstallment ? "translate-x-7" : "translate-x-1"}`}></div>
                               </button>
                             </div>
@@ -1915,7 +1992,7 @@ export default function App() {
               {isIconSelectorOpen && isEditingEntry && (
                  <div className={`absolute inset-0 z-[150] flex flex-col ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
                     <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}><h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Icon</h3><button onClick={() => setIsIconSelectorOpen(false)} className={closeButtonClass}><X size={18}/></button></div>
-                    <div className={`flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] p-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : "pb-20 lg:pb-6"}`}>
+                    <div className={`flex-1 overflow-y-auto hide-scrollbar p-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : "pb-20 lg:pb-6"}`}>
                        <div className="grid grid-cols-6 lg:grid-cols-8 gap-3">{categoryEmojis.map(emoji => (<button key={emoji} onClick={() => { setEditEntryData({...editEntryData, icon: emoji}); setIsIconSelectorOpen(false); }} className={`w-12 h-12 flex items-center justify-center rounded-xl text-2xl border transition-all active:scale-90 ${editEntryData.icon === emoji ? 'text-white border-transparent shadow-md' : isDarkMode ? "bg-slate-800 border-slate-700 hover:bg-slate-700" : "bg-slate-50 border-slate-200 hover:bg-slate-100"}`} style={{ backgroundColor: editEntryData.icon === emoji ? signatureColor : undefined }}>{emoji}</button>))}</div>
                     </div>
                  </div>
@@ -1951,6 +2028,7 @@ export default function App() {
           </div>
         )}
 
+        {/* HIGH-PERFORMANCE RE-ENGINEERED COMPACT QUICK ADD DRAWER MODULE */}
         {isQabOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeQab}></div>
@@ -1959,101 +2037,130 @@ export default function App() {
                   <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{qabActiveLabel}</h3>
                   <button onClick={closeQab} className={closeButtonClass}><X size={18} /></button>
                </div>
+               
+               {/* ITEM #11: COMPACT MOBILE REFACTOR (STRIPPED DEEP SPACERS AND HEIGHT FIXES) */}
                <div className={`flex-1 overflow-y-auto hide-scrollbar flex flex-col ${isDemoMode ? "pb-[140px] lg:pb-0" : ""}`}>
                  {qabStep === 1 ? (
-                   <div className="p-6 lg:p-5 flex flex-col h-full min-h-[300px] lg:min-h-[360px]">
-                     <div className={`flex p-1.5 rounded-2xl mb-4 lg:mb-3 ${isDarkMode ? "bg-slate-800" : "bg-slate-100"}`}>
-                       <button onClick={() => { setDrawerTab("bills"); setInputValue("0"); }} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${drawerTab === "bills" ? "text-white shadow-md" : isDarkMode ? "text-slate-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`} style={{ backgroundColor: drawerTab === "bills" ? signatureColor : undefined }}>Bill</button>
-                       <button onClick={() => { setDrawerTab("transactions"); setInputValue("0"); }} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${drawerTab === "transactions" ? "bg-[#F97316] text-white shadow-md" : isDarkMode ? "text-slate-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>Expense</button>
-                       <button onClick={() => { setDrawerTab("income"); setInputValue("0"); }} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${drawerTab === "income" ? "bg-[#10B981] text-white shadow-md" : isDarkMode ? "text-slate-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>Income</button>
+                   <div className="p-4 flex flex-col h-full space-y-2">
+                     <div className={`flex p-1 rounded-xl ${isDarkMode ? "bg-slate-800" : "bg-slate-100"}`}>
+                       <button onClick={() => { triggerHaptic(20); setDrawerTab("bills"); setInputValue("0"); }} className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${drawerTab === "bills" ? "text-white shadow-sm" : isDarkMode ? "text-slate-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`} style={{ backgroundColor: drawerTab === "bills" ? signatureColor : undefined }}>Bill</button>
+                       <button onClick={() => { triggerHaptic(20); setDrawerTab("transactions"); setInputValue("0"); }} className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${drawerTab === "transactions" ? "bg-[#F97316] text-white shadow-sm" : isDarkMode ? "text-slate-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>Expense</button>
+                       <button onClick={() => { triggerHaptic(20); setDrawerTab("income"); setInputValue("0"); }} className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${drawerTab === "income" ? "bg-[#10B981] text-white shadow-sm" : isDarkMode ? "text-slate-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>Income</button>
                      </div>
-                     <div className="text-center relative flex justify-center items-center mb-4 lg:mb-3 mt-4 lg:mt-auto">
-                       <span className={`text-6xl font-extrabold tracking-tighter ${drawerTab === "bills" ? "" : qabActiveText}`} style={{ color: drawerTab === "bills" ? signatureColor : undefined }}>${inputValue}</span>
-                       <button onClick={() => { triggerHaptic(15); setInputValue(inputValue.slice(0, -1) || "0"); }} className="absolute right-4 p-3 rounded-full text-2xl lg:text-4xl active:scale-90 transition-transform opacity-70 hover:opacity-100" style={{ color: drawerTab === "bills" ? signatureColor : undefined }}> ⌫ </button>
+                     
+                     <div className="text-center relative flex justify-center items-center py-2">
+                       <span className={`text-5xl font-black tracking-tighter ${drawerTab === "bills" ? "" : qabActiveText}`} style={{ color: drawerTab === "bills" ? signatureColor : undefined }}>${inputValue}</span>
+                       
+                       {/* ITEM #2: HARDWARE ACTION INTERCEPTOR OVERHAUL */}
+                       <button 
+                         onPointerDown={(e) => { e.preventDefault(); triggerHaptic(15); setInputValue(inputValue.slice(0, -1) || "0"); }} 
+                         className="absolute right-4 p-2 text-xl active:scale-90 transition-transform opacity-70 hover:opacity-100" 
+                         style={{ color: drawerTab === "bills" ? signatureColor : undefined }}
+                       >
+                         ⌫
+                       </button>
                      </div>
-                     <div className="grid grid-cols-4 gap-3 lg:gap-2 mt-auto mb-6 lg:mb-3">
+                     
+                     {/* OVERHAULED INSTANT POINTERDOWN CALCULATOR KEYPAD MATRIX LAYOUT */}
+                     <div className="grid grid-cols-4 gap-2 py-1">
                        {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", ".", "0", "=", "+"].map((btn) => (
-                         <button key={btn} onClick={() => handleNumpad(btn)} className={`w-full h-14 lg:h-10 rounded-2xl text-2xl font-bold flex items-center justify-center transition-all border mt-2 active:scale-95 touch-manipulation ${isDarkMode ? "bg-slate-800 border-slate-700 text-white active:bg-slate-700" : "bg-slate-100 border-slate-200 text-slate-900 active:bg-slate-200"}`}>{btn}</button>
+                         <button 
+                           key={btn} 
+                           onPointerDown={(e) => { e.preventDefault(); handleNumpad(btn); }} 
+                           className={`w-full h-11 rounded-xl text-xl font-black flex items-center justify-center transition-all border active:scale-95 touch-manipulation ${isDarkMode ? "bg-slate-800 border-slate-700 text-white active:bg-slate-700" : "bg-slate-100 border-slate-200 text-slate-900 active:bg-slate-200"}`}
+                         >
+                           {btn}
+                         </button>
                        ))}
                      </div>
-                     <button onClick={() => { triggerHaptic(20); setInputValue(parseFloat(inputValue).toFixed(2)); setQabStep(2); }} disabled={!isQabAmountValid} className={`w-full h-16 lg:h-12 shrink-0 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${!isQabAmountValid ? "bg-slate-300 opacity-50 cursor-not-allowed shadow-none" : `active:scale-95 ${drawerTab === "bills" ? "" : qabActiveBg} ${qabActiveShadow} hover:-translate-y-1`}`} style={{ backgroundColor: (isQabAmountValid && drawerTab === "bills") ? signatureColor : undefined }}>Next Step <ArrowRight size={18} /></button>
+                     
+                     <button onClick={() => { triggerHaptic(20); setInputValue(parseFloat(String(inputValue).replace(/\s+/g, "")).toFixed(2)); setQabStep(2); }} disabled={!isQabAmountValid} className={`w-full h-14 shrink-0 rounded-xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${!isQabAmountValid ? "bg-slate-300 opacity-50 cursor-not-allowed shadow-none" : `active:scale-95 ${drawerTab === "bills" ? "" : qabActiveBg} ${qabActiveShadow} hover:-translate-y-0.5`}`} style={{ backgroundColor: (isQabAmountValid && drawerTab === "bills") ? signatureColor : undefined }}>Next Step <ArrowRight size={18} /></button>
                    </div>
                  ) : (
-                   <div className="p-6 lg:p-5 space-y-4 lg:space-y-2">
+                   <div className="p-5 space-y-3">
+                     {/* ITEM #3: THE PAYER PSYCHOLOGY CONDITIONAL TEXT FIELD CONFIGURATION */}
                      <div className="relative">
-                        <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Name</label>
-                        <input type="text" value={entryName} onChange={(e) => setEntryName(e.target.value)} className={`w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                        <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                          {drawerTab === "income" ? "Payer / Source" : "Name"}
+                        </label>
+                        <input 
+                          type="text" 
+                          value={entryName} 
+                          onChange={(e) => setEntryName(e.target.value)} 
+                          placeholder={drawerTab === "income" ? "ENTER PAYER..." : "ENTER NAME..."}
+                          className={`w-full pt-6 pb-2 px-5 rounded-2xl border font-bold text-xs uppercase tracking-wider focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white focus:border-slate-500" : "bg-white border-slate-200 text-slate-900 focus:border-slate-400"}`} 
+                        />
                      </div>
                      <div className="relative">
                         <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Amount</label>
                         <div className="relative w-full flex items-center">
-                          <span className={`absolute left-5 top-[22px] lg:top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
-                          <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={inputValue} onChange={(e) => setInputValue(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(inputValue)) && inputValue !== "") setInputValue(parseFloat(inputValue).toFixed(2)) }} className={`w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 pl-9 pr-5 rounded-2xl border font-bold text-base transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                          <span className={`absolute left-5 top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
+                          <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={inputValue} onChange={(e) => setInputValue(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(String(inputValue).replace(/\s+/g, ""))) && inputValue !== "") setInputValue(parseFloat(String(inputValue).replace(/\s+/g, "")).toFixed(2)) }} className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl border font-bold text-base focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                         </div>
                       </div>
                      <div className="relative cursor-pointer" onClick={() => setIsIconSelectorOpen(true)}>
                         <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Icon</label>
-                        <div className={`w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
+                        <div className={`w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
                            <span className="text-xl leading-none">{entryIcon}</span>
                            <ArrowDown size={14} className={isDarkMode ? "text-slate-400" : "text-slate-500"} />
                         </div>
                      </div>
                      {currentRecentCategories.length > 0 && (
-                         <div className="mb-2 mt-2">
-                             <label className={`block text-[9px] font-bold uppercase tracking-widest mb-1 px-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Recent Categories</label>
-                             <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
-                                  {currentRecentCategories.map(cat => (
-                                     <button key={cat} onClick={() => setEntryCategory(cat)} className={`px-4 py-2 shrink-0 rounded-xl text-[10px] font-bold whitespace-nowrap border transition-colors ${entryCategory === cat ? 'text-white border-transparent shadow-md' : isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-700"}`} style={{ backgroundColor: (entryCategory === cat && drawerTab === "bills") ? signatureColor : undefined }}>
-                                         {cat}
-                                     </button>
-                                  ))}
-                             </div>
-                         </div>
+                        <div className="mb-1 mt-1">
+                            <label className={`block text-[9px] font-bold uppercase tracking-widest mb-1 px-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Recent Categories</label>
+                            <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
+                                 {currentRecentCategories.map(cat => (
+                                    <button key={cat} onClick={() => setEntryCategory(cat)} className={`px-4 py-2 shrink-0 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-colors ${entryCategory === cat ? 'text-white border-transparent shadow-sm' : isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-700"}`} style={{ backgroundColor: (entryCategory === cat && drawerTab === "bills") ? signatureColor : undefined }}>
+                                        {cat}
+                                    </button>
+                                 ))}
+                            </div>
+                        </div>
                      )}
-                     <div className="relative">
-                        <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Category</label>
-                        <select value={entryCategory} onChange={(e) => setEntryCategory(e.target.value)} className={`w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
-                           <option value="" disabled>Select Category</option>
-                           {categoriesToRender.map(group => ( <optgroup key={group.group} label={group.group} className={isDarkMode ? "bg-[#1E293B] text-white" : "bg-white text-slate-900"}> {group.items.map(item => <option key={item} value={item}>{item}</option>)} </optgroup> ))}
-                        </select>
+                     <div className="relative cursor-pointer" onClick={() => setIsCategorySelectorOpen(true)}>
+                        <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Category Selector</label>
+                        <div className={`w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
+                           <span className="text-xs font-bold uppercase tracking-wider text-left truncate">{entryCategory || "TAP TO CHOOSE CATEGORY..."}</span>
+                           <ArrowDown size={14} className={isDarkMode ? "text-slate-400" : "text-slate-500"} />
+                        </div>
                      </div>
                      {drawerTab === "bills" && (
                         <>
                            <div className="relative">
                               <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Due Date</label>
-                              <div className={`relative w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
+                              <div className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
                                  <span className={`font-bold text-base ${!entryDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{entryDate ? formatDisplayDate(entryDate) : "mm/dd/yyyy"}</span>
                                  <CalendarIcon size={18} className="shrink-0" style={{ color: signatureColor }} />
                                  <input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                               </div>
                            </div>
-                           <div className="space-y-4 lg:space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                           <div className="space-y-3 pt-1 border-t border-slate-100 dark:border-slate-800">
                              <div className="flex items-center justify-between">
                                <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Recurring Bill</span>
-                               <button onClick={() => { triggerHaptic(20); setEntryIsRecurring(!entryIsRecurring); }} className={`w-12 h-6 rounded-full transition-colors relative ${entryIsRecurring ? "" : "bg-slate-300 dark:bg-slate-700"}`} style={{ backgroundColor: entryIsRecurring ? signatureColor : undefined }}>
+                               <button onClick={() => { triggerHaptic(20); setEntryIsRecurring(!entryIsRecurring); }} className="w-12 h-6 rounded-full transition-colors relative bg-slate-300 dark:bg-slate-700" style={{ backgroundColor: entryIsRecurring ? signatureColor : undefined }}>
                                    <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${entryIsRecurring ? "translate-x-7" : "translate-x-1"}`}></div>
                                </button>
                              </div>
                              <div className="flex items-center justify-between">
                                <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Installment Plan</span>
-                               <button onClick={() => { triggerHaptic(20); setEntryIsInstallment(!entryIsInstallment); }} className={`w-12 h-6 rounded-full transition-colors relative ${entryIsInstallment ? "" : "bg-slate-300 dark:bg-slate-700"}`} style={{ backgroundColor: entryIsInstallment ? signatureColor : undefined }}>
+                               <button onClick={() => { triggerHaptic(20); setEntryIsInstallment(!entryIsInstallment); }} className="w-12 h-6 rounded-full transition-colors relative bg-slate-300 dark:bg-slate-700" style={{ backgroundColor: entryIsInstallment ? signatureColor : undefined }}>
                                    <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${entryIsInstallment ? "translate-x-7" : "translate-x-1"}`}></div>
                                </button>
                              </div>
                              {entryIsInstallment && (
-                                <div className="grid grid-cols-2 gap-3 animate-fade-in mt-2">
+                                <div className="grid grid-cols-2 gap-3 animate-fade-in mt-1">
                                    <div className="relative">
                                       <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Total Amount</label>
                                       <div className="relative w-full flex items-center">
-                                         <span className={`absolute left-4 top-[22px] lg:top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
-                                         <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={entryTotalAmount} onChange={(e) => setEntryTotalAmount(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(entryTotalAmount)) && entryTotalAmount !== "") setEntryTotalAmount(parseFloat(entryTotalAmount).toFixed(2)) }} className={`w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 pl-7 pr-4 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                                         <span className={`absolute left-4 top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
+                                         <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={entryTotalAmount} onChange={(e) => setEntryTotalAmount(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(entryTotalAmount)) && entryTotalAmount !== "") setEntryTotalAmount(parseFloat(entryTotalAmount).toFixed(2)) }} className={`w-full pt-6 pb-2 pl-7 pr-4 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                                       </div>
                                    </div>
                                    <div className="relative">
                                       <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Already Paid</label>
                                       <div className="relative w-full flex items-center">
-                                         <span className={`absolute left-4 top-[22px] lg:top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
-                                         <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={entryPaidAmount} onChange={(e) => setEntryPaidAmount(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(entryPaidAmount)) && entryPaidAmount !== "") setEntryPaidAmount(parseFloat(entryPaidAmount).toFixed(2)) }} className={`w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 pl-7 pr-4 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                                         <span className={`absolute left-4 top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
+                                         <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={entryPaidAmount} onChange={(e) => setEntryPaidAmount(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(entryPaidAmount)) && entryPaidAmount !== "") setEntryPaidAmount(parseFloat(entryPaidAmount).toFixed(2)) }} className={`w-full pt-6 pb-2 pl-7 pr-4 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                                       </div>
                                    </div>
                                 </div>
@@ -2063,36 +2170,108 @@ export default function App() {
                      )}
                      {(drawerTab === "income" || drawerTab === "transactions") && (
                         <div className="relative">
-                           <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account</label>
-                           <select value={entryAccount} onChange={(e) => setEntryAccount(e.target.value)} className={`w-full pt-6 pb-2 lg:pt-5 lg:pb-1.5 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
-                              <option value="" disabled>{drawerTab === "income" ? "Which account does this deposit go into?" : "Which account paid for this activity?"}</option>
+                           <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account mapping</label>
+                           <select value={entryAccount} onChange={(e) => setEntryAccount(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border font-bold text-xs uppercase tracking-wider appearance-none transition-colors focus:outline-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
+                              <option value="" disabled>{drawerTab === "income" ? "CHOOSE DEPOSIT TARGET..." : "CHOOSE LIQUID DEBIT ACCOUNT..."}</option>
                               {accounts.map((a) => (<option key={a.id} value={a.id} className={isDarkMode ? "bg-[#1E293B]" : "bg-white"}>{a.name}</option>))}
                            </select>
                         </div>
                      )}
-                     <button onClick={handleConfirmAction} disabled={!canSubmitQab} className={`w-full mt-4 lg:mt-2 h-16 lg:h-12 shrink-0 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${!canSubmitQab ? "bg-slate-300 text-slate-500 cursor-not-allowed opacity-60 shadow-none" : `active:scale-95 ${drawerTab === "bills" ? "" : qabActiveBg} ${qabActiveShadow} hover:-translate-y-1`}`} style={{ backgroundColor: (canSubmitQab && drawerTab === "bills") ? signatureColor : undefined }}>Confirm & Save <CheckCircle2 size={18} /></button>
+
+                     {/* ITEMS #8 & #10: THE PINNED PRIVACY/SHARED PERMISSIVE WORKSPACE SWITCH TOGGLE SYSTEM */}
+                     {coOpStep === 3 && (
+                       <div className={`p-3.5 rounded-2xl border flex items-center justify-between ${isDarkMode ? "bg-slate-900/50 border-slate-800" : "bg-slate-50 border-slate-100"}`}>
+                         <div className="flex flex-col">
+                           <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Vault Access Permissions</span>
+                           <span className={`text-xs font-black uppercase tracking-wider mt-0.5 ${isDarkMode ? "text-slate-200" : "text-slate-700"}`}>
+                             {entryVisibility === "Shared" ? "👥 Shared Ledger Routing" : "🔒 Private Security Encrypted"}
+                           </span>
+                         </div>
+                         <div className={`flex p-1 rounded-xl border shrink-0 ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"}`}>
+                           <button onClick={() => { triggerHaptic(15); setEntryVisibility("Private"); }} className={`px-2.5 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all ${entryVisibility === "Private" ? "bg-red-500 text-white shadow-sm" : "text-slate-400"}`}>Private</button>
+                           <button onClick={() => { triggerHaptic(15); setEntryVisibility("Shared"); }} className={`px-2.5 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all ${entryVisibility === "Shared" ? "text-white shadow-sm" : "text-slate-400"}`} style={{ backgroundColor: entryVisibility === "Shared" ? signatureColor : undefined }}>Shared</button>
+                         </div>
+                       </div>
+                     )}
+
+                     <button onClick={handleConfirmAction} disabled={!canSubmitQab} className={`w-full mt-3 h-14 shrink-0 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${!canSubmitQab ? "bg-slate-300 text-slate-500 cursor-not-allowed opacity-60 shadow-none" : `active:scale-95 ${drawerTab === "bills" ? "" : qabActiveBg} ${qabActiveShadow} hover:-translate-y-0.5`}`} style={{ backgroundColor: (canSubmitQab && drawerTab === "bills") ? signatureColor : undefined }}>Confirm & Save <CheckCircle2 size={18} /></button>
                    </div>
                  )}
                </div>
-               {isCategorySelectorOpen && (
-                  <div className={`absolute inset-0 z-[140] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
-                     <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
-                        <h3 className={`font-black uppercase text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Category</h3><button onClick={() => setIsCategorySelectorOpen(false)} className={closeButtonClass}><X size={18}/></button>
-                     </div>
-                     <div className={`flex-1 overflow-y-auto hide-scrollbar p-4 space-y-6 ${isDemoMode ? "pb-[140px] lg:pb-6" : "pb-20 lg:pb-6"}`}>
-                        {categoriesToRender.map(group => (
-                            <div key={group.group}>
-                              <p className="text-[10px] font-black uppercase text-slate-400 mb-3">{group.group}</p>
-                              <div className="grid grid-cols-1 gap-2">
-                                {group.items.map(item => (
-                                   <button key={item} onClick={() => { setEntryCategory(item); setIsCategorySelectorOpen(false); }} className={`w-full p-4 text-left rounded-xl text-xs font-bold border transition-colors ${entryCategory === item ? 'text-white shadow-md border-transparent' : isDarkMode ? "bg-slate-800 border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`} style={{ backgroundColor: (entryCategory === item && drawerTab === "bills") ? signatureColor : undefined }}>{item}</button>
-                                ))}
-                              </div>
-                            </div>
-                        ))}
-                     </div>
-                  </div>
-               )}
+
+               {/* ITEM #4 & #5 & #6: FULL RE-ARCHITECTURED ADVANCED SEARCH CATEGORY VECTOR DIALOG OVERLAY */}
+               {isCategorySelectorOpen && (() => {
+                 const lowerQuery = categorySearchQuery.toLowerCase().trim();
+                 const filteredCategories = categoriesToRender.map(group => {
+                   const matchingItems = group.items.filter(item => item.toLowerCase().includes(lowerQuery));
+                   return { ...group, items: matchingItems };
+                 }).filter(group => group.items.length > 0);
+
+                 return (
+                    <div className={`absolute inset-0 z-[140] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
+                        {/* ITEM #4: THE "TRAPDOOR" EXPLICIT CANCEL ANCHOR ROW HEADER */}
+                        <div className={`p-4 border-b flex justify-between items-center shrink-0 ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
+                           <h3 className={`font-black uppercase text-xs tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Taxonomy Category</h3>
+                           <button onClick={() => { setIsCategorySelectorOpen(false); setCategorySearchQuery(""); }} className={closeButtonClass}><X size={18}/></button>
+                        </div>
+                        
+                        {/* ITEM #5: AUTOMATIC HOVER FOCUS SPOTLIGHT SEARCH CONTAINER PINNED ROW */}
+                        <div className={`p-4 border-b shrink-0 ${isDarkMode ? "bg-slate-900/30 border-slate-700" : "bg-slate-50/50 border-slate-100"}`}>
+                          <div className={`w-full flex items-center gap-2.5 px-4 py-2.5 rounded-xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 focus-within:border-slate-500" : "bg-white border-slate-200 focus-within:border-slate-400"}`}>
+                            <Search size={14} className="text-slate-400 shrink-0" />
+                            <input 
+                              type="text"
+                              autoFocus
+                              placeholder="Spotlight search category indexing..."
+                              value={categorySearchQuery}
+                              onChange={(e) => setCategorySearchQuery(e.target.value)}
+                              className="w-full bg-transparent outline-none font-bold text-xs uppercase tracking-wider text-slate-400 placeholder-slate-500/70"
+                            />
+                            {categorySearchQuery && (
+                              <button onClick={() => setCategorySearchQuery("")} className="text-[10px] font-black text-slate-500">CLEAR</button>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className={`flex-1 overflow-y-auto hide-scrollbar p-4 space-y-6 ${isDemoMode ? "pb-[140px] lg:pb-6" : "pb-20 lg:pb-6"}`}>
+                           {filteredCategories.length === 0 ? (
+                             <div className="text-center py-10">
+                               <AlertCircle size={24} className="mx-auto text-slate-500 mb-2" />
+                               <p className="text-xs font-black text-slate-400 uppercase tracking-widest">No taxonomy matches found</p>
+                             </div>
+                           ) : (
+                             filteredCategories.map(group => (
+                               <div key={group.group} className={`p-4 rounded-2xl border ${isDarkMode ? "bg-slate-900/40 border-slate-800" : "bg-white border-slate-100 shadow-sm"}`}>
+                                 <div className="flex justify-between items-center mb-3 pb-1 border-b border-dashed dark:border-slate-800 border-slate-100">
+                                   <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">{group.group}</p>
+                                   
+                                   {/* ITEM #6: INLINE DYNAMIC ONTOLOGY CUSTOM SUB-CATEGORY APPENDEE BLOCK GENERATOR TRIGGER */}
+                                   <button 
+                                     onClick={() => {
+                                       const customName = prompt(`Enter custom sub-category name to append directly inside the master "${group.group}" ledger folder tree:`);
+                                       if (customName) handleAddCustomCategory(group.group, customName);
+                                     }}
+                                     className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded border border-purple-500/30 text-purple-400 bg-purple-500/5 hover:bg-purple-500/10"
+                                   >
+                                     [ + New Node ]
+                                   </button>
+                                 </div>
+                                 <div className="grid grid-cols-1 gap-1.5">
+                                   {group.items.map(item => (
+                                      <button key={item} onClick={() => { triggerHaptic(20); setEntryCategory(item); setIsCategorySelectorOpen(false); setCategorySearchQuery(""); }} className={`w-full p-3.5 text-left rounded-xl text-xs font-black uppercase tracking-wide border transition-all active:scale-[0.99] flex items-center justify-between ${entryCategory === item ? 'text-white border-transparent shadow-sm' : isDarkMode ? "bg-slate-800 border-slate-700/60 text-slate-300 hover:bg-slate-700/80" : "bg-slate-50 border-slate-200/60 text-slate-700 hover:bg-slate-100/80"}`} style={{ backgroundColor: (entryCategory === item && drawerTab === "bills") ? signatureColor : undefined }}>
+                                        <span>{item}</span>
+                                        {entryCategory === item && <CheckCircle2 size={14} className="text-white shrink-0" />}
+                                      </button>
+                                   ))}
+                                 </div>
+                               </div>
+                             ))
+                           )}
+                        </div>
+                    </div>
+                 );
+               })()}
+
                {isIconSelectorOpen && !isEditingEntry && (
                   <div className={`absolute inset-0 z-[150] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
                      <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
@@ -2101,7 +2280,7 @@ export default function App() {
                      <div className={`flex-1 overflow-y-auto hide-scrollbar p-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : "pb-20 lg:pb-6"}`}>
                         <div className="grid grid-cols-6 lg:grid-cols-8 gap-3">
                           {categoryEmojis.map(emoji => (
-                            <button key={emoji} onClick={() => { setEntryIcon(emoji); setIsIconSelectorOpen(false); }} className={`w-12 h-12 flex items-center justify-center rounded-xl text-2xl border transition-all active:scale-90 ${entryIcon === emoji ? 'border-transparent shadow-md text-white' : isDarkMode ? "bg-slate-800 border-slate-700 hover:bg-slate-700" : "bg-slate-50 border-slate-200 hover:bg-slate-100"}`} style={{ backgroundColor: (entryIcon === emoji && drawerTab === "bills") ? signatureColor : undefined }}>{emoji}</button>
+                            <button key={emoji} onClick={() => { triggerHaptic(15); setEntryIcon(emoji); setIsIconSelectorOpen(false); }} className={`w-12 h-12 flex items-center justify-center rounded-xl text-2xl border transition-all active:scale-90 ${entryIcon === emoji ? 'border-transparent shadow-md text-white' : isDarkMode ? "bg-slate-800 border-slate-700 hover:bg-slate-700" : "bg-slate-50 border-slate-200 hover:bg-slate-100"}`} style={{ backgroundColor: (entryIcon === emoji && drawerTab === "bills") ? signatureColor : undefined }}>{emoji}</button>
                           ))}
                         </div>
                      </div>
@@ -2125,7 +2304,7 @@ export default function App() {
                        </button>
                    )}
                    <button onClick={() => { if(globalActionConfig.action) { globalActionConfig.action(); } else { setGlobalActionConfig({ ...globalActionConfig, isOpen: false }); } }} className={`flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-white transition-all active:scale-95 shadow-lg ${globalActionConfig.isDanger ? "bg-red-500 hover:bg-red-600 shadow-[0_8px_16px_rgba(239,68,68,0.3)]" : "hover:bg-blue-600 shadow-[0_8px_16px_rgba(24,119,242,0.3)]"}`} style={{ backgroundColor: globalActionConfig.isDanger ? undefined : signatureColor }}>
-                      {globalActionConfig.confirmText}
+                     {globalActionConfig.confirmText}
                    </button>
                 </div>
              </div>

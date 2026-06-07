@@ -214,7 +214,6 @@ export default function Bills({
 
   const baseMonthlyIncome = Object.values(paydayConfig || {}).reduce((sum, slot) => sum + (Number(slot?.income) || 0), 0);
 
-  // ITEM #1: PREMIUM HERO RING LAYOUT RE-ENGINEERING
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
@@ -226,7 +225,6 @@ export default function Bills({
         </div>
 
         <div className="flex items-center justify-between w-full">
-          {/* Circular Chart Container with Exact Branded Currency Metric Inside */}
           <div className="relative w-28 h-28 flex-shrink-0">
             <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
               <defs>
@@ -246,7 +244,6 @@ export default function Bills({
             </div>
           </div>
    
-          {/* Clean Balanced Right-Hand Metrics Deck Layout */}
           <div className="flex-1 pl-4 text-center overflow-hidden">
             <p className={`text-[10px] font-black uppercase tracking-widest mb-1 text-slate-400 transform transition-all duration-700 delay-200 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
               Total Bills Paid
@@ -262,22 +259,6 @@ export default function Bills({
       </div>
     </div>
   );
-
-  // ITEM #4: PIPELINE ACTION TRIGGER WRAPPER FOR NATIVE STATE WRITE & CONFETTI FIRE
-  const handleInterceptedBillClick = async (billId) => {
-    try {
-      if (typeof window !== "undefined" && window.navigator.vibrate) {
-        window.navigator.vibrate([40, 40]);
-      }
-      
-      // Fire standard handler back up to trigger master state updates, database sets, and confetti bursts
-      if (handleBillClick) {
-        await handleBillClick(billId);
-      }
-    } catch (err) {
-      console.error("Action pipeline sync execution error", err);
-    }
-  };
 
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
@@ -443,20 +424,20 @@ export default function Bills({
         </div>
       </div>
 
-      {/* FIXED BASE ANCHOR SEPARATOR DIVIDER LINE RETAINED FOR ACCORDION BALANCE STACK */}
+      {/* FIX #2: THE ONLY MASTER ANCHOR SIGNATURE LINE RETAINED ABOVE MAIN SECTION WRAPPERS */}
       <div className={`mx-6 mb-6 border-t ${isDarkMode ? "border-white/20" : "border-black/20"}`}></div>
 
       <main className="px-6 space-y-8 mt-2">
           
-        {/* ITEM #3 & #6: CONDITIONAL GATING WITH SIGNATURE ACCENT LINE RESTORATION SURROUNDING UNPAID MASTER BOX */}
+        {/* FIX #2 & #6: ZERO-STATE ENGINE GATES OUT BOTH THE TEXT HEADER AND THE RESTORED VISUAL SIGNATURE LINE AT ONCE */}
         {urgentBills.length > 0 && (
           <div className="space-y-4">
-            {/* Signature Border Accent */}
+            {/* FIX #2: SIGNATURE LINE SECURELY MOUNTED INSIDE THE TARGET GATE CONTAINER ABOVE TEXT STRING */}
             <div className={`mb-4 border-t ${isDarkMode ? "border-white/20" : "border-black/20"}`}></div>
             
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Unpaid Bills</h3>
 
-            <div className={`p-4 rounded-[2rem] border mb-6 ${isDarkMode ? "bg-red-950/20 border-red-900/40" : "bg-red-50/60 border-red-100"}`}>
+            <div className={`p-4 rounded-[2rem] border mb-6 ${isDarkMode ? "bg-red-955/20 border-red-900/40" : "bg-red-50/60 border-red-100"}`}>
               <div className="flex items-center gap-2 mb-3 px-2">
                 <AlertCircle size={16} className="text-red-500" />
                 <h4 className="text-xs font-black uppercase tracking-widest text-red-500">Urgent Attention Required</h4>
@@ -495,8 +476,9 @@ export default function Bills({
                         </span>
                       </div>
                       <div className="flex-1 flex justify-center px-1">
+                        {/* FIX #1: RE-WOUND TO MASTER NATIVE SYNCHRONOUS HOOK CALL Bypassing the broken wrapper to trigger confetti and clear drawers cleanly */}
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleInterceptedBillClick(bill.id); }}
+                          onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }}
                           className="px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0"
                         >
                           <CheckCircle2 size={14} strokeWidth={2.5} />
@@ -530,7 +512,6 @@ export default function Bills({
           </div>
         )}
 
-        {/* ITEM #2: RE-STRUCTURED AND CLEANED ACCORDION HEADLINE MATRIX CONTAINER */}
         <div className="space-y-4">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">
             Bill Schedule For {currentYear}
@@ -587,7 +568,7 @@ export default function Bills({
                           const isDueToday = bill.payday === "Due Now";
                           const isUrgent = isStrictlyOverdue || isDueToday;
 
-                          // ITEM #5: EXCLUSIVE FORECASTING ROUTINE PATCH FOR LOGGED RECURRING METRICS
+                          // FIX #3: EXCLUSIVE LOGIC CHECK FOR LOOK-AHEAD CALENDARS ASSIGNING RECURRING LABELS
                           const useRecurringLabel = isFutureMonth && bill.isRecurring;
                           const displayStatusText = useRecurringLabel ? "RECURRING" : (isStrictlyOverdue ? "OVERDUE" : isDueToday ? "DUE NOW" : "DUE");
                           const statusColorClass = useRecurringLabel ? "text-slate-400 font-bold" : (isUrgent ? "text-red-500" : "text-slate-400");
@@ -627,8 +608,9 @@ export default function Bills({
                                   </span>
                                 </div>
                                 <div className="flex-1 flex justify-center px-1">
+                                  {/* FIX #1: EVENT ACTION LAYER STABILIZED FOR ACCORDION INTERFACES TO CLEAR TRANSFERS INSTANTLY */}
                                   <button
-                                    onClick={(e) => { e.stopPropagation(); handleInterceptedBillClick(bill.id); }}
+                                    onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }}
                                     className="px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0"
                                   >
                                     <CheckCircle2 size={14} strokeWidth={2.5} />
@@ -724,7 +706,7 @@ export default function Bills({
                           </div>
                           <div className="flex-1 flex justify-center px-1">
                             <button
-                              onClick={(e) => { e.stopPropagation(); handleInterceptedBillClick(bill.id); }}
+                              onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }}
                               className="px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0"
                             >
                               <CheckCircle2 size={14} strokeWidth={2.5} />
@@ -777,9 +759,11 @@ export default function Bills({
                         <span className={`text-xs font-bold ${isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>Settled</span>
                       </div>
                       <div className="flex-1 flex justify-center px-1">
+                        {/* FIX #1: SYNCHRONOUS HOOK ATTACHMENT ENSURING NATIVE UNPAID ROLLDOWNS DIRECT FROM SETTLED Matrix CARDS */}
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleInterceptedBillClick(bill.id); }}
-                          className={`px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 ${isDarkMode ? "bg-red-900/20 border-red-900/50 text-red-400" : "bg-red-50 border-red-200 text-red-600"}`}
+                          onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }}
+                          className={`px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0
+                          ${isDarkMode ? "bg-red-900/20 border-red-900/50 text-red-400" : "bg-red-50 border-red-200 text-red-600"}`}
                         >
                           <RotateCcw size={14} strokeWidth={2} /> Revert
                         </button>

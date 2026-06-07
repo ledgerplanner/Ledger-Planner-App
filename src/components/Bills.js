@@ -214,6 +214,7 @@ export default function Bills({
 
   const baseMonthlyIncome = Object.values(paydayConfig || {}).reduce((sum, slot) => sum + (Number(slot?.income) || 0), 0);
 
+  // ITEM #1: PREMIUM HERO RING LAYOUT RE-ENGINEERING
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
@@ -225,6 +226,7 @@ export default function Bills({
         </div>
 
         <div className="flex items-center justify-between w-full">
+          {/* Circular Chart Container with Exact Branded Currency Metric Inside */}
           <div className="relative w-28 h-28 flex-shrink-0">
             <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
               <defs>
@@ -236,30 +238,46 @@ export default function Bills({
               <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "#1E293B" : "rgba(226, 232, 240, 0.9)"} strokeWidth="12" />
               <circle cx="50" cy="50" r="40" fill="transparent" stroke="url(#billGlow)" strokeWidth="12" strokeLinecap="round" strokeDasharray={251.2} strokeDashoffset={isMounted ? (251.2 - (251.2 * globalProgressPercentage) / 100) : 251.2} className="transition-all duration-1000 ease-out" />
             </svg>
-            <div className={`absolute inset-0 flex flex-col items-center justify-center transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
-              <span className={`text-xl font-black ${isDarkMode ? "text-white" : "text-slate-900"}`}>{Math.round(globalProgressPercentage)}%</span>
-              <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">Paid</span>
+            <div className={`absolute inset-0 flex flex-col items-center justify-center transform transition-all duration-700 delay-300 ease-out p-1 text-center ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
+              <span className={`font-black tracking-tighter leading-none min-[0px]:text-[11px] min-[350px]:text-xs sm:text-sm ${globalTotalPaid === 0 ? "text-red-500" : "text-[#10B981]"}`}>
+                ${globalTotalPaid.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+              <span className="text-[7px] font-black uppercase tracking-widest text-slate-400 mt-0.5">Paid</span>
             </div>
           </div>
    
-          <div className="flex-1 pl-4 text-right overflow-hidden">
+          {/* Clean Balanced Right-Hand Metrics Deck Layout */}
+          <div className="flex-1 pl-4 text-center overflow-hidden">
             <p className={`text-[10px] font-black uppercase tracking-widest mb-1 text-slate-400 transform transition-all duration-700 delay-200 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
               Total Bills Paid
             </p>
-            <p className="font-black tracking-tighter mb-0 inline-block whitespace-nowrap overflow-hidden text-ellipsis max-w-full transform transition-all duration-700 delay-400 cubic-bezier(0.16, 1, 0.3, 1)">
-              <span className={`min-[0px]:text-lg min-[340px]:text-xl min-[380px]:text-3xl sm:text-4xl inline ${globalTotalPaid === 0 ? "text-red-500" : "text-[#10B981]"}`}>
-                ${globalTotalPaid.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </span>
-              <span className="min-[0px]:text-[10px] min-[340px]:text-xs min-[380px]:text-base sm:text-xl text-[#1877F2] inline ml-1 font-black">
-                 / ${globalTotalDue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </span>
-            </p>
+            <div className="transform transition-all duration-700 delay-400">
+              <p className="text-xl min-[380px]:text-2xl font-black tracking-tighter text-[#1877F2] m-0 block truncate">
+                ${globalTotalDue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            </div>
           </div>
         </div>
 
       </div>
     </div>
   );
+
+  // ITEM #4: PIPELINE ACTION TRIGGER WRAPPER FOR NATIVE STATE WRITE & CONFETTI FIRE
+  const handleInterceptedBillClick = async (billId) => {
+    try {
+      if (typeof window !== "undefined" && window.navigator.vibrate) {
+        window.navigator.vibrate([40, 40]);
+      }
+      
+      // Fire standard handler back up to trigger master state updates, database sets, and confetti bursts
+      if (handleBillClick) {
+        await handleBillClick(billId);
+      }
+    } catch (err) {
+      console.error("Action pipeline sync execution error", err);
+    }
+  };
 
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
@@ -425,11 +443,17 @@ export default function Bills({
         </div>
       </div>
 
+      {/* FIXED BASE ANCHOR SEPARATOR DIVIDER LINE RETAINED FOR ACCORDION BALANCE STACK */}
+      <div className={`mx-6 mb-6 border-t ${isDarkMode ? "border-white/20" : "border-black/20"}`}></div>
+
       <main className="px-6 space-y-8 mt-2">
           
-        {/* === DYNAMIC INTERFACE CONDITIONAL GATING TO PRUNE BLANK DESKTOP CLUTTER === */}
+        {/* ITEM #3 & #6: CONDITIONAL GATING WITH SIGNATURE ACCENT LINE RESTORATION SURROUNDING UNPAID MASTER BOX */}
         {urgentBills.length > 0 && (
           <div className="space-y-4">
+            {/* Signature Border Accent */}
+            <div className={`mb-4 border-t ${isDarkMode ? "border-white/20" : "border-black/20"}`}></div>
+            
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Unpaid Bills</h3>
 
             <div className={`p-4 rounded-[2rem] border mb-6 ${isDarkMode ? "bg-red-950/20 border-red-900/40" : "bg-red-50/60 border-red-100"}`}>
@@ -472,7 +496,7 @@ export default function Bills({
                       </div>
                       <div className="flex-1 flex justify-center px-1">
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }}
+                          onClick={(e) => { e.stopPropagation(); handleInterceptedBillClick(bill.id); }}
                           className="px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0"
                         >
                           <CheckCircle2 size={14} strokeWidth={2.5} />
@@ -502,14 +526,14 @@ export default function Bills({
               </div>
             </div>
             
-            {/* MATCHING SEPARATOR BOUNDARY RE-ROUTED INSIDE HIGH-PERFORMANCE INTERCEPT BLOCK */}
             <div className={`mx-6 my-6 border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
           </div>
         )}
 
+        {/* ITEM #2: RE-STRUCTURED AND CLEANED ACCORDION HEADLINE MATRIX CONTAINER */}
         <div className="space-y-4">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">
-            | BILL SCHEDULE FOR {currentYear}
+            Bill Schedule For {currentYear}
           </h3>
 
           {monthsData.map((m) => {
@@ -517,6 +541,7 @@ export default function Bills({
             const isCollapsed = expandedMonthIdx !== m.idx; 
             const sortedBills = sortBillsSurgically(monthBills.filter((b) => !b.isPaid));
             const isPastMonth = m.idx < currentMonthIndex;
+            const isFutureMonth = m.idx > currentMonthIndex;
 
             const headerTextColor = isPastMonth && totalDue > 0 
               ? "text-red-500 font-black" 
@@ -562,11 +587,17 @@ export default function Bills({
                           const isDueToday = bill.payday === "Due Now";
                           const isUrgent = isStrictlyOverdue || isDueToday;
 
+                          // ITEM #5: EXCLUSIVE FORECASTING ROUTINE PATCH FOR LOGGED RECURRING METRICS
+                          const useRecurringLabel = isFutureMonth && bill.isRecurring;
+                          const displayStatusText = useRecurringLabel ? "RECURRING" : (isStrictlyOverdue ? "OVERDUE" : isDueToday ? "DUE NOW" : "DUE");
+                          const statusColorClass = useRecurringLabel ? "text-slate-400 font-bold" : (isUrgent ? "text-red-500" : "text-slate-400");
+                          const blockIconUrgentClass = useRecurringLabel ? (isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200") : (isUrgent ? (isDarkMode ? "bg-red-900/20 border-red-900/50" : "bg-red-50 border-red-100") : (isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"));
+
                           return (
                             <div key={bill.id} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
                               <div className="flex items-start justify-between w-full mb-6">
                                 <div className="flex items-center gap-3 flex-1">
-                                  <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isUrgent ? (isDarkMode ? "bg-red-900/20 border-red-900/50" : "bg-red-50 border-red-100") : (isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200")}`}>
+                                  <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${blockIconUrgentClass}`}>
                                     {bill.icon}
                                   </div>
                                   <div className="flex flex-col">
@@ -588,8 +619,8 @@ export default function Bills({
 
                               <div className="flex items-center justify-between gap-1 min-[360px]:gap-2 w-full">
                                 <div className="flex flex-col shrink-0">
-                                  <span className={`text-[10px] font-black uppercase tracking-wider ${isUrgent ? "text-red-500" : "text-slate-400"}`}>
-                                    {isStrictlyOverdue ? "OVERDUE" : isDueToday ? "DUE NOW" : "DUE"}
+                                  <span className={`text-[10px] font-black uppercase tracking-wider ${statusColorClass}`}>
+                                    {displayStatusText}
                                   </span>
                                   <span className={`text-xs font-bold ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
                                     {bill.fullDate || "TBD"}
@@ -597,7 +628,7 @@ export default function Bills({
                                 </div>
                                 <div className="flex-1 flex justify-center px-1">
                                   <button
-                                    onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }}
+                                    onClick={(e) => { e.stopPropagation(); handleInterceptedBillClick(bill.id); }}
                                     className="px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0"
                                   >
                                     <CheckCircle2 size={14} strokeWidth={2.5} />
@@ -693,7 +724,7 @@ export default function Bills({
                           </div>
                           <div className="flex-1 flex justify-center px-1">
                             <button
-                              onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }}
+                              onClick={(e) => { e.stopPropagation(); handleInterceptedBillClick(bill.id); }}
                               className="px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0"
                             >
                               <CheckCircle2 size={14} strokeWidth={2.5} />
@@ -714,7 +745,7 @@ export default function Bills({
           </div>
         </div>
 
-        {/* LINE #3 SWEEP: Adjusted to explicit crisp white #FFFFFF value tracking theme status safely */}
+        {/* LINE #3 SWEEP: Anchor separator boundary retained above history matrix */}
         <div className={`mt-6 mb-2 border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
 
         {bills.filter(b => b.isPaid).length > 0 && (
@@ -747,7 +778,7 @@ export default function Bills({
                       </div>
                       <div className="flex-1 flex justify-center px-1">
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }}
+                          onClick={(e) => { e.stopPropagation(); handleInterceptedBillClick(bill.id); }}
                           className={`px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 ${isDarkMode ? "bg-red-900/20 border-red-900/50 text-red-400" : "bg-red-50 border-red-200 text-red-600"}`}
                         >
                           <RotateCcw size={14} strokeWidth={2} /> Revert

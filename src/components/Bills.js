@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { CheckCircle2, RefreshCw, ChevronUp, ChevronDown, RotateCcw, Edit2, AlertCircle } from "lucide-react";
- 
+
 export default function Bills({
   userName,
   bills,
@@ -22,19 +22,21 @@ export default function Bills({
   const [expandedMonthIdx, setExpandedMonthIdx] = useState(() => new Date().getMonth());
   
   const horizontalScrollRef = useRef(null);
- 
-  const rawLiveIncomeValue = typeof liveHeroBalance !== "undefined" && liveHeroBalance !== null ? liveHeroBalance 
-    : typeof accountsHeroBalance !== "undefined" && accountsHeroBalance !== null ? accountsHeroBalance 
-    : typeof totalLiveIncome !== "undefined" && totalLiveIncome !== null ? totalLiveIncome 
+  const rawLiveIncomeValue = typeof liveHeroBalance !== "undefined" && liveHeroBalance !== null ?
+    liveHeroBalance 
+    : typeof accountsHeroBalance !== "undefined" && accountsHeroBalance !== null ?
+    accountsHeroBalance 
+    : typeof totalLiveIncome !== "undefined" && totalLiveIncome !== null ?
+    totalLiveIncome 
     : null;
- 
+
   useEffect(() => {
     setIsMounted(true);
     const today = new Date();
     const currentMonthIndex = today.getMonth();
     setSelectedMonth(currentMonthIndex);
     setExpandedMonthIdx(currentMonthIndex);
- 
+
     const centerActiveMonthCard = () => {
       if (horizontalScrollRef.current) {
         const container = horizontalScrollRef.current;
@@ -54,18 +56,16 @@ export default function Bills({
         }
       }
     };
- 
+
     requestAnimationFrame(() => {
       setTimeout(centerActiveMonthCard, 350);
     });
- 
     window.addEventListener("resize", centerActiveMonthCard);
     return () => window.removeEventListener("resize", centerActiveMonthCard);
   }, []);
- 
+
   const currentYear = 2026;
   const currentMonthIndex = new Date().getMonth();
- 
   const monthsData = [
     { name: "January", short: "Jan", idx: 0 },
     { name: "February", short: "Feb", idx: 1 },
@@ -80,38 +80,36 @@ export default function Bills({
     { name: "November", short: "Nov", idx: 10 },
     { name: "December", short: "Dec", idx: 11 }
   ];
- 
+
   const getClosingBalanceForMonth = (mIdx) => {
     if (mIdx === currentMonthIndex) {
       const liveAccountsTotal = accounts
         .filter(a => !a.isGoal)
         .reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
- 
       if (liveAccountsTotal !== 0) {
         return liveAccountsTotal;
       }
- 
+
       if (rawLiveIncomeValue !== null && Number(rawLiveIncomeValue) !== 0) {
         return Number(rawLiveIncomeValue);
       }
- 
+
       const activeMonthIncome = bills.filter((b) => {
         if (!b.isIncome || !b.rawDate) return false;
         const parts = b.rawDate.split("-");
         if (parts.length !== 3) return false;
         return (parseInt(parts[1], 10) - 1) === currentMonthIndex && parseInt(parts[0], 10) === currentYear;
       });
- 
       if (activeMonthIncome.length > 0) {
         return activeMonthIncome.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
       }
       return 0;
     }
- 
+
     if (mIdx > currentMonthIndex) {
       return 0;
     }
- 
+
     const historicalDeposits = bills.filter((b) => {
       if (!b.isIncome || !b.rawDate) return false;
       const parts = b.rawDate.split("-");
@@ -120,14 +118,13 @@ export default function Bills({
       const bYear = parseInt(parts[0], 10);
       return bMonth === mIdx && bYear === currentYear;
     });
- 
     if (historicalDeposits.length > 0) {
       return historicalDeposits.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
     }
- 
+
     return 0;
   };
- 
+
   const getMonthMetrics = (mIdx) => {
     const monthBills = bills.filter((b) => {
       if (!b.rawDate) return false;
@@ -135,38 +132,35 @@ export default function Bills({
       if (parts.length !== 3) return false;
       const bMonth = parseInt(parts[1], 10) - 1;
       const bYear = parseInt(parts[0], 10);
- 
+
       if (bYear !== currentYear) return false;
- 
+
       if (mIdx === currentMonthIndex) {
         const isPastUnpaidDebt = bMonth < currentMonthIndex && !b.isPaid;
         const isCurrentMonthItem = bMonth === currentMonthIndex;
         return isCurrentMonthItem || isPastUnpaidDebt;
       }
- 
+
       if (mIdx < currentMonthIndex) {
         return bMonth === mIdx && b.isPaid;
       }
- 
+
       if (mIdx > currentMonthIndex) {
         if (bMonth === mIdx) return true;
         return b.isRecurring && bMonth !== mIdx;
       }
- 
+
       return false;
     });
- 
     const totalDue = monthBills
       .filter((b) => !b.isPaid)
       .reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
- 
     const totalPaid = mIdx <= currentMonthIndex
       ? monthBills.filter((b) => b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0)
       : 0;
- 
     return { monthBills, totalDue, totalPaid };
   };
- 
+
   const handleMonthCardClick = (mIdx) => {
     setSelectedMonth(mIdx);
     setExpandedMonthIdx(mIdx);
@@ -174,11 +168,11 @@ export default function Bills({
       document.getElementById(`month-accordion-${mIdx}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 150);
   };
- 
+
   const toggleMonthAccordion = (mIdx) => {
     setExpandedMonthIdx(expandedMonthIdx === mIdx ? -1 : mIdx);
   };
- 
+
   const sortBillsSurgically = (billList) => {
     return [...billList].sort((a, b) => {
       if (a.isOverdue && !b.isOverdue) return -1;
@@ -190,31 +184,26 @@ export default function Bills({
       return new Date(a.rawDate) - new Date(b.rawDate);
     });
   };
- 
+
   const activeMetrics = getMonthMetrics(selectedMonth);
   
   const globalTotalDue = bills.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
   const globalTotalPaid = bills.filter((b) => b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
   const globalProgressPercentage = globalTotalDue === 0 ? 0 : Math.max(0, Math.min((globalTotalPaid / globalTotalDue) * 100, 100));
- 
   const urgentBills = bills.filter((b) => !b.isPaid && (b.isOverdue || b.payday === "Due Now"));
-  
   const horizonBills = bills.filter((b) => {
     if (!b.rawDate) return false;
     const parts = b.rawDate.split("-");
     return parts.length === 3 && parseInt(parts[0], 10) === 2027;
   });
- 
   const horizonTotalDue = horizonBills
     .filter((b) => !b.isPaid)
     .reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
   const horizonTotalPaid = horizonBills
     .filter((b) => b.isPaid)
     .reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
- 
   const baseMonthlyIncome = Object.values(paydayConfig || {}).reduce((sum, slot) => sum + (Number(slot?.income) || 0), 0);
- 
-  // ITEM #1: PREMIUM HERO RING LAYOUT RE-ENGINEERING
+
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
@@ -224,9 +213,8 @@ export default function Bills({
             Master Bills List
           </span>
         </div>
- 
+
         <div className="flex items-center justify-between w-full">
-          {/* Circular Chart Container with Exact Branded Currency Metric Inside */}
           <div className="relative w-28 h-28 flex-shrink-0">
             <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
               <defs>
@@ -246,7 +234,6 @@ export default function Bills({
             </div>
           </div>
    
-          {/* Clean Balanced Right-Hand Metrics Deck Layout */}
           <div className="flex-1 pl-4 text-center overflow-hidden">
             <p className={`text-[10px] font-black uppercase tracking-widest mb-1 text-slate-400 transform transition-all duration-700 delay-200 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
               Total Bills Paid
@@ -258,11 +245,11 @@ export default function Bills({
             </div>
           </div>
         </div>
- 
+
       </div>
     </div>
   );
- 
+
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
         
@@ -285,19 +272,18 @@ export default function Bills({
             const isSelected = selectedMonth === m.idx;
             const isPastMonth = m.idx < currentMonthIndex;
             const isCurrentMonth = m.idx === currentMonthIndex;
- 
+
             const amountColorClass = "text-[#1877F2]";
- 
+
             let cardBackgroundClass = "";
             let buttonText = "";
             let buttonStyleClass = "";
             let incomeTextClass = "";
             let displayIncomeValue = "";
             let customIdAttribute = null;
- 
+
             if (isPastMonth) {
               const historicalBalance = getClosingBalanceForMonth(m.idx);
-              
               if (historicalBalance === 0) {
                 incomeTextClass = "text-slate-400 dark:text-slate-500 font-bold";
                 displayIncomeValue = "$0.00";
@@ -305,7 +291,7 @@ export default function Bills({
                 incomeTextClass = isDarkMode ? "text-emerald-400 font-black" : "text-emerald-600 font-black";
                 displayIncomeValue = `+$${historicalBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
               }
- 
+
               if (isSelected) {
                 cardBackgroundClass = isDarkMode ? "bg-blue-900/20 border-blue-500 shadow-md scale-[1.01]" : "bg-blue-50/80 border-blue-300 shadow-[0_4px_20px_rgba(24,119,242,0.15)] scale-[1.01]";
                 buttonText = "SELECTED MONTH";
@@ -317,19 +303,16 @@ export default function Bills({
               }
             } else if (isCurrentMonth) {
               customIdAttribute = "current-month-scroll-anchor";
-              
               const currentLiveBalance = getClosingBalanceForMonth(m.idx);
               incomeTextClass = isDarkMode ? "text-emerald-400 font-black" : "text-emerald-600 font-black";
               displayIncomeValue = `+$${currentLiveBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
- 
+
               if (isSelected) {
                 cardBackgroundClass = isDarkMode ? "bg-blue-900/20 border-blue-500 shadow-md scale-[1.01]" : "bg-blue-50/80 border-blue-300 shadow-[0_4px_20px_rgba(24,119,242,0.15)] scale-[1.01]";
                 buttonText = "SELECTED MONTH";
                 buttonStyleClass = "bg-[#1877F2] text-white shadow-md font-black border border-transparent";
               } else {
-                cardBackgroundClass = isDarkMode 
-                  ? "bg-[#1E293B] border-[#1877F2] shadow-[0_0_35px_rgba(24,119,242,0.65)] border-2 scale-[1.01]" 
-                  : "bg-white border-[#1877F2] shadow-[0_0_30px_rgba(24,119,242,0.45)] border-2 scale-[1.01]";
+                cardBackgroundClass = isDarkMode ? "bg-[#1E293B] border-[#1877F2] shadow-[0_0_35px_rgba(24,119,242,0.65)] border-2 scale-[1.01]" : "bg-white border-[#1877F2] shadow-[0_0_30px_rgba(24,119,242,0.45)] border-2 scale-[1.01]";
                 buttonText = "VIEW DETAILS";
                 buttonStyleClass = isDarkMode ? "bg-slate-800/80 hover:bg-slate-800 text-slate-400 border border-slate-700 font-bold shadow-sm" : "bg-slate-50 hover:bg-slate-100 text-slate-500 border border-slate-200 font-bold shadow-sm";
               }
@@ -359,7 +342,7 @@ export default function Bills({
                   <h4 className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? "text-[#1877F2]" : "text-slate-400"}`}>{m.name}</h4>
                   <span className={`text-[9px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>{currentYear}</span>
                 </div>
- 
+
                 <div className="text-center pt-1.5 pb-1">
                   <p className={`text-2xl font-black tracking-tighter leading-none mb-1 ${amountColorClass}`}>
                     ${totalDue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -368,11 +351,11 @@ export default function Bills({
                     TOTAL DUE
                   </span>
                 </div>
- 
+
                 <div className={`w-full py-1.5 rounded-xl text-center text-[9px] tracking-wider transition-all uppercase ${buttonStyleClass}`}>
                   {buttonText}
                 </div>
- 
+
                 <div className="flex justify-between items-end w-full pt-2">
                   <div className="flex flex-col flex-1">
                     <span className={`text-[7px] font-black uppercase tracking-widest mb-0.5 ${isDarkMode ? "text-white opacity-40" : "text-black opacity-40"}`}>Income</span>
@@ -386,7 +369,7 @@ export default function Bills({
               </div>
             );
           })}
- 
+
           <div
             onClick={() => {
               setSelectedMonth(12);
@@ -395,7 +378,7 @@ export default function Bills({
                 document.getElementById("month-accordion-12")?.scrollIntoView({ behavior: "smooth", block: "center" });
               }, 150);
             }}
-            className={`shrink-0 w-52 p-5 rounded-[1.75rem] border cursor-pointer active:scale-[0.95] snap-center transition-all flex flex-col justify-between h-44 ${selectedMonth === 12 ? (isDarkMode ? "bg-blue-900/20 border-blue-500 shadow-md scale-[1.01]" : "bg-blue-50/80 border-blue-300 shadow-[0_4px_20px_rgba(24,119,242,0.15)] scale-[1.01]") : (isDarkMode ? "bg-[#1E293B] border-slate-700 shadow-md" : "bg-white/90 backdrop-blur-sm border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]")}px`}
+            className={`shrink-0 w-52 p-5 rounded-[1.75rem] border cursor-pointer active:scale-[0.95] snap-center transition-all flex flex-col justify-between h-44 ${selectedMonth === 12 ? (isDarkMode ? "bg-blue-900/20 border-blue-500 shadow-md scale-[1.01]" : "bg-blue-50/80 border-blue-300 shadow-[0_4px_20px_rgba(24,119,242,0.15)] scale-[1.01]") : (isDarkMode ? "bg-[#1E293B] border-slate-700 shadow-md" : "bg-white/90 backdrop-blur-sm border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]")}`}
           >
             <div className="w-full flex justify-center items-center">
               <h4 className={`text-[10px] font-black uppercase tracking-widest text-center ${selectedMonth === 12 ? "text-[#1877F2]" : "text-slate-400"}`}>
@@ -426,20 +409,18 @@ export default function Bills({
           </div>
         </div>
       </div>
- 
-      {/* FIX #2: REMOVED FLOATING STATIC DIVIDER BREAK FROM THIS ROW POSITION */}
- 
+
+      <div className={`mx-6 mb-6 border-t ${isDarkMode ? "border-white/20" : "border-black/20"}`}></div>
+
       <main className="px-6 space-y-8 mt-2">
           
-        {/* FIX #2 & #6: ZERO-STATE ENGINE GATES OUT BOTH THE TEXT HEADER AND THE RESTORED VISUAL SIGNATURE LINE AT ONCE */}
         {urgentBills.length > 0 && (
           <div className="space-y-4">
-            {/* FIX #2: SIGNATURE LINE SECURELY MOUNTED INSIDE THE TARGET GATE CONTAINER ABOVE TEXT STRING */}
             <div className={`mb-4 border-t ${isDarkMode ? "border-white/20" : "border-black/20"}`}></div>
             
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Unpaid Bills</h3>
- 
-            <div className={`p-4 rounded-[2rem] border mb-6 ${isDarkMode ? "bg-red-955/20 border-red-900/40" : "bg-red-50/60 border-red-100"}`}>
+
+            <div className={`p-4 rounded-[2rem] border mb-6 ${isDarkMode ? "bg-red-950/20 border-red-900/40" : "bg-red-50/60 border-red-100"}`}>
               <div className="flex items-center gap-2 mb-3 px-2">
                 <AlertCircle size={16} className="text-red-500" />
                 <h4 className="text-xs font-black uppercase tracking-widest text-red-500">Urgent Attention Required</h4>
@@ -468,6 +449,7 @@ export default function Bills({
                         <Edit2 size={16} strokeWidth={2} />
                       </button>
                     </div>
+    
                     <div className="flex items-center justify-between gap-1 min-[360px]:gap-2 w-full">
                       <div className="flex flex-col shrink-0">
                         <span className="text-[10px] font-black uppercase tracking-wider text-red-500">
@@ -478,9 +460,8 @@ export default function Bills({
                         </span>
                       </div>
                       <div className="flex-1 flex justify-center px-1">
-                        {/* FIX #1: RE-WOUND TO MASTER NATIVE SYNCHRONOUS HOOK CALL Bypassing the broken wrapper to trigger confetti and clear drawers cleanly */}
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }}
+                          onClick={(e) => { e.stopPropagation(); handleBillClick?.(bill.id); }}
                           className="px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0"
                         >
                           <CheckCircle2 size={14} strokeWidth={2.5} />
@@ -513,26 +494,26 @@ export default function Bills({
             <div className={`mx-6 my-6 border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
           </div>
         )}
- 
-        {/* FIX #2: SIGNATURE LINE REMAINS ANCHORED AS BALANCED ENTRY RIGHT ABOVE SCHEDULE HEADER CONTAINER */}
+
         <div className="space-y-4">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">
             Bill Schedule For {currentYear}
           </h3>
- 
+
           {monthsData.map((m) => {
             const { monthBills, totalDue } = getMonthMetrics(m.idx);
             const isCollapsed = expandedMonthIdx !== m.idx; 
             const sortedBills = sortBillsSurgically(monthBills.filter((b) => !b.isPaid));
             const isPastMonth = m.idx < currentMonthIndex;
             const isFutureMonth = m.idx > currentMonthIndex;
- 
+
             const headerTextColor = isPastMonth && totalDue > 0 
               ? "text-red-500 font-black" 
               : selectedMonth === m.idx ? "text-[#1877F2]" : isDarkMode ? "text-white" : "text-slate-900";
- 
+
             return (
               <div key={m.idx} id={`month-accordion-${m.idx}`} className="space-y-2 scroll-mt-24">
+               
                 <div
                   className="flex flex-col px-2 py-4 cursor-pointer transition-colors"
                   onClick={() => toggleMonthAccordion(m.idx)}
@@ -559,7 +540,7 @@ export default function Bills({
                     </div>
                   </div>
                 </div>
- 
+
                 {!isCollapsed && (
                   <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
                     {sortedBills.length === 0 ? (
@@ -570,13 +551,12 @@ export default function Bills({
                           const isStrictlyOverdue = bill.isOverdue;
                           const isDueToday = bill.payday === "Due Now";
                           const isUrgent = isStrictlyOverdue || isDueToday;
- 
-                          // FIX #3: EXCLUSIVE LOGIC CHECK FOR LOOK-AHEAD CALENDARS ASSIGNING RECURRING LABELS
+
                           const useRecurringLabel = isFutureMonth && bill.isRecurring;
                           const displayStatusText = useRecurringLabel ? "RECURRING" : (isStrictlyOverdue ? "OVERDUE" : isDueToday ? "DUE NOW" : "DUE");
                           const statusColorClass = useRecurringLabel ? "text-slate-400 font-bold" : (isUrgent ? "text-red-500" : "text-slate-400");
                           const blockIconUrgentClass = useRecurringLabel ? (isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200") : (isUrgent ? (isDarkMode ? "bg-red-900/20 border-red-900/50" : "bg-red-50 border-red-100") : (isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"));
- 
+                          
                           return (
                             <div key={bill.id} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
                               <div className="flex items-start justify-between w-full mb-6">
@@ -600,7 +580,7 @@ export default function Bills({
                                   <Edit2 size={16} strokeWidth={2} />
                                 </button>
                               </div>
- 
+
                               <div className="flex items-center justify-between gap-1 min-[360px]:gap-2 w-full">
                                 <div className="flex flex-col shrink-0">
                                   <span className={`text-[10px] font-black uppercase tracking-wider ${statusColorClass}`}>
@@ -611,9 +591,8 @@ export default function Bills({
                                   </span>
                                 </div>
                                 <div className="flex-1 flex justify-center px-1">
-                                  {/* FIX #1: EVENT ACTION LAYER STABILIZED FOR ACCORDION INTERFACES TO CLEAR TRANSFERS INSTANTLY */}
                                   <button
-                                    onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }}
+                                    onClick={(e) => { e.stopPropagation(); handleBillClick?.(bill.id); }}
                                     className="px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0"
                                   >
                                     <CheckCircle2 size={14} strokeWidth={2.5} />
@@ -625,7 +604,7 @@ export default function Bills({
                                   {(Number(bill.amount) || 0).toFixed(2)}
                                 </div>
                               </div>
- 
+
                               {bill.isInstallment && !bill.isPaid && (
                                 <div className="mt-5 pt-3 border-t border-slate-200 w-full animate-fade-in">
                                   <div className="flex justify-between items-end mb-2 px-1">
@@ -651,7 +630,7 @@ export default function Bills({
               </div>
             );
           })}
- 
+
           <div id="month-accordion-12" className="space-y-2 scroll-mt-24">
             <div
               className="flex flex-col px-2 py-4 cursor-pointer transition-colors"
@@ -679,7 +658,7 @@ export default function Bills({
                 </div>
               </div>
             </div>
- 
+
             {expandedMonthIdx === 12 && (
               <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
                 {horizonBills.filter(b => !b.isPaid).length === 0 ? (
@@ -709,7 +688,7 @@ export default function Bills({
                           </div>
                           <div className="flex-1 flex justify-center px-1">
                             <button
-                              onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }}
+                              onClick={(e) => { e.stopPropagation(); handleBillClick?.(bill.id); }}
                               className="px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0"
                             >
                               <CheckCircle2 size={14} strokeWidth={2.5} />
@@ -729,10 +708,9 @@ export default function Bills({
             )}
           </div>
         </div>
- 
-        {/* LINE #3 SWEEP: Anchor separator boundary retained above history matrix */}
+
         <div className={`mt-6 mb-2 border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
- 
+
         {bills.filter(b => b.isPaid).length > 0 && (
           <div className="space-y-4 mt-6">
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Paid & Settled (All History)</h3>
@@ -756,17 +734,16 @@ export default function Bills({
                         <Edit2 size={16} strokeWidth={2} />
                       </button>
                     </div>
+    
                     <div className="flex items-center justify-between gap-1 min-[360px]:gap-2 w-full">
                       <div className="flex flex-col shrink-0">
                         <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Status</span>
                         <span className={`text-xs font-bold ${isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>Settled</span>
                       </div>
                       <div className="flex-1 flex justify-center px-1">
-                        {/* FIX #1: SYNCHRONOUS HOOK ATTACHMENT ENSURING NATIVE UNPAID ROLLDOWNS DIRECT FROM SETTLED CARDS */}
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleBillClick(bill.id); }}
-                          className={`px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0
-                          ${isDarkMode ? "bg-red-900/20 border-red-900/50 text-red-400" : "bg-red-50 border-red-200 text-red-600"}`}
+                          onClick={(e) => { e.stopPropagation(); handleBillClick?.(bill.id); }}
+                          className={`px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 ${isDarkMode ? "bg-red-900/20 border-red-900/50 text-red-400" : "bg-red-50 border-red-200 text-red-600"}`}
                         >
                           <RotateCcw size={14} strokeWidth={2} /> Revert
                         </button>
@@ -781,7 +758,7 @@ export default function Bills({
             </div>
           </div>
         )}
- 
+
       </main>
     </div>
   );

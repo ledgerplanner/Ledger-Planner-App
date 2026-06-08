@@ -215,7 +215,37 @@ export default function App() {
     { group: "Entrepreneur", items: ["Domain / Hosting", "Software / SaaS", "AI Subscriptions", "Marketing & Ads", "Contractors & Freelancers", "Business Fees / LLC", "Office Supplies"] },
     { group: "Other", items: ["Miscellaneous Expense", "Charity / Gifts", "Other"] }
   ]);
-  // VAULT ACCESS PERMISSION WORKSPACE DEFAULT SLIDER SYNCHRONIZATION
+const triggerHaptic = (pattern = 50) => {
+    if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) {
+      window.navigator.vibrate(pattern);
+    }
+  };
+  const triggerVictory = () => { triggerHaptic([30, 50, 30]); setShowConfetti(true); setTimeout(() => setShowConfetti(false), 3000); };
+  const triggerWarning = () => { triggerHaptic([50, 100, 50]); };
+
+  const enablePushNotifications = async () => {
+    triggerHaptic(50);
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        setIsPushEnabled(true);
+        if (messaging) {
+          const token = await getToken(messaging, { vapidKey: "YOUR_PUBLIC_VAPID_KEY" });
+          if (token && user) {
+            await setDoc(doc(db, "users", user.uid, "settings", "push"), { token, updatedAt: serverTimestamp() }, { merge: true });
+          }
+        }
+        openGlobalAction("Notifications On", "The structural system channel bridges are live.", "Close", false, () => setGlobalActionConfig(prev => ({...prev, isOpen: false})), true);
+      } else {
+        setIsPushEnabled(false);
+      }
+    } catch (e) {
+      console.error("Push system activation fault:", e);
+    }
+  };
+
+  // SMART DEFAULTING MATRIX STATE SYNCHRONIZATION HOOK
   useEffect(() => {
     if (drawerTab === "bills") setEntryVisibility("Shared");
     else if (drawerTab === "transactions") setEntryVisibility("Private");
@@ -538,11 +568,11 @@ export default function App() {
     if (completed.length === 0) return;
     openGlobalAction("Clear Tasks", "Delete all completed tasks from the board?", "Delete", true, async () => {
       if (isDemoMode) {
-         setTodos(todos.filter(t => !t.isCompleted));
+          setTodos(todos.filter(t => !t.isCompleted));
       } else {
-         setTodos(todos.filter(t => !t.isCompleted));
-         const batchPromises = completed.map(t => deleteDoc(doc(db, "users", user.uid, "todos", t.id)));
-         await Promise.all(batchPromises);
+          setTodos(todos.filter(t => !t.isCompleted));
+          const batchPromises = completed.map(t => deleteDoc(doc(db, "users", user.uid, "todos", t.id)));
+          await Promise.all(batchPromises);
       }
       triggerHaptic(50);
       setGlobalActionConfig(prev => ({ ...prev, isOpen: false }));
@@ -848,9 +878,9 @@ export default function App() {
     if (!isDemoMode) { await setDoc(doc(db, "users", user.uid, "settings", "paydayConfig"), editPaydayConfig); }
     setIsPaydaySetupOpen(false); triggerVictory();
   };
-
+  
   const todayForDynamic = new Date(); todayForDynamic.setHours(0, 0, 0, 0);
-
+  
   const calculatePaydayGroup = (dateString) => {
     if (!dateString) return "Unscheduled";
     const billDate = new Date(dateString);
@@ -1255,7 +1285,7 @@ export default function App() {
           height: 100%;
           opacity: 0;
           cursor: pointer;
-          }
+        }
       `}</style>
       
       <div className={`w-full h-full relative flex flex-col lg:flex-row transition-colors duration-500 overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
@@ -1658,7 +1688,7 @@ export default function App() {
                   <select value={cashOutToAccount} onChange={(e) => setCashOutToAccount(e.target.value)} className="w-full pt-6 pb-2 px-5 rounded-2xl border font-bold text-sm appearance-none transition-colors outline-none focus:border-slate-400 dark:focus:border-slate-500 bg-transparent relative z-10">
                     <option value="" disabled>Select liquid account...</option>
                     {accounts.filter(a => !a.isGoal && (a.type === "Checking" || a.type === "Savings" || a.type === "Cash")).map(a => (
-                      <option key={a.id} value={a.id} className={isDarkMode ? "bg-[#1E293B]" : "bg-white"}>{a.name} (${(a.balance || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })})</option>
+                      <option key={a.id} value={a.id} className={isDarkMode ? "bg-[#1E293B]" : "bg-white"}>{a.name} (${(a.balance || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}). </option>
                     ))}
                   </select>
                 </div>
@@ -1952,7 +1982,7 @@ export default function App() {
                             <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account</label>
                             <select disabled value={editEntryData.accountId || ""} onChange={(e) => setEditEntryData({...editEntryData, accountId: e.target.value})} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors opacity-70 cursor-not-allowed ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
                                <option value="" disabled>Which account paid for this activity?</option>
-                               {accounts.map((a) => (<option key={a.id} value={a.id} className={isDarkMode ? "bg-[#1E293B] text-white" : "bg-white text-slate-900"}>{a.name}</option>))}
+                               {accounts.map((a) => (<option key={a.id} value={a.id} className={isDarkMode ? "bg-[#1E293B]" : "bg-white"}>{a.name}</option>))}
                             </select>
                          </div>
                       )}

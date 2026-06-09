@@ -584,16 +584,22 @@ export default function App() {
     if (bill.isPaid) {
       const refundAccountId = bill.paidFromAccountId;
       const targetAcc = accounts.find(a => a.id === refundAccountId);
+      
+      // --- PRECISION REVERT MATH FIX ---
+      // Look up the exact transaction that paid this bill to refund the exact amount paid.
+      const linkedTx = transactions.find(t => t.id === bill.linkedTxId);
+      const exactRefundAmount = linkedTx ? (linkedTx.amount || 0) : (bill.amount || 0);
+
       let newPaidAmount = bill.paidAmount || 0;
-      if (bill.isInstallment) newPaidAmount = Math.max(0, (bill.paidAmount || 0) - (bill.amount || 0));
+      if (bill.isInstallment) newPaidAmount = Math.max(0, (bill.paidAmount || 0) - exactRefundAmount);
 
       if (isDemoMode) {
         setBills(bills.map(b => b.id === id ? { ...b, isPaid: false, paidAmount: newPaidAmount, paidFromAccountId: null, linkedTxId: null } : b));
-        if (targetAcc) setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: a.balance + (bill.amount || 0) } : a));
+        if (targetAcc) setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: a.balance + exactRefundAmount } : a));
         if (bill.linkedTxId) setTransactions(transactions.filter(t => t.id !== bill.linkedTxId));
       } else {
         await updateDoc(doc(db, "users", user.uid, "bills", id), { isPaid: false, paidAmount: newPaidAmount, paidFromAccountId: null, linkedTxId: null });
-        if (targetAcc) await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance + (bill.amount || 0) });
+        if (targetAcc) await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance + exactRefundAmount });
         if (bill.linkedTxId) await deleteDoc(doc(db, "users", user.uid, "transactions", bill.linkedTxId));
       }
       triggerHaptic(50);
@@ -1276,6 +1282,9 @@ export default function App() {
     );
   }
 
+  // Calculate live liquidity for Bills.js sync
+  const currentLiveBalance = accounts.filter(a => !a.isGoal && (a.type === "Checking" || a.type === "Cash")).reduce((sum, acc) => sum + (acc.balance || 0), 0);
+
   return (
     <div 
       onContextMenu={(e) => e.preventDefault()} 
@@ -1327,7 +1336,10 @@ export default function App() {
           <div className={`flex-1 overflow-y-auto hide-scrollbar lg:pb-0 ${isDemoMode ? "pb-[220px]" : "pb-28"}`} ref={scrollRef} onScroll={handleScroll}>
             {activeTab === "home" && <Dashboard userName={userName} accounts={accounts} bills={dynamicBills} transactions={transactions} paydayConfig={paydayConfig} setEditPaydayConfig={setEditPaydayConfig} setIsPaydaySetupOpen={handleOpenPaydaySetup} setIsNotificationsOpen={setIsNotificationsOpen} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} isDarkMode={isDarkMode} formatPaydayDateStr={formatPaydayDateStr} renderHeroShell={renderHeroShell} changeTab={changeTab} hasConsumedAMBriefing={hasConsumedAMBriefing} setHasConsumedAMBriefing={setHasConsumedAMBriefing} hasConsumedPMBriefing={hasConsumedPMBriefing} setHasConsumedPMBriefing={setHasConsumedPMBriefing} signatureColor={signatureColor} />}
             {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setIsAddGoalOpen={setIsAddGoalOpen} setSelectedAccount={setSelectedAccount} setEditAccountBalance={setEditAccountBalance} renderHeroShell={renderHeroShell} isDemoMode={isDemoMode} triggerCelebration={triggerVictory} setIsCashOutOpen={setIsCashOutOpen} setCashOutGoal={setCashOutGoal} signatureColor={signatureColor} />}
-            {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} paydayConfig={paydayConfig} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} handleRolloverMonth={handleRolloverMonth} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} accounts={accounts} signatureColor={signatureColor} />}
+            
+            {/* === PROP SYNC FIX IS INJECTED HERE === */}
+            {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} paydayConfig={paydayConfig} isDarkMode={isDarkMode} handleBillClick={handleBillClick} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} handleRolloverMonth={handleRolloverMonth} collapsedPaydays={collapsedPaydays} toggleCollapse={toggleCollapse} accounts={accounts} signatureColor={signatureColor} liveHeroBalance={currentLiveBalance} />}
+            
             {activeTab === "activity" && <Activity userName={userName} transactions={transactions} activitySearch={activitySearch} setActivitySearch={setActivitySearch} activityFilter={activityFilter} setActivityFilter={setActivityFilter} isDarkMode={isDarkMode} setSelectedEntry={openEntryDrawer} renderHeroShell={renderHeroShell} signatureColor={signatureColor} />}
             {activeTab === "todo" && <Todo userName={userName} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} newTodoPriority={newTodoPriority} setNewTodoPriority={setNewTodoPriority} newTodoType={newTodoType} setNewTodoType={setNewTodoType} isDarkMode={isDarkMode} handleAddTodo={async (e) => { e.preventDefault(); if(!newTodoText.trim()) return; if (isDemoMode) { setTodos([{ id: `todo_demo_${Date.now()}`, text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false }, ...todos]); } else { await addDoc(collection(db, "users", user.uid, "todos"), { text: newTodoText, priority: newTodoPriority, type: newTodoType, isCompleted: false, createdAt: serverTimestamp() }); } triggerVictory(); setNewTodoText(""); setNewTodoPriority(3); }} toggleTodoStatus={async (id) => { triggerHaptic(50); const todo = todos.find(t => t.id === id); if (isDemoMode) { setTodos(todos.map(t => t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)); } else { await updateDoc(doc(db, "users", user.uid, "todos", id), { isCompleted: !todo.isCompleted }); } }} setSelectedTodo={setSelectedTodo} renderHeroShell={renderHeroShell} clearCompletedTodos={clearCompletedTodos} openGlobalAction={openGlobalAction} signatureColor={signatureColor} />}
           </div>

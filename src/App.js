@@ -1,6 +1,3 @@
-App.js Master Code
--------------------------
-
 import React, { useState, useEffect, useRef } from "react";
 import {
   Home, Wallet, Calendar as CalendarIcon, CreditCard, CheckSquare,
@@ -165,7 +162,7 @@ export default function App() {
   const [isIconSelectorOpen, setIsIconSelectorOpen] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   
-  // FIXED ITEM #5 & #9: Real-time queries and collaborative state parameters
+  // Real-time queries and collaborative state parameters
   const [categorySearchQuery, setCategorySearchQuery] = useState("");
   const [entryVisibility, setEntryVisibility] = useState("Shared"); 
   const [coOpStep, setCoOpStep] = useState(1); 
@@ -205,7 +202,7 @@ export default function App() {
   });
   const categoryEmojis = ["💵", "💲", "🤑", "💰", "🏦", "💹", "₿", "💎", "💳", "🧾", "📋", "💼", "🏠", "🏢", "🔑", "🛋️", "🧹", "💧", "⚡", "📶", "📡", "☁️", "📺", "🎬", "🍿", "🎵", "🎧", "🚗", "🚲", "🚂", "✈️", "⛽", "🛠️", "🅿️", "🎫", "🚕", "🚇", "🛒", "🛍️", "📦", "👕", "👗", "👟", "💅", "💄", "💈", "🕶️", "💍", "🍔", "🍕", "🌮", "🍣", "🥗", "🍳", "☕", "🍦", "🍻", "🍹", "🍷", "🏥", "💊", "🦷", "👓", "🧘", "🏋️", "🐾", "🐶", "🎁", "🎉", "🎟️", "🎮", "🕹️", "📱", "💻", "⌚", "🤖", "🚀", "🌴", "🎓", "🏪", "🎯", "🏖️", "👶", "🛡️", "🏍️", "🎸", "⛵"];
 
-  // FIXED ITEM #6 & #7: CONSOLIDATED DYNAMIC COMPONENT DATA FOR TAXONOMY MATRIX
+  // CONSOLIDATED DYNAMIC COMPONENT DATA FOR TAXONOMY MATRIX
   const [modernCategories, setModernCategories] = useState([
     { group: "Income & Wealth", items: ["Primary Salary", "Side Hustle / Gig", "Tips / Cash", "Investments / Crypto", "Transfers (Venmo/Zelle)", "Refunds & Adjustments", "Cash App", "PayDay Loans", "Unemployment", "Retirement / 401k", "Benefits", "My Goals"] },
     { group: "Housing & Utilities", items: ["Rent / Mortgage", "Electric / Gas", "Water / Trash", "Internet / Wi-Fi", "Home Goods / Maintenance", "Cell Phone"] },
@@ -218,8 +215,7 @@ export default function App() {
     { group: "Entrepreneur", items: ["Domain / Hosting", "Software / SaaS", "AI Subscriptions", "Marketing & Ads", "Contractors & Freelancers", "Business Fees / LLC", "Office Supplies"] },
     { group: "Other", items: ["Miscellaneous Expense", "Charity / Gifts", "Other"] }
   ]);
-
-  const triggerHaptic = (pattern = 50) => {
+const triggerHaptic = (pattern = 50) => {
     if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) {
       window.navigator.vibrate(pattern);
     }
@@ -249,7 +245,7 @@ export default function App() {
     }
   };
 
-  // FIXED ITEM #9: SMART DEFAULTING MATRIX STATE SYNCHRONIZATION HOOK
+  // SMART DEFAULTING MATRIX STATE SYNCHRONIZATION HOOK
   useEffect(() => {
     if (drawerTab === "bills") setEntryVisibility("Shared");
     else if (drawerTab === "transactions") setEntryVisibility("Private");
@@ -294,7 +290,7 @@ export default function App() {
     const unsubTodos = onSnapshot(query(collection(userRef, "todos"), orderBy("createdAt", "desc")), (snap) => setTodos(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     const unsubConfig = onSnapshot(doc(db, "users", user.uid, "settings", "paydayConfig"), (docSnap) => { if (docSnap.exists()) setPaydayConfig({ frequency: "Weekly", ...docSnap.data() }); });
     
-    // FIXED ITEM #8: THE SILENT MIGRATION INITIALIZATION SCRIPT DETECTS AND RE-MAPS LEGACY KEYS
+    // THE SILENT MIGRATION INITIALIZATION SCRIPT DETECTS AND RE-MAPS LEGACY KEYS
     const executeSilentMigration = async () => {
       try {
         const legacyFlatData = localStorage.getItem("lp_custom_categories_flat");
@@ -390,6 +386,7 @@ export default function App() {
     }, 1000);
     return () => clearInterval(timer);
   }, [manualThemeOverride]);
+
   // === SELECTED ACCOUNT BOUND STATE POPULATOR ===
   useEffect(() => {
     if (selectedAccount) {
@@ -497,7 +494,6 @@ export default function App() {
   const toggleCollapse = (payday) => setCollapsedPaydays((prev) => ({ ...prev, [payday]: !prev[payday] }));
   const openEntryDrawer = (entry) => { setSelectedEntry(entry); setIsEditingEntry(false); };
   const closeEntryDrawer = () => { setSelectedEntry(null); setIsEditingEntry(false); };
-  
   const executeRolloverCore = async () => {
     const batchPromises = [];
     bills.forEach(bill => {
@@ -572,16 +568,17 @@ export default function App() {
     if (completed.length === 0) return;
     openGlobalAction("Clear Tasks", "Delete all completed tasks from the board?", "Delete", true, async () => {
       if (isDemoMode) {
-         setTodos(todos.filter(t => !t.isCompleted));
+          setTodos(todos.filter(t => !t.isCompleted));
       } else {
-         setTodos(todos.filter(t => !t.isCompleted));
-         const batchPromises = completed.map(t => deleteDoc(doc(db, "users", user.uid, "todos", t.id)));
-         await Promise.all(batchPromises);
+          setTodos(todos.filter(t => !t.isCompleted));
+          const batchPromises = completed.map(t => deleteDoc(doc(db, "users", user.uid, "todos", t.id)));
+          await Promise.all(batchPromises);
       }
       triggerHaptic(50);
       setGlobalActionConfig(prev => ({ ...prev, isOpen: false }));
     });
   };
+
   const handleBillClick = async (id) => {
     const bill = bills.find(b => b.id === id);
     if (!bill) return;
@@ -717,9 +714,9 @@ export default function App() {
     }
     triggerVictory();
     setIsAddGoalOpen(false);
-    newGoalName("");
-    newGoalAmount("");
-    newGoalDate("");
+    setNewGoalName("");
+    setNewGoalAmount("");
+    setNewGoalDate("");
     setNewGoalIcon("🎯");
   };
 
@@ -774,6 +771,7 @@ export default function App() {
     }
     setIsTransferOpen(false); setTransferAmount("0"); setTransferFrom(""); setTransferTo("");
   };
+
   const handleCashOutGoalSubmit = async (e) => {
     if (e) e.preventDefault();
     const amt = parseFloat(cashOutAmount);
@@ -913,7 +911,6 @@ export default function App() {
     }
     return assignedPd;
   };
-  
   const dynamicBills = bills.map(bill => {
     let currentPayday = bill.payday;
     let isOverdue = bill.isOverdue || false;
@@ -1062,7 +1059,6 @@ export default function App() {
 
   const closeQab = () => { setIsQabOpen(false); setQabStep(1); setInputValue("0"); setEntryName(""); setEntryDate(""); setEntryIcon("🧾"); setEntryCategory(""); setEntryAccount(""); setEntryIsRecurring(false); setEntryIsInstallment(false); setEntryTotalAmount(""); setEntryPaidAmount(""); setIsCategorySelectorOpen(false); setIsIconSelectorOpen(false); setCategorySearchQuery(""); setCustomCategoryInput(""); };
   
-  // ITEM #1: TWO-STEP DEFENSE WHITESPACE BLOCKER AND SANITIZER FOR NUMPAD ENGINE
   const handleNumpad = (btn) => {
     triggerHaptic(15);
     if (btn === " ") return; 
@@ -1081,7 +1077,6 @@ export default function App() {
     });
   };
 
-  // ITEM #6 & #7: CUSTOM SUB-CATEGORY APPENDEE HANDLER INTEGRATED INTO STATE LIST
   const handleAddCustomCategory = (groupName, newCatName) => {
     if (!newCatName.trim()) return;
     triggerHaptic(30);
@@ -1336,7 +1331,7 @@ export default function App() {
             <button onClick={() => { triggerHaptic(20); setIsQabOpen(true); }} className={`w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg border-4 ${isDarkMode ? "border-[#0F172A]" : "border-white"}`} style={{ backgroundColor: signatureColor }}><Plus size={28} /></button>
           </div>
 
-          {/* RESPONSIVE MOBILE NAVIGATION DOCK (FIXED CONTRAST HARDCODING REFACTOR WITH PURE MARGIN WRAPPERS) */}
+          {/* RESPONSIVE MOBILE NAVIGATION DOCK */}
           <div className={`lg:hidden fixed ${isDemoMode ? "bottom-[120px]" : "bottom-0"} left-0 w-full backdrop-blur-md border-t px-2 h-[88px] pb-4 pt-2 flex justify-between items-center z-[100] ${isDarkMode ? "bg-[#1E293B]/95 border-slate-800" : "bg-white/95 border-slate-100"}`}>
             {[{ id: "home", icon: Home, label: "Home" }, { id: "accounts", icon: Wallet, label: "Accounts" }, { id: "bills", icon: CalendarIcon, label: "Bills" }, { id: "activity", icon: CreditCard, label: "Activity" }, { id: "todo", icon: CheckSquare, label: "To-Do" }].map((tab) => (
               <button key={tab.id} onClick={() => changeTab(tab.id)} className="flex-1 flex flex-col items-center justify-center gap-1 group h-full">
@@ -1693,7 +1688,7 @@ export default function App() {
                   <select value={cashOutToAccount} onChange={(e) => setCashOutToAccount(e.target.value)} className="w-full pt-6 pb-2 px-5 rounded-2xl border font-bold text-sm appearance-none transition-colors outline-none focus:border-slate-400 dark:focus:border-slate-500 bg-transparent relative z-10">
                     <option value="" disabled>Select liquid account...</option>
                     {accounts.filter(a => !a.isGoal && (a.type === "Checking" || a.type === "Savings" || a.type === "Cash")).map(a => (
-                      <option key={a.id} value={a.id} className={isDarkMode ? "bg-[#1E293B]" : "bg-white"}>{a.name} (${(a.balance || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })})</option>
+                      <option key={a.id} value={a.id} className={isDarkMode ? "bg-[#1E293B]" : "bg-white"}>{a.name} (${(a.balance || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}). </option>
                     ))}
                   </select>
                 </div>
@@ -1812,7 +1807,7 @@ export default function App() {
                   <div className="relative">
                     <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Pay From Account</label>
                     <select value={paymentModalConfig.accountId} onChange={(e) => setPaymentModalConfig({ ...paymentModalConfig, accountId: e.target.value })} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
-                      {accounts.map((a) => (<option key={a.id} value={a.id} className={isDarkMode ? "bg-[#1E293B]" : "bg-white"}>{a.name} (${(a.balance || 0).toFixed(2)})</option>))}
+                      {accounts.filter(a => !a.isGoal && (a.type === "Checking" || a.type === "Cash")).map((a) => (<option key={a.id} value={a.id} className={isDarkMode ? "bg-[#1E293B]" : "bg-white"}>{a.name} (${(a.balance || 0).toFixed(2)})</option>))}
                     </select>
                   </div>
                   {isPayInFullAvailable && (
@@ -1987,7 +1982,7 @@ export default function App() {
                             <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account</label>
                             <select disabled value={editEntryData.accountId || ""} onChange={(e) => setEditEntryData({...editEntryData, accountId: e.target.value})} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors opacity-70 cursor-not-allowed ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
                                <option value="" disabled>Which account paid for this activity?</option>
-                               {accounts.map((a) => (<option key={a.id} value={a.id} className={isDarkMode ? "bg-[#1E293B] text-white" : "bg-white text-slate-900"}>{a.name}</option>))}
+                               {accounts.map((a) => (<option key={a.id} value={a.id} className={isDarkMode ? "bg-[#1E293B]" : "bg-white"}>{a.name}</option>))}
                             </select>
                          </div>
                       )}
@@ -2035,7 +2030,6 @@ export default function App() {
           </div>
         )}
 
-        {/* FIXED ITEM #1: SHORTENED HEIGHT FOR THE MOBILE INTERFACE VIEW WITH FLEX GROW DISMISSAL */}
         {isQabOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeQab}></div>
@@ -2171,7 +2165,6 @@ export default function App() {
                         </>
                      )}
                      
-                     {/* FIXED ITEM #2 & #3: CONVERSATIONAL PLACEHOLDER LOGIC RESTORATION */}
                      {(drawerTab === "income" || drawerTab === "transactions") && (
                         <div className="relative">
                            <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account mapping</label>
@@ -2182,7 +2175,6 @@ export default function App() {
                         </div>
                      )}
 
-                     {/* FIXED ITEM #9: LIVE WIRED PERMISSIVE PRIVACY WORKSPACE SLIDER COMPONENT */}
                      {coOpStep === 3 && (
                        <div className={`p-3.5 rounded-2xl border flex items-center justify-between ${isDarkMode ? "bg-slate-900/50 border-slate-800" : "bg-slate-50 border-slate-100"}`}>
                          <div className="flex flex-col">
@@ -2203,7 +2195,6 @@ export default function App() {
                  )}
                </div>
 
-               {/* FIXED ITEM #4 & #5 & #6 & #7: CLEAN CATEGORY LAYER WITH HIGH-CONTRAST HEADER ESCAPE HOOK */}
                {isCategorySelectorOpen && (() => {
                  const lowerQuery = categorySearchQuery.toLowerCase().trim();
                  const filteredCategories = categoriesToRender.map(group => {
@@ -2213,13 +2204,11 @@ export default function App() {
 
                  return (
                     <div className={`absolute inset-0 z-[140] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
-                        {/* FIXED ITEM #4: CLEAN RESTORATION OF SPECIFIC TEXT VALUE DESCRIPTION TITLE */}
                         <div className={`p-4 border-b flex justify-between items-center shrink-0 ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
                            <h3 className={`font-black uppercase text-xs tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Select Category</h3>
                            <button onClick={() => { setIsCategorySelectorOpen(false); setCategorySearchQuery(""); setCustomCategoryInput(""); }} className={closeButtonClass}><X size={18}/></button>
                         </div>
                         
-                        {/* FIXED ITEM #5: JARGON DROPPED IN FAVOR OF CLEAN CAPS LOCK DESCRIPTION PROMPT TEXT */}
                         <div className={`p-4 border-b shrink-0 ${isDarkMode ? "bg-slate-900/30 border-slate-700" : "bg-slate-50/50 border-slate-100"}`}>
                           <div className={`w-full flex items-center gap-2.5 px-4 py-2.5 rounded-xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 focus-within:border-slate-500" : "bg-white border-slate-200 focus-within:border-slate-400"}`}>
                             <Search size={14} className="text-slate-400 shrink-0" />
@@ -2248,8 +2237,6 @@ export default function App() {
                                <div key={group.group} className={`p-4 rounded-2xl border ${isDarkMode ? "bg-slate-900/40 border-slate-800" : "bg-white border-slate-100 shadow-sm"}`}>
                                  <div className="flex justify-between items-center mb-3 pb-1 border-b border-dashed dark:border-slate-800 border-slate-100">
                                    <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">{group.group}</p>
-                                   
-                                   {/* FIXED ITEM #6 & #7: ACCURATE SYSTEM BLUE LINK WITH HIGH-FIDELITY CUSTOM INTEGRATED CAPTURE ROUTINE */}
                                    <button 
                                      onClick={() => {
                                        const instructionText = `Enter custom sub-category name for the "${group.group}" category.`;

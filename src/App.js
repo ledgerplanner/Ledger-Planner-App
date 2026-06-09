@@ -284,10 +284,11 @@ export default function App() {
   useEffect(() => {
     if (!isMounted || isDemoMode || !user) return;
     const userRef = doc(db, "users", user.uid);
-    const unsubAcc = onSnapshot(collection(userRef, "accounts"), (snap) => setAccounts(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(a => !a.isArchived)));
-    const unsubBills = onSnapshot(collection(userRef, "bills"), (snap) => setBills(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-    const unsubTxs = onSnapshot(query(collection(userRef, "transactions"), orderBy("createdAt", "desc")), (snap) => setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-    const unsubTodos = onSnapshot(query(collection(userRef, "todos"), orderBy("createdAt", "desc")), (snap) => setTodos(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    // 🚨 SURGICAL FIX: The ...d.data(), id: d.id order forces Firebase's secure ID to override any temporary local ID
+    const unsubAcc = onSnapshot(collection(userRef, "accounts"), (snap) => setAccounts(snap.docs.map(d => ({ ...d.data(), id: d.id })).filter(a => !a.isArchived)));
+    const unsubBills = onSnapshot(collection(userRef, "bills"), (snap) => setBills(snap.docs.map(d => ({ ...d.data(), id: d.id }))));
+    const unsubTxs = onSnapshot(query(collection(userRef, "transactions"), orderBy("createdAt", "desc")), (snap) => setTransactions(snap.docs.map(d => ({ ...d.data(), id: d.id }))));
+    const unsubTodos = onSnapshot(query(collection(userRef, "todos"), orderBy("createdAt", "desc")), (snap) => setTodos(snap.docs.map(d => ({ ...d.data(), id: d.id }))));
     const unsubConfig = onSnapshot(doc(db, "users", user.uid, "settings", "paydayConfig"), (docSnap) => { if (docSnap.exists()) setPaydayConfig({ frequency: "Weekly", ...docSnap.data() }); });
     
     // THE SILENT MIGRATION INITIALIZATION SCRIPT DETECTS AND RE-MAPS LEGACY KEYS
@@ -2230,7 +2231,6 @@ export default function App() {
                             <Search size={14} className="text-slate-400 shrink-0" />
                             <input 
                               type="text"
-                              autoFocus
                               placeholder="SEARCH CATEGORIES"
                               value={categorySearchQuery}
                               onChange={(e) => setCategorySearchQuery(e.target.value)}

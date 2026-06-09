@@ -64,7 +64,7 @@ export default function Bills({
     return () => window.removeEventListener("resize", centerActiveMonthCard);
   }, []);
 
-  const currentYear = 2026;
+  const currentYear = new Date().getFullYear();
   const currentMonthIndex = new Date().getMonth();
   const monthsData = [
     { name: "January", short: "Jan", idx: 0 },
@@ -135,6 +135,10 @@ export default function Bills({
 
       if (bYear !== currentYear) return false;
 
+      if (b.isPaid) {
+        return bMonth === mIdx;
+      }
+
       if (mIdx === currentMonthIndex) {
         const isPastUnpaidDebt = bMonth < currentMonthIndex && !b.isPaid;
         const isCurrentMonthItem = bMonth === currentMonthIndex;
@@ -142,7 +146,7 @@ export default function Bills({
       }
 
       if (mIdx < currentMonthIndex) {
-        return bMonth === mIdx && b.isPaid;
+        return false;
       }
 
       if (mIdx > currentMonthIndex) {
@@ -155,9 +159,9 @@ export default function Bills({
     const totalDue = monthBills
       .filter((b) => !b.isPaid)
       .reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
-    const totalPaid = mIdx <= currentMonthIndex
-      ? monthBills.filter((b) => b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0)
-      : 0;
+    const totalPaid = monthBills
+      .filter((b) => b.isPaid)
+      .reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
     return { monthBills, totalDue, totalPaid };
   };
 
@@ -194,7 +198,7 @@ export default function Bills({
   const horizonBills = bills.filter((b) => {
     if (!b.rawDate) return false;
     const parts = b.rawDate.split("-");
-    return parts.length === 3 && parseInt(parts[0], 10) === 2027;
+    return parts.length === 3 && parseInt(parts[0], 10) === (currentYear + 1);
   });
   const horizonTotalDue = horizonBills
     .filter((b) => !b.isPaid)
@@ -382,7 +386,7 @@ export default function Bills({
           >
             <div className="w-full flex justify-center items-center">
               <h4 className={`text-[10px] font-black uppercase tracking-widest text-center ${selectedMonth === 12 ? "text-[#1877F2]" : "text-slate-400"}`}>
-                BILLS IN 2027
+                BILLS IN {currentYear + 1}
               </h4>
             </div>
             <div className="text-center pt-1.5 pb-1">
@@ -513,7 +517,7 @@ export default function Bills({
 
             return (
               <div key={m.idx} id={`month-accordion-${m.idx}`} className="space-y-2 scroll-mt-24">
-               
+                
                 <div
                   className="flex flex-col px-2 py-4 cursor-pointer transition-colors"
                   onClick={() => toggleMonthAccordion(m.idx)}
@@ -640,7 +644,7 @@ export default function Bills({
                 <div className="flex flex-col">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className={`text-sm font-black uppercase tracking-widest ${selectedMonth === 12 ? "text-[#1877F2]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
-                      BILLS IN 2027
+                      BILLS IN {currentYear + 1}
                     </h3>
                     <div className="text-slate-500">{expandedMonthIdx !== 12 ? <ChevronDown size={16} /> : <ChevronUp size={16} />}</div>
                   </div>
@@ -662,7 +666,7 @@ export default function Bills({
             {expandedMonthIdx === 12 && (
               <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
                 {horizonBills.filter(b => !b.isPaid).length === 0 ? (
-                  <p className="text-center py-5 text-xs font-bold text-slate-400">No unpaid bills on the board for 2027.</p>
+                  <p className="text-center py-5 text-xs font-bold text-slate-400">No unpaid bills on the board for {currentYear + 1}.</p>
                 ) : (
                   <div className="space-y-3">
                     {sortBillsSurgically(horizonBills.filter(b => !b.isPaid)).map((bill) => (

@@ -215,7 +215,7 @@ export default function App() {
     { group: "Entrepreneur", items: ["Domain / Hosting", "Software / SaaS", "AI Subscriptions", "Marketing & Ads", "Contractors & Freelancers", "Business Fees / LLC", "Office Supplies"] },
     { group: "Other", items: ["Miscellaneous Expense", "Charity / Gifts", "Other"] }
   ]);
-const triggerHaptic = (pattern = 50) => {
+  const triggerHaptic = (pattern = 50) => {
     if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) {
       window.navigator.vibrate(pattern);
     }
@@ -421,7 +421,6 @@ const triggerHaptic = (pattern = 50) => {
       hasInitializedCollapse.current = true;
     }
   }, [bills]);
-
   const handleOpenPaydaySetup = () => {
     setEditPaydayConfig(paydayConfig);
     setIsPaydaySetupOpen(true);
@@ -670,6 +669,327 @@ const triggerHaptic = (pattern = 50) => {
     setSelectedEntry({ ...selectedEntry, ...updatePayload });
     setIsEditingEntry(false); triggerVictory();
   };
+  const handleAddAccount = async () => {
+    const startBal = parseFloat(newAccBalance);
+    if (!newAccName.trim() || isNaN(startBal)) return;
+
+    let finalBalance = Math.abs(startBal);
+    if (newAccIsNegative) finalBalance = -finalBalance;
+
+    const getIcon = (type) => { if (type === "Credit Card") return "💳";
+    if (type === "401k / Retirement") return "🌴"; if (type === "Savings") return "📈";
+    if (type === "Cash") return "💵"; return "🏦"; };
+
+    if (isDemoMode) {
+      const newAcc = { id: `acc_demo_${Date.now()}`, name: newAccName, type: newAccType, description: newAccDesc, balance: finalBalance, icon: getIcon(newAccType) };
+      setAccounts([...accounts, newAcc]);
+    } else {
+      const accRef = await addDoc(collection(db, "users", user.uid, "accounts"), { name: newAccName, type: newAccType, description: newAccDesc, balance: finalBalance, icon: getIcon(newAccType), isArchived: false });
+      if (Math.abs(startBal) > 0) {
+        const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+        await addDoc(collection(db, "users", user.uid, "transactions"), { name: `${newAccName} (Opening)`, icon: getIcon(newAccType), amount: Math.abs(startBal), date: autoTimeStamp, type: finalBalance < 0 ? "Expense" : "Income", category: finalBalance < 0 ? "Initial Debt" : "Opening Balance", accountId: accRef.id, createdAt: serverTimestamp() });
+      }
+    }
+    triggerVictory(); setIsAddAccountOpen(false); setNewAccName(""); setNewAccBalance(""); setNewAccDesc(""); setNewAccType("Checking"); setNewAccIsNegative(false);
+  };
+
+  const handleAddGoal = async () => {
+    const targetBal = parseFloat(newGoalAmount);
+    if (!newGoalName.trim() || isNaN(targetBal) || targetBal <= 0 || !newGoalDate || !newGoalIcon) return;
+    const newGoal = {
+      name: newGoalName,
+      type: "Goal",
+      description: "Savings Goal",
+      balance: 0,
+      targetAmount: targetBal,
+      targetDate: newGoalDate,
+      icon: newGoalIcon,
+      isGoal: true,
+      isArchived: false
+    };
+    if (isDemoMode) {
+      setAccounts([...accounts, { id: `goal_demo_${Date.now()}`, ...newGoal }]);
+    } else {
+      await addDoc(collection(db, "users", user.uid, "accounts"), newGoal);
+    }
+    triggerVictory();
+    setIsAddGoalOpen(false);
+    setNewGoalName("");
+    setNewGoalAmount("");
+    setNewGoalDate("");
+    setNewGoalIcon("🎯");
+  };
+
+  const handleTransferNumpad = (btn) => {
+    triggerHaptic(15);
+    if (btn === "=") {
+      try { const toEval = transferAmount.replace(/×/g, "*").replace(/÷/g, "/"); if (/^[0-9+\-*/. ]+$/.test(toEval)) setTransferAmount(String(Function('"use strict";return (' + toEval + ")")())); }
+      catch (e) { setTransferAmount("Error"); setTimeout(() => setTransferAmount("0"), 1000); }
+    } else if (transferAmount === "0" && btn !== ".") setTransferAmount(btn);
+    else setTransferAmount(transferAmount + btn);
+  };
+
+  const executeTransfer = async () => {
+    const amt = parseFloat(transferAmount);
+    if (isNaN(amt) || amt <= 0 || !transferFrom || !transferTo) return;
+    const fromAcc = accounts.find(a => a.id === transferFrom);
+    const toAcc = accounts.find(a => a.id === transferTo);
+    if (!fromAcc || !toAcc) return;
+
+    const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+    const sentName = `${fromAcc.name} → ${toAcc.name} (Sent)`;
+    const receivedName = `${fromAcc.name} → ${toAcc.name} (Received)`;
+
+    const oldToBalance = toAcc.balance || 0;
+    const newToBalance = oldToBalance + amt;
+    const isGoalCompleted = toAcc.isGoal && oldToBalance < (toAcc.targetAmount || 0) && newToBalance >= (toAcc.targetAmount || 0);
+
+    if (isDemoMode) {
+      setAccounts(accounts.map(a => {
+        if(a.id === fromAcc.id) return { ...a, balance: a.balance - amt };
+        if(a.id === toAcc.id) return { ...a, balance: a.balance + amt };
+        return a;
+      }));
+      const txId1 = `tx_demo_${Date.now()}_1`;
+      const txId2 = `tx_demo_${Date.now()}_2`;
+      setTransactions([
+        { id: txId1, name: sentName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Expense", category: "Transfers (Venmo/Zelle)", accountId: fromAcc.id },
+        { id: txId2, name: receivedName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: toAcc.id },
+        ...transactions
+      ]);
+    } else {
+      await updateDoc(doc(db, "users", user.uid, "accounts", fromAcc.id), { balance: fromAcc.balance - amt });
+      await updateDoc(doc(db, "users", user.uid, "accounts", toAcc.id), { balance: toAcc.balance + amt });
+      await addDoc(collection(db, "users", user.uid, "transactions"), { name: sentName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Expense", category: "Transfers (Venmo/Zelle)", accountId: fromAcc.id, createdAt: serverTimestamp() });
+      await addDoc(collection(db, "users", user.uid, "transactions"), { name: receivedName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: toAcc.id, createdAt: serverTimestamp() });
+    }
+
+    if (isGoalCompleted) {
+      triggerVictory(); 
+    } else {
+      triggerHaptic(50);
+    }
+    setIsTransferOpen(false); setTransferAmount("0"); setTransferFrom(""); setTransferTo("");
+  };
+
+  const handleCashOutGoalSubmit = async (e) => {
+    if (e) e.preventDefault();
+    const amt = parseFloat(cashOutAmount);
+    if (isNaN(amt) || amt <= 0 || !cashOutGoal || !cashOutToAccount) return;
+    if (amt > cashOutGoal.balance) return; 
+
+    const destAcc = accounts.find(a => a.id === cashOutToAccount);
+    if (!destAcc) return;
+
+    const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+    const txName = `Goal Cash Out: ${cashOutGoal.name} → ${destAcc.name}`;
+
+    if (isDemoMode) {
+      setAccounts(accounts.map(a => {
+        if (a.id === cashOutGoal.id) return { ...a, balance: a.balance - amt };
+        if (a.id === destAcc.id) return { ...a, balance: a.balance + amt };
+        return a;
+      }));
+      setTransactions([
+        { id: `tx_demo_co_${Date.now()}`, name: txName, icon: "🎯", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: destAcc.id },
+        ...transactions
+      ]);
+    } else {
+      await updateDoc(doc(db, "users", user.uid, "accounts", cashOutGoal.id), { balance: cashOutGoal.balance - amt });
+      await updateDoc(doc(db, "users", user.uid, "accounts", destAcc.id), { balance: destAcc.balance + amt });
+      await addDoc(collection(db, "users", user.uid, "transactions"), { name: txName, icon: "🎯", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: destAcc.id, createdAt: serverTimestamp() });
+    }
+
+    triggerHaptic(50);
+    setIsCashOutOpen(false);
+    setCashOutGoal(null);
+    setCashOutAmount("0");
+    setCashOutToAccount("");
+  };
+
+  const handleCashOutNumpad = (btn) => {
+    triggerHaptic(15);
+    if (!cashOutGoal) return;
+    if (btn === "CLR") {
+      setCashOutAmount("0");
+    } else if (cashOutAmount === "0" && btn !== ".") {
+      setCashOutAmount(btn);
+    } else {
+      const nextVal = cashOutAmount + btn;
+      if (parseFloat(nextVal) <= cashOutGoal.balance) {
+        setCashOutAmount(nextVal);
+      }
+    }
+  };
+
+  const updateAccountBalance = async () => {
+    const newBal = parseFloat(editAccountBalance);
+    if (isNaN(newBal) || !selectedAccount) return;
+
+    let finalBalance = Math.abs(newBal);
+    if (editAccIsNegative) finalBalance = -finalBalance;
+
+    const diff = finalBalance - (selectedAccount.balance || 0);
+
+    const updatePayload = {
+      balance: finalBalance,
+      description: editAccountDesc,
+      name: editAccountName,
+      icon: editAccountIcon
+    };
+    if (selectedAccount.isGoal) {
+      updatePayload.targetDate = editAccountTargetDate;
+    }
+
+    if (isDemoMode) {
+      setAccounts(accounts.map(a => a.id === selectedAccount.id ? { ...a, ...updatePayload } : a));
+    } else {
+      if (Math.abs(diff) > 0.01) {
+        const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+        await addDoc(collection(db, "users", user.uid, "transactions"), { name: "Balance Adjustment", icon: "⚖️", amount: Math.abs(diff), date: autoTimeStamp, type: diff > 0 ? "Income" : "Expense", category: "Refunds & Adjustments", accountId: selectedAccount.id, createdAt: serverTimestamp() });
+      }
+      await updateDoc(doc(db, "users", user.uid, "accounts", selectedAccount.id), updatePayload);
+    }
+    triggerVictory(); setSelectedAccount(null);
+  };
+
+  const deleteAccount = async () => {
+    if (!selectedAccount) return;
+
+    openGlobalAction("Delete Account", `Are you sure you want to permanently delete ${selectedAccount.name}? This will unlink related transactions.`, "Delete", true, async () => {
+      const accId = selectedAccount.id;
+      if (isDemoMode) { setAccounts(accounts.filter(a => a.id !== accId)); }
+      else {
+        await deleteDoc(doc(db, "users", user.uid, "accounts", accId));
+        const txsToDelete = transactions.filter(tx => tx.accountId === accId);
+        const batchPromises = txsToDelete.map(tx => deleteDoc(doc(db, "users", user.uid, "transactions", tx.id)));
+        const billsToReset = bills.filter(b => b.paidFromAccountId === accId);
+        billsToReset.forEach(b => { batchPromises.push(updateDoc(doc(db, "users", user.uid, "bills", b.id), { isPaid: false, paidAmount: b.isInstallment ? (b.paidAmount || 0) - (b.amount || 0) : 0, paidFromAccountId: null, linkedTxId: null })); });
+        await Promise.all(batchPromises);
+      }
+      triggerHaptic(50); setSelectedAccount(null); setGlobalActionConfig(prev => ({ ...prev, isOpen: false }));
+    });
+  };
+
+  const clearPaydayConfig = () => { setEditPaydayConfig({ frequency: "Weekly", "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } });
+    triggerHaptic(50); };
+  const savePaydayConfig = async () => {
+    setPaydayConfig(editPaydayConfig);
+    if (!isDemoMode) { await setDoc(doc(db, "users", user.uid, "settings", "paydayConfig"), editPaydayConfig); }
+    setIsPaydaySetupOpen(false); triggerVictory();
+  };
+  
+  const todayForDynamic = new Date(); todayForDynamic.setHours(0, 0, 0, 0);
+  
+  const calculatePaydayGroup = (dateString) => {
+    if (!dateString) return "Unscheduled";
+    const billDate = new Date(dateString);
+    if (isNaN(billDate.getTime())) return "Unscheduled";
+
+    const todayLocal = new Date(); todayLocal.setHours(0, 0, 0, 0);
+    const localBillDate = new Date(billDate.getUTCFullYear(), billDate.getUTCMonth(), billDate.getUTCDate());
+    if (localBillDate < todayLocal || localBillDate.getTime() === todayLocal.getTime()) return "Due Now";
+    const activePaydays = [];
+    for (let i = 1; i <= 5; i++) {
+      const pdId = `Payday ${i}`;
+      if (paydayConfig && paydayConfig[pdId] && paydayConfig[pdId].date) {
+        const d = new Date(paydayConfig[pdId].date);
+        if (!isNaN(d.getTime())) activePaydays.push({ id: pdId, date: d });
+      }
+    }
+    if (activePaydays.length === 0) return "Unscheduled";
+    activePaydays.sort((a, b) => a.date - b.date);
+    const lastPayday = activePaydays[activePaydays.length - 1].date;
+    const horizonDate = new Date(lastPayday);
+    horizonDate.setDate(horizonDate.getDate() + 7);
+    if (localBillDate > horizonDate) return "Unscheduled";
+    if (billDate < activePaydays[0].date) return activePaydays[0].id;
+    let assignedPd = activePaydays[0].id;
+    for (let i = 0; i < activePaydays.length; i++) {
+      if (billDate >= activePaydays[i].date) assignedPd = activePaydays[i].id;
+      else break;
+    }
+    return assignedPd;
+  };
+  const dynamicBills = bills.map(bill => {
+    let currentPayday = bill.payday;
+    let isOverdue = bill.isOverdue || false;
+    if (bill.rawDate && !bill.isPaid) {
+      const bDate = new Date(bill.rawDate);
+      if (!isNaN(bDate.getTime())) {
+          const localBDate = new Date(bDate.getUTCFullYear(), bDate.getUTCMonth(), bDate.getUTCDate());
+
+          if (localBDate < todayForDynamic) {
+              currentPayday = "Due Now";
+              isOverdue = true;
+          } else if (localBDate.getTime() === todayForDynamic.getTime()) {
+              currentPayday = "Due Now";
+              isOverdue = false;
+          } else {
+              currentPayday = calculatePaydayGroup(bill.rawDate);
+              isOverdue = false;
+          }
+      }
+    }
+    return { ...bill, payday: currentPayday || "Unscheduled", isOverdue: isOverdue };
+  }).sort((a, b) => {
+    if (a.isOverdue && !b.isOverdue) return -1;
+    if (!a.isOverdue && b.isOverdue) return 1;
+    if (a.payday === "Due Now" && b.payday !== "Due Now") return -1;
+    if (a.payday !== "Due Now" && b.payday === "Due Now") return 1;
+    if (!a.rawDate) return 1; if (!b.rawDate) return -1;
+    return new Date(a.rawDate || 0) - new Date(b.rawDate || 0);
+  });
+
+  const generateAlerts = () => {
+    const currentAlerts = [];
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    if (needsRefresh) {
+      currentAlerts.unshift({
+        id: 'refresh-required',
+        type: 'danger',
+        icon: <RefreshCw size={20} className="text-red-500 animate-[spin_3s_linear_infinite]" />,
+        title: 'System Update',
+        message: 'New month detected. Refresh to initialize the new vault.',
+        time: 'REQUIRED',
+        action: () => window.location.reload()
+      });
+    }
+    const actionBills = dynamicBills.filter(b => b.isOverdue || (!b.isPaid && b.payday === "Due Now"));
+    actionBills.forEach(b => { currentAlerts.push({ id: `action-${b.id}`, type: 'danger', icon: <AlertCircle size={20} className="text-red-500" />, title: 'Action Required', message: `Your ${b.name || "Bill"} is ${b.isOverdue ? 'past due' : 'due now'}.`, amount: b.amount || 0, time: b.isOverdue ? 'URGENT' : 'TODAY', action: () => { setIsNotificationsOpen(false); changeTab("bills"); } }); });
+    const upcomingRecurring = dynamicBills.filter(b => !b.isPaid && b.isRecurring && !b.isOverdue && b.payday !== "Due Now" && b.payday !== "Unscheduled");
+    upcomingRecurring.forEach(b => { if (b.rawDate) { const bDate = new Date(b.rawDate); if (!isNaN(bDate.getTime())) { const diffDays = Math.ceil((bDate - today) / (1000 * 60 * 60 * 24)); if (diffDays >= 0 && diffDays <= 2) { currentAlerts.push({ id: `sub-${b.id}`, type: 'info', icon: <RefreshCw size={20} className="text-[#10B981]" />, title: 'Subscription Nudge', message: `${b.name || "Subscription"} is recurring in ${diffDays} day(s).`, amount: b.amount || 0, time: `${diffDays}D`, action: () => { setIsNotificationsOpen(false); changeTab("bills"); } }); } } } });
+    ["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].forEach(pdId => {
+      const config = paydayConfig?.[pdId];
+      if (config && config.date) {
+        const pdDate = new Date(config.date);
+        if (!isNaN(pdDate.getTime())) {
+            pdDate.setUTCHours(0, 0, 0, 0);
+            const diffDays = Math.ceil((pdDate - today) / (1000 * 60 * 60 * 24));
+            if (diffDays >= 0 && diffDays <= 3) { currentAlerts.push({ id: `payday-${pdId}`, type: 'info', icon: <CalendarIcon size={20} className="text-[#1877F2]" />, title: 'Upcoming Payday', message: `${pdId} is approaching.`, time: `${diffDays}D`, action: () => { setIsNotificationsOpen(false); handleOpenPaydaySetup(); } });
+            }
+            const pdBills = bills.filter(b => b.payday === pdId && !b.isPaid);
+            const pdTotal = pdBills.reduce((sum, b) => sum + (b.amount || 0), 0);
+            const pdIncome = parseFloat(config.income) || 0;
+            if (pdTotal > pdIncome && pdIncome > 0) { currentAlerts.push({ id: `gap-${pdId}`, type: 'warning', icon: <ArrowDown size={20} className="text-orange-500" />, title: 'Liquidity Gap', message: `${pdId} is $${(pdTotal - pdIncome).toFixed(2)} short.`, time: 'WARNING', action: () => { setIsNotificationsOpen(false); changeTab("bills"); } });
+            }
+        }
+      }
+    });
+    const liquidCash = accounts.filter(a => !a.isGoal && (a.type === "Checking" || a.type === "Cash")).reduce((sum, acc) => sum + (acc.balance || 0), 0);
+    const upcomingBills = bills.filter(b => !b.isPaid && !b.isOverdue);
+    const upcomingBurn = upcomingBills.reduce((sum, b) => sum + (b.amount || 0), 0);
+    const safeToSpend = liquidCash - upcomingBurn;
+    if (safeToSpend < 100 && safeToSpend >= 0) { currentAlerts.push({ id: `redline`, type: 'danger', icon: <AlertCircle size={20} className="text-red-500" />, title: 'Redline', message: `Buffer critically low ($${safeToSpend.toFixed(2)}).`, time: 'ALERT', action: () => { setIsNotificationsOpen(false); changeTab("home"); } });
+    }
+
+    const recentTransfers = transactions.filter(tx => tx.category === "Transfers (Venmo/Zelle)" && tx.type === "Income");
+    if (recentTransfers.length > 0) { const latestTransfer = recentTransfers[0]; currentAlerts.push({ id: `transfer-${latestTransfer.id}`, type: 'success', icon: <CheckCircle2 size={20} className="text-[#10B981]" />, title: 'Transfer Complete', message: `$${(latestTransfer.amount || 0).toFixed(2)} was successfully moved.`, time: latestTransfer.date?.split(',')[0] || "Recent", action: () => { setIsNotificationsOpen(false); changeTab("activity"); } });
+    }
+    return currentAlerts;
+  };
+  const activeAlerts = generateAlerts();
+  const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
 
   const confirmPaymentRoute = async () => {
     const bill = bills.find(b => b.id === paymentModalConfig.billId);
@@ -724,6 +1044,7 @@ const triggerHaptic = (pattern = 50) => {
       }
     }
   };
+  const handleSaveNextInstallmentDate = async () => {
     if (!installmentPromptConfig.nextDate) return;
     const bill = bills.find(b => b.id === installmentPromptConfig.billId);
     if(!bill) return;
@@ -1025,8 +1346,7 @@ const triggerHaptic = (pattern = 50) => {
             ))}
           </div>
         </div>
-        
-        {isSettingsOpen && (
+{isSettingsOpen && (
           <Settings 
             userName={userName}
             isDarkMode={isDarkMode}

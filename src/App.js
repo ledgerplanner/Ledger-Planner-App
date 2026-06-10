@@ -459,7 +459,6 @@ export default function App() {
       finally { setUser(null); setActiveTab("home"); setGlobalActionConfig(prev => ({ ...prev, isOpen: false })); }
     });
   };
-
   // === DYNAMIC UTILITY CALCULATION ENGINE ===
   const userName = isDemoMode ? "Aaron" : user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || "Founder";
   const getOrdinalNum = (n) => n + (n > 0 ? ['th', 'st', 'nd', 'rd'][(n > 3 && n < 21) || n % 10 > 3 ? 0 : n % 10] : '');
@@ -676,9 +675,13 @@ export default function App() {
     setSelectedEntry({ ...selectedEntry, ...updatePayload });
     setIsEditingEntry(false); triggerVictory();
   };
+
   const handleAddAccount = async () => {
     const startBal = parseFloat(newAccBalance);
     if (!newAccName.trim() || isNaN(startBal)) return;
+
+    // UPDATE 1: Account Name Input Field to Default to ALL CAPS Data Layer Sanitization
+    const sanitizedName = newAccName.trim().toUpperCase();
 
     let finalBalance = Math.abs(startBal);
     if (newAccIsNegative) finalBalance = -finalBalance;
@@ -688,13 +691,13 @@ export default function App() {
     if (type === "Cash") return "💵"; return "🏦"; };
 
     if (isDemoMode) {
-      const newAcc = { id: `acc_demo_${Date.now()}`, name: newAccName, type: newAccType, description: newAccDesc, balance: finalBalance, icon: getIcon(newAccType) };
+      const newAcc = { id: `acc_demo_${Date.now()}`, name: sanitizedName, type: newAccType, description: newAccDesc, balance: finalBalance, icon: getIcon(newAccType) };
       setAccounts([...accounts, newAcc]);
     } else {
-      const accRef = await addDoc(collection(db, "users", user.uid, "accounts"), { name: newAccName, type: newAccType, description: newAccDesc, balance: finalBalance, icon: getIcon(newAccType), isArchived: false });
+      const accRef = await addDoc(collection(db, "users", user.uid, "accounts"), { name: sanitizedName, type: newAccType, description: newAccDesc, balance: finalBalance, icon: getIcon(newAccType), isArchived: false });
       if (Math.abs(startBal) > 0) {
         const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
-        await addDoc(collection(db, "users", user.uid, "transactions"), { name: `${newAccName} (Opening)`, icon: getIcon(newAccType), amount: Math.abs(startBal), date: autoTimeStamp, type: finalBalance < 0 ? "Expense" : "Income", category: finalBalance < 0 ? "Initial Debt" : "Opening Balance", accountId: accRef.id, createdAt: serverTimestamp() });
+        await addDoc(collection(db, "users", user.uid, "transactions"), { name: `${sanitizedName} (Opening)`, icon: getIcon(newAccType), amount: Math.abs(startBal), date: autoTimeStamp, type: finalBalance < 0 ? "Expense" : "Income", category: finalBalance < 0 ? "Initial Debt" : "Opening Balance", accountId: accRef.id, createdAt: serverTimestamp() });
       }
     }
     triggerVictory(); setIsAddAccountOpen(false); setNewAccName(""); setNewAccBalance(""); setNewAccDesc(""); setNewAccType("Checking"); setNewAccIsNegative(false);
@@ -798,13 +801,15 @@ export default function App() {
         return a;
       }));
       setTransactions([
-        { id: `tx_demo_co_${Date.now()}`, name: txName, icon: "🎯", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: destAcc.id },
+        // FIX 3: Property Tagging for Analytics Protection
+        { id: `tx_demo_co_${Date.now()}`, name: txName, icon: "🎯", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: destAcc.id, isCashOut: true },
         ...transactions
       ]);
     } else {
       await updateDoc(doc(db, "users", user.uid, "accounts", cashOutGoal.id), { balance: cashOutGoal.balance - amt });
       await updateDoc(doc(db, "users", user.uid, "accounts", destAcc.id), { balance: destAcc.balance + amt });
-      await addDoc(collection(db, "users", user.uid, "transactions"), { name: txName, icon: "🎯", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: destAcc.id, createdAt: serverTimestamp() });
+      // FIX 3: Property Tagging for Analytics Protection
+      await addDoc(collection(db, "users", user.uid, "transactions"), { name: txName, icon: "🎯", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: destAcc.id, createdAt: serverTimestamp(), isCashOut: true });
     }
 
     triggerHaptic(50);
@@ -918,6 +923,7 @@ export default function App() {
     }
     return assignedPd;
   };
+
   const dynamicBills = bills.map(bill => {
     let currentPayday = bill.payday;
     let isOverdue = bill.isOverdue || false;
@@ -947,7 +953,6 @@ export default function App() {
     if (!a.rawDate) return 1; if (!b.rawDate) return -1;
     return new Date(a.rawDate || 0) - new Date(b.rawDate || 0);
   });
-
   const generateAlerts = () => {
     const currentAlerts = [];
     const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -1461,30 +1466,38 @@ export default function App() {
 
                   {activeAlerts.length === 0 && !isUnconsumedBriefing ? (
                     <div className="text-center py-20 opacity-100 flex flex-col items-center justify-center h-full">
-                      <CheckCircle2 size={44} className="mb-4 text-[#10B981] drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]" />
-                      <p className={`font-black text-sm uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-900"}`}>All clear. Your ledger is up to date.</p>
+                      <div className="p-4 rounded-full bg-emerald-50 mb-4 dark:bg-emerald-900/20">
+                        <CheckCircle2 size={36} className="text-[#10B981] drop-shadow-sm" />
+                      </div>
+                      <p className={`font-black text-xs uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>No Action Items</p>
+                      <p className={`text-[10px] font-bold mt-1 uppercase tracking-wider ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Your ledger is perfectly balanced</p>
                     </div>
                   ) : (
-                    activeAlerts.map(alert => (
-                      <div key={alert.id} onClick={alert.action} className={`flex items-start gap-4 p-4 rounded-2xl cursor-pointer border transition-colors ${alert.type === 'danger' ? (isDarkMode ? "bg-red-900/20 border-red-900/50 hover:bg-red-900/30" : "bg-red-50 border-red-100 hover:bg-red-100") : (isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50 shadow-sm")}`}>
-                        <div className={`mt-1 p-2 rounded-full ${isDarkMode ? "bg-[#0F172A]" : "bg-slate-50"}`}>{alert.icon}</div>
-                        <div className="flex-1">
-                          <div className="flex justify-between items-start">
-                            <p className={`font-black text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>{alert.title}</p>
-                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{alert.time}</span>
-                          </div>
-                          <p className={`text-xs font-bold mt-0.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{alert.message}</p>
+                    <div className="space-y-3">
+                      {activeAlerts.map(alert => (
+                        <div key={alert.id} onClick={alert.action} className={`p-4 rounded-2xl border cursor-pointer transition-transform active:scale-[0.98] ${isDarkMode ? "bg-slate-800/40 border-slate-700/60 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50 hover:border-slate-200"}`}>
+                           <div className="flex gap-3">
+                             <div className={`p-2.5 rounded-xl self-start ${isDarkMode ? "bg-slate-900" : "bg-slate-50"}`}>
+                               {alert.icon}
+                             </div>
+                             <div className="flex-1 min-w-0">
+                               <div className="flex items-start justify-between gap-2 mb-1">
+                                 <p className={`font-black text-xs uppercase tracking-wide truncate ${isDarkMode ? "text-white" : "text-slate-900"}`}>{alert.title}</p>
+                                 <span className={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md ${alert.type === 'danger' ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"}`}>{alert.time}</span>
+                               </div>
+                               <p className={`text-[10px] font-bold leading-snug ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{alert.message}</p>
+                             </div>
+                           </div>
                         </div>
-                      </div>
-                    ))
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
             </div>
           );
         })()}
-
-        {isPaydaySetupOpen && (
+          {isPaydaySetupOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsPaydaySetupOpen(false)}></div>
             <div className={`w-full lg:max-w-md h-[90vh] lg:h-[80vh] rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl relative z-[130] flex flex-col ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
@@ -1554,7 +1567,8 @@ export default function App() {
                 <button onClick={() => setIsAddAccountOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
               <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
-                <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Name</label><input type="text" value={newAccName} onChange={(e) => setNewAccName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
+                {/* UPDATE 1 INJECTED: UI Uppercase styling locked in */}
+                <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Name</label><input type="text" value={newAccName} onChange={(e) => setNewAccName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors uppercase ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
                 <div className="relative">
                   <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Current Balance</label>
                   <div className="relative w-full flex items-center">
@@ -1700,10 +1714,11 @@ export default function App() {
               </div>
 
               <div className="p-6 flex flex-col flex-1">
+                {/* UPDATE 2 INJECTED: Punchy clinical UX text copy locked in */}
                 <div className="relative mb-4">
-                  <label className={`absolute left-4 top-2 text-[9px] font-black uppercase tracking-widest z-10 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Liquid Destination Account</label>
+                  <label className={`absolute left-4 top-2 text-[9px] font-black uppercase tracking-widest z-10 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>CASH OUT TO WHICH ACCOUNT?</label>
                   <select value={cashOutToAccount} onChange={(e) => setCashOutToAccount(e.target.value)} className="w-full pt-6 pb-2 px-5 rounded-2xl border font-bold text-sm appearance-none transition-colors outline-none focus:border-slate-400 dark:focus:border-slate-500 bg-transparent relative z-10">
-                    <option value="" disabled>Select liquid account...</option>
+                    <option value="" disabled>Select Account...</option>
                     {accounts.filter(a => !a.isGoal && (a.type === "Checking" || a.type === "Savings" || a.type === "Cash")).map(a => (
                       <option key={a.id} value={a.id} className={isDarkMode ? "bg-[#1E293B]" : "bg-white"}>{a.name} (${(a.balance || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}). </option>
                     ))}

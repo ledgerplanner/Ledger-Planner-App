@@ -319,7 +319,6 @@ export default function App() {
 
     return () => { unsubAcc(); unsubBills(); unsubTxs(); unsubTodos(); unsubConfig(); };
   }, [isMounted, isDemoMode, user]);
-
   useEffect(() => {
     if (!isMounted || isDemoMode || !user || hasCheckedRollover || bills.length === 0) return;
     const checkAutoRollover = async () => {
@@ -422,6 +421,7 @@ export default function App() {
       hasInitializedCollapse.current = true;
     }
   }, [bills]);
+
   const handleOpenPaydaySetup = () => {
     setEditPaydayConfig(paydayConfig);
     setIsPaydaySetupOpen(true);
@@ -459,6 +459,7 @@ export default function App() {
       finally { setUser(null); setActiveTab("home"); setGlobalActionConfig(prev => ({ ...prev, isOpen: false })); }
     });
   };
+
   // === DYNAMIC UTILITY CALCULATION ENGINE ===
   const userName = isDemoMode ? "Aaron" : user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || "Founder";
   const getOrdinalNum = (n) => n + (n > 0 ? ['th', 'st', 'nd', 'rd'][(n > 3 && n < 21) || n % 10 > 3 ? 0 : n % 10] : '');
@@ -493,6 +494,7 @@ export default function App() {
   const toggleCollapse = (payday) => setCollapsedPaydays((prev) => ({ ...prev, [payday]: !prev[payday] }));
   const openEntryDrawer = (entry) => { setSelectedEntry(entry); setIsEditingEntry(false); };
   const closeEntryDrawer = () => { setSelectedEntry(null); setIsEditingEntry(false); };
+
   const executeRolloverCore = async () => {
     const batchPromises = [];
     bills.forEach(bill => {
@@ -752,7 +754,10 @@ export default function App() {
 
     const oldToBalance = toAcc.balance || 0;
     const newToBalance = oldToBalance + amt;
-    const isGoalCompleted = toAcc.isGoal && oldToBalance < (toAcc.targetAmount || 0) && newToBalance >= (toAcc.targetAmount || 0);
+    
+    // UPDATE INJECTED: Identify if the destination is a Goal to handle Liquid math and gamification triggers.
+    const isFundingGoal = toAcc.isGoal === true;
+    const isGoalCompleted = isFundingGoal && oldToBalance < (toAcc.targetAmount || 0) && newToBalance >= (toAcc.targetAmount || 0);
 
     if (isDemoMode) {
       setAccounts(accounts.map(a => {
@@ -763,18 +768,19 @@ export default function App() {
       const txId1 = `tx_demo_${Date.now()}_1`;
       const txId2 = `tx_demo_${Date.now()}_2`;
       setTransactions([
-        { id: txId1, name: sentName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Expense", category: "Transfers (Venmo/Zelle)", accountId: fromAcc.id },
-        { id: txId2, name: receivedName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: toAcc.id },
+        { id: txId1, name: sentName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Expense", category: "Transfers (Venmo/Zelle)", accountId: fromAcc.id, isGoalFunding: isFundingGoal },
+        { id: txId2, name: receivedName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: toAcc.id, isGoalFunding: isFundingGoal },
         ...transactions
       ]);
     } else {
       await updateDoc(doc(db, "users", user.uid, "accounts", fromAcc.id), { balance: fromAcc.balance - amt });
       await updateDoc(doc(db, "users", user.uid, "accounts", toAcc.id), { balance: toAcc.balance + amt });
-      await addDoc(collection(db, "users", user.uid, "transactions"), { name: sentName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Expense", category: "Transfers (Venmo/Zelle)", accountId: fromAcc.id, createdAt: serverTimestamp() });
-      await addDoc(collection(db, "users", user.uid, "transactions"), { name: receivedName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: toAcc.id, createdAt: serverTimestamp() });
+      await addDoc(collection(db, "users", user.uid, "transactions"), { name: sentName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Expense", category: "Transfers (Venmo/Zelle)", accountId: fromAcc.id, createdAt: serverTimestamp(), isGoalFunding: isFundingGoal });
+      await addDoc(collection(db, "users", user.uid, "transactions"), { name: receivedName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: toAcc.id, createdAt: serverTimestamp(), isGoalFunding: isFundingGoal });
     }
 
-    if (isGoalCompleted) {
+    // UPDATE INJECTED: Immediate gamification trigger anytime funds arrive securely in a Goal.
+    if (isGoalCompleted || isFundingGoal) {
       triggerVictory(); 
     } else {
       triggerHaptic(50);
@@ -882,7 +888,6 @@ export default function App() {
       triggerHaptic(50); setSelectedAccount(null); setGlobalActionConfig(prev => ({ ...prev, isOpen: false }));
     });
   };
-
   const clearPaydayConfig = () => { setEditPaydayConfig({ frequency: "Weekly", "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } });
     triggerHaptic(50); };
   const savePaydayConfig = async () => {
@@ -953,6 +958,7 @@ export default function App() {
     if (!a.rawDate) return 1; if (!b.rawDate) return -1;
     return new Date(a.rawDate || 0) - new Date(b.rawDate || 0);
   });
+
   const generateAlerts = () => {
     const currentAlerts = [];
     const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -1056,6 +1062,7 @@ export default function App() {
       }
     }
   };
+
   const handleSaveNextInstallmentDate = async () => {
     if (!installmentPromptConfig.nextDate) return;
     const bill = bills.find(b => b.id === installmentPromptConfig.billId);
@@ -1099,6 +1106,7 @@ export default function App() {
     triggerHaptic(30);
     setModernCategories(prev => prev.map(g => g.group === groupName ? { ...g, items: [...g.items, newCatName.trim()] } : g));
   };
+
   const handleConfirmAction = () => {
     const sanitizedInput = String(inputValue).replace(/\s+/g, "");
     const amountToProcess = parseFloat(sanitizedInput);
@@ -1218,7 +1226,6 @@ export default function App() {
     if (entry.type === 'Expense') return "text-[#F97316]";
     return "text-[#1877F2]";
   };
-
   const renderHeroShell = (title, graphicContent) => {
     const hasOverdueOrDueNow = dynamicBills.some(b => !b.isPaid && (b.isOverdue || b.payday === "Due Now"));
     const hours = new Date().getHours();
@@ -1257,9 +1264,9 @@ export default function App() {
         <div className="relative z-10 flex justify-center px-1 mb-6">
           <h2 title={title || "Overview"} className={`text-3xl font-black tracking-tight leading-tight truncate max-w-full ${isDarkMode ? "text-white" : "text-slate-900"}`}>{title || "Overview"}</h2>
         </div>
- 
+
         <div className="relative z-10 w-full h-auto opacity-100">{graphicContent}</div>
- 
+
         <div className={`relative z-10 pt-4 border-t flex justify-center items-center ${isDarkMode ? "border-slate-800" : "border-slate-50"}`}>
           <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{heroDateTimeStr}</span>
         </div>
@@ -1717,7 +1724,7 @@ export default function App() {
                 {/* UPDATE 2 INJECTED: Punchy clinical UX text copy locked in */}
                 <div className="relative mb-4">
                   <label className={`absolute left-4 top-2 text-[9px] font-black uppercase tracking-widest z-10 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>CASH OUT TO WHICH ACCOUNT?</label>
-                  <select value={cashOutToAccount} onChange={(e) => setCashOutToAccount(e.target.value)} className="w-full pt-6 pb-2 px-5 rounded-2xl border font-bold text-sm appearance-none transition-colors outline-none focus:border-slate-400 dark:focus:border-slate-500 bg-transparent relative z-10">
+                  <select value={cashOutToAccount} onChange={(e) => setCashOutToAccount(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border font-bold text-sm appearance-none transition-colors outline-none focus:border-slate-400 dark:focus:border-slate-500 bg-transparent relative z-10 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                     <option value="" disabled>Select Account...</option>
                     {accounts.filter(a => !a.isGoal && (a.type === "Checking" || a.type === "Savings" || a.type === "Cash")).map(a => (
                       <option key={a.id} value={a.id} className={isDarkMode ? "bg-[#1E293B]" : "bg-white"}>{a.name} (${(a.balance || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}). </option>

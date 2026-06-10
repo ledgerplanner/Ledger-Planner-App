@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Search, Edit2, ChevronUp, ChevronDown } from "lucide-react";
- 
+
 export default function Activity({ 
   userName,
   transactions, 
@@ -15,11 +15,11 @@ export default function Activity({
   const [collapsedMonths, setCollapsedMonths] = useState({});
   const [isTodayCollapsed, setIsTodayCollapsed] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
- 
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
- 
+
   const filteredTransactions = transactions.filter(tx => {
     const matchesSearch = tx.name.toLowerCase().includes(activitySearch.toLowerCase()) ||
       (tx.category && tx.category.toLowerCase().includes(activitySearch.toLowerCase()));
@@ -27,7 +27,6 @@ export default function Activity({
     return matchesSearch && matchesFilter;
   });
 
-  // UPDATE 2 Engine: Surgical parsing and extraction of today's real-time entries
   const todayTransactions = useMemo(() => {
     const todayObj = new Date();
     const currentYear = todayObj.getFullYear();
@@ -46,28 +45,28 @@ export default function Activity({
     let inflow = 0;
     let outflow = 0;
     todayTransactions.forEach(tx => {
-      if (tx.type === "Income") inflow += Number(tx.amount) || 0;
+      if (tx.isCashOut) return; 
+      if (tx.type === "Income" && tx.category !== "Transfers (Venmo/Zelle)") inflow += Number(tx.amount) || 0; 
       if (tx.type === "Expense") outflow += Number(tx.amount) || 0;
     });
     return { inflow, outflow };
   }, [todayTransactions]);
- 
+
   const groupedTransactions = useMemo(() => {
     const groups = {};
     const todayObj = new Date();
     const currentYear = todayObj.getFullYear();
     const currentMonth = todayObj.getMonth();
     const currentDate = todayObj.getDate();
- 
+
     filteredTransactions.forEach(tx => {
       const d = new Date(tx.rawDate || tx.date || todayObj);
       if (d.getFullYear() === 2001) d.setFullYear(currentYear);
 
-      // Filter out today's transactions from the monthly buckets to prevent duplicate cards on screen
       if (d.getFullYear() === currentYear && d.getMonth() === currentMonth && d.getDate() === currentDate) {
         return;
       }
- 
+
       const monthYear = d.toLocaleString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
       
       if (!groups[monthYear]) {
@@ -80,13 +79,15 @@ export default function Activity({
         };
       }
       groups[monthYear].transactions.push(tx);
-      if (tx.type === "Income") groups[monthYear].inflow += Number(tx.amount) || 0;
+      
+      if (tx.isCashOut) return; 
+      if (tx.type === "Income" && tx.category !== "Transfers (Venmo/Zelle)") groups[monthYear].inflow += Number(tx.amount) || 0; 
       if (tx.type === "Expense") groups[monthYear].outflow += Number(tx.amount) || 0;
     });
- 
+
     return Object.values(groups).sort((a, b) => b.timestamp - a.timestamp);
   }, [filteredTransactions]);
- 
+
   useEffect(() => {
     const isSearching = activitySearch.trim() !== "" || activityFilter !== "All";
     
@@ -104,50 +105,50 @@ export default function Activity({
       setIsTodayCollapsed(false);
     }
   }, [activitySearch, activityFilter, groupedTransactions.length, todayTransactions.length]); 
- 
+
   const toggleMonth = (monthLabel) => {
     setCollapsedMonths(prev => ({ ...prev, [monthLabel]: !prev[monthLabel] }));
   };
- 
+
   const formatActivityDate = (dateStr, groupLabel) => {
     if (!dateStr) return "TODAY";
     const groupYear = groupLabel ? (groupLabel.split(" ")[1] || new Date().getFullYear()) : new Date().getFullYear();
     return dateStr.replace(/2001/g, groupYear);
   };
- 
-  const totalIncome = transactions.filter(t => t.type === "Income").reduce((sum, t) => sum + t.amount, 0);
+
+  const totalIncome = transactions.filter(t => t.type === "Income" && !t.isCashOut).reduce((sum, t) => sum + t.amount, 0);
   const totalExpense = transactions.filter(t => t.type === "Expense").reduce((sum, t) => sum + t.amount, 0);
   const netCashFlow = totalIncome - totalExpense;
   const totalVolume = totalIncome + totalExpense;
   const inPercentage = totalVolume > 0 ? (totalIncome / totalVolume) * 100 : 50;
- 
+
   const isIncomeView = activityFilter === "Income";
   const targetTransactions = isIncomeView 
     ? transactions.filter(t => t.type === "Income") 
     : transactions.filter(t => t.type === "Expense"); 
- 
+
   const totalTargetAmount = targetTransactions.reduce((sum, t) => sum + t.amount, 0);
- 
+
   const categoriesMap = targetTransactions.reduce((acc, t) => {
     const catName = t.category || "Uncategorized";
     acc[catName] = (acc[catName] || 0) + t.amount;
     return acc;
   }, {});
- 
+
   const sortedCategories = Object.entries(categoriesMap).sort((a, b) => b[1] - a[1]);
   
   const topCategories = sortedCategories.slice(0, 8);
   const otherAmount = sortedCategories.slice(8).reduce((sum, [_, amt]) => sum + amt, 0);
   if (otherAmount > 0) topCategories.push(["Other", otherAmount]);
- 
+
   const colors = isIncomeView 
     ? ["#10B981", "#059669", "#34D399", "#6EE7B7", "#047857", "#064E3B", "#0D9488", "#14B8A6", "#94A3B8"] 
     : ["#1877F2", "#F59E0B", "#8B5CF6", "#EC4899", "#06B6D4", "#F43F5E", "#F97316", "#84CC16", "#64748B"]; 
- 
+
   let currentOffset = 0;
   const radius = 42; 
   const circumference = 2 * Math.PI * radius;
- 
+
   const chartSegments = topCategories.map(([name, amount], index) => {
     const percentage = totalTargetAmount > 0 ? amount / totalTargetAmount : 0;
     const strokeDasharray = `${percentage * circumference} ${circumference}`;
@@ -155,7 +156,7 @@ export default function Activity({
     currentOffset += percentage * circumference;
     return { name, amount, percentage, strokeDasharray, strokeDashoffset, color: colors[index] };
   });
- 
+
   const getTxAmountClasses = (tx, isDark) => {
     if (tx.isBillPayment || tx.category === "Bill Payment") {
       return isDark 
@@ -171,13 +172,13 @@ export default function Activity({
       ? "bg-orange-900/30 text-orange-400 drop-shadow-[0_0_12px_rgba(249,115,22,0.7)]" 
       : "bg-orange-50 text-orange-600 drop-shadow-[0_0_12px_rgba(249,115,22,0.7)]";
   };
- 
+
   const getTxCategoryColor = (tx) => {
     if (tx.isBillPayment || tx.category === "Bill Payment") return "text-[#1877F2]";
     if (tx.type === "Income") return "text-[#10B981]";
     return "text-[#F97316]";
   };
- 
+
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
@@ -187,14 +188,14 @@ export default function Activity({
             Net Cash Flow
           </span>
         </div>
- 
+
         <div className={`text-center w-full transform transition-all duration-700 delay-100 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           <p className={`text-5xl font-black tracking-tighter transition-all duration-300 mb-6 ${netCashFlow >= 0 ? "text-[#10B981]" : "text-red-500"}`}>
             {netCashFlow >= 0 ? "+" : "-"}${Math.abs(netCashFlow).toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </p>
         </div>
- 
-        <div className={`w-full transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+
+        <div className={`w-full transform transition-all duration-700 delay-200 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           <div className={`w-full h-10 rounded-full flex overflow-hidden shadow-inner ${isDarkMode ? "bg-[#1E293B]" : "bg-slate-100"}`}>
             <div 
               className="h-full bg-[#10B981] flex items-center justify-start px-4 transition-all duration-1000" 
@@ -210,14 +211,25 @@ export default function Activity({
             </div>
           </div>
         </div>
+
+        <div className={`flex justify-center items-center w-full gap-3 mt-4 pt-2 border-t border-dashed transform transition-all duration-700 delay-300 ease-out ${isDarkMode ? "border-slate-700/50" : "border-slate-200/60"} ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-6"}`}>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-500">
+            +${totalIncome.toLocaleString("en-US", { minimumFractionDigits: 2 })} In
+          </span>
+          <span className={`text-[10px] ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>|</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-[#F97316]">
+            -${totalExpense.toLocaleString("en-US", { minimumFractionDigits: 2 })} Out
+          </span>
+        </div>
+
       </div>
     </div>
   );
- 
+
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
-       
-      <div className="relative z-10 Activity-Master-Header">
+         
+      <div className={`relative z-10 Activity-Master-Header transform transition-all duration-700 delay-150 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
         <style>{`
           .Activity-Master-Header h1, 
           .Activity-Master-Header h2,
@@ -228,9 +240,9 @@ export default function Activity({
         `}</style>
         {renderHeroShell(`${userName}'s Activities`, graphicContent)}
       </div>
- 
+
       <main className="px-6 space-y-6 mt-4">
- 
+
         {activityFilter !== "All" && totalTargetAmount > 0 && (
           <div className={`p-6 rounded-[2rem] border flex items-center gap-6 ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
             <div className="relative w-40 h-40 shrink-0">
@@ -272,7 +284,7 @@ export default function Activity({
             </div>
           </div>
         )}
- 
+
         <div className="flex gap-3">
            <button 
              onClick={() => setActivityFilter(activityFilter === "Income" ? "All" : "Income")} 
@@ -301,9 +313,9 @@ export default function Activity({
              )}
           </button>
         </div>
- 
+
         <div className={`border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
- 
+
         <div className="flex gap-2">
           <div className={`flex-1 flex items-center px-4 rounded-2xl border shadow-sm transition-colors ${isDarkMode ? "bg-[#1E293B] border-slate-800 text-white focus-within:border-slate-600" : "bg-white border-slate-100 text-slate-900 focus-within:border-[#1877F2]"}`}>
             <Search size={18} className="text-slate-400 shrink-0" />
@@ -314,7 +326,7 @@ export default function Activity({
             />
           </div>
         </div>
- 
+
         <div className="space-y-4">
          {groupedTransactions.length === 0 && todayTransactions.length === 0 ? (
             <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
@@ -323,10 +335,8 @@ export default function Activity({
           ) : (
             <div className="space-y-6">
               
-              {/* UPDATE 2: Top-level dedicated TODAY transaction ledger section break out block */}
               {todayTransactions.length > 0 && (
                 <div className="space-y-2">
-                  {/* FIX 1 & 2: Applied horizontal baseline row alignment (items-center) to perfectly baseline header row metrics */}
                   <div className="flex flex-col px-2 py-2 cursor-pointer transition-colors" onClick={() => setIsTodayCollapsed(!isTodayCollapsed)}>
                     <div className="flex justify-between items-center w-full gap-2">
                       <div className="flex items-center gap-2 shrink-0">
@@ -390,14 +400,12 @@ export default function Activity({
                 </div>
               )}
 
-              {/* MONTHLY HISTORICAL TRANSACTION BUCKETS ROW DISPLAY */}
               {groupedTransactions.map((group) => {
                 const isCollapsed = collapsedMonths[group.label];
- 
+
                 return (
                  <div key={group.label} className="space-y-2">
                     
-                   {/* FIX 1 & 2: Applied horizontal baseline row alignment (items-center) to perfectly baseline header row metrics */}
                    <div className="flex flex-col px-2 py-2 cursor-pointer transition-colors" onClick={() => toggleMonth(group.label)}>
                      <div className="flex justify-between items-center w-full gap-2">
                         <div className="flex items-center gap-2 shrink-0">
@@ -415,7 +423,7 @@ export default function Activity({
                         </div>
                      </div>
                    </div>
- 
+
                    {!isCollapsed && (
                      <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
                        <div className="space-y-3">
@@ -438,7 +446,7 @@ export default function Activity({
                                   <Edit2 size={16} strokeWidth={2.5} />
                                 </button>
                              </div>
- 
+
                              <div className={`mt-3 pt-3 border-t flex items-center justify-between gap-2 ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
                                 <div className="flex-1 min-w-0 flex flex-col">
                                   <span className={`text-[10px] font-black uppercase tracking-widest truncate leading-tight ${getTxCategoryColor(tx)}`}>
@@ -455,7 +463,7 @@ export default function Activity({
                                   </div>
                                 </div>
                              </div>
- 
+
                            </div>
                          ))}
                        </div>

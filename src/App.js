@@ -1156,7 +1156,6 @@ export default function App() {
         paidAmount: entryIsInstallment ? parseFloat(entryPaidAmount) || 0 : 0,
         linkedTxId: null,
         vaultVisibility: entryVisibility,
-        isDirectGoalEntry: targetAcc.isGoal || false
       };
 
       if (isDemoMode) {
@@ -1183,7 +1182,8 @@ export default function App() {
           date: autoTimeStamp,
           type: isIncome ? "Income" : "Expense",
           accountId: targetAcc.id,
-          vaultVisibility: entryVisibility
+          vaultVisibility: entryVisibility,
+          isDirectGoalEntry: targetAcc.isGoal || targetAcc.type === "Goal" || false
         };
 
         if (isDemoMode) {

@@ -21,6 +21,9 @@ export default function Activity({
   }, []);
 
   const filteredTransactions = transactions.filter(tx => {
+    // GHOST ENTRY FIREWALL: Completely hide direct-to-goal funding from the Liquid Activity feed
+    if (tx.isDirectGoalEntry) return false;
+
     const matchesSearch = tx.name.toLowerCase().includes(activitySearch.toLowerCase()) ||
       (tx.category && tx.category.toLowerCase().includes(activitySearch.toLowerCase()));
     const matchesFilter = activityFilter === "All" || tx.type === activityFilter;
@@ -133,17 +136,17 @@ export default function Activity({
   };
 
   // ==========================================
-  // EXPENSE REFUND METHOD: HERO DATA MASTER
+  // EXPENSE REFUND METHOD & GHOST ENTRY FIREWALL: HERO DATA MASTER
   // ==========================================
   
-  // 1. Inbound is ONLY external wealth creation. Zero internal transfers.
+  // 1. Inbound is ONLY external wealth creation. Zero internal transfers. Zero direct-to-goal ghost entries.
   const totalIncome = transactions
-    .filter(t => t.type === "Income" && t.category !== "Transfers (Venmo/Zelle)")
+    .filter(t => t.type === "Income" && t.category !== "Transfers (Venmo/Zelle)" && !t.isDirectGoalEntry)
     .reduce((sum, t) => sum + t.amount, 0);
 
-  // 2. Gross Operating Outbound (Expenses + Pushing to Goals)
+  // 2. Gross Operating Outbound (Expenses + Pushing to Goals). Zero ghost entries.
   const rawExpense = transactions
-    .filter(t => t.type === "Expense" && (t.category !== "Transfers (Venmo/Zelle)" || t.isGoalFunding))
+    .filter(t => t.type === "Expense" && (t.category !== "Transfers (Venmo/Zelle)" || t.isGoalFunding) && !t.isDirectGoalEntry)
     .reduce((sum, t) => sum + t.amount, 0);
 
   // 3. Subtract returned Goal funds from the Gross Outbound
@@ -159,10 +162,11 @@ export default function Activity({
   const inPercentage = totalVolume > 0 ? (totalIncome / totalVolume) * 100 : 50;
 
   const isIncomeView = activityFilter === "Income";
+  
   // Filter pie chart visualization to match pure logic
   const targetTransactions = isIncomeView 
-    ? transactions.filter(t => t.type === "Income" && t.category !== "Transfers (Venmo/Zelle)") 
-    : transactions.filter(t => t.type === "Expense" && (t.category !== "Transfers (Venmo/Zelle)" || t.isGoalFunding)); 
+    ? transactions.filter(t => t.type === "Income" && t.category !== "Transfers (Venmo/Zelle)" && !t.isDirectGoalEntry) 
+    : transactions.filter(t => t.type === "Expense" && (t.category !== "Transfers (Venmo/Zelle)" || t.isGoalFunding) && !t.isDirectGoalEntry); 
 
   const totalTargetAmount = targetTransactions.reduce((sum, t) => sum + t.amount, 0);
 

@@ -45,23 +45,32 @@ export default function Activity({
   }, [filteredTransactions]);
 
   const todayTotals = useMemo(() => {
-    let inflow = 0;
-    let outflow = 0;
+    let pureInflow = 0;
+    let rawOutflow = 0;
+    let refunds = 0;
+    
     todayTransactions.forEach(tx => {
-      // EXPENSE REFUND METHOD: Pure external income only.
       if (tx.type === "Income" && tx.category !== "Transfers (Venmo/Zelle)") {
-        inflow += Number(tx.amount) || 0;
+        pureInflow += Number(tx.amount) || 0;
       }
-      // Add standard expenses and goal funding to the burn rate.
       if (tx.type === "Expense" && (tx.category !== "Transfers (Venmo/Zelle)" || tx.isGoalFunding)) {
-        outflow += Number(tx.amount) || 0;
+        rawOutflow += Number(tx.amount) || 0;
       }
-      // Cash outs subtract from the burn rate, acting as a refund.
       if (tx.isCashOut) {
-        outflow -= Number(tx.amount) || 0;
+        refunds += Number(tx.amount) || 0;
       }
     });
-    return { inflow, outflow };
+
+    // SPILLOVER PROTOCOL
+    let finalOutflow = rawOutflow - refunds;
+    let finalInflow = pureInflow;
+
+    if (finalOutflow < 0) {
+      finalInflow += Math.abs(finalOutflow);
+      finalOutflow = 0;
+    }
+
+    return { inflow: finalInflow, outflow: finalOutflow };
   }, [todayTransactions]);
 
   const groupedTransactions = useMemo(() => {
@@ -86,25 +95,42 @@ export default function Activity({
           label: monthYear,
           timestamp: d.getTime(), 
           transactions: [],
-          inflow: 0,
-          outflow: 0
+          pureInflow: 0,
+          rawOutflow: 0,
+          refunds: 0
         };
       }
       groups[monthYear].transactions.push(tx);
       
-      // EXPENSE REFUND METHOD: Month-level localized loops
       if (tx.type === "Income" && tx.category !== "Transfers (Venmo/Zelle)") {
-        groups[monthYear].inflow += Number(tx.amount) || 0;
+        groups[monthYear].pureInflow += Number(tx.amount) || 0;
       }
       if (tx.type === "Expense" && (tx.category !== "Transfers (Venmo/Zelle)" || tx.isGoalFunding)) {
-        groups[monthYear].outflow += Number(tx.amount) || 0;
+        groups[monthYear].rawOutflow += Number(tx.amount) || 0;
       }
       if (tx.isCashOut) {
-        groups[monthYear].outflow -= Number(tx.amount) || 0;
+        groups[monthYear].refunds += Number(tx.amount) || 0;
       }
     });
 
-    return Object.values(groups).sort((a, b) => b.timestamp - a.timestamp);
+    return Object.values(groups).map(g => {
+      // SPILLOVER PROTOCOL
+      let outflow = g.rawOutflow - g.refunds;
+      let inflow = g.pureInflow;
+      
+      if (outflow < 0) {
+        inflow += Math.abs(outflow);
+        outflow = 0;
+      }
+      
+      return {
+        label: g.label,
+        timestamp: g.timestamp,
+        transactions: g.transactions,
+        inflow,
+        outflow
+      };
+    }).sort((a, b) => b.timestamp - a.timestamp);
   }, [filteredTransactions]);
 
   useEffect(() => {
@@ -136,34 +162,35 @@ export default function Activity({
   };
 
   // ==========================================
-  // EXPENSE REFUND METHOD & GHOST ENTRY FIREWALL: HERO DATA MASTER
+  // EXPENSE REFUND METHOD & SPILLOVER PROTOCOL: HERO DATA MASTER
   // ==========================================
   
-  // 1. Inbound is ONLY external wealth creation. Zero internal transfers. Zero direct-to-goal ghost entries.
-  const totalIncome = transactions
+  const pureIncome = transactions
     .filter(t => t.type === "Income" && t.category !== "Transfers (Venmo/Zelle)" && !t.isDirectGoalEntry)
     .reduce((sum, t) => sum + t.amount, 0);
 
-  // 2. Gross Operating Outbound (Expenses + Pushing to Goals). Zero ghost entries.
   const rawExpense = transactions
     .filter(t => t.type === "Expense" && (t.category !== "Transfers (Venmo/Zelle)" || t.isGoalFunding) && !t.isDirectGoalEntry)
     .reduce((sum, t) => sum + t.amount, 0);
 
-  // 3. Subtract returned Goal funds from the Gross Outbound
   const refundedCashOuts = transactions
     .filter(t => t.isCashOut)
     .reduce((sum, t) => sum + t.amount, 0);
 
-  const totalExpense = rawExpense - refundedCashOuts;
+  let totalExpense = rawExpense - refundedCashOuts;
+  let totalIncome = pureIncome;
+
+  if (totalExpense < 0) {
+    totalIncome += Math.abs(totalExpense);
+    totalExpense = 0;
+  }
   
-  // High-Level calculations
   const netCashFlow = totalIncome - totalExpense;
   const totalVolume = totalIncome + Math.abs(totalExpense);
   const inPercentage = totalVolume > 0 ? (totalIncome / totalVolume) * 100 : 50;
 
   const isIncomeView = activityFilter === "Income";
   
-  // Filter pie chart visualization to match pure logic
   const targetTransactions = isIncomeView 
     ? transactions.filter(t => t.type === "Income" && t.category !== "Transfers (Venmo/Zelle)" && !t.isDirectGoalEntry) 
     : transactions.filter(t => t.type === "Expense" && (t.category !== "Transfers (Venmo/Zelle)" || t.isGoalFunding) && !t.isDirectGoalEntry); 

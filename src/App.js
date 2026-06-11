@@ -1155,7 +1155,8 @@ export default function App() {
         totalAmount: entryIsInstallment ? parseFloat(entryTotalAmount) || 0 : 0,
         paidAmount: entryIsInstallment ? parseFloat(entryPaidAmount) || 0 : 0,
         linkedTxId: null,
-        vaultVisibility: entryVisibility
+        vaultVisibility: entryVisibility,
+        isDirectGoalEntry: targetAcc.isGoal || false
       };
 
       if (isDemoMode) {

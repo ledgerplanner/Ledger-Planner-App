@@ -45,9 +45,9 @@ export default function Activity({
     let inflow = 0;
     let outflow = 0;
     todayTransactions.forEach(tx => {
-      if (tx.isCashOut) return; 
-      if (tx.type === "Income" && tx.category !== "Transfers (Venmo/Zelle)") inflow += Number(tx.amount) || 0; 
-      if (tx.type === "Expense") outflow += Number(tx.amount) || 0;
+      // LIQUID CAPITAL LOGIC: Ignore transfers unless it's a Goal Cash Out (Income) or Goal Funding (Expense)
+      if (tx.type === "Income" && (tx.category !== "Transfers (Venmo/Zelle)" || tx.isCashOut)) inflow += Number(tx.amount) || 0; 
+      if (tx.type === "Expense" && (tx.category !== "Transfers (Venmo/Zelle)" || tx.isGoalFunding)) outflow += Number(tx.amount) || 0;
     });
     return { inflow, outflow };
   }, [todayTransactions]);
@@ -80,9 +80,9 @@ export default function Activity({
       }
       groups[monthYear].transactions.push(tx);
       
-      if (tx.isCashOut) return; 
-      if (tx.type === "Income" && tx.category !== "Transfers (Venmo/Zelle)") groups[monthYear].inflow += Number(tx.amount) || 0; 
-      if (tx.type === "Expense") groups[monthYear].outflow += Number(tx.amount) || 0;
+      // LIQUID CAPITAL LOGIC: Ignore transfers unless it's a Goal Cash Out (Income) or Goal Funding (Expense)
+      if (tx.type === "Income" && (tx.category !== "Transfers (Venmo/Zelle)" || tx.isCashOut)) groups[monthYear].inflow += Number(tx.amount) || 0; 
+      if (tx.type === "Expense" && (tx.category !== "Transfers (Venmo/Zelle)" || tx.isGoalFunding)) groups[monthYear].outflow += Number(tx.amount) || 0;
     });
 
     return Object.values(groups).sort((a, b) => b.timestamp - a.timestamp);
@@ -116,9 +116,9 @@ export default function Activity({
     return dateStr.replace(/2001/g, groupYear);
   };
 
-  // FULL ISOLATION MATRIX APPLIED: Both Income and Expense filter out the internal transfer loop. Cashouts ignored from Income.
-  const totalIncome = transactions.filter(t => t.type === "Income" && !t.isCashOut && t.category !== "Transfers (Venmo/Zelle)").reduce((sum, t) => sum + t.amount, 0);
-  const totalExpense = transactions.filter(t => t.type === "Expense" && t.category !== "Transfers (Venmo/Zelle)").reduce((sum, t) => sum + t.amount, 0);
+  // LIQUID CAPITAL HERO LOGIC: Standardize internal tracking to strictly represent liquid cash flow.
+  const totalIncome = transactions.filter(t => t.type === "Income" && (t.category !== "Transfers (Venmo/Zelle)" || t.isCashOut)).reduce((sum, t) => sum + t.amount, 0);
+  const totalExpense = transactions.filter(t => t.type === "Expense" && (t.category !== "Transfers (Venmo/Zelle)" || t.isGoalFunding)).reduce((sum, t) => sum + t.amount, 0);
   const netCashFlow = totalIncome - totalExpense;
   const totalVolume = totalIncome + totalExpense;
   const inPercentage = totalVolume > 0 ? (totalIncome / totalVolume) * 100 : 50;
@@ -214,7 +214,7 @@ export default function Activity({
           </div>
         </div>
 
-        {/* BEAT 3: Global Row Anchor with Parallax Horizontal Glide. Typography updated to text-sm & font-black */}
+        {/* BEAT 3: Global Row Anchor with Parallax Horizontal Glide. Text upscaled to text-sm & font-black */}
         <div className={`flex justify-center items-center w-full gap-3 mt-4 pt-2 border-t border-dashed transform transition-all duration-700 delay-300 ease-out ${isDarkMode ? "border-slate-700/50" : "border-slate-200/60"} ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-6"}`}>
           <span className="text-sm font-black uppercase tracking-widest text-emerald-500">
             +${totalIncome.toLocaleString("en-US", { minimumFractionDigits: 2 })} In

@@ -45,9 +45,18 @@ export default function Activity({
     let inflow = 0;
     let outflow = 0;
     todayTransactions.forEach(tx => {
-      // LIQUID CAPITAL LOGIC: Ignore transfers unless it's a Goal Cash Out (Income) or Goal Funding (Expense)
-      if (tx.type === "Income" && (tx.category !== "Transfers (Venmo/Zelle)" || tx.isCashOut)) inflow += Number(tx.amount) || 0; 
-      if (tx.type === "Expense" && (tx.category !== "Transfers (Venmo/Zelle)" || tx.isGoalFunding)) outflow += Number(tx.amount) || 0;
+      // EXPENSE REFUND METHOD: Pure external income only.
+      if (tx.type === "Income" && tx.category !== "Transfers (Venmo/Zelle)") {
+        inflow += Number(tx.amount) || 0;
+      }
+      // Add standard expenses and goal funding to the burn rate.
+      if (tx.type === "Expense" && (tx.category !== "Transfers (Venmo/Zelle)" || tx.isGoalFunding)) {
+        outflow += Number(tx.amount) || 0;
+      }
+      // Cash outs subtract from the burn rate, acting as a refund.
+      if (tx.isCashOut) {
+        outflow -= Number(tx.amount) || 0;
+      }
     });
     return { inflow, outflow };
   }, [todayTransactions]);
@@ -80,9 +89,16 @@ export default function Activity({
       }
       groups[monthYear].transactions.push(tx);
       
-      // LIQUID CAPITAL LOGIC: Ignore transfers unless it's a Goal Cash Out (Income) or Goal Funding (Expense)
-      if (tx.type === "Income" && (tx.category !== "Transfers (Venmo/Zelle)" || tx.isCashOut)) groups[monthYear].inflow += Number(tx.amount) || 0; 
-      if (tx.type === "Expense" && (tx.category !== "Transfers (Venmo/Zelle)" || tx.isGoalFunding)) groups[monthYear].outflow += Number(tx.amount) || 0;
+      // EXPENSE REFUND METHOD: Month-level localized loops
+      if (tx.type === "Income" && tx.category !== "Transfers (Venmo/Zelle)") {
+        groups[monthYear].inflow += Number(tx.amount) || 0;
+      }
+      if (tx.type === "Expense" && (tx.category !== "Transfers (Venmo/Zelle)" || tx.isGoalFunding)) {
+        groups[monthYear].outflow += Number(tx.amount) || 0;
+      }
+      if (tx.isCashOut) {
+        groups[monthYear].outflow -= Number(tx.amount) || 0;
+      }
     });
 
     return Object.values(groups).sort((a, b) => b.timestamp - a.timestamp);
@@ -116,17 +132,37 @@ export default function Activity({
     return dateStr.replace(/2001/g, groupYear);
   };
 
-  // LIQUID CAPITAL HERO LOGIC: Standardize internal tracking to strictly represent liquid cash flow.
-  const totalIncome = transactions.filter(t => t.type === "Income" && (t.category !== "Transfers (Venmo/Zelle)" || t.isCashOut)).reduce((sum, t) => sum + t.amount, 0);
-  const totalExpense = transactions.filter(t => t.type === "Expense" && (t.category !== "Transfers (Venmo/Zelle)" || t.isGoalFunding)).reduce((sum, t) => sum + t.amount, 0);
+  // ==========================================
+  // EXPENSE REFUND METHOD: HERO DATA MASTER
+  // ==========================================
+  
+  // 1. Inbound is ONLY external wealth creation. Zero internal transfers.
+  const totalIncome = transactions
+    .filter(t => t.type === "Income" && t.category !== "Transfers (Venmo/Zelle)")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  // 2. Gross Operating Outbound (Expenses + Pushing to Goals)
+  const rawExpense = transactions
+    .filter(t => t.type === "Expense" && (t.category !== "Transfers (Venmo/Zelle)" || t.isGoalFunding))
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  // 3. Subtract returned Goal funds from the Gross Outbound
+  const refundedCashOuts = transactions
+    .filter(t => t.isCashOut)
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const totalExpense = rawExpense - refundedCashOuts;
+  
+  // High-Level calculations
   const netCashFlow = totalIncome - totalExpense;
-  const totalVolume = totalIncome + totalExpense;
+  const totalVolume = totalIncome + Math.abs(totalExpense);
   const inPercentage = totalVolume > 0 ? (totalIncome / totalVolume) * 100 : 50;
 
   const isIncomeView = activityFilter === "Income";
+  // Filter pie chart visualization to match pure logic
   const targetTransactions = isIncomeView 
-    ? transactions.filter(t => t.type === "Income") 
-    : transactions.filter(t => t.type === "Expense"); 
+    ? transactions.filter(t => t.type === "Income" && t.category !== "Transfers (Venmo/Zelle)") 
+    : transactions.filter(t => t.type === "Expense" && (t.category !== "Transfers (Venmo/Zelle)" || t.isGoalFunding)); 
 
   const totalTargetAmount = targetTransactions.reduce((sum, t) => sum + t.amount, 0);
 
@@ -182,7 +218,6 @@ export default function Activity({
 
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
-      {/* BEAT 1: Core Graphic Shell Vertical Glide */}
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
          
         <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
@@ -214,14 +249,13 @@ export default function Activity({
           </div>
         </div>
 
-        {/* BEAT 3: Global Row Anchor with Parallax Horizontal Glide. Text upscaled to text-sm & font-black */}
         <div className={`flex justify-center items-center w-full gap-3 mt-4 pt-2 border-t border-dashed transform transition-all duration-700 delay-300 ease-out ${isDarkMode ? "border-slate-700/50" : "border-slate-200/60"} ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-6"}`}>
           <span className="text-sm font-black uppercase tracking-widest text-emerald-500">
             +${totalIncome.toLocaleString("en-US", { minimumFractionDigits: 2 })} In
           </span>
           <span className={`text-sm font-black ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>|</span>
           <span className="text-sm font-black uppercase tracking-widest text-[#F97316]">
-            -${totalExpense.toLocaleString("en-US", { minimumFractionDigits: 2 })} Out
+            {totalExpense >= 0 ? "-" : "+"}${Math.abs(totalExpense).toLocaleString("en-US", { minimumFractionDigits: 2 })} Out
           </span>
         </div>
 
@@ -232,7 +266,6 @@ export default function Activity({
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
          
-      {/* BEAT 2: Primary Text Header Vertical Glide */}
       <div className={`relative z-10 Activity-Master-Header transform transition-all duration-700 delay-150 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
         <style>{`
           .Activity-Master-Header h1, 
@@ -353,7 +386,7 @@ export default function Activity({
                         </span>
                         <span className={`text-[10px] ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>|</span>
                         <span className="text-[10px] font-bold uppercase tracking-widest text-[#F97316]">
-                          -${todayTotals.outflow.toLocaleString("en-US", { minimumFractionDigits: 2 })} Out
+                          {todayTotals.outflow >= 0 ? "-" : "+"}${Math.abs(todayTotals.outflow).toLocaleString("en-US", { minimumFractionDigits: 2 })} Out
                         </span>
                       </div>
                     </div>
@@ -422,7 +455,7 @@ export default function Activity({
                            </span>
                            <span className={`text-[10px] ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>|</span>
                            <span className="text-[10px] font-bold uppercase tracking-widest text-[#F97316]">
-                             -${group.outflow.toLocaleString("en-US", { minimumFractionDigits: 2 })} Out
+                             {group.outflow >= 0 ? "-" : "+"}${Math.abs(group.outflow).toLocaleString("en-US", { minimumFractionDigits: 2 })} Out
                            </span>
                         </div>
                      </div>

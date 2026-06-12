@@ -255,7 +255,7 @@ export default function Activity({
          
         <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
           <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-black"}`}>
-            Net Cash Flow
+            Actual Net Cash Flow
           </span>
         </div>
 

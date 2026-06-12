@@ -252,7 +252,7 @@ export default function Bills({
             <span className={`font-black tracking-tighter leading-none text-2xl ${isDarkMode ? "text-white" : "text-slate-900"}`}>
               {Math.round(annualProgressPercentage)}%
             </span>
-            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-0.5">PAID</span>
+            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-0.5">COMPLETE</span>
           </div>
         </div>
 
@@ -270,28 +270,29 @@ export default function Bills({
         {/* 3. Flowing Pills */}
         <div className={`w-full space-y-2 transform transition-all duration-700 delay-200 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           
-          <div className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transition-all ${urgentTotal > 0 ? (isDarkMode ? 'bg-red-900/20 border-red-900/50' : 'bg-red-50 border-red-200') : (isDarkMode ? 'bg-[#10B981]/10 border-[#10B981]/20' : 'bg-emerald-50 border-emerald-200')}`}>
-            <span className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 ${urgentTotal > 0 ? 'text-red-500' : 'text-[#10B981]'}`}>
-              {urgentTotal > 0 && <AlertCircle size={12} strokeWidth={2.5}/>} 
-              {urgentTotal > 0 ? 'TOTAL DUE NOW' : 'BOARD CLEAR'}
-            </span>
-            <span className={`text-sm sm:text-base font-black leading-none ${urgentTotal > 0 ? 'text-red-500' : 'text-[#10B981]'}`}>
-              ${urgentTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </span>
-          </div>
+          {urgentTotal > 0 && (
+            <div className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transition-all ${isDarkMode ? 'bg-red-500/10 border-red-900/50' : 'bg-red-500/10 border-red-200'}`}>
+              <span className="text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 text-red-500">
+                <AlertCircle size={12} strokeWidth={2.5}/> TOTAL DUE NOW
+              </span>
+              <span className="text-sm sm:text-base font-black leading-none text-red-500">
+                ${urgentTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+          )}
 
-          <div className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transition-all ${isDarkMode ? 'bg-slate-800/80 border-slate-700/80' : 'bg-slate-50 border-slate-200/80'}`}>
+          <div className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transition-all ${isDarkMode ? 'bg-blue-500/10 border-blue-500/20' : 'bg-[#1877F2]/10 border-blue-200'}`}>
             <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: signatureColor }}>
-              REMAINING THIS MONTH
+              DUE THIS MONTH
             </span>
             <span className="text-sm sm:text-base font-black leading-none" style={{ color: signatureColor }}>
               ${remainingThisMonth.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
 
-          <div className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transition-all ${isDarkMode ? 'bg-slate-800/80 border-slate-700/80' : 'bg-slate-50 border-slate-200/80'}`}>
+          <div className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transition-all ${isDarkMode ? 'bg-slate-500/10 border-slate-700/80' : 'bg-slate-500/10 border-slate-200'}`}>
             <span className="text-[10px] font-black uppercase tracking-widest text-[#64748B]">
-              RECURRING THIS YEAR
+              RECURRING BILLS
             </span>
             <span className="text-sm sm:text-base font-black leading-none text-[#64748B]">
               ${recurringThisYear.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -470,7 +471,6 @@ export default function Bills({
           
         {urgentBills.length > 0 && (
           <div className="space-y-4">
-            <div className={`mb-4 border-t ${isDarkMode ? "border-white/20" : "border-black/20"}`}></div>
             
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Unpaid Bills</h3>
 
@@ -545,7 +545,7 @@ export default function Bills({
               </div>
             </div>
             
-            <div className={`mx-6 my-6 border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
+            <div className={`mx-6 my-6 border-t relative z-10 ${isDarkMode ? "border-white/20" : "border-black/20"}`}></div>
           </div>
         )}
 

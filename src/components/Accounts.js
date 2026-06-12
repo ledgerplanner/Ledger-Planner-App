@@ -157,7 +157,7 @@ export default function Accounts({
           </div>
         </div>
  
-        <div className={`flex gap-2 transform transition-all duration-700 delay-400 cubic-bezier(0.16, 1, 0.3, 1) ${showContent ? "opacity-100 translate-x-0" : "opacity-0 translate-x-12"}`}>
+        <div className={`flex justify-center w-full gap-2 transform transition-all duration-700 delay-400 cubic-bezier(0.16, 1, 0.3, 1) ${showContent ? "opacity-100 translate-x-0" : "opacity-0 translate-x-12"}`}>
           {["1M", "3M", "6M", "YTD"].map((tf) => (
             <button
               key={tf}

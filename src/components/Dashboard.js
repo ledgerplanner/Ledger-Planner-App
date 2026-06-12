@@ -180,7 +180,6 @@ export default function Dashboard({
     }
   }
 
-  // RE-CALIBRATION: Downscaled light mode shadow configuration to match Accounts blueprint specs precisely
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
@@ -316,7 +315,7 @@ export default function Dashboard({
                 </div>
 
                 <div className="text-center pt-1.5 pb-1">
-                  <p className={`text-2xl font-black tracking-tighter leading-none mb-1 ${isDeficit ? "text-red-500" : "text-[#10B981]"}`}>
+                   <p className={`text-2xl font-black tracking-tighter leading-none mb-1 ${isDeficit ? "text-red-500" : "text-[#10B981]"}`}>
                     ${Math.abs(waterfallBalance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                   </p>
                   <span className={`text-[8px] font-black uppercase tracking-[0.15em] ${isDarkMode ? "text-white" : "text-black"} leading-none block`}>
@@ -338,7 +337,7 @@ export default function Dashboard({
                     </div>
                   )}
                   <div className="flex flex-col items-end shrink-0">
-                    <span className={`text-[7px] font-black uppercase tracking-widest mb-0.5 ${isDarkMode ? "text-white" : "text-black"}`}>
+                     <span className={`text-[7px] font-black uppercase tracking-widest mb-0.5 ${isDarkMode ? "text-white" : "text-black"}`}>
                       {unpaidCount === 1 ? `${unpaidCount} Bill Out` : `${unpaidCount} Bills Out`}
                     </span>
                     <span className="text-[10px] font-black text-[#1877F2]">-${unpaidTotal.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
@@ -398,7 +397,7 @@ export default function Dashboard({
                       ) : (
                         sortedBills.map((bill) => (
                           <div key={bill?.id} className={`flex flex-col p-4 rounded-2xl border shadow-sm transition-colors ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
-                            
+                           
                             <div className="flex items-start justify-between w-full mb-4">
                                <div className="flex items-center gap-3 cursor-pointer flex-1 min-w-0" onClick={() => setSelectedEntry(bill)}>
                                   <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
@@ -534,8 +533,12 @@ export default function Dashboard({
 
                       <div className="flex items-center justify-between gap-2 w-full">
                          <div className="flex flex-col flex-1 min-w-0 pr-2">
-                          <span className={`text-[9px] font-black uppercase tracking-widest truncate w-full ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{tx?.category || "General"}</span>
-                          <span className={`text-[10px] font-semibold uppercase tracking-widest mt-0.5 truncate w-full ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>{tx?.date || "Recent"}</span>
+                          <span className={`text-[9px] font-black uppercase tracking-widest truncate w-full ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                            {tx?.isDirectGoalEntry ? "🔒 SAVED TO GOAL" : (tx?.category || "General")}
+                          </span>
+                          <span className={`text-[10px] font-semibold uppercase tracking-widest mt-0.5 truncate w-full ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
+                            {tx?.date || "Recent"}
+                          </span>
                          </div>
                          <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 ${txColorStr} ${txBgBorderStr} ${txShadowStr} whitespace-nowrap`}>
                             {txPrefix}{(Number(tx?.amount) || 0).toFixed(2)}

@@ -15,7 +15,8 @@ export default function Bills({
   liveHeroBalance,
   accountsHeroBalance,
   totalLiveIncome,
-  accounts = []
+  accounts = [],
+  signatureColor = "#1877F2"
 }) {
   const [isMounted, setIsMounted] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth());
@@ -193,8 +194,9 @@ export default function Bills({
   
   const globalTotalDue = bills.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
   const globalTotalPaid = bills.filter((b) => b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
-  const globalProgressPercentage = globalTotalDue === 0 ? 0 : Math.max(0, Math.min((globalTotalPaid / globalTotalDue) * 100, 100));
   const urgentBills = bills.filter((b) => !b.isPaid && (b.isOverdue || b.payday === "Due Now"));
+  const urgentTotal = urgentBills.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+  
   const horizonBills = bills.filter((b) => {
     if (!b.rawDate) return false;
     const parts = b.rawDate.split("-");
@@ -208,46 +210,94 @@ export default function Bills({
     .reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
   const baseMonthlyIncome = Object.values(paydayConfig || {}).reduce((sum, slot) => sum + (Number(slot?.income) || 0), 0);
 
+  // HERO METRICS
+  const annualBills = bills.filter((b) => {
+    if (!b.rawDate) return false;
+    const parts = b.rawDate.split("-");
+    return parseInt(parts[0], 10) === currentYear;
+  });
+  const annualTotal = annualBills.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+  const annualPaid = annualBills.filter((b) => b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+  const annualProgressPercentage = annualTotal === 0 ? 0 : Math.max(0, Math.min((annualPaid / annualTotal) * 100, 100));
+
+  const { totalDue: remainingThisMonth } = getMonthMetrics(currentMonthIndex);
+  
+  const activeRecurringSum = bills.filter(b => b.isRecurring && !b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+  const monthsLeftInYear = Math.max(0, 11 - currentMonthIndex);
+  const recurringThisYear = activeRecurringSum * monthsLeftInYear;
+
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
-      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
+      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col items-center w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
           
-        <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
+        <div className="absolute top-4 w-full flex justify-center pointer-events-none">
           <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-black"}`}>
             Master Bills List
           </span>
         </div>
 
-        <div className="flex items-center justify-between w-full">
-          <div className="relative w-28 h-28 flex-shrink-0">
-            <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
-              <defs>
-                <linearGradient id="billGlow" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#10B981" />
-                  <stop offset="100%" stopColor="#059669" />
-                </linearGradient>
-              </defs>
-              <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "#1E293B" : "rgba(226, 232, 240, 0.9)"} strokeWidth="12" />
-              <circle cx="50" cy="50" r="40" fill="transparent" stroke="url(#billGlow)" strokeWidth="12" strokeLinecap="round" strokeDasharray={251.2} strokeDashoffset={isMounted ? (251.2 - (251.2 * globalProgressPercentage) / 100) : 251.2} className="transition-all duration-1000 ease-out" />
-            </svg>
-            <div className={`absolute inset-0 flex flex-col items-center justify-center transform transition-all duration-700 delay-300 ease-out p-1 text-center ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
-              <span className={`font-black tracking-tighter leading-none min-[0px]:text-[11px] min-[350px]:text-xs sm:text-sm ${globalTotalPaid === 0 ? "text-red-500" : "text-[#10B981]"}`}>
-                ${globalTotalPaid.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </span>
-              <span className="text-[7px] font-black uppercase tracking-widest text-slate-400 mt-0.5">Paid</span>
-            </div>
+        {/* 1. Animated Ring */}
+        <div className="relative w-32 h-32 flex-shrink-0 mt-4 mb-2">
+          <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
+            <defs>
+              <linearGradient id="billGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#10B981" />
+                <stop offset="100%" stopColor="#059669" />
+              </linearGradient>
+            </defs>
+            <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "#1E293B" : "rgba(226, 232, 240, 0.9)"} strokeWidth="10" />
+            <circle cx="50" cy="50" r="40" fill="transparent" stroke="url(#billGlow)" strokeWidth="10" strokeLinecap="round" strokeDasharray={251.2} strokeDashoffset={isMounted ? (251.2 - (251.2 * annualProgressPercentage) / 100) : 251.2} className="transition-all duration-1000 ease-out" />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-1 text-center">
+            <span className={`font-black tracking-tighter leading-none text-2xl ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+              {Math.round(annualProgressPercentage)}%
+            </span>
+            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-0.5">PAID</span>
           </div>
-   
-          <div className="flex-1 pl-4 text-center overflow-hidden">
-            <p className={`text-[10px] font-black uppercase tracking-widest mb-1 text-slate-400 transform transition-all duration-700 delay-200 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-              Total Bills Paid
-            </p>
-            <div className="transform transition-all duration-700 delay-400">
-              <p className="text-xl min-[380px]:text-2xl font-black tracking-tighter text-[#1877F2] m-0 block truncate">
-                ${globalTotalDue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </p>
-            </div>
+        </div>
+
+        {/* 2. Gliding Subtext */}
+        <div className={`transform transition-all duration-700 ease-out mb-5 ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"}`}>
+          <span className={`text-[11px] font-bold ${annualPaid === 0 ? "text-red-500" : "text-[#10B981]"}`}>
+            PAID ${annualPaid.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+          <span className={`text-[11px] font-bold ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}> / </span>
+          <span className="text-[11px] font-bold" style={{ color: signatureColor }}>
+            TOTAL ${annualTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+        </div>
+
+        {/* 3. Flowing Pills */}
+        <div className={`w-full space-y-2 transform transition-all duration-700 delay-200 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+          
+          <div className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transition-all ${urgentTotal > 0 ? (isDarkMode ? 'bg-red-900/20 border-red-900/50' : 'bg-red-50 border-red-200') : (isDarkMode ? 'bg-[#10B981]/10 border-[#10B981]/20' : 'bg-emerald-50 border-emerald-200')}`}>
+            <span className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 ${urgentTotal > 0 ? 'text-red-500' : 'text-[#10B981]'}`}>
+              {urgentTotal > 0 && <AlertCircle size={12} strokeWidth={2.5}/>} 
+              {urgentTotal > 0 ? 'TOTAL DUE NOW' : 'BOARD CLEAR'}
+            </span>
+            <span className={`text-sm sm:text-base font-black leading-none ${urgentTotal > 0 ? 'text-red-500' : 'text-[#10B981]'}`}>
+              ${urgentTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
           </div>
+
+          <div className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transition-all ${isDarkMode ? 'bg-slate-800/80 border-slate-700/80' : 'bg-slate-50 border-slate-200/80'}`}>
+            <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: signatureColor }}>
+              REMAINING THIS MONTH
+            </span>
+            <span className="text-sm sm:text-base font-black leading-none" style={{ color: signatureColor }}>
+              ${remainingThisMonth.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          </div>
+
+          <div className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transition-all ${isDarkMode ? 'bg-slate-800/80 border-slate-700/80' : 'bg-slate-50 border-slate-200/80'}`}>
+            <span className="text-[10px] font-black uppercase tracking-widest text-[#64748B]">
+              RECURRING THIS YEAR
+            </span>
+            <span className="text-sm sm:text-base font-black leading-none text-[#64748B]">
+              ${recurringThisYear.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          </div>
+
         </div>
 
       </div>

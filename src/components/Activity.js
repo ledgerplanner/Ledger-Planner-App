@@ -21,9 +21,7 @@ export default function Activity({
   }, []);
 
   const filteredTransactions = transactions.filter(tx => {
-    // GHOST ENTRY FIREWALL: Completely hide direct-to-goal funding from the Liquid Activity feed
-    if (tx.isDirectGoalEntry) return false;
-
+    // THE AUDIT TRAIL: Ghost entries are now allowed through to the visual feed.
     const matchesSearch = tx.name.toLowerCase().includes(activitySearch.toLowerCase()) ||
       (tx.category && tx.category.toLowerCase().includes(activitySearch.toLowerCase()));
     const matchesFilter = activityFilter === "All" || tx.type === activityFilter;
@@ -50,10 +48,11 @@ export default function Activity({
     let refunds = 0;
     
     todayTransactions.forEach(tx => {
-      if (tx.type === "Income" && tx.category !== "Transfers (Venmo/Zelle)") {
+      // Localized Math Firewall: Ignore Ghost Entries in the daily header loop
+      if (tx.type === "Income" && tx.category !== "Transfers (Venmo/Zelle)" && !tx.isDirectGoalEntry) {
         pureInflow += Number(tx.amount) || 0;
       }
-      if (tx.type === "Expense" && (tx.category !== "Transfers (Venmo/Zelle)" || tx.isGoalFunding)) {
+      if (tx.type === "Expense" && (tx.category !== "Transfers (Venmo/Zelle)" || tx.isGoalFunding) && !tx.isDirectGoalEntry) {
         rawOutflow += Number(tx.amount) || 0;
       }
       if (tx.isCashOut) {
@@ -102,10 +101,11 @@ export default function Activity({
       }
       groups[monthYear].transactions.push(tx);
       
-      if (tx.type === "Income" && tx.category !== "Transfers (Venmo/Zelle)") {
+      // Localized Math Firewall: Ignore Ghost Entries in the monthly archive loop
+      if (tx.type === "Income" && tx.category !== "Transfers (Venmo/Zelle)" && !tx.isDirectGoalEntry) {
         groups[monthYear].pureInflow += Number(tx.amount) || 0;
       }
-      if (tx.type === "Expense" && (tx.category !== "Transfers (Venmo/Zelle)" || tx.isGoalFunding)) {
+      if (tx.type === "Expense" && (tx.category !== "Transfers (Venmo/Zelle)" || tx.isGoalFunding) && !tx.isDirectGoalEntry) {
         groups[monthYear].rawOutflow += Number(tx.amount) || 0;
       }
       if (tx.isCashOut) {
@@ -162,7 +162,7 @@ export default function Activity({
   };
 
   // ==========================================
-  // EXPENSE REFUND METHOD & SPILLOVER PROTOCOL: HERO DATA MASTER
+  // EXPENSE REFUND & SPILLOVER PROTOCOL: HERO DATA MASTER
   // ==========================================
   
   const pureIncome = transactions
@@ -241,7 +241,9 @@ export default function Activity({
       : "bg-orange-50 text-orange-600 drop-shadow-[0_0_12px_rgba(249,115,22,0.7)]";
   };
 
+  // UI OVERRIDE: Mute the text color for Vaulted entries
   const getTxCategoryColor = (tx) => {
+    if (tx.isDirectGoalEntry) return isDarkMode ? "text-slate-400" : "text-slate-500";
     if (tx.isBillPayment || tx.category === "Bill Payment") return "text-[#1877F2]";
     if (tx.type === "Income") return "text-[#10B981]";
     return "text-[#F97316]";
@@ -448,7 +450,8 @@ export default function Activity({
                             <div className={`mt-3 pt-3 border-t flex items-center justify-between gap-2 ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
                               <div className="flex-1 min-w-0 flex flex-col">
                                 <span className={`text-[10px] font-black uppercase tracking-widest truncate leading-tight ${getTxCategoryColor(tx)}`}>
-                                  {tx.category || "Uncategorized"}
+                                  {/* UI OVERRIDE: Display Locked Tag */}
+                                  {tx.isDirectGoalEntry ? "🔒 SAVED TO GOAL" : (tx.category || "Uncategorized")}
                                 </span>
                                 <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest truncate leading-tight mt-0.5">
                                   {formatActivityDate(tx.date, null)}
@@ -518,7 +521,8 @@ export default function Activity({
                              <div className={`mt-3 pt-3 border-t flex items-center justify-between gap-2 ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
                                 <div className="flex-1 min-w-0 flex flex-col">
                                   <span className={`text-[10px] font-black uppercase tracking-widest truncate leading-tight ${getTxCategoryColor(tx)}`}>
-                                    {tx.category || "Uncategorized"}
+                                    {/* UI OVERRIDE: Display Locked Tag */}
+                                    {tx.isDirectGoalEntry ? "🔒 SAVED TO GOAL" : (tx.category || "Uncategorized")}
                                   </span>
                                   <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest truncate leading-tight mt-0.5">
                                     {formatActivityDate(tx.date, group.label)}

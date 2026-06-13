@@ -152,7 +152,7 @@ export default function Bills({
 
       if (mIdx > currentMonthIndex) {
         if (bMonth === mIdx) return true;
-        // FIX: Only show as recurring if the month index is STRICTLY GREATER than the bill's creation month.
+        // Only show as recurring if the month index is STRICTLY GREATER than the bill's creation month.
         return b.isRecurring && bMonth < mIdx; 
       }
 
@@ -170,13 +170,23 @@ export default function Bills({
   const handleMonthCardClick = (mIdx) => {
     setSelectedMonth(mIdx);
     setExpandedMonthIdx(mIdx);
-    setTimeout(() => {
-      document.getElementById(`month-accordion-${mIdx}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 150);
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        document.getElementById(`month-accordion-${mIdx}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 150);
+    });
   };
 
   const toggleMonthAccordion = (mIdx) => {
-    setExpandedMonthIdx(expandedMonthIdx === mIdx ? -1 : mIdx);
+    const targetIdx = expandedMonthIdx === mIdx ? -1 : mIdx;
+    setExpandedMonthIdx(targetIdx);
+    if (targetIdx !== -1) {
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          document.getElementById(`month-accordion-${targetIdx}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 150);
+      });
+    }
   };
 
   const sortBillsSurgically = (billList) => {
@@ -221,11 +231,11 @@ export default function Bills({
   const annualPaid = annualBills.filter((b) => b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
   const annualProgressPercentage = annualTotal === 0 ? 0 : Math.max(0, Math.min((annualPaid / annualTotal) * 100, 100));
 
-  const { totalDue: remainingThisMonth } = getMonthMetrics(currentMonthIndex);
+  const { totalDue: remainingThisMonth, monthBills: currentMonthBillsList } = getMonthMetrics(currentMonthIndex);
   
-  const activeRecurringSum = bills.filter(b => b.isRecurring && !b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
-  const monthsLeftInYear = Math.max(0, 11 - currentMonthIndex);
-  const recurringThisYear = activeRecurringSum * monthsLeftInYear;
+  const recurringThisMonthTotal = currentMonthBillsList
+    .filter(b => b.isRecurring && !b.isPaid)
+    .reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
 
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
@@ -296,7 +306,7 @@ export default function Bills({
               RECURRING BILLS
             </span>
             <span className="text-sm sm:text-base font-black leading-none text-[#64748B]">
-              ${recurringThisYear.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              ${recurringThisMonthTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
 
@@ -430,9 +440,11 @@ export default function Bills({
             onClick={() => {
               setSelectedMonth(12);
               setExpandedMonthIdx(12);
-              setTimeout(() => {
-                document.getElementById("month-accordion-12")?.scrollIntoView({ behavior: "smooth", block: "start" });
-              }, 150);
+              requestAnimationFrame(() => {
+                setTimeout(() => {
+                  document.getElementById("month-accordion-12")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }, 150);
+              });
             }}
             className={`shrink-0 w-52 p-5 rounded-[1.75rem] border cursor-pointer active:scale-[0.95] snap-center transition-all flex flex-col justify-between h-44 ${selectedMonth === 12 ? (isDarkMode ? "bg-blue-900/20 border-blue-500 shadow-md scale-[1.01]" : "bg-blue-50/80 border-blue-300 shadow-[0_4px_20px_rgba(24,119,242,0.15)] scale-[1.01]") : (isDarkMode ? "bg-[#1E293B] border-slate-700 shadow-md" : "bg-white/90 backdrop-blur-sm border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]")}`}
           >
@@ -560,6 +572,7 @@ export default function Bills({
             const isCollapsed = expandedMonthIdx !== m.idx; 
             const sortedBills = sortBillsSurgically(monthBills.filter((b) => !b.isPaid));
             const isPastMonth = m.idx < currentMonthIndex;
+            const isFutureMonth = m.idx > currentMonthIndex;
 
             const headerTextColor = isPastMonth && totalDue > 0 
               ? "text-red-500 font-black" 
@@ -609,6 +622,8 @@ export default function Bills({
                           const isUrgent = isStrictlyOverdue || isDueToday;
 
                           const useRecurringLabel = bill.isRecurring && m.idx > billMonthIdx;
+                          const hidePayButton = isFutureMonth && useRecurringLabel;
+                          
                           const displayStatusText = useRecurringLabel ? "RECURRING" : (isStrictlyOverdue ? "OVERDUE" : isDueToday ? "DUE NOW" : "DUE");
                           const statusColorClass = useRecurringLabel ? "text-slate-400 font-bold" : (isUrgent ? "text-red-500" : "text-slate-400");
                           const blockIconUrgentClass = useRecurringLabel ? (isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200") : (isUrgent ? (isDarkMode ? "bg-red-900/20 border-red-900/50" : "bg-red-50 border-red-100") : (isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"));
@@ -646,16 +661,20 @@ export default function Bills({
                                     {bill.fullDate || "TBD"}
                                   </span>
                                 </div>
-                                <div className="flex-1 flex justify-center px-1">
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); handleBillClick?.(bill.id); }}
-                                    className="px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0"
-                                  >
-                                    <CheckCircle2 size={14} strokeWidth={2.5} />
-                                    <span className="hidden min-[360px]:inline">MARK AS PAID</span>
-                                    <span className="min-[360px]:hidden">PAY</span>
-                                  </button>
-                                </div>
+                                {!hidePayButton ? (
+                                  <div className="flex-1 flex justify-center px-1">
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); handleBillClick?.(bill.id); }}
+                                      className="px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0"
+                                    >
+                                      <CheckCircle2 size={14} strokeWidth={2.5} />
+                                      <span className="hidden min-[360px]:inline">MARK AS PAID</span>
+                                      <span className="min-[360px]:hidden">PAY</span>
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="flex-1"></div>
+                                )}
                                 <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
                                   {(Number(bill.amount) || 0).toFixed(2)}
                                 </div>
@@ -725,6 +744,7 @@ export default function Bills({
                       const parts = bill.rawDate ? bill.rawDate.split("-") : [];
                       const billMonthIdx = parts.length === 3 ? parseInt(parts[1], 10) - 1 : currentMonthIndex;
                       const useRecurringLabel = bill.isRecurring && 12 > billMonthIdx;
+                      const hidePayButton = useRecurringLabel;
                       
                       return (
                         <div key={bill.id} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
@@ -749,16 +769,20 @@ export default function Bills({
                               </span>
                               <span className={`text-xs font-bold ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>{bill.fullDate}</span>
                             </div>
-                            <div className="flex-1 flex justify-center px-1">
-                              <button
-                                onClick={(e) => { e.stopPropagation(); handleBillClick?.(bill.id); }}
-                                className="px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0"
-                              >
-                                <CheckCircle2 size={14} strokeWidth={2.5} />
-                                <span className="hidden min-[360px]:inline">MARK AS PAID</span>
-                                <span className="min-[360px]:hidden">PAY</span>
-                              </button>
-                            </div>
+                            {!hidePayButton ? (
+                              <div className="flex-1 flex justify-center px-1">
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleBillClick?.(bill.id); }}
+                                  className="px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0"
+                                >
+                                  <CheckCircle2 size={14} strokeWidth={2.5} />
+                                  <span className="hidden min-[360px]:inline">MARK AS PAID</span>
+                                  <span className="min-[360px]:hidden">PAY</span>
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex-1"></div>
+                            )}
                             <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 text-[#1877F2] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
                               {(Number(bill.amount) || 0).toFixed(2)}
                             </div>

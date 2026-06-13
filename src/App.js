@@ -220,7 +220,7 @@ export default function App() {
       window.navigator.vibrate(pattern);
     }
   };
-  const triggerVictory = () => { triggerHaptic([30, 50, 30]); setShowConfetti(true); setTimeout(() => setShowConfetti(false), 3000); };
+  const triggerVictory = () => { triggerHaptic([30, 50, 30]); setShowConfetti(true); setTimeout(() => setShowConfetti(false), 4500); };
   const triggerWarning = () => { triggerHaptic([50, 100, 50]); };
 
   const enablePushNotifications = async () => {
@@ -1370,7 +1370,8 @@ export default function App() {
             ))}
           </div>
         </div>
-{isSettingsOpen && (
+        {/* UPDATE 2 INJECTED: Prop Bridge linking App.js master states down into Settings Data Export Engine */}
+        {isSettingsOpen && (
           <Settings 
             userName={userName}
             isDarkMode={isDarkMode}
@@ -1386,6 +1387,9 @@ export default function App() {
             setSignatureColor={setSignatureColor}
             currentCurrency={currentCurrency}
             setCurrentCurrency={setCurrentCurrency}
+            bills={dynamicBills}
+            transactions={transactions}
+            accounts={accounts}
           />
         )}
 
@@ -1407,13 +1411,57 @@ export default function App() {
               }
             }
           }
-          const daysLeft = Math.max(Math.ceil((nextPaydayDate - todayForDynamic) / (1000 * 60 * 60 * 24)), 1);
+          
+          // UPDATE 1 INJECTED: Absolute Timeline Calculation for "Payday Eve" Bug Fix
+          const daysUntilPayday = Math.max(Math.ceil((nextPaydayDate - todayForDynamic) / (1000 * 60 * 60 * 24)), 1);
+          
           const currentCycleBillsTotal = bills.filter(b => b.payday === activePaydayKey && !b.isPaid).reduce((sum, b) => sum + (b.amount || 0), 0);
-          const trueRunwayAmount = Math.max((liquidCash - currentCycleBillsTotal) / daysLeft, 0);
+          const trueRunwayAmount = Math.max((liquidCash - currentCycleBillsTotal) / daysUntilPayday, 0);
           const totalCycleIncome = parseFloat(paydayConfig?.[activePaydayKey]?.income) || 0;
           const burnPercentage = totalCycleIncome > 0 ? Math.round((currentCycleBillsTotal / totalCycleIncome) * 100) : 0;
           const excessCushion = liquidCash;
           const isUnconsumedBriefing = isAM ? !hasConsumedAMBriefing : !hasConsumedPMBriefing;
+          const userNameDisplay = userName || "Founder";
+
+          // UPDATE 1 INJECTED: Combinatorial Matrix Briefing Engine (Deterministic Randomizer)
+          const seedString = (user?.uid || "demo") + new Date().toDateString();
+          let seedVal = 0;
+          for(let i = 0; i < seedString.length; i++) seedVal = Math.imul(31, seedVal) + seedString.charCodeAt(i) | 0;
+          seedVal = Math.abs(seedVal);
+          const pick = (arr, offset) => arr[(seedVal + offset) % arr.length];
+
+          let briefingText = "";
+          if (isAM) {
+            if (burnPercentage > 60) {
+              const t1 = ["Capital lock-down active, {N}.", "Heads up, {N}, let's play defense today.", "Reviewing the payload trajectory, {N}.", "Defensive posture required, {N}.", "Attention on deck, {N}.", "Operational alert, {N}.", "Let's review the active burn rate, {N}.", "Tactical adjustment needed, {N}."];
+              const t2 = ["This cycle is running hot with {P}% of your income locked into fixed bills.", "Fixed obligations are consuming a massive {P}% of your baseline pay.", "A steep {P}% of your incoming capital is strictly allocated.", "Telemetry shows {P}% of this paycheck is already spoken for.", "You are operating at a {P}% fixed-burn capacity.", "The ledger shows a heavy {P}% burn rate.", "Fixed outflow is critically high at {P}% for this cycle.", "We are tracking a heavy {P}% overhead on this capital."];
+              const t3 = ["Freeze all non-essential outflows and let automation do the heavy lifting.", "Hold a rigid line on casual swiping until this wave passes.", "Focus purely on maintaining the cushion line.", "Execute strict operational discipline until the next influx clears.", "Minimize discretionary spending and let the system absorb the impact.", "Keep your powder dry and rely on pre-programmed allocations.", "Lock down your daily velocity and trust the vault's defenses.", "Maintain strict capital controls until the next cycle drops."];
+              briefingText = `${pick(t1, 0).replace('{N}', userNameDisplay)} ${pick(t2, 1).replace('{P}', burnPercentage)} ${pick(t3, 2)}`;
+            } else if (burnPercentage < 30) {
+              const t1 = ["Optimal conditions detected, {N}.", "Good morning, {N}. We have a clear runway.", "System checks nominal, {N}.", "Green lights across the board, {N}.", "Strategic advantage secured, {N}.", "Capitalizing on the surplus, {N}.", "Excellent operational setup today, {N}.", "Morning analysis is highly favorable, {N}."];
+              const t2 = ["This is a Low-Burn cycle—only {P}% of this income goes to fixed nodes.", "We are tracking a highly efficient {P}% overhead on this cycle.", "Your baseline burn is running at a pristine {P}% right now.", "Fixed obligations are incredibly light at just {P}%.", "You have massive flexibility with only {P}% fixed allocation.", "The vault is operating with a minimal {P}% drag factor.", "We are seeing extreme efficiency with a {P}% baseline burn.", "Your liquidity is dominant with just {P}% fixed capital."];
+              const t3 = ["You have a prime opportunity to make an aggressive manual transfer toward your Savings Goal.", "Deploy excess capital toward your primary wealth targets ahead of schedule.", "Accelerate your savings timeline with a manual capital injection today.", "Consider sweeping the surplus directly into your investment layers.", "Use this velocity to strike your financial targets early.", "Route the excess runway into your highest-yield goal.", "Capitalize on this gap by fully funding a priority target.", "Command the surplus into your long-term vault structures."];
+              briefingText = `${pick(t1, 3).replace('{N}', userNameDisplay)} ${pick(t2, 4).replace('{P}', burnPercentage)} ${pick(t3, 5)}`;
+            } else {
+              const t1 = ["Runway calculated, {N}.", "Morning telemetry is live, {N}.", "Baseline established, {N}.", "Reviewing your velocity metrics, {N}.", "Operational targets set, {N}.", "Good morning, {N}. Here is your trajectory.", "Checking the daily burn rate, {N}.", "Vault analysis complete, {N}."];
+              const t2 = ["After fixed bills, your true safe-to-spend runway is exactly ${A} per day until {D}.", "You are holding a daily operational velocity of ${A} leading up to {D}.", "Your discretionary burn rate is safely capped at ${A}/day until {D}.", "We project a steady ${A} daily allowance until the next payload on {D}.", "The ledger clears you for ${A} in daily outflows until {D}.", "Your baseline cushion allows for a ${A} daily velocity through {D}.", "We've locked your maximum daily variance at ${A} leading into {D}.", "Operational models give you a strict ${A} daily limit until {D}."];
+              const t3 = ["Keep daily spending under this line to maintain a perfect cushion.", "Hold this exact trajectory to secure your month-end surplus.", "Pace your outflows to match this mathematical baseline.", "Defend this threshold to guarantee a flawless cycle.", "Execute within these parameters to protect the vault.", "Maintain discipline on this number to arrive exactly on target.", "Do not exceed this velocity if you want to optimize savings.", "Command this baseline to ensure zero liquidity gaps."];
+              briefingText = `${pick(t1, 6).replace('{N}', userNameDisplay)} ${pick(t2, 7).replace('{A}', trueRunwayAmount.toFixed(2)).replace('{D}', formatPaydayDateStr(paydayConfig?.[activePaydayKey]?.date))} ${pick(t3, 8)}`;
+            }
+          } else {
+            // FIX INJECTED: Surgical Timeline calculation restricting "Payday Eve" to strictly 1 day.
+            if (daysUntilPayday === 1) {
+              const t1 = ["Payday Eve is active, {N}.", "Final cycle approach, {N}.", "Preparing for payload injection, {N}.", "Payday Eve protocols engaged, {N}.", "Closing out the cycle, {N}.", "Final sweep before the drop, {N}.", "Payday Eve is officially here, {N}.", "Securing the vault for tomorrow, {N}."];
+              const t2 = ["You navigated this wave with a surplus of ${E} remaining in your baseline buffer.", "We are tracking a strong ${E} excess cushion as we cross the finish line.", "You held the line beautifully with ${E} intact before tomorrow's deposit.", "The ledger shows a solid ${E} remaining in liquidity.", "You executed the plan and retained a ${E} tactical reserve.", "We're ending the cycle with a precise ${E} buffer.", "Your discipline preserved a ${E} operational surplus.", "The math holds true—you have ${E} remaining in the primary vault."];
+              const t3 = ["Excellent discipline. Preparing the vault to initialize your incoming paycheck tomorrow.", "Outstanding execution. We are primed to receive capital tomorrow.", "Flawless run. The system is ready to route tomorrow's inbound funds.", "Mission accomplished. Stand by for capital deployment in the morning.", "Perfect pacing. Vault doors are open for tomorrow's influx.", "High-level execution. Preparing automated routing for the new cycle.", "Textbook finish. The ledger is clean and ready for tomorrow.", "Commanding performance. Initializing receiving protocols for payday."];
+              briefingText = `${pick(t1, 9).replace('{N}', userNameDisplay)} ${pick(t2, 10).replace('{E}', excessCushion.toFixed(2))} ${pick(t3, 11)}`;
+            } else {
+              const t1 = ["Evening analysis complete, {N}.", "Wrapping up daily telemetry, {N}.", "End-of-day ledger sync, {N}.", "Nightly vault check, {N}.", "Reviewing today's velocity, {N}.", "Closing out the day's books, {N}.", "Evening baseline confirmed, {N}.", "System entering night mode, {N}."];
+              const t2 = ["We are exactly {D} days out from your next scheduled capital injection.", "You have a {D}-day operational gap until the next paycheck drops.", "The system is tracking a {D}-day timeline to your next funding event.", "We are holding steady with {D} days remaining in this cycle.", "The math shows {D} days left until the primary account is replenished.", "We are pacing toward a payload drop in exactly {D} days.", "The countdown sits at {D} days until the next payday.", "You must sustain this trajectory for another {D} days."];
+              const t3 = ["Rest easy, the automated systems are holding the line.", "Maintain your defensive posture through the remainder of the week.", "The baseline is secure. No further action is required tonight.", "Your capital is locked. Great execution today.", "Hold this exact pace and we will cross the finish line perfectly.", "Zero alerts active. The ledger is perfectly balanced.", "Stay disciplined tomorrow and trust the pre-planned allocations.", "The vault is secure. We ride this velocity to the end."];
+              briefingText = `${pick(t1, 12).replace('{N}', userNameDisplay)} ${pick(t2, 13).replace('{D}', daysUntilPayday)} ${pick(t3, 14)}`;
+            }
+          }
 
           return (
             <div className="fixed inset-0 z-[120] flex justify-end">
@@ -1454,17 +1502,7 @@ export default function App() {
                           }} className="text-slate-400 hover:text-slate-600 p-0.5">×</button>
                         </div>
                         <p className={`text-xs font-bold leading-relaxed ${isDarkMode ? "text-slate-300" : "text-amber-950"}`}>
-                          {isAM ? (
-                            burnPercentage > 60 ? (
-                              `Heads up, ${userName}. This paycheck is a High-Burn cycle—${burnPercentage}% of this income is spoken for by fixed bills. It’s a great week to hold the line on non-essential spending and let your automation handle the heavy lifting.`
-                            ) : burnPercentage < 30 ? (
-                              `Good morning, ${userName}. This is a Low-Burn cycle—only ${burnPercentage}% of this income goes to bills. You have a prime opportunity this week to make an extra manual transfer toward your Savings Goal ahead of schedule.`
-                            ) : (
-                              `Good morning, ${userName}. After accounting for all bills in this cycle, your true safe-to-spend runway is exactly $${trueRunwayAmount.toFixed(2)} per day until your next paycheck drops on ${formatPaydayDateStr(paydayConfig?.[activePaydayKey]?.date)}. Keep daily spending under this line to maintain a perfect cushion.`
-                            )
-                          ) : (
-                            `Good evening, ${userName}. Payday Eve is active. You successfully navigated this cycle with a surplus of $${excessCushion.toFixed(2)} remaining in your baseline checking buffer. Excellent discipline. Preparing the vault to initialize your incoming paycheck tomorrow morning.`
-                          )}
+                          {briefingText}
                         </p>
                       </div>
                     </div>
@@ -2141,7 +2179,6 @@ export default function App() {
                         <div className="mb-1 mt-1">
                             <label className={`block text-[9px] font-bold uppercase tracking-widest mb-1 px-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Recent Categories</label>
                             <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
-                                 {/* UPDATE 1 INJECTED: Contextual UI Glows for QAB Category Pills */}
                                  {currentRecentCategories.map(cat => {
                                     const isSelected = entryCategory === cat;
                                     const tabColorHex = drawerTab === "bills" ? signatureColor : drawerTab === "income" ? "#10B981" : "#F97316";
@@ -2282,7 +2319,6 @@ export default function App() {
                            ) : (
                              filteredCategories.map(group => (
                                <div key={group.group} className={`p-4 rounded-2xl border ${isDarkMode ? "bg-slate-900/40 border-slate-800" : "bg-white border-slate-100 shadow-sm"}`}>
-                                 {/* UPDATE 4 INJECTED: Domain Pop-Up Elimination (Inline Category Creator) */}
                                  <div className="flex justify-between items-center mb-3 pb-1 border-b border-dashed dark:border-slate-800 border-slate-100">
                                    <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">{group.group}</p>
                                    {customCategoryInput.startsWith(`[ADD]${group.group}:`) ? (
@@ -2376,16 +2412,15 @@ export default function App() {
            </div>
         )}
        
-        {/* UPDATE 4 INJECTED: Premium 3D Volumetric Confetti Engine */}
         {showConfetti && (
          <div className="absolute inset-0 z-[200] pointer-events-none flex items-center justify-center overflow-hidden" style={{ perspective: '800px' }}>
-            {[...Array(60)].map((_, i) => {
+            {[...Array(120)].map((_, i) => {
               const colors = [signatureColor, '#10B981', '#F97316'];
               const isStrip = Math.random() > 0.6;
               return (
                 <div 
                   key={i} 
-                  className="absolute animate-[explode3D_2.5s_cubic-bezier(0.25,1,0.5,1)_forwards]" 
+                  className="absolute animate-[explode3D_4.5s_cubic-bezier(0.1,1,0.1,1)_forwards]" 
                   style={{ 
                     backgroundColor: colors[Math.floor(Math.random() * colors.length)], 
                     left: '50%', top: '50%', 
@@ -2393,9 +2428,9 @@ export default function App() {
                     height: isStrip ? '24px' : '12px',
                     borderRadius: Math.random() > 0.5 && !isStrip ? '50%' : '2px',
                     transformStyle: 'preserve-3d',
-                    '--tx': `${(Math.random() - 0.5) * 1000}px`, 
-                    '--ty': `${(Math.random() - 0.3) * 1000 - 300}px`, 
-                    '--tz': `${(Math.random() - 0.5) * 500}px`,
+                    '--tx': `${(Math.random() - 0.5) * 1200}px`, 
+                    '--ty': `${(Math.random() - 0.3) * 1200 - 400}px`, 
+                    '--tz': `${(Math.random() - 0.5) * 600}px`,
                     '--rx': `${Math.random() * 1080}deg`,
                     '--ry': `${Math.random() * 1080}deg`,
                     '--rz': `${Math.random() * 1080}deg`,

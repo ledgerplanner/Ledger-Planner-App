@@ -319,6 +319,7 @@ export default function App() {
 
     return () => { unsubAcc(); unsubBills(); unsubTxs(); unsubTodos(); unsubConfig(); };
   }, [isMounted, isDemoMode, user]);
+
   useEffect(() => {
     if (!isMounted || isDemoMode || !user || hasCheckedRollover || bills.length === 0) return;
     const checkAutoRollover = async () => {
@@ -459,7 +460,6 @@ export default function App() {
       finally { setUser(null); setActiveTab("home"); setGlobalActionConfig(prev => ({ ...prev, isOpen: false })); }
     });
   };
-
   // === DYNAMIC UTILITY CALCULATION ENGINE ===
   const userName = isDemoMode ? "Aaron" : user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || "Founder";
   const getOrdinalNum = (n) => n + (n > 0 ? ['th', 'st', 'nd', 'rd'][(n > 3 && n < 21) || n % 10 > 3 ? 0 : n % 10] : '');
@@ -588,7 +588,6 @@ export default function App() {
       const targetAcc = accounts.find(a => a.id === refundAccountId);
       
       // --- PRECISION REVERT MATH FIX ---
-      // Look up the exact transaction that paid this bill to refund the exact amount paid.
       const linkedTx = transactions.find(t => t.id === bill.linkedTxId);
       const exactRefundAmount = linkedTx ? (linkedTx.amount || 0) : (bill.amount || 0);
 
@@ -613,7 +612,6 @@ export default function App() {
   const handleSaveEntryEdit = async () => {
     if (!selectedEntry) return;
     
-    // Bulletproof check: Does this ID exist in the bills array? If not, it's definitively a transaction.
     const isTransaction = !bills.some(b => b.id === selectedEntry.id);
     const colName = isTransaction ? "transactions" : "bills";
 
@@ -708,8 +706,12 @@ export default function App() {
   const handleAddGoal = async () => {
     const targetBal = parseFloat(newGoalAmount);
     if (!newGoalName.trim() || isNaN(targetBal) || targetBal <= 0 || !newGoalDate || !newGoalIcon) return;
+
+    // UPDATE 3: Force "Goal Name" Input to Default to ALL CAPS Data Layer Sanitization
+    const sanitizedGoalName = newGoalName.trim().toUpperCase();
+
     const newGoal = {
-      name: newGoalName,
+      name: sanitizedGoalName,
       type: "Goal",
       description: "Savings Goal",
       balance: 0,
@@ -754,10 +756,7 @@ export default function App() {
 
     const oldToBalance = toAcc.balance || 0;
     const newToBalance = oldToBalance + amt;
-    
-    // UPDATE INJECTED: Identify if the destination is a Goal to handle Liquid math and gamification triggers.
-    const isFundingGoal = toAcc.isGoal === true;
-    const isGoalCompleted = isFundingGoal && oldToBalance < (toAcc.targetAmount || 0) && newToBalance >= (toAcc.targetAmount || 0);
+    const isGoalCompleted = toAcc.isGoal && oldToBalance < (toAcc.targetAmount || 0) && newToBalance >= (toAcc.targetAmount || 0);
 
     if (isDemoMode) {
       setAccounts(accounts.map(a => {
@@ -768,19 +767,18 @@ export default function App() {
       const txId1 = `tx_demo_${Date.now()}_1`;
       const txId2 = `tx_demo_${Date.now()}_2`;
       setTransactions([
-        { id: txId1, name: sentName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Expense", category: "Transfers (Venmo/Zelle)", accountId: fromAcc.id, isGoalFunding: isFundingGoal },
-        { id: txId2, name: receivedName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: toAcc.id, isGoalFunding: isFundingGoal },
+        { id: txId1, name: sentName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Expense", category: "Transfers (Venmo/Zelle)", accountId: fromAcc.id },
+        { id: txId2, name: receivedName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: toAcc.id },
         ...transactions
       ]);
     } else {
       await updateDoc(doc(db, "users", user.uid, "accounts", fromAcc.id), { balance: fromAcc.balance - amt });
       await updateDoc(doc(db, "users", user.uid, "accounts", toAcc.id), { balance: toAcc.balance + amt });
-      await addDoc(collection(db, "users", user.uid, "transactions"), { name: sentName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Expense", category: "Transfers (Venmo/Zelle)", accountId: fromAcc.id, createdAt: serverTimestamp(), isGoalFunding: isFundingGoal });
-      await addDoc(collection(db, "users", user.uid, "transactions"), { name: receivedName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: toAcc.id, createdAt: serverTimestamp(), isGoalFunding: isFundingGoal });
+      await addDoc(collection(db, "users", user.uid, "transactions"), { name: sentName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Expense", category: "Transfers (Venmo/Zelle)", accountId: fromAcc.id, createdAt: serverTimestamp() });
+      await addDoc(collection(db, "users", user.uid, "transactions"), { name: receivedName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: toAcc.id, createdAt: serverTimestamp() });
     }
 
-    // UPDATE INJECTED: Immediate gamification trigger anytime funds arrive securely in a Goal.
-    if (isGoalCompleted || isFundingGoal) {
+    if (isGoalCompleted) {
       triggerVictory(); 
     } else {
       triggerHaptic(50);
@@ -888,6 +886,7 @@ export default function App() {
       triggerHaptic(50); setSelectedAccount(null); setGlobalActionConfig(prev => ({ ...prev, isOpen: false }));
     });
   };
+
   const clearPaydayConfig = () => { setEditPaydayConfig({ frequency: "Weekly", "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } });
     triggerHaptic(50); };
   const savePaydayConfig = async () => {
@@ -958,7 +957,6 @@ export default function App() {
     if (!a.rawDate) return 1; if (!b.rawDate) return -1;
     return new Date(a.rawDate || 0) - new Date(b.rawDate || 0);
   });
-
   const generateAlerts = () => {
     const currentAlerts = [];
     const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -1012,7 +1010,6 @@ export default function App() {
   const confirmPaymentRoute = async () => {
     const bill = bills.find(b => b.id === paymentModalConfig.billId);
     
-    // Find the account selected, OR fallback to the first available Checking/Cash account to prevent the silent freeze
     let targetAcc = accounts.find(a => a.id === paymentModalConfig.accountId);
     if (!targetAcc) {
       targetAcc = accounts.find(a => !a.isGoal && (a.type === "Checking" || a.type === "Cash")) || accounts[0];
@@ -1227,6 +1224,7 @@ export default function App() {
     if (entry.type === 'Expense') return "text-[#F97316]";
     return "text-[#1877F2]";
   };
+
   const renderHeroShell = (title, graphicContent) => {
     const hasOverdueOrDueNow = dynamicBills.some(b => !b.isPaid && (b.isOverdue || b.payday === "Due Now"));
     const hours = new Date().getHours();
@@ -1575,7 +1573,6 @@ export default function App() {
                 <button onClick={() => setIsAddAccountOpen(false)} className={closeButtonClass}><X size={18} /></button>
               </div>
               <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
-                {/* UPDATE 1 INJECTED: UI Uppercase styling locked in */}
                 <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Name</label><input type="text" value={newAccName} onChange={(e) => setNewAccName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors uppercase ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
                 <div className="relative">
                   <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Current Balance</label>
@@ -1609,7 +1606,7 @@ export default function App() {
               <div className={`p-6 space-y-4 relative ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
                 <div className="relative">
                   <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Goal Name</label>
-                  <input type="text" value={newGoalName} onChange={(e) => setNewGoalName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors outline-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                  <input type="text" value={newGoalName} onChange={(e) => setNewGoalName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors outline-none uppercase ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                 </div>
                 
                 <div className="relative cursor-pointer" onClick={() => setIsIconSelectorOpen(true)}>
@@ -1722,7 +1719,6 @@ export default function App() {
               </div>
 
               <div className="p-6 flex flex-col flex-1">
-                {/* UPDATE 2 INJECTED: Punchy clinical UX text copy locked in */}
                 <div className="relative mb-4">
                   <label className={`absolute left-4 top-2 text-[9px] font-black uppercase tracking-widest z-10 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>CASH OUT TO WHICH ACCOUNT?</label>
                   <select value={cashOutToAccount} onChange={(e) => setCashOutToAccount(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border font-bold text-sm appearance-none transition-colors outline-none focus:border-slate-400 dark:focus:border-slate-500 bg-transparent relative z-10 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
@@ -2145,11 +2141,23 @@ export default function App() {
                         <div className="mb-1 mt-1">
                             <label className={`block text-[9px] font-bold uppercase tracking-widest mb-1 px-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Recent Categories</label>
                             <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
-                                 {currentRecentCategories.map(cat => (
-                                    <button key={cat} onClick={() => setEntryCategory(cat)} className={`px-4 py-2 shrink-0 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-colors ${entryCategory === cat ? 'text-white border-transparent shadow-md' : isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-700"}`} style={{ backgroundColor: (entryCategory === cat && drawerTab === "bills") ? signatureColor : undefined }}>
-                                        {cat}
-                                    </button>
-                                 ))}
+                                 {/* UPDATE 1 INJECTED: Contextual UI Glows for QAB Category Pills */}
+                                 {currentRecentCategories.map(cat => {
+                                    const isSelected = entryCategory === cat;
+                                    const tabColorHex = drawerTab === "bills" ? signatureColor : drawerTab === "income" ? "#10B981" : "#F97316";
+                                    const tabShadowClass = drawerTab === "bills" ? "shadow-[0_0_12px_rgba(24,119,242,0.45)]" : drawerTab === "income" ? "shadow-[0_0_12px_rgba(16,185,129,0.45)]" : "shadow-[0_0_12px_rgba(249,115,22,0.45)]";
+
+                                    return (
+                                        <button 
+                                            key={cat} 
+                                            onClick={() => setEntryCategory(cat)} 
+                                            className={`px-4 py-2 shrink-0 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all ${isSelected ? `text-white border-transparent ${tabShadowClass}` : isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-700"}`} 
+                                            style={{ backgroundColor: isSelected ? tabColorHex : undefined }}
+                                        >
+                                            {cat}
+                                        </button>
+                                    );
+                                 })}
                             </div>
                         </div>
                      )}
@@ -2274,32 +2282,44 @@ export default function App() {
                            ) : (
                              filteredCategories.map(group => (
                                <div key={group.group} className={`p-4 rounded-2xl border ${isDarkMode ? "bg-slate-900/40 border-slate-800" : "bg-white border-slate-100 shadow-sm"}`}>
+                                 {/* UPDATE 4 INJECTED: Domain Pop-Up Elimination (Inline Category Creator) */}
                                  <div className="flex justify-between items-center mb-3 pb-1 border-b border-dashed dark:border-slate-800 border-slate-100">
                                    <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">{group.group}</p>
-                                   <button 
-                                     onClick={() => {
-                                       const instructionText = `Enter custom sub-category name for the "${group.group}" category.`;
-                                       openGlobalAction(
-                                         "Create Category Component",
-                                         instructionText,
-                                         "Build Node",
-                                         false,
-                                         () => {
-                                            const targetedInput = prompt(instructionText);
-                                            if (targetedInput && targetedInput.trim()) {
-                                              handleAddCustomCategory(group.group, targetedInput.trim());
-                                              triggerVictory();
-                                            }
-                                            setGlobalActionConfig(prev => ({ ...prev, isOpen: false }));
-                                         },
-                                         false
-                                       );
-                                     }}
-                                     className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded border border-blue-500/20 bg-blue-500/5 transition-colors"
-                                     style={{ color: signatureColor, borderColor: `${signatureColor}40` }}
-                                   >
-                                     [ + New Category ]
-                                   </button>
+                                   {customCategoryInput.startsWith(`[ADD]${group.group}:`) ? (
+                                       <div className="flex items-center gap-1">
+                                           <input 
+                                               autoFocus
+                                               type="text"
+                                               value={customCategoryInput.replace(`[ADD]${group.group}:`, '')}
+                                               onChange={(e) => setCustomCategoryInput(`[ADD]${group.group}:${e.target.value}`)}
+                                               placeholder="CATEGORY NAME"
+                                               className={`w-28 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded border outline-none ${isDarkMode ? "bg-slate-800 border-slate-600 text-white" : "bg-white border-slate-300 text-slate-900"}`}
+                                           />
+                                           <button 
+                                               onClick={() => {
+                                                   const val = customCategoryInput.replace(`[ADD]${group.group}:`, '');
+                                                   if(val.trim()) {
+                                                       handleAddCustomCategory(group.group, val.trim());
+                                                       triggerVictory();
+                                                   }
+                                                   setCustomCategoryInput("");
+                                               }}
+                                               className="text-[9px] font-black text-white px-2 py-0.5 rounded transition-all active:scale-95 shadow-sm"
+                                               style={{ backgroundColor: signatureColor }}
+                                           >
+                                               SAVE
+                                           </button>
+                                           <button onClick={() => setCustomCategoryInput("")} className="text-[9px] text-slate-400 px-1 hover:text-red-500">✕</button>
+                                       </div>
+                                   ) : (
+                                       <button 
+                                         onClick={() => setCustomCategoryInput(`[ADD]${group.group}:`)}
+                                         className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded border border-blue-500/20 bg-blue-500/5 transition-colors"
+                                         style={{ color: signatureColor, borderColor: `${signatureColor}40` }}
+                                       >
+                                         [ + New Category ]
+                                       </button>
+                                   )}
                                  </div>
                                  <div className="grid grid-cols-1 gap-1.5">
                                    {group.items.map(item => (
@@ -2356,12 +2376,35 @@ export default function App() {
            </div>
         )}
        
+        {/* UPDATE 4 INJECTED: Premium 3D Volumetric Confetti Engine */}
         {showConfetti && (
-         <div className="absolute inset-0 z-[200] pointer-events-none flex items-center justify-center overflow-hidden">
-            {[...Array(200)].map((_, i) => (
-              <div key={i} className="absolute w-3 h-3 rounded-sm animate-[explode_3s_ease-out_forwards]" style={{ backgroundColor: [signatureColor, '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#FFFFFF', '#FFD700', '#059669'][Math.floor(Math.random() * 8)], left: '50%', top: '50%', transform: `translate(-50%, -50%)`, '--tx': `${(Math.random() - 0.5) * 1500}px`, '--ty': `${(Math.random() - 0.3) * 1200 - 400}px`, '--rot': `${Math.random() * 720}deg` }} />
-            ))}
-            <style>{`@keyframes explode { 0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); opacity: 1; } 100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) rotate(calc(var(--rot))) scale(0); opacity: 0; } }`}</style>
+         <div className="absolute inset-0 z-[200] pointer-events-none flex items-center justify-center overflow-hidden" style={{ perspective: '800px' }}>
+            {[...Array(60)].map((_, i) => {
+              const colors = [signatureColor, '#10B981', '#F97316'];
+              const isStrip = Math.random() > 0.6;
+              return (
+                <div 
+                  key={i} 
+                  className="absolute animate-[explode3D_2.5s_cubic-bezier(0.25,1,0.5,1)_forwards]" 
+                  style={{ 
+                    backgroundColor: colors[Math.floor(Math.random() * colors.length)], 
+                    left: '50%', top: '50%', 
+                    width: isStrip ? '8px' : '12px',
+                    height: isStrip ? '24px' : '12px',
+                    borderRadius: Math.random() > 0.5 && !isStrip ? '50%' : '2px',
+                    transformStyle: 'preserve-3d',
+                    '--tx': `${(Math.random() - 0.5) * 1000}px`, 
+                    '--ty': `${(Math.random() - 0.3) * 1000 - 300}px`, 
+                    '--tz': `${(Math.random() - 0.5) * 500}px`,
+                    '--rx': `${Math.random() * 1080}deg`,
+                    '--ry': `${Math.random() * 1080}deg`,
+                    '--rz': `${Math.random() * 1080}deg`,
+                    '--scale': `${Math.random() * 0.8 + 0.5}`
+                  }} 
+                />
+              )
+            })}
+            <style>{`@keyframes explode3D { 0% { transform: translate3d(-50%, -50%, 0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1); opacity: 1; } 100% { transform: translate3d(calc(-50% + var(--tx)), calc(-50% + var(--ty)), var(--tz)) rotateX(var(--rx)) rotateY(var(--ry)) rotateZ(var(--rz)) scale(var(--scale)); opacity: 0; } }`}</style>
           </div>
         )}
       </div>

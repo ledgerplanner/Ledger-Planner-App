@@ -35,10 +35,10 @@ function LedgerApp() {
   // 1. INITIATE THE BACKGROUND DATA PUMP
   useLedgerData();
 
-  // 2. PULL MASTER STATES FROM THE CLOUD
+  // 2. PULL MASTER STATES FROM THE CLOUD (Added setBills for Dashboard interactions)
   const { 
     user, setUser, isDemoMode, setIsDemoMode, 
-    accounts, bills, transactions, todos, paydayConfig,
+    accounts, bills, setBills, transactions, todos, paydayConfig,
     isDarkMode, setIsDarkMode, signatureColor, currentCurrency
   } = useLedger();
 
@@ -67,6 +67,10 @@ function LedgerApp() {
   const [isCashOutOpen, setIsCashOutOpen] = useState(false);
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
   const [isAddGoalOpen, setIsAddGoalOpen] = useState(false);
+  
+  // RESTORED DASHBOARD STATES
+  const [isPaydaySetupOpen, setIsPaydaySetupOpen] = useState(false);
+  const [collapsedPaydays, setCollapsedPaydays] = useState({});
 
   // Cross-Component Transfer Buffers
   const [cashOutGoal, setCashOutGoal] = useState(null);
@@ -94,7 +98,7 @@ function LedgerApp() {
   const triggerVictory = () => { 
     triggerHaptic([30, 50, 30]); 
     setShowConfetti(true); 
-    setTimeout(() => setShowConfetti(false), 5200); // Updated to the 5.2s High-Drag Timeline
+    setTimeout(() => setShowConfetti(false), 5200);
   };
 
   const handleScroll = (e) => { setIsScrolled(e.target.scrollTop > 20); };
@@ -103,6 +107,25 @@ function LedgerApp() {
     triggerHaptic(20);
     setActiveTab(tabId);
     if (scrollRef.current) scrollRef.current.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // RESTORED DASHBOARD LOGIC FUNCTIONS
+  const toggleCollapse = (payday) => {
+    triggerHaptic(15);
+    setCollapsedPaydays(prev => ({ ...prev, [payday]: !prev[payday] }));
+  };
+
+  const handleBillClick = async (billId) => {
+    triggerHaptic(50);
+    if (isDemoMode) {
+      setBills(bills.map(b => b.id === billId ? { ...b, isPaid: true } : b));
+    } else {
+      try {
+        await updateDoc(doc(db, "users", user.uid, "bills", billId), { isPaid: true });
+      } catch (e) {
+        console.error("Error paying bill:", e);
+      }
+    }
   };
 
   // === LIFECYCLE & AUTH HOOKS ===
@@ -320,7 +343,30 @@ function LedgerApp() {
         {/* PRIMARY VIEWPORT ROUTER */}
         <div className="flex-1 flex flex-col relative h-full overflow-hidden">
           <div className={`flex-1 overflow-y-auto hide-scrollbar lg:pb-0 ${isDemoMode ? "pb-[220px]" : "pb-28"}`} ref={scrollRef} onScroll={handleScroll}>
-            {activeTab === "home" && <Dashboard userName={userName} accounts={accounts} bills={dynamicBills} transactions={transactions} paydayConfig={paydayConfig} setIsNotificationsOpen={setIsNotificationsOpen} isDarkMode={isDarkMode} renderHeroShell={renderHeroShell} changeTab={changeTab} signatureColor={signatureColor} />}
+            {activeTab === "home" && (
+              <Dashboard 
+                userName={userName} 
+                accounts={accounts} 
+                bills={dynamicBills} 
+                transactions={transactions} 
+                paydayConfig={paydayConfig} 
+                setIsNotificationsOpen={setIsNotificationsOpen} 
+                isDarkMode={isDarkMode} 
+                renderHeroShell={renderHeroShell} 
+                changeTab={changeTab} 
+                signatureColor={signatureColor}
+                formatPaydayDateStr={formatPaydayDateStr}
+                setIsPaydaySetupOpen={setIsPaydaySetupOpen}
+                collapsedPaydays={collapsedPaydays}
+                toggleCollapse={toggleCollapse}
+                handleBillClick={handleBillClick}
+                setSelectedEntry={setSelectedEntry}
+                hasConsumedAMBriefing={hasConsumedAMBriefing}
+                setHasConsumedAMBriefing={setHasConsumedAMBriefing}
+                hasConsumedPMBriefing={hasConsumedPMBriefing}
+                setHasConsumedPMBriefing={setHasConsumedPMBriefing}
+              />
+            )}
             {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setIsAddGoalOpen={setIsAddGoalOpen} renderHeroShell={renderHeroShell} triggerCelebration={triggerVictory} setIsCashOutOpen={setIsCashOutOpen} setCashOutGoal={setCashOutGoal} signatureColor={signatureColor} />}
             {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} isDarkMode={isDarkMode} renderHeroShell={renderHeroShell} accounts={accounts} signatureColor={signatureColor} />}
             {activeTab === "activity" && <Activity userName={userName} transactions={transactions} isDarkMode={isDarkMode} setSelectedEntry={setSelectedEntry} renderHeroShell={renderHeroShell} signatureColor={signatureColor} />}
@@ -348,7 +394,7 @@ function LedgerApp() {
         <TransferEngine isTransferOpen={isTransferOpen} setIsTransferOpen={setIsTransferOpen} isCashOutOpen={isCashOutOpen} setIsCashOutOpen={setIsCashOutOpen} cashOutGoal={cashOutGoal} setCashOutGoal={setCashOutGoal} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} />
         <AccountBuilder isAddAccountOpen={isAddAccountOpen} setIsAddAccountOpen={setIsAddAccountOpen} isAddGoalOpen={isAddGoalOpen} setIsAddGoalOpen={setIsAddGoalOpen} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} />
 
-        {/* SETTINGS AND GLOBAL ACTIONS (Maintained locally for final layer extraction later) */}
+        {/* SETTINGS AND GLOBAL ACTIONS */}
         {isSettingsOpen && <Settings setIsSettingsOpen={setIsSettingsOpen} />}
 
         {showConfetti && (

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Home, Wallet, Calendar as CalendarIcon, CreditCard, CheckSquare,
-  Bell, Moon, Sun, Plus, Settings as SettingsIcon, LogOut, AlertCircle
+  Bell, Moon, Sun, Plus, Settings as SettingsIcon, LogOut, AlertCircle, X, CheckCircle2
 } from "lucide-react";
 
 // === FIREBASE INITIALIZATION ===
@@ -41,7 +41,7 @@ function LedgerApp() {
   // 2. PULL MASTER STATES FROM THE CLOUD
   const { 
     user, setUser, isDemoMode, setIsDemoMode, 
-    accounts, bills, setBills, transactions, todos, paydayConfig,
+    accounts, setAccounts, bills, setBills, transactions, setTransactions, todos, setTodos, paydayConfig, setPaydayConfig,
     isDarkMode, setIsDarkMode, signatureColor
   } = useLedger();
 
@@ -94,10 +94,15 @@ function LedgerApp() {
     onConfirm: null
   });
 
-  // Cross-Component Transfer Buffers
+  // === RESTORED AUTHENTIC MASTER BUFFERS ===
   const [cashOutGoal, setCashOutGoal] = useState(null);
   const [selectedEntry, setSelectedEntry] = useState(null);
+  const [selectedAccount, setSelectedAccount] = useState(null);
+  const [isEditingEntry, setIsEditingEntry] = useState(false);
+  const [editEntryData, setEditEntryData] = useState({});
   const [paymentModalConfig, setPaymentModalConfig] = useState({ isOpen: false, billId: null, accountId: "", isPayInFull: false });
+  const [installmentPromptConfig, setInstallmentPromptConfig] = useState({ isOpen: false, billId: null, nextDate: "" });
+  const [editPaydayConfig, setEditPaydayConfig] = useState(paydayConfig);
   
   // Briefing Engine Consumption Memory
   const [hasConsumedAMBriefing, setHasConsumedAMBriefing] = useState(() => {
@@ -131,6 +136,16 @@ function LedgerApp() {
     if (scrollRef.current) scrollRef.current.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const formatDisplayDate = (dString) => {
+    if (!dString) return "";
+    const parts = dString.split('-');
+    if (parts.length === 3) return `${parts[1]}/${parts[2]}/${parts[0]}`;
+    return dString;
+  };
+
+  const openEntryDrawer = (entry) => { setSelectedEntry(entry); setIsEditingEntry(false); };
+  const closeEntryDrawer = () => { setSelectedEntry(null); setIsEditingEntry(false); };
+
   // === GLOBAL MODAL CONTROLLER ===
   const openGlobalAction = (title, message, confirmText, isDestructive, onConfirm) => {
     triggerHaptic(20);
@@ -144,16 +159,189 @@ function LedgerApp() {
     closeGlobalAction();
   };
 
-  // === RESTORED LOGIC ENGINES ===
+  // === RESTORED AUTHENTIC LOGIC ENGINES ===
   const toggleCollapse = (payday) => {
     triggerHaptic(15);
     setCollapsedPaydays(prev => ({ ...prev, [payday]: !prev[payday] }));
   };
 
-  // ITEM #3 FIX: Redirects the click to open the Payment Modal instead of writing to DB silently
-  const handleBillClick = (billId) => {
-    triggerHaptic(20);
-    setPaymentModalConfig({ isOpen: true, billId: billId, accountId: "", isPayInFull: false });
+  const clearPaydayConfig = () => { 
+    setEditPaydayConfig({ frequency: "Weekly", "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } });
+    triggerHaptic(50); 
+  };
+  
+  const savePaydayConfig = async () => {
+    setPaydayConfig(editPaydayConfig);
+    if (!isDemoMode && user) { await setDoc(doc(db, "users", user.uid, "settings", "paydayConfig"), editPaydayConfig); }
+    setIsPaydaySetupOpen(false); 
+    triggerVictory();
+  };
+
+  const handleSaveNextInstallmentDate = async () => {
+    if (!installmentPromptConfig.nextDate) return;
+    const bill = bills.find(b => b.id === installmentPromptConfig.billId);
+    if(!bill) return;
+    const dateObj = new Date(installmentPromptConfig.nextDate);
+    if (isNaN(dateObj.getTime())) return;
+
+    const sortableDay = dateObj.getUTCDate();
+    const displayDate = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+    const newPayday = calculatePaydayGroup(installmentPromptConfig.nextDate);
+    if (isDemoMode) {
+      setBills(bills.map(b => b.id === bill.id ? { ...b, rawDate: installmentPromptConfig.nextDate, date: sortableDay, fullDate: displayDate, payday: newPayday, isOverdue: false } : b));
+    } else {
+      await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { rawDate: installmentPromptConfig.nextDate, date: sortableDay, fullDate: displayDate, payday: newPayday, isOverdue: false });
+    }
+    triggerVictory(); setInstallmentPromptConfig({ isOpen: false, billId: null, nextDate: "" });
+  };
+
+  const handleBillClick = async (id) => {
+    const bill = bills.find(b => b.id === id);
+    if (!bill) return;
+    if (bill.isPaid) {
+      const refundAccountId = bill.paidFromAccountId;
+      const targetAcc = accounts.find(a => a.id === refundAccountId);
+      
+      // --- PRECISION REVERT MATH FIX ---
+      const linkedTx = transactions.find(t => t.id === bill.linkedTxId);
+      const exactRefundAmount = linkedTx ? (linkedTx.amount || 0) : (bill.amount || 0);
+
+      let newPaidAmount = bill.paidAmount || 0;
+      if (bill.isInstallment) newPaidAmount = Math.max(0, (bill.paidAmount || 0) - exactRefundAmount);
+
+      if (isDemoMode) {
+        setBills(bills.map(b => b.id === id ? { ...b, isPaid: false, paidAmount: newPaidAmount, paidFromAccountId: null, linkedTxId: null } : b));
+        if (targetAcc) setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: a.balance + exactRefundAmount } : a));
+        if (bill.linkedTxId) setTransactions(transactions.filter(t => t.id !== bill.linkedTxId));
+      } else {
+        await updateDoc(doc(db, "users", user.uid, "bills", id), { isPaid: false, paidAmount: newPaidAmount, paidFromAccountId: null, linkedTxId: null });
+        if (targetAcc) await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance + exactRefundAmount });
+        if (bill.linkedTxId) await deleteDoc(doc(db, "users", user.uid, "transactions", bill.linkedTxId));
+      }
+      triggerHaptic(50);
+      return;
+    }
+    setPaymentModalConfig({ isOpen: true, billId: id, accountId: accounts.find(a => !a.isGoal && (a.type === "Checking" || a.type === "Cash"))?.id || (accounts[0]?.id || ""), isPayInFull: false });
+  };
+
+  const confirmPaymentRoute = async () => {
+    const bill = bills.find(b => b.id === paymentModalConfig.billId);
+    
+    let targetAcc = accounts.find(a => a.id === paymentModalConfig.accountId);
+    if (!targetAcc) {
+      targetAcc = accounts.find(a => !a.isGoal && (a.type === "Checking" || a.type === "Cash")) || accounts[0];
+    }
+
+    if (!bill || !targetAcc) return;
+    const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+    const remainingBalance = (bill.totalAmount || 0) - (bill.paidAmount || 0);
+    const amountToPay = paymentModalConfig.isPayInFull ? remainingBalance : (bill.amount || 0);
+
+    if (isDemoMode) {
+      const txId = `tx_demo_${Date.now()}`;
+      setTransactions([{ id: txId, name: bill.name || "Bill", icon: bill.icon || "🧾", amount: amountToPay, date: autoTimeStamp, type: "Expense", category: bill.category || "Bill Payment", accountId: targetAcc.id, isBillPayment: true }, ...transactions]);
+      setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: (a.balance || 0) - amountToPay } : a));
+      if (bill.isInstallment) {
+        const newPaidAmt = (bill.paidAmount || 0) + amountToPay;
+        if (newPaidAmt >= (bill.totalAmount || 0) || paymentModalConfig.isPayInFull) {
+          setBills(bills.map(b => b.id === bill.id ? { ...b, isPaid: true, paidAmount: newPaidAmt, paidFromAccountId: targetAcc.id, linkedTxId: txId } : b));
+          triggerVictory();
+          setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false });
+        } else {
+          setBills(bills.map(b => b.id === bill.id ? { ...b, paidAmount: newPaidAmt, isOverdue: false } : b));
+          triggerHaptic(50); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false }); setInstallmentPromptConfig({ isOpen: true, billId: bill.id, nextDate: "" });
+        }
+      } else {
+        setBills(bills.map(b => b.id === bill.id ? { ...b, isPaid: true, paidAmount: 0, paidFromAccountId: targetAcc.id, linkedTxId: txId } : b));
+        triggerVictory();
+        setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false });
+      }
+    } else {
+      const txRef = await addDoc(collection(db, "users", user.uid, "transactions"), { name: bill.name || "Bill", icon: bill.icon || "🧾", amount: amountToPay, date: autoTimeStamp, type: "Expense", category: bill.category || "Bill Payment", accountId: targetAcc.id, isBillPayment: true, createdAt: serverTimestamp() });
+      await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: (targetAcc.balance || 0) - amountToPay });
+      if (bill.isInstallment) {
+        const newPaidAmt = (bill.paidAmount || 0) + amountToPay;
+        if (newPaidAmt >= (bill.totalAmount || 0) || paymentModalConfig.isPayInFull) {
+          await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: true, paidAmount: newPaidAmt, paidFromAccountId: targetAcc.id, linkedTxId: txRef.id });
+          triggerVictory();
+          setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false });
+        } else {
+          await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { paidAmount: newPaidAmt, isOverdue: false });
+          triggerHaptic(50); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false }); setInstallmentPromptConfig({ isOpen: true, billId: bill.id, nextDate: "" });
+        }
+      } else {
+        await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: true, paidAmount: 0, paidFromAccountId: targetAcc.id, linkedTxId: txRef.id });
+        triggerVictory();
+        setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false });
+      }
+    }
+  };
+
+  const handleSaveEntryEdit = async () => {
+    if (!selectedEntry) return;
+    
+    const isTransaction = !bills.some(b => b.id === selectedEntry.id);
+    const colName = isTransaction ? "transactions" : "bills";
+
+    const newAmount = parseFloat(editEntryData.amount) || 0;
+    const oldAmount = parseFloat(selectedEntry.amount) || 0;
+    const amountDelta = newAmount - oldAmount;
+    const updatePayload = {
+      name: editEntryData.name || selectedEntry.name || "Unnamed",
+      amount: newAmount,
+      category: editEntryData.category || selectedEntry.category || "Other",
+      icon: editEntryData.icon || selectedEntry.icon || "🧾"
+    };
+
+    if (!isTransaction) {
+      if (editEntryData.rawDate && editEntryData.rawDate !== selectedEntry.rawDate) {
+          const dateObj = new Date(editEntryData.rawDate);
+          updatePayload.rawDate = editEntryData.rawDate;
+          updatePayload.date = dateObj.getUTCDate();
+          updatePayload.fullDate = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+          updatePayload.payday = calculatePaydayGroup(editEntryData.rawDate);
+          const todayLocal = new Date(); todayLocal.setHours(0, 0, 0, 0);
+          const localBillDate = new Date(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate());
+          updatePayload.isOverdue = localBillDate < todayLocal;
+          if (localBillDate.getTime() === todayLocal.getTime()) updatePayload.payday = "Due Now";
+      }
+
+      updatePayload.isRecurring = editEntryData.isRecurring || false;
+      updatePayload.isInstallment = editEntryData.isInstallment || false;
+      if (editEntryData.isInstallment) {
+        updatePayload.totalAmount = parseFloat(editEntryData.totalAmount) || 0;
+        updatePayload.paidAmount = parseFloat(editEntryData.paidAmount) || 0;
+      } else {
+        updatePayload.totalAmount = 0;
+        updatePayload.paidAmount = 0;
+      }
+    }
+
+    if (isDemoMode) {
+      if (colName === "bills") {
+        setBills(bills.map(b => b.id === selectedEntry.id ? { ...b, ...updatePayload } : b));
+      } else {
+        setTransactions(transactions.map(t => t.id === selectedEntry.id ? { ...t, ...updatePayload } : t));
+        if (selectedEntry.accountId && amountDelta !== 0) {
+           const isIncome = selectedEntry.type === "Income";
+           const balanceChange = isIncome ? amountDelta : -amountDelta;
+           setAccounts(accounts.map(a => a.id === selectedEntry.accountId ? { ...a, balance: (a.balance || 0) + balanceChange } : a));
+        }
+      }
+    } else {
+      await updateDoc(doc(db, "users", user.uid, colName, selectedEntry.id), updatePayload);
+      if (isTransaction && selectedEntry.accountId && amountDelta !== 0) {
+        const targetAcc = accounts.find(a => a.id === selectedEntry.accountId);
+        if (targetAcc) {
+          const isIncome = selectedEntry.type === "Income";
+          const balanceChange = isIncome ? amountDelta : -amountDelta;
+          await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: (targetAcc.balance || 0) + balanceChange });
+        }
+      }
+    }
+
+    setSelectedEntry({ ...selectedEntry, ...updatePayload });
+    setIsEditingEntry(false); triggerVictory();
   };
 
   const handleAddTodo = async (e) => {
@@ -434,7 +622,7 @@ function LedgerApp() {
                 collapsedPaydays={collapsedPaydays}
                 toggleCollapse={toggleCollapse}
                 handleBillClick={handleBillClick}
-                setSelectedEntry={setSelectedEntry}
+                setSelectedEntry={openEntryDrawer}
                 hasConsumedAMBriefing={hasConsumedAMBriefing}
                 setHasConsumedAMBriefing={setHasConsumedAMBriefing}
                 hasConsumedPMBriefing={hasConsumedPMBriefing}
@@ -448,7 +636,7 @@ function LedgerApp() {
                 userName={userName} 
                 transactions={transactions} 
                 isDarkMode={isDarkMode} 
-                setSelectedEntry={setSelectedEntry} 
+                setSelectedEntry={openEntryDrawer} 
                 renderHeroShell={renderHeroShell} 
                 signatureColor={signatureColor} 
                 activitySearch={activitySearch}
@@ -500,10 +688,79 @@ function LedgerApp() {
         <TransferEngine isTransferOpen={isTransferOpen} setIsTransferOpen={setIsTransferOpen} isCashOutOpen={isCashOutOpen} setIsCashOutOpen={setIsCashOutOpen} cashOutGoal={cashOutGoal} setCashOutGoal={setCashOutGoal} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} />
         <AccountBuilder isAddAccountOpen={isAddAccountOpen} setIsAddAccountOpen={setIsAddAccountOpen} isAddGoalOpen={isAddGoalOpen} setIsAddGoalOpen={setIsAddGoalOpen} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} />
 
-        {/* === RESTORED MODAL CONTAINERS (FIX FOR ITEMS #1, #2, #3, #4) === */}
-        {isPaydaySetupOpen && <PaydaySetup setIsPaydaySetupOpen={setIsPaydaySetupOpen} />}
-        {selectedEntry && <EditEntryDrawer selectedEntry={selectedEntry} onClose={() => setSelectedEntry(null)} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} />}
-        {paymentModalConfig.isOpen && <PaymentModal config={paymentModalConfig} setConfig={setPaymentModalConfig} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} />}
+        {/* === RESTORED AUTHENTIC MODAL CONTAINERS (FIX FOR ITEMS #1, #2, #3, #4) === */}
+        {isPaydaySetupOpen && (
+          <PaydaySetup 
+            setIsPaydaySetupOpen={setIsPaydaySetupOpen} 
+            editPaydayConfig={editPaydayConfig}
+            setEditPaydayConfig={setEditPaydayConfig}
+            clearPaydayConfig={clearPaydayConfig}
+            savePaydayConfig={savePaydayConfig}
+            formatDisplayDate={formatDisplayDate}
+            signatureColor={signatureColor}
+            isDarkMode={isDarkMode}
+            isDemoMode={isDemoMode}
+          />
+        )}
+        
+        {selectedEntry && !selectedAccount && (
+          <EditEntryDrawer 
+            selectedEntry={selectedEntry} 
+            setSelectedEntry={setSelectedEntry}
+            isEditingEntry={isEditingEntry}
+            setIsEditingEntry={setIsEditingEntry}
+            editEntryData={editEntryData}
+            setEditEntryData={setEditEntryData}
+            closeEntryDrawer={closeEntryDrawer}
+            handleSaveEntryEdit={handleSaveEntryEdit}
+            openGlobalAction={openGlobalAction}
+            formatDisplayDate={formatDisplayDate}
+            accounts={accounts}
+            signatureColor={signatureColor}
+            isDarkMode={isDarkMode}
+            isDemoMode={isDemoMode}
+          />
+        )}
+        
+        {paymentModalConfig.isOpen && (
+          <PaymentModal 
+            paymentModalConfig={paymentModalConfig} 
+            setPaymentModalConfig={setPaymentModalConfig}
+            confirmPaymentRoute={confirmPaymentRoute}
+            bills={bills}
+            accounts={accounts}
+            signatureColor={signatureColor}
+            isDarkMode={isDarkMode}
+          />
+        )}
+
+        {/* REINJECTED INSTALLMENT PROMPT FROM AUTHENTIC CODE */}
+        {installmentPromptConfig.isOpen && (
+          <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setInstallmentPromptConfig({ isOpen: false, billId: null, nextDate: "" })}></div>
+            <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+              <div className="p-6 border-b flex justify-between items-center">
+                <h3 className={`font-black uppercase tracking-widest text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Next Installment</h3>
+                <button onClick={() => setInstallmentPromptConfig({ isOpen: false, billId: null, nextDate: "" })} className={`p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`}><X size={18}/></button>
+              </div>
+              <div className={`p-6 space-y-6 ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
+                <div className="text-center">
+                  <h2 className={`text-lg font-black mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Payment Logged!</h2>
+                  <p className="text-xs font-bold text-slate-500">When is your next payment due?</p>
+                </div>
+                <div className="relative">
+                   <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Next Due Date</label>
+                   <div className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
+                     <span className={`font-bold text-base ${!installmentPromptConfig.nextDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{installmentPromptConfig.nextDate ? formatDisplayDate(installmentPromptConfig.nextDate) : "mm/dd/yyyy"}</span>
+                     <CalendarIcon size={18} className="shrink-0" style={{ color: signatureColor }} />
+                     <input type="date" value={installmentPromptConfig.nextDate} onChange={(e) => setInstallmentPromptConfig({...installmentPromptConfig, nextDate: e.target.value})} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                   </div>
+                </div>
+                <button onClick={handleSaveNextInstallmentDate} disabled={!installmentPromptConfig.nextDate} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all active:scale-95 flex items-center justify-center gap-2" style={{ backgroundColor: !installmentPromptConfig.nextDate ? undefined : signatureColor }}><CalendarIcon size={16}/> Route to Payday</button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* SETTINGS AND GLOBAL ACTIONS */}
         {isSettingsOpen && <Settings setIsSettingsOpen={setIsSettingsOpen} />}

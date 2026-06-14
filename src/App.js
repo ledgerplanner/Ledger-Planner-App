@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Home, Wallet, Calendar as CalendarIcon, CreditCard, CheckSquare,
-  Bell, Moon, Sun, Plus, Settings as SettingsIcon, LogOut, CheckCircle2, AlertCircle, X, Trash2
+  Bell, Moon, Sun, Plus, Settings as SettingsIcon, LogOut, AlertCircle
 } from "lucide-react";
 
 // === FIREBASE INITIALIZATION ===
@@ -30,6 +30,9 @@ import QuickAddModal from "./components/modals/QuickAddModal";
 import CommandCenter from "./components/modals/CommandCenter";
 import TransferEngine from "./components/modals/TransferEngine";
 import AccountBuilder from "./components/modals/AccountBuilder";
+import PaydaySetup from "./components/modals/PaydaySetup";
+import EditEntryDrawer from "./components/modals/EditEntryDrawer";
+import PaymentModal from "./components/modals/PaymentModal";
 
 function LedgerApp() {
   // 1. INITIATE THE BACKGROUND DATA PUMP
@@ -39,7 +42,7 @@ function LedgerApp() {
   const { 
     user, setUser, isDemoMode, setIsDemoMode, 
     accounts, bills, setBills, transactions, todos, paydayConfig,
-    isDarkMode, setIsDarkMode, signatureColor, currentCurrency
+    isDarkMode, setIsDarkMode, signatureColor
   } = useLedger();
 
   // === LOCAL UI & ROUTING STATE ===
@@ -147,14 +150,10 @@ function LedgerApp() {
     setCollapsedPaydays(prev => ({ ...prev, [payday]: !prev[payday] }));
   };
 
-  const handleBillClick = async (billId) => {
-    triggerHaptic(50);
-    if (isDemoMode) {
-      setBills(bills.map(b => b.id === billId ? { ...b, isPaid: true } : b));
-    } else {
-      try { await updateDoc(doc(db, "users", user.uid, "bills", billId), { isPaid: true }); } 
-      catch (e) { console.error("Error paying bill:", e); }
-    }
+  // ITEM #3 FIX: Redirects the click to open the Payment Modal instead of writing to DB silently
+  const handleBillClick = (billId) => {
+    triggerHaptic(20);
+    setPaymentModalConfig({ isOpen: true, billId: billId, accountId: "", isPayInFull: false });
   };
 
   const handleAddTodo = async (e) => {
@@ -495,11 +494,16 @@ function LedgerApp() {
           </div>
         </div>
 
-        {/* === THE MODAL INJECTIONS === */}
+        {/* === THE CORE MODAL INJECTIONS === */}
         {isQabOpen && <QuickAddModal onClose={() => setIsQabOpen(false)} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} />}
         {isNotificationsOpen && <CommandCenter setIsNotificationsOpen={setIsNotificationsOpen} needsRefresh={needsRefresh} dynamicBills={dynamicBills} changeTab={changeTab} userName={userName} hasConsumedAMBriefing={hasConsumedAMBriefing} setHasConsumedAMBriefing={setHasConsumedAMBriefing} hasConsumedPMBriefing={hasConsumedPMBriefing} setHasConsumedPMBriefing={setHasConsumedPMBriefing} formatPaydayDateStr={formatPaydayDateStr} />}
         <TransferEngine isTransferOpen={isTransferOpen} setIsTransferOpen={setIsTransferOpen} isCashOutOpen={isCashOutOpen} setIsCashOutOpen={setIsCashOutOpen} cashOutGoal={cashOutGoal} setCashOutGoal={setCashOutGoal} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} />
         <AccountBuilder isAddAccountOpen={isAddAccountOpen} setIsAddAccountOpen={setIsAddAccountOpen} isAddGoalOpen={isAddGoalOpen} setIsAddGoalOpen={setIsAddGoalOpen} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} />
+
+        {/* === RESTORED MODAL CONTAINERS (FIX FOR ITEMS #1, #2, #3, #4) === */}
+        {isPaydaySetupOpen && <PaydaySetup setIsPaydaySetupOpen={setIsPaydaySetupOpen} />}
+        {selectedEntry && <EditEntryDrawer selectedEntry={selectedEntry} onClose={() => setSelectedEntry(null)} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} />}
+        {paymentModalConfig.isOpen && <PaymentModal config={paymentModalConfig} setConfig={setPaymentModalConfig} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} />}
 
         {/* SETTINGS AND GLOBAL ACTIONS */}
         {isSettingsOpen && <Settings setIsSettingsOpen={setIsSettingsOpen} />}

@@ -629,7 +629,28 @@ function LedgerApp() {
                 setHasConsumedPMBriefing={setHasConsumedPMBriefing}
               />
             )}
-            {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setIsAddGoalOpen={setIsAddGoalOpen} renderHeroShell={renderHeroShell} triggerCelebration={triggerVictory} setIsCashOutOpen={setIsCashOutOpen} setCashOutGoal={setCashOutGoal} signatureColor={signatureColor} />}
+            
+            {/* === PROP INJECTIONS FOR ACCOUNTS & ACCOUNT BUILDER === */}
+            {activeTab === "accounts" && (
+              <Accounts 
+                userName={userName} 
+                accounts={accounts} 
+                transactions={transactions} 
+                isDarkMode={isDarkMode} 
+                setIsTransferOpen={setIsTransferOpen} 
+                setIsAddAccountOpen={setIsAddAccountOpen} 
+                setIsAddGoalOpen={setIsAddGoalOpen} 
+                setSelectedAccount={setSelectedAccount} 
+                setEditAccountBalance={() => {}} 
+                renderHeroShell={renderHeroShell} 
+                isDemoMode={isDemoMode} 
+                triggerCelebration={triggerVictory} 
+                setIsCashOutOpen={setIsCashOutOpen} 
+                setCashOutGoal={setCashOutGoal} 
+                signatureColor={signatureColor} 
+              />
+            )}
+
             {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} isDarkMode={isDarkMode} renderHeroShell={renderHeroShell} accounts={accounts} signatureColor={signatureColor} />}
             {activeTab === "activity" && (
               <Activity 
@@ -686,7 +707,19 @@ function LedgerApp() {
         {isQabOpen && <QuickAddModal onClose={() => setIsQabOpen(false)} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} />}
         {isNotificationsOpen && <CommandCenter setIsNotificationsOpen={setIsNotificationsOpen} needsRefresh={needsRefresh} dynamicBills={dynamicBills} changeTab={changeTab} userName={userName} hasConsumedAMBriefing={hasConsumedAMBriefing} setHasConsumedAMBriefing={setHasConsumedAMBriefing} hasConsumedPMBriefing={hasConsumedPMBriefing} setHasConsumedPMBriefing={setHasConsumedPMBriefing} formatPaydayDateStr={formatPaydayDateStr} />}
         <TransferEngine isTransferOpen={isTransferOpen} setIsTransferOpen={setIsTransferOpen} isCashOutOpen={isCashOutOpen} setIsCashOutOpen={setIsCashOutOpen} cashOutGoal={cashOutGoal} setCashOutGoal={setCashOutGoal} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} />
-        <AccountBuilder isAddAccountOpen={isAddAccountOpen} setIsAddAccountOpen={setIsAddAccountOpen} isAddGoalOpen={isAddGoalOpen} setIsAddGoalOpen={setIsAddGoalOpen} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} />
+        
+        {/* === PROP INJECTIONS FOR ACCOUNT BUILDER === */}
+        <AccountBuilder 
+          isAddAccountOpen={isAddAccountOpen} 
+          setIsAddAccountOpen={setIsAddAccountOpen} 
+          isAddGoalOpen={isAddGoalOpen} 
+          setIsAddGoalOpen={setIsAddGoalOpen} 
+          selectedAccount={selectedAccount} 
+          setSelectedAccount={setSelectedAccount} 
+          openGlobalAction={openGlobalAction} 
+          triggerHaptic={triggerHaptic} 
+          triggerVictory={triggerVictory} 
+        />
 
         {/* === RESTORED AUTHENTIC MODAL CONTAINERS (FIX FOR ITEMS #1, #2, #3, #4) === */}
         {isPaydaySetupOpen && (

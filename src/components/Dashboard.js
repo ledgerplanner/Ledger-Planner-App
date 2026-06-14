@@ -180,6 +180,18 @@ export default function Dashboard({
     }
   }
 
+  // === AUTO-COLLAPSE HEURISTIC ENGINE (ITEM #5 FIX) ===
+  let defaultOpenPayday = null;
+  for (const pd of hzPaydays) {
+    const groupUnpaid = (billsByRunwayGroup[pd] || []).filter(b => !b.isPaid);
+    if (pd === "Due Now" && groupUnpaid.length > 0) {
+      defaultOpenPayday = "Due Now";
+      break;
+    } else if (pd !== "Due Now" && paydayConfig?.[pd]?.date && !defaultOpenPayday) {
+      defaultOpenPayday = pd;
+    }
+  }
+
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
@@ -307,7 +319,7 @@ export default function Dashboard({
             const subLabelStr = pd === "Due Now" ? "AVAILABLE NOW" : "AVAILABLE THIS WEEK";
 
             return (
-              <div key={`hz-${pd}`} onClick={() => { if(collapsedPaydays[pd]) toggleCollapse(pd); document.getElementById(`vert-${pd}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} className={`shrink-0 w-52 p-5 rounded-[1.75rem] border cursor-pointer active:scale-95 transition-all flex flex-col justify-between h-44 ${pd === "Due Now" ? (isDarkMode ? "bg-red-900/10 border-red-900/40 shadow-md" : "bg-red-50 border-red-100 shadow-[0_4px_20px_rgba(239,68,68,0.1)]") : (isDarkMode ? "bg-[#1E293B] border-slate-700 shadow-md" : "bg-white/90 backdrop-blur-sm border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]")}`}>
+              <div key={`hz-${pd}`} onClick={() => { if(collapsedPaydays[pd] || collapsedPaydays[pd] === undefined) toggleCollapse(pd); document.getElementById(`vert-${pd}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} className={`shrink-0 w-52 p-5 rounded-[1.75rem] border cursor-pointer active:scale-95 transition-all flex flex-col justify-between h-44 ${pd === "Due Now" ? (isDarkMode ? "bg-red-900/10 border-red-900/40 shadow-md" : "bg-red-50 border-red-100 shadow-[0_4px_20px_rgba(239,68,68,0.1)]") : (isDarkMode ? "bg-[#1E293B] border-slate-700 shadow-md" : "bg-white/90 backdrop-blur-sm border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]")}`}>
                 
                 <div className="flex justify-between items-center w-full">
                   <h4 className={`text-[10px] font-black uppercase tracking-widest ${pd === "Due Now" ? "text-red-500" : "text-slate-400"}`}>{pd}</h4>
@@ -368,7 +380,11 @@ export default function Dashboard({
             if (isDueNow && activeGroupBills.length === 0) return null;
             if (!isDueNow && !pdSettings?.date) return null;
 
-            const isCollapsed = collapsedPaydays?.[payday];
+            // ITEM #5 FIX: Evaluate default state dynamically if no manual click has occurred
+            const isCollapsed = collapsedPaydays?.[payday] !== undefined 
+              ? collapsedPaydays[payday] 
+              : payday !== defaultOpenPayday;
+
             const checkTotal = activeGroupBills.reduce((sum, b) => sum + (Number(b?.amount) || 0), 0);
             const expectedDateStr = isDueNow ? "Currently Due" : formatPaydayDateStr(pdSettings.date);
             const sortedBills = sortBillsSurgically(activeGroupBills);
@@ -397,7 +413,7 @@ export default function Dashboard({
                       ) : (
                         sortedBills.map((bill) => (
                           <div key={bill?.id} className={`flex flex-col p-4 rounded-2xl border shadow-sm transition-colors ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
-                           
+                            
                             <div className="flex items-start justify-between w-full mb-4">
                                <div className="flex items-center gap-3 cursor-pointer flex-1 min-w-0" onClick={() => setSelectedEntry(bill)}>
                                   <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Home, Wallet, Calendar as CalendarIcon, CreditCard, CheckSquare,
-  Bell, Moon, Sun, Plus, Settings as SettingsIcon, LogOut, CheckCircle2, AlertCircle, X
+  Bell, Moon, Sun, Plus, Settings as SettingsIcon, LogOut, CheckCircle2, AlertCircle, X, Trash2
 } from "lucide-react";
 
 // === FIREBASE INITIALIZATION ===
@@ -10,7 +10,7 @@ import {
   signInWithEmailAndPassword, createUserWithEmailAndPassword, 
   onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup, updateProfile 
 } from "firebase/auth";
-import { doc, setDoc, serverTimestamp, updateDoc, collection, addDoc } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp, updateDoc, collection, addDoc, deleteDoc } from "firebase/firestore";
 
 // === CONTEXT & HOOKS ===
 import { LedgerProvider, useLedger } from "./context/LedgerContext";
@@ -35,7 +35,7 @@ function LedgerApp() {
   // 1. INITIATE THE BACKGROUND DATA PUMP
   useLedgerData();
 
-  // 2. PULL MASTER STATES FROM THE CLOUD (Added setBills for Dashboard interactions)
+  // 2. PULL MASTER STATES FROM THE CLOUD
   const { 
     user, setUser, isDemoMode, setIsDemoMode, 
     accounts, bills, setBills, transactions, todos, paydayConfig,
@@ -71,6 +71,25 @@ function LedgerApp() {
   // RESTORED DASHBOARD STATES
   const [isPaydaySetupOpen, setIsPaydaySetupOpen] = useState(false);
   const [collapsedPaydays, setCollapsedPaydays] = useState({});
+
+  // RESTORED ACTIVITY STATES
+  const [activitySearch, setActivitySearch] = useState("");
+  const [activityFilter, setActivityFilter] = useState("All");
+
+  // RESTORED TODO STATES
+  const [newTodoText, setNewTodoText] = useState("");
+  const [newTodoPriority, setNewTodoPriority] = useState(3);
+  const [newTodoType, setNewTodoType] = useState("task");
+
+  // RESTORED GLOBAL ACTION MODAL
+  const [globalActionConfig, setGlobalActionConfig] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    confirmText: "Confirm",
+    isDestructive: false,
+    onConfirm: null
+  });
 
   // Cross-Component Transfer Buffers
   const [cashOutGoal, setCashOutGoal] = useState(null);
@@ -109,7 +128,20 @@ function LedgerApp() {
     if (scrollRef.current) scrollRef.current.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // RESTORED DASHBOARD LOGIC FUNCTIONS
+  // === GLOBAL MODAL CONTROLLER ===
+  const openGlobalAction = (title, message, confirmText, isDestructive, onConfirm) => {
+    triggerHaptic(20);
+    setGlobalActionConfig({ isOpen: true, title, message, confirmText, isDestructive, onConfirm });
+  };
+  
+  const closeGlobalAction = () => setGlobalActionConfig({ ...globalActionConfig, isOpen: false });
+  
+  const executeGlobalAction = () => {
+    if (globalActionConfig.onConfirm) globalActionConfig.onConfirm();
+    closeGlobalAction();
+  };
+
+  // === RESTORED LOGIC ENGINES ===
   const toggleCollapse = (payday) => {
     triggerHaptic(15);
     setCollapsedPaydays(prev => ({ ...prev, [payday]: !prev[payday] }));
@@ -120,12 +152,55 @@ function LedgerApp() {
     if (isDemoMode) {
       setBills(bills.map(b => b.id === billId ? { ...b, isPaid: true } : b));
     } else {
-      try {
-        await updateDoc(doc(db, "users", user.uid, "bills", billId), { isPaid: true });
-      } catch (e) {
-        console.error("Error paying bill:", e);
-      }
+      try { await updateDoc(doc(db, "users", user.uid, "bills", billId), { isPaid: true }); } 
+      catch (e) { console.error("Error paying bill:", e); }
     }
+  };
+
+  const handleAddTodo = async (e) => {
+    e.preventDefault();
+    if (!user || !newTodoText.trim()) return;
+    try {
+      if (!isDemoMode) {
+        await addDoc(collection(db, "users", user.uid, "todos"), {
+          text: newTodoText.trim(),
+          priority: newTodoPriority,
+          type: newTodoType,
+          isCompleted: false,
+          createdAt: serverTimestamp()
+        });
+      }
+      triggerVictory();
+      setNewTodoText("");
+      setNewTodoPriority(3);
+      setNewTodoType("task");
+    } catch (error) { console.error("Error adding todo:", error); }
+  };
+
+  const toggleTodoStatus = async (todoId) => {
+    triggerHaptic(20);
+    const todo = todos.find(t => t.id === todoId);
+    if (!todo) return;
+    if (!isDemoMode) {
+      await updateDoc(doc(db, "users", user.uid, "todos", todoId), { isCompleted: !todo.isCompleted });
+    }
+  };
+
+  const clearCompletedTodos = () => {
+    openGlobalAction(
+      "Clear Completed",
+      "Are you sure you want to permanently delete all completed tasks?",
+      "Delete All",
+      true,
+      async () => {
+        if (isDemoMode) return;
+        const completedTasks = todos.filter(t => t.isCompleted);
+        for (const t of completedTasks) {
+          await deleteDoc(doc(db, "users", user.uid, "todos", t.id));
+        }
+        triggerHaptic(50);
+      }
+    );
   };
 
   // === LIFECYCLE & AUTH HOOKS ===
@@ -369,8 +444,40 @@ function LedgerApp() {
             )}
             {activeTab === "accounts" && <Accounts userName={userName} accounts={accounts} transactions={transactions} isDarkMode={isDarkMode} setIsTransferOpen={setIsTransferOpen} setIsAddAccountOpen={setIsAddAccountOpen} setIsAddGoalOpen={setIsAddGoalOpen} renderHeroShell={renderHeroShell} triggerCelebration={triggerVictory} setIsCashOutOpen={setIsCashOutOpen} setCashOutGoal={setCashOutGoal} signatureColor={signatureColor} />}
             {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} isDarkMode={isDarkMode} renderHeroShell={renderHeroShell} accounts={accounts} signatureColor={signatureColor} />}
-            {activeTab === "activity" && <Activity userName={userName} transactions={transactions} isDarkMode={isDarkMode} setSelectedEntry={setSelectedEntry} renderHeroShell={renderHeroShell} signatureColor={signatureColor} />}
-            {activeTab === "todo" && <Todo userName={userName} todos={todos} isDarkMode={isDarkMode} renderHeroShell={renderHeroShell} signatureColor={signatureColor} triggerVictory={triggerVictory} />}
+            {activeTab === "activity" && (
+              <Activity 
+                userName={userName} 
+                transactions={transactions} 
+                isDarkMode={isDarkMode} 
+                setSelectedEntry={setSelectedEntry} 
+                renderHeroShell={renderHeroShell} 
+                signatureColor={signatureColor} 
+                activitySearch={activitySearch}
+                setActivitySearch={setActivitySearch}
+                activityFilter={activityFilter}
+                setActivityFilter={setActivityFilter}
+              />
+            )}
+            {activeTab === "todo" && (
+              <Todo 
+                userName={userName} 
+                todos={todos} 
+                isDarkMode={isDarkMode} 
+                renderHeroShell={renderHeroShell} 
+                signatureColor={signatureColor} 
+                triggerVictory={triggerVictory} 
+                newTodoText={newTodoText}
+                setNewTodoText={setNewTodoText}
+                newTodoPriority={newTodoPriority}
+                setNewTodoPriority={setNewTodoPriority}
+                newTodoType={newTodoType}
+                setNewTodoType={setNewTodoType}
+                handleAddTodo={handleAddTodo}
+                toggleTodoStatus={toggleTodoStatus}
+                clearCompletedTodos={clearCompletedTodos}
+                openGlobalAction={openGlobalAction}
+              />
+            )}
           </div>
 
           <div className={`fixed lg:hidden ${isDemoMode ? "bottom-[200px]" : "bottom-28"} right-6 z-50`}>
@@ -396,6 +503,26 @@ function LedgerApp() {
 
         {/* SETTINGS AND GLOBAL ACTIONS */}
         {isSettingsOpen && <Settings setIsSettingsOpen={setIsSettingsOpen} />}
+
+        {/* THE GLOBAL ACTION MODAL ENGINE */}
+        {globalActionConfig.isOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center px-4">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeGlobalAction}></div>
+            <div className={`relative w-full max-w-sm p-6 rounded-[2rem] shadow-2xl animate-slide-up ${isDarkMode ? "bg-[#1E293B] border border-slate-700" : "bg-white border border-slate-100"}`}>
+              <div className="flex flex-col items-center text-center">
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${globalActionConfig.isDestructive ? "bg-red-50 text-red-500" : "bg-blue-50 text-[#1877F2]"}`}>
+                  <AlertCircle size={32} />
+                </div>
+                <h3 className={`text-lg font-black uppercase tracking-widest mb-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{globalActionConfig.title}</h3>
+                <p className={`text-sm font-bold leading-relaxed mb-6 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{globalActionConfig.message}</p>
+                <div className="flex gap-3 w-full">
+                  <button onClick={closeGlobalAction} className={`flex-1 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-colors ${isDarkMode ? "bg-slate-800 text-slate-300 hover:bg-slate-700" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>Cancel</button>
+                  <button onClick={executeGlobalAction} className={`flex-1 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest text-white shadow-lg transition-transform active:scale-95 ${globalActionConfig.isDestructive ? "bg-red-500 shadow-[0_8px_16px_rgba(239,68,68,0.3)]" : "bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)]"}`}>{globalActionConfig.confirmText}</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showConfetti && (
          <div className="absolute inset-0 z-[200] pointer-events-none flex items-center justify-center overflow-hidden" style={{ perspective: '800px' }}>

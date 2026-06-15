@@ -5,31 +5,28 @@ import { db } from '../../firebase';
 import { useLedger } from '../../context/LedgerContext';
 
 export default function TransferEngine({
-  isTransferOpen, 
+  isTransferOpen,
   setIsTransferOpen,
-  isCashOutOpen, 
+  isCashOutOpen,
   setIsCashOutOpen,
-  cashOutGoal, 
+  cashOutGoal,
   setCashOutGoal,
-  triggerHaptic, 
+  triggerHaptic,
   triggerVictory
 }) {
-  const { 
-    user, isDemoMode, isDarkMode, signatureColor, 
-    accounts, setAccounts, transactions, setTransactions 
-  } = useLedger();
+  const { user, isDemoMode, accounts, setAccounts, transactions, setTransactions, isDarkMode, signatureColor } = useLedger();
 
-  // Local Component States (Extracted from App.js)
+  // Authentic State Buffers
   const [transferFrom, setTransferFrom] = useState("");
   const [transferTo, setTransferTo] = useState("");
   const [transferAmount, setTransferAmount] = useState("0");
-
+  
   const [cashOutAmount, setCashOutAmount] = useState("0");
   const [cashOutToAccount, setCashOutToAccount] = useState("");
 
   const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
 
-  // === INTERNAL TRANSFER ENGINE ===
+  // === AUTHENTIC TRANSFER LOGIC ===
   const handleTransferNumpad = (btn) => {
     triggerHaptic(15);
     if (btn === "=") {
@@ -78,20 +75,30 @@ export default function TransferEngine({
       await addDoc(collection(db, "users", user.uid, "transactions"), { name: receivedName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: toAcc.id, createdAt: serverTimestamp() });
     }
 
-    // UPDATE #2 PIVOT: Trigger Victory on major transfers ($250+) or goal completions
-    if (isGoalCompleted || amt >= 250) {
+    if (isGoalCompleted) {
       triggerVictory(); 
     } else {
       triggerHaptic(50);
     }
-    
-    setIsTransferOpen(false); 
-    setTransferAmount("0"); 
-    setTransferFrom(""); 
-    setTransferTo("");
+    setIsTransferOpen(false); setTransferAmount("0"); setTransferFrom(""); setTransferTo("");
   };
 
-  // === GOAL CASH OUT ENGINE ===
+  // === AUTHENTIC CASH OUT LOGIC ===
+  const handleCashOutNumpad = (btn) => {
+    triggerHaptic(15);
+    if (!cashOutGoal) return;
+    if (btn === "CLR") {
+      setCashOutAmount("0");
+    } else if (cashOutAmount === "0" && btn !== ".") {
+      setCashOutAmount(btn);
+    } else {
+      const nextVal = cashOutAmount + btn;
+      if (parseFloat(nextVal) <= cashOutGoal.balance) {
+        setCashOutAmount(nextVal);
+      }
+    }
+  };
+
   const handleCashOutGoalSubmit = async (e) => {
     if (e) e.preventDefault();
     const amt = parseFloat(cashOutAmount);
@@ -128,26 +135,9 @@ export default function TransferEngine({
     setCashOutToAccount("");
   };
 
-  const handleCashOutNumpad = (btn) => {
-    triggerHaptic(15);
-    if (!cashOutGoal) return;
-    if (btn === "CLR") {
-      setCashOutAmount("0");
-    } else if (cashOutAmount === "0" && btn !== ".") {
-      setCashOutAmount(btn);
-    } else {
-      const nextVal = cashOutAmount + btn;
-      if (parseFloat(nextVal) <= cashOutGoal.balance) {
-        setCashOutAmount(nextVal);
-      }
-    }
-  };
-
-  // If neither modal is active, render nothing to save DOM weight
-  if (!isTransferOpen && !(isCashOutOpen && cashOutGoal)) return null;
-
   return (
     <>
+      {/* AUTHENTIC TRANSFER DRAWER */}
       {isTransferOpen && (
         <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsTransferOpen(false)}></div>
@@ -203,6 +193,7 @@ export default function TransferEngine({
         </div>
       )}
 
+      {/* AUTHENTIC CASH OUT DRAWER */}
       {isCashOutOpen && cashOutGoal && (
         <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => { setIsCashOutOpen(false); setCashOutGoal(null); }}></div>

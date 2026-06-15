@@ -18,7 +18,8 @@ export default function Settings({
   signatureColor = "#1877F2",
   setSignatureColor,
   currentCurrency = "USD ($)",
-  setCurrentCurrency
+  setCurrentCurrency,
+  handleUpdateDisplayName // <-- Injected for Fix #2
 }) {
   const [editName, setEditName] = useState(userName || "");
 
@@ -52,12 +53,13 @@ export default function Settings({
     { code: "JPY (¥)", symbol: "¥" }
   ];
 
+  // FIX #3: OVERHAULED PREMIUM PALETTE (Purple & Yellow added)
   const premiumPalette = [
     { name: "Classic Ledger Blue", hex: "#1877F2" },
-    { name: "Emerald Growth", hex: "#10B981" },
-    { name: "Vibrant Horizon", hex: "#F97316" },
+    { name: "Neon Yellow", hex: "#FBBF24" },
+    { name: "Midnight Purple", hex: "#8B5CF6" },
     { name: "Crimson Forge", hex: "#EF4444" },
-    { name: "Royal Velocity", hex: "#8B5CF6" },
+    { name: "Cyan Wave", hex: "#0EA5E9" },
     { name: "Rose Quartz", hex: "#EC4899" }
   ];
 
@@ -131,16 +133,12 @@ export default function Settings({
           isDemoMode ? "pb-[140px] lg:pb-6" : "pb-12 lg:pb-6"
         }`}>
           
-          {/* Section Apex Element: High-Contrast Premium Dark-Canvas Subscription Hero Block */}
-          <div className={`p-5 rounded-[2rem] border relative overflow-hidden bg-gradient-to-br transition-all duration-300 ${
-            isDarkMode 
-              ? "from-slate-950 via-slate-900 to-slate-950 border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.4)]" 
-              : "from-black via-slate-950 to-black border-black shadow-[0_16px_36px_rgba(15,23,42,0.45)]"
-          }`}>
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-2xl rounded-full pointer-events-none"></div>
+          {/* FIX #1: ACCOUNT STATUS - Hardcoded Dark Gradient Canvas (Stays Dark in Light Mode) */}
+          <div className="p-5 rounded-[2rem] border relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-black border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.5)] transition-all duration-300">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-2xl rounded-full pointer-events-none"></div>
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 block mb-0.5">Account Status</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-0.5">Account Status</span>
                 <p className="text-base font-black text-white">Ledger Planner Pro</p>
                 <div className="flex items-center gap-1.5 mt-1">
                   <div className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse"></div>
@@ -149,38 +147,38 @@ export default function Settings({
               </div>
               <button 
                 onClick={() => openGlobalAction("Subscription Portal", "Establishing secure handshakes to billing validation channels...", "Close", false, () => {}, true)}
-                className="px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-700 bg-slate-800 text-white hover:bg-slate-700 shadow-sm transition-all active:scale-95"
+                className="px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-700 bg-slate-800/80 text-white hover:bg-slate-700 shadow-sm transition-all active:scale-95"
               >
                 Manage
               </button>
             </div>
           </div>
 
-          {/* SIGNATURE SEPARATION LINE TRACK (Accounts-Ledger Calibration Style) */}
-          <div className={`border-t w-full my-2 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
+          {/* SIGNATURE SEPARATION LINE TRACK */}
+          <div className={`border-t w-full my-2 ${isDarkMode ? "border-slate-800" : "border-slate-300"}`}></div>
 
-          {/* UPGRADED STANDALONE NODE: SHARE MY ACCOUNT Premium Dark Canvas Row Block */}
+          {/* FIX #1: SHARE MY ACCOUNT - Demoted to standard menu style */}
           <button
             onClick={() => setIsCoOpOpen(true)}
-            className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left transition-all active:scale-[0.99] gap-3 bg-gradient-to-br ${
+            className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left transition-all active:scale-[0.99] gap-3 ${
               isDarkMode 
-                ? "from-slate-950 via-slate-900 to-slate-950 border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.4)]" 
-                : "from-black via-slate-950 to-black border-black shadow-[0_16px_36px_rgba(15,23,42,0.45)]"
+                ? "bg-slate-800/40 border-slate-700/50 hover:bg-slate-800/80" 
+                : "bg-white border-slate-100 hover:bg-slate-50/80 shadow-sm"
             }`}
           >
-            {/* Layer 1: Label Block */}
             <div className="flex items-center gap-3 w-full min-w-0">
-              <div className="p-2.5 rounded-xl shrink-0 bg-slate-900/60 text-purple-400">
+              <div className={`p-2.5 rounded-xl shrink-0 ${isDarkMode ? "bg-slate-900/60" : "bg-purple-50"} text-purple-400`}>
                 <Users size={16} strokeWidth={2.5} />
               </div>
-              <span className="text-xs font-black uppercase tracking-wider truncate flex-1 text-white">
+              <span className={`text-xs font-black uppercase tracking-wider truncate flex-1 ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
                 SHARE MY ACCOUNT
               </span>
             </div>
 
-            {/* Layer 2: Action Utility Base */}
-            <div className="flex items-center justify-between w-full pt-2 border-t border-slate-800/60">
-              <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border bg-slate-900/40 border-slate-700/80 text-slate-400">
+            <div className={`flex items-center justify-between w-full pt-2 border-t ${isDarkMode ? "border-slate-800/60" : "border-slate-100"}`}>
+              <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border ${
+                isDarkMode ? "bg-slate-900/40 border-slate-700/80 text-slate-400" : "bg-slate-100/60 border-slate-200/60 text-slate-500"
+              }`}>
                 {coOpStep === 3 ? "2 Users Linked" : "Inactive Setup"}
               </span>
               <div className="flex items-center gap-1 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
@@ -190,8 +188,7 @@ export default function Settings({
             </div>
           </button>
 
-          {/* SIGNATURE SEPARATION LINE TRACK (Accounts-Ledger Calibration Style) */}
-          <div className={`border-t w-full my-2 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
+          <div className={`border-t w-full my-2 ${isDarkMode ? "border-slate-800" : "border-slate-300"}`}></div>
 
           {/* CENTRAL MASTER MODULE GROUP: Personalization Parameters Layout Shell */}
           <div className="space-y-3">
@@ -200,7 +197,7 @@ export default function Settings({
             </h4>
             <div className={`p-4 rounded-[2rem] border space-y-3 ${isDarkMode ? "bg-slate-800/20 border-slate-800" : "bg-white border-slate-100 shadow-sm"}`}>
               
-              {/* [POSITION #1 NODE]: User Profile Naming Vector Field Configuration Component */}
+              {/* [POSITION #1 NODE]: User Profile Naming Vector Field */}
               <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
                 <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-2">PREFERRED DISPLAY NAME</label>
                 <div className="flex flex-col gap-2.5">
@@ -212,8 +209,12 @@ export default function Settings({
                       isDarkMode ? "bg-[#0F172A] border-slate-700 text-white focus:border-slate-500" : "bg-white border-slate-200 text-slate-900 focus:border-slate-400"
                     }`} 
                   />
+                  {/* FIX #2: Wired up the handleUpdateDisplayName function */}
                   <button 
-                    onClick={() => openGlobalAction("Identity Updated", "Local cache verification synchronized successfully.", "Close", false, () => {}, true)}
+                    onClick={() => {
+                      if (handleUpdateDisplayName) handleUpdateDisplayName(editName);
+                      openGlobalAction("Identity Updated", "Local cache verification synchronized successfully.", "Close", false, () => {}, true);
+                    }}
                     disabled={!editName.trim() || editName === userName}
                     className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-[0.98]"
                     style={{ backgroundColor: (editName.trim() && editName !== userName) ? signatureColor : isDarkMode ? "#1E293B" : "#E2E8F0", color: (editName.trim() && editName !== userName) ? "#FFFFFF" : "#94A3B8" }}
@@ -223,7 +224,7 @@ export default function Settings({
                 </div>
               </div>
 
-              {/* [POSITION #2 NODE]: Nested Individual Theme Active Switch Toggle Card Module */}
+              {/* [POSITION #2 NODE]: Theme Swapper */}
               <button 
                 onClick={() => setIsDarkMode(!isDarkMode)}
                 className={`w-full flex items-center justify-between p-4 rounded-[1.5rem] border text-left transition-all active:scale-[0.99] ${
@@ -248,7 +249,7 @@ export default function Settings({
                 </div>
               </button>
 
-              {/* [POSITION #3 NODE]: UNIFIED 2-LAYER SELECTION NODE: Palette Swapper Grid Interface */}
+              {/* [POSITION #3 NODE]: Palette Swapper Grid Interface */}
               <div className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left gap-3 ${
                 isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-100 shadow-sm"
               }`}>
@@ -269,6 +270,12 @@ export default function Settings({
                         className="h-8 rounded-xl relative transition-transform active:scale-90 flex items-center justify-center border shadow-sm"
                         style={{ backgroundColor: color.hex, borderColor: signatureColor === color.hex ? "#FFFFFF" : "transparent" }}
                       >
+                        {/* FIX #3: DEFAULT ANCHOR TAG */}
+                        {color.hex === "#1877F2" && (
+                          <span className="absolute -top-3 -right-2 bg-slate-800 text-white text-[5px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest border border-slate-600 shadow-xl z-10">
+                            DEFAULT
+                          </span>
+                        )}
                         {signatureColor === color.hex && (
                           <Check size={14} className="text-white drop-shadow-md" strokeWidth={3} />
                         )}
@@ -278,7 +285,7 @@ export default function Settings({
                 </div>
               </div>
 
-              {/* [POSITION #4 NODE]: Global Localization & Internationalization Currency Link Row */}
+              {/* [POSITION #4 NODE]: Currency Link Row */}
               <SettingRow 
                 icon={Globe} 
                 title="SELECT CURRENCY" 
@@ -289,14 +296,13 @@ export default function Settings({
             </div>
           </div>
 
-          {/* CLUSTER MODULE GROUP 3: Core Maintenance Tools & Critical Overrides */}
+          {/* CLUSTER MODULE GROUP 3: Core Maintenance Tools */}
           <div className="space-y-3">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 flex items-center gap-1.5">
               <RefreshCw size={12} strokeWidth={2.5} /> SYSTEM SETTINGS
             </h4>
             <div className={`p-4 rounded-[2rem] border space-y-3 ${isDarkMode ? "bg-slate-800/20 border-slate-800" : "bg-white border-slate-100 shadow-sm"}`}>
               
-              {/* RE-ENGINEERED 1-LAYER INSTANT ACTION MONTH TRANSITION COMPONENT */}
               <button
                 onClick={handleRolloverMonth}
                 className={`w-full flex items-center gap-3 p-4 rounded-[1.5rem] border text-left transition-all active:scale-[0.99] ${
@@ -313,9 +319,10 @@ export default function Settings({
                 </span>
               </button>
 
+              {/* FIX #5: Text string updated to Contact Support */}
               <SettingRow 
                 icon={HelpCircle} 
-                title="Glitch Report Vector Channel" 
+                title="Contact Support" 
                 statusText="Support Live" 
                 colorClass="text-sky-400"
                 onClick={() => openGlobalAction("Support Vector", "Opening secure mail transfer protocols to support documentation channels...", "Close", false, () => {}, true)}
@@ -323,7 +330,7 @@ export default function Settings({
             </div>
           </div>
 
-          {/* DANGER ZONE CRITICAL STORAGE WIPE OVERLAY CAPTURE SYSTEM BLOCK CARD MODULE */}
+          {/* DANGER ZONE CRITICAL STORAGE WIPE */}
           <div className={`p-5 rounded-[2rem] border ${
             isDarkMode ? "bg-red-950/10 border-red-900/30" : "bg-red-50/40 border-red-100"
           }`}>
@@ -344,8 +351,17 @@ export default function Settings({
                   : "bg-white border-slate-200 text-slate-900 focus:border-red-400 shadow-inner"
               }`}
             />
+            {/* FIX #4: Intercepting the execution with openGlobalAction */}
             <button
-              onClick={handleFactoryReset}
+              onClick={() => {
+                openGlobalAction(
+                  "Destroy Vault Architecture", 
+                  "Are you absolutely certain you want to permanently wipe all tracking ledgers? This action cannot be undone.", 
+                  "Execute Wipe", 
+                  true, 
+                  handleFactoryReset
+                );
+              }}
               disabled={resetConfirm !== "RESET"}
               className={`w-full py-3.5 rounded-xl font-black text-xs uppercase tracking-widest text-white transition-all border border-transparent flex items-center justify-center gap-2 ${
                 resetConfirm === "RESET" 
@@ -439,7 +455,7 @@ export default function Settings({
                     }}
                     disabled={!inviteEmail.trim()}
                     className="w-full py-4 rounded-xl font-black text-xs uppercase tracking-widest text-white transition-all active:scale-[0.98]"
-                    style={{ backgroundColor: inviteEmail.trim() ? signatureColor : isDarkMode ? "#1E293B" : "#E2E8F0", color: inviteEmail.trim() ? "#FFFFFF" : "#94A3B8" }}
+                    style={{ backgroundColor: inviteEmail.trim() ? signatureColor : isDarkMode ? "bg-slate-800" : "#E2E8F0", color: inviteEmail.trim() ? "#FFFFFF" : "#94A3B8" }}
                   >
                     Dispatch Vault Outbound Request
                   </button>

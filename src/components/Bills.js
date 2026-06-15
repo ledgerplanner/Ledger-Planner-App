@@ -152,7 +152,6 @@ export default function Bills({
 
       if (mIdx > currentMonthIndex) {
         if (bMonth === mIdx) return true;
-        // FIX: Only show as recurring if the month index is STRICTLY GREATER than the bill's creation month.
         return b.isRecurring && bMonth < mIdx; 
       }
 
@@ -221,11 +220,17 @@ export default function Bills({
   const annualPaid = annualBills.filter((b) => b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
   const annualProgressPercentage = annualTotal === 0 ? 0 : Math.max(0, Math.min((annualPaid / annualTotal) * 100, 100));
 
-  const { totalDue: remainingThisMonth } = getMonthMetrics(currentMonthIndex);
+  const { totalDue: remainingThisMonth, monthBills: currentMonthBills } = getMonthMetrics(currentMonthIndex);
   
-  const activeRecurringSum = bills.filter(b => b.isRecurring && !b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
-  const monthsLeftInYear = Math.max(0, 11 - currentMonthIndex);
-  const recurringThisYear = activeRecurringSum * monthsLeftInYear;
+  // Clamped Recurring Calculation (Current Month Only)
+  const recurringThisMonth = currentMonthBills.filter(b => b.isRecurring && !b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+
+  // Dynamic Heuristic Month Naming
+  const currentMonthData = monthsData[currentMonthIndex];
+  const displayMonthLabel = currentMonthData.name.length <= 5 ? currentMonthData.name.toUpperCase() : currentMonthData.short.toUpperCase();
+  const recurringPillText = `${displayMonthLabel}'S RECURRING`;
+
+  const pillBaseClass = "w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transition-all duration-500 ease-out hover:-translate-y-0.5 active:scale-[0.98]";
 
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
@@ -257,22 +262,11 @@ export default function Bills({
           </div>
         </div>
 
-        {/* 2. Gliding Subtext */}
-        <div className={`transform transition-all duration-700 ease-out mb-5 ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"}`}>
-          <span className={`text-[11px] font-bold ${annualPaid === 0 ? "text-red-500" : "text-[#10B981]"}`}>
-            PAID ${annualPaid.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </span>
-          <span className={`text-[11px] font-bold ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}> / </span>
-          <span className="text-[11px] font-bold" style={{ color: signatureColor }}>
-            TOTAL ${annualTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </span>
-        </div>
-
-        {/* 3. Flowing Pills */}
-        <div className={`w-full space-y-2 transform transition-all duration-700 delay-200 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+        {/* 3. The Modern 5-Pill Matrix */}
+        <div className="w-full space-y-2 mt-5">
           
           {urgentTotal > 0 && (
-            <div className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transition-all ${isDarkMode ? 'bg-red-500/10 border-red-900/50' : 'bg-red-500/10 border-red-200'}`}>
+            <div className={`${pillBaseClass} ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"} delay-[100ms] ${isDarkMode ? 'bg-red-500/10 border-red-900/50 shadow-[0_0_15px_rgba(239,68,68,0.15)] animate-[pulse_3s_ease-in-out_infinite]' : 'bg-red-50 border-red-200 shadow-[0_0_15px_rgba(239,68,68,0.2)] animate-[pulse_3s_ease-in-out_infinite]'}`}>
               <span className="text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 text-red-500">
                 <AlertCircle size={12} strokeWidth={2.5}/> TOTAL DUE NOW
               </span>
@@ -282,21 +276,39 @@ export default function Bills({
             </div>
           )}
 
-          <div className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transition-all ${isDarkMode ? 'bg-blue-500/10 border-blue-500/20' : 'bg-[#1877F2]/10 border-blue-200'}`}>
-            <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: signatureColor }}>
+          <div className={`${pillBaseClass} ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"} delay-[150ms] ${annualPaid === 0 ? (isDarkMode ? 'bg-red-500/10 border-red-900/50 text-red-500' : 'bg-red-50 border-red-200 text-red-500') : (isDarkMode ? 'bg-emerald-500/10 border-emerald-900/50 text-[#10B981] shadow-[0_0_15px_rgba(16,185,129,0.1)] animate-[pulse_4s_ease-in-out_infinite]' : 'bg-emerald-50 border-emerald-200 text-[#10B981] shadow-[0_0_15px_rgba(16,185,129,0.15)] animate-[pulse_4s_ease-in-out_infinite]')}`}>
+            <span className="text-[10px] font-black uppercase tracking-widest">
+              TOTAL PAID
+            </span>
+            <span className="text-sm sm:text-base font-black leading-none">
+              ${annualPaid.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          </div>
+
+          <div className={`${pillBaseClass} ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"} delay-[200ms] ${isDarkMode ? 'bg-slate-500/10 border-slate-700/80 text-[#64748B]' : 'bg-slate-50 border-slate-200 text-[#64748B]'}`}>
+            <span className="text-[10px] font-black uppercase tracking-widest">
+              {recurringPillText}
+            </span>
+            <span className="text-sm sm:text-base font-black leading-none">
+              ${recurringThisMonth.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          </div>
+
+          <div className={`${pillBaseClass} ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"} delay-[250ms] ${isDarkMode ? 'bg-blue-500/10 border-blue-500/20' : 'bg-[#1877F2]/10 border-blue-200'}`} style={{ color: signatureColor }}>
+            <span className="text-[10px] font-black uppercase tracking-widest">
               DUE THIS MONTH
             </span>
-            <span className="text-sm sm:text-base font-black leading-none" style={{ color: signatureColor }}>
+            <span className="text-sm sm:text-base font-black leading-none">
               ${remainingThisMonth.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
 
-          <div className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transition-all ${isDarkMode ? 'bg-slate-500/10 border-slate-700/80' : 'bg-slate-500/10 border-slate-200'}`}>
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#64748B]">
-              RECURRING BILLS
+          <div className={`${pillBaseClass} ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"} delay-[300ms] ${isDarkMode ? 'bg-blue-500/10 border-blue-500/20' : 'bg-[#1877F2]/10 border-blue-200'}`} style={{ color: signatureColor }}>
+            <span className="text-[10px] font-black uppercase tracking-widest">
+              DUE IN {currentYear}
             </span>
-            <span className="text-sm sm:text-base font-black leading-none text-[#64748B]">
-              ${recurringThisYear.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            <span className="text-sm sm:text-base font-black leading-none">
+              ${annualTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
 
@@ -531,7 +543,7 @@ export default function Bills({
                     {bill.isInstallment && !bill.isPaid && (
                       <div className="mt-5 pt-3 border-t border-slate-200 w-full animate-fade-in">
                         <div className="flex justify-between items-end mb-2 px-1">
-                          <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500">Installment Plan</span>
+                          <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Installment Plan</span>
                           <span className="text-xs sm:text-sm font-black text-slate-600 dark:text-slate-300">
                             ${(Number(bill.paidAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} / ${(Number(bill.totalAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                           </span>

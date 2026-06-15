@@ -514,6 +514,8 @@ function LedgerApp() {
     return new Date(a.rawDate || 0) - new Date(b.rawDate || 0);
   });
 
+  const currentLiveBalance = accounts.filter(a => !a.isGoal && (a.type === "Checking" || a.type === "Cash")).reduce((sum, acc) => sum + (acc.balance || 0), 0);
+
   const renderHeroShell = (title, graphicContent) => {
     const hasOverdueOrDueNow = dynamicBills.some(b => !b.isPaid && (b.isOverdue || b.payday === "Due Now"));
     const hours = new Date().getHours();
@@ -651,7 +653,24 @@ function LedgerApp() {
               />
             )}
 
-            {activeTab === "bills" && <Bills userName={userName} bills={dynamicBills} isDarkMode={isDarkMode} renderHeroShell={renderHeroShell} accounts={accounts} signatureColor={signatureColor} />}
+            {/* === FIX #5: SURGICALLY WIRED BILLS COMPONENT === */}
+            {activeTab === "bills" && (
+              <Bills 
+                userName={userName} 
+                bills={dynamicBills} 
+                paydayConfig={paydayConfig}
+                isDarkMode={isDarkMode} 
+                renderHeroShell={renderHeroShell} 
+                accounts={accounts} 
+                signatureColor={signatureColor} 
+                handleBillClick={handleBillClick} 
+                setSelectedEntry={openEntryDrawer} 
+                collapsedPaydays={collapsedPaydays}
+                toggleCollapse={toggleCollapse}
+                liveHeroBalance={currentLiveBalance}
+              />
+            )}
+
             {activeTab === "activity" && (
               <Activity 
                 userName={userName} 

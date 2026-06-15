@@ -10,7 +10,7 @@ import {
   signInWithEmailAndPassword, createUserWithEmailAndPassword, 
   onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup, updateProfile 
 } from "firebase/auth";
-import { doc, setDoc, serverTimestamp, updateDoc, collection, addDoc, deleteDoc } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp, updateDoc, collection, addDoc, deleteDoc, getDocs } from "firebase/firestore";
 
 // === CONTEXT & HOOKS ===
 import { LedgerProvider, useLedger } from "./context/LedgerContext";
@@ -104,6 +104,9 @@ function LedgerApp() {
   const [installmentPromptConfig, setInstallmentPromptConfig] = useState({ isOpen: false, billId: null, nextDate: "" });
   const [editPaydayConfig, setEditPaydayConfig] = useState(paydayConfig);
   const [currentCurrency, setCurrentCurrency] = useState("USD ($)");
+  
+  // WSOD FIX: Add the missing resetConfirm state definition
+  const [resetConfirm, setResetConfirm] = useState("");
   
   // Briefing Engine Consumption Memory
   const [hasConsumedAMBriefing, setHasConsumedAMBriefing] = useState(() => {

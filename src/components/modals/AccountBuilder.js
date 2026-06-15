@@ -171,6 +171,9 @@ export default function AccountBuilder({
     });
   };
 
+  const isAddAccountDisabled = !newAccName.trim() || isNaN(parseFloat(newAccBalance));
+  const isAddGoalDisabled = !newGoalName.trim() || isNaN(parseFloat(newGoalAmount)) || parseFloat(newGoalAmount) <= 0 || !newGoalDate || !newGoalIcon;
+
   return (
     <>
       {isAddAccountOpen && (
@@ -198,7 +201,15 @@ export default function AccountBuilder({
               </div>
               <div className="relative mt-2"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Type</label><select value={newAccType} onChange={(e) => setNewAccType(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}><option>Checking</option><option>Savings</option><option>Credit Card</option><option>Cash</option><option>401k / Retirement</option></select></div>
               <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Details</label><input type="text" placeholder={newAccType} value={newAccDesc} onChange={(e) => setNewAccDesc(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white placeholder-slate-600" : "bg-white border-slate-200 text-slate-900 placeholder-slate-300"}`} /></div>
-              <button onClick={handleAddAccount} disabled={!newAccName.trim() || isNaN(parseFloat(newAccBalance))} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2" style={{ backgroundColor: (!newAccName.trim() || isNaN(parseFloat(newAccBalance))) ? undefined : signatureColor }}>Save Account <CheckCircle2 size={16} /></button>
+              
+              <button 
+                onClick={handleAddAccount} 
+                disabled={isAddAccountDisabled} 
+                className={`w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${isAddAccountDisabled ? "bg-slate-300 dark:bg-slate-700 opacity-50 cursor-not-allowed" : "shadow-lg active:scale-95"}`} 
+                style={{ backgroundColor: isAddAccountDisabled ? undefined : signatureColor }}
+              >
+                Save Account <CheckCircle2 size={16} />
+              </button>
             </div>
           </div>
         </div>
@@ -241,7 +252,15 @@ export default function AccountBuilder({
                   <input type="date" value={newGoalDate} onChange={(e) => setNewGoalDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                 </div>
               </div>
-              <button onClick={handleAddGoal} className="w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2" style={{ backgroundColor: signatureColor }}>Lock In Goal <Target size={16} /></button>
+
+              <button 
+                onClick={handleAddGoal} 
+                disabled={isAddGoalDisabled} 
+                className={`w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${isAddGoalDisabled ? "bg-slate-300 dark:bg-slate-700 opacity-50 cursor-not-allowed" : "shadow-lg active:scale-95"}`} 
+                style={{ backgroundColor: isAddGoalDisabled ? undefined : signatureColor }}
+              >
+                Lock In Goal <Target size={16} />
+              </button>
 
               {isIconSelectorOpen && activeIconField === "goal" && (
                 <div className={`absolute inset-0 z-[150] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
@@ -322,7 +341,7 @@ export default function AccountBuilder({
                 <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest text-slate-400 z-10 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{selectedAccount.isGoal ? "Goal Details" : "Account Details"}</label>
                 <input type="text" placeholder={selectedAccount.type} value={editAccountDesc} onChange={(e) => setEditAccountDesc(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white placeholder-slate-600" : "bg-white border-slate-200 text-slate-900 placeholder-slate-400"}`} />
               </div>
-              <button onClick={updateAccountBalance} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2" style={{ backgroundColor: signatureColor }}><Save size={16} /> Save Changes</button>
+              <button onClick={updateAccountBalance} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all active:scale-95 flex items-center justify-center gap-2" style={{ backgroundColor: signatureColor }}><Save size={16} /> Save Changes</button>
               <button onClick={deleteAccount} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-red-500 shadow-[0_8px_16px_rgba(239,68,68,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"><Trash2 size={16}/> {selectedAccount.isGoal ? "Delete Goal" : "Delete Account"}</button>
             </div>
             {isIconSelectorOpen && selectedAccount.isGoal && activeIconField === "edit" && (

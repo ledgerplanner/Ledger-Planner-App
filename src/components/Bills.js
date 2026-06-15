@@ -22,6 +22,9 @@ export default function Bills({
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth());
   const [expandedMonthIdx, setExpandedMonthIdx] = useState(() => new Date().getMonth());
   
+  // Custom Local Interceptor Modal for Future Recurring Payments
+  const [chronoLock, setChronologicalLock] = useState({ isOpen: false, billName: "" });
+
   const horizontalScrollRef = useRef(null);
   const rawLiveIncomeValue = typeof liveHeroBalance !== "undefined" && liveHeroBalance !== null ?
     liveHeroBalance 
@@ -189,11 +192,7 @@ export default function Bills({
       return new Date(a.rawDate) - new Date(b.rawDate);
     });
   };
-
-  const activeMetrics = getMonthMetrics(selectedMonth);
   
-  const globalTotalDue = bills.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
-  const globalTotalPaid = bills.filter((b) => b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
   const urgentBills = bills.filter((b) => !b.isPaid && (b.isOverdue || b.payday === "Due Now"));
   const urgentTotal = urgentBills.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
   
@@ -208,7 +207,6 @@ export default function Bills({
   const horizonTotalPaid = horizonBills
     .filter((b) => b.isPaid)
     .reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
-  const baseMonthlyIncome = Object.values(paydayConfig || {}).reduce((sum, slot) => sum + (Number(slot?.income) || 0), 0);
 
   // HERO METRICS
   const annualBills = bills.filter((b) => {
@@ -220,17 +218,18 @@ export default function Bills({
   const annualPaid = annualBills.filter((b) => b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
   const annualProgressPercentage = annualTotal === 0 ? 0 : Math.max(0, Math.min((annualPaid / annualTotal) * 100, 100));
 
+  // Fix #3: Isolate unpaid bills for the year so the final pill drops to $0.00
+  const annualUnpaidTotal = annualBills.filter(b => !b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+
   const { totalDue: remainingThisMonth, monthBills: currentMonthBills } = getMonthMetrics(currentMonthIndex);
   
-  // Clamped Recurring Calculation (Current Month Only)
+  // Fix #1: Clamped Recurring Calculation (Current Month Only)
   const recurringThisMonth = currentMonthBills.filter(b => b.isRecurring && !b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
 
-  // Dynamic Heuristic Month Naming
+  // Fix #2: Dynamic Heuristic Month Naming
   const currentMonthData = monthsData[currentMonthIndex];
   const displayMonthLabel = currentMonthData.name.length <= 5 ? currentMonthData.name.toUpperCase() : currentMonthData.short.toUpperCase();
   const recurringPillText = `${displayMonthLabel}'S RECURRING`;
-
-  const pillBaseClass = "w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transition-all duration-500 ease-out hover:-translate-y-0.5 active:scale-[0.98]";
 
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
@@ -262,11 +261,15 @@ export default function Bills({
           </div>
         </div>
 
-        {/* 3. The Modern 5-Pill Matrix */}
+        {/* 2. The 5-Pill Matrix (With Alternating Staggered Glide Animation) */}
         <div className="w-full space-y-2 mt-5">
           
+          {/* Pill 1: Total Due Now (Glides Left, Active Red Pulse) */}
           {urgentTotal > 0 && (
-            <div className={`${pillBaseClass} ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"} delay-[100ms] ${isDarkMode ? 'bg-red-500/10 border-red-900/50 shadow-[0_0_15px_rgba(239,68,68,0.15)] animate-[pulse_3s_ease-in-out_infinite]' : 'bg-red-50 border-red-200 shadow-[0_0_15px_rgba(239,68,68,0.2)] animate-[pulse_3s_ease-in-out_infinite]'}`}>
+            <div 
+              className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transform transition-all duration-[600ms] delay-[400ms] ${isMounted ? "translate-x-0 opacity-100" : "translate-x-12 opacity-0"} ${isDarkMode ? 'bg-red-500/10 border-red-900/50 shadow-[0_0_15px_rgba(239,68,68,0.15)] animate-[pulse_3s_ease-in-out_infinite]' : 'bg-red-50 border-red-200 shadow-[0_0_15px_rgba(239,68,68,0.2)] animate-[pulse_3s_ease-in-out_infinite]'}`}
+              style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
+            >
               <span className="text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 text-red-500">
                 <AlertCircle size={12} strokeWidth={2.5}/> TOTAL DUE NOW
               </span>
@@ -276,7 +279,11 @@ export default function Bills({
             </div>
           )}
 
-          <div className={`${pillBaseClass} ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"} delay-[150ms] ${annualPaid === 0 ? (isDarkMode ? 'bg-red-500/10 border-red-900/50 text-red-500' : 'bg-red-50 border-red-200 text-red-500') : (isDarkMode ? 'bg-emerald-500/10 border-emerald-900/50 text-[#10B981] shadow-[0_0_15px_rgba(16,185,129,0.1)] animate-[pulse_4s_ease-in-out_infinite]' : 'bg-emerald-50 border-emerald-200 text-[#10B981] shadow-[0_0_15px_rgba(16,185,129,0.15)] animate-[pulse_4s_ease-in-out_infinite]')}`}>
+          {/* Pill 2: Total Paid (Glides Right, No Pulse, Red if $0, Green if > $0) */}
+          <div 
+            className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transform transition-all duration-[600ms] delay-[300ms] ${isMounted ? "translate-x-0 opacity-100" : "-translate-x-12 opacity-0"} ${annualPaid === 0 ? (isDarkMode ? 'bg-red-500/10 border-red-900/50 text-red-500' : 'bg-red-50 border-red-200 text-red-500') : (isDarkMode ? 'bg-emerald-500/10 border-emerald-900/50 text-[#10B981]' : 'bg-emerald-50 border-emerald-200 text-[#10B981]')}`}
+            style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
+          >
             <span className="text-[10px] font-black uppercase tracking-widest">
               TOTAL PAID
             </span>
@@ -285,7 +292,11 @@ export default function Bills({
             </span>
           </div>
 
-          <div className={`${pillBaseClass} ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"} delay-[200ms] ${isDarkMode ? 'bg-slate-500/10 border-slate-700/80 text-[#64748B]' : 'bg-slate-50 border-slate-200 text-[#64748B]'}`}>
+          {/* Pill 3: Dynamic Monthly Recurring (Glides Left, Slate Gray) */}
+          <div 
+            className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transform transition-all duration-[600ms] delay-[200ms] ${isMounted ? "translate-x-0 opacity-100" : "translate-x-12 opacity-0"} ${isDarkMode ? 'bg-slate-500/10 border-slate-700/80 text-[#64748B]' : 'bg-slate-50 border-slate-200 text-[#64748B]'}`}
+            style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
+          >
             <span className="text-[10px] font-black uppercase tracking-widest">
               {recurringPillText}
             </span>
@@ -294,7 +305,11 @@ export default function Bills({
             </span>
           </div>
 
-          <div className={`${pillBaseClass} ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"} delay-[250ms] ${isDarkMode ? 'bg-blue-500/10 border-blue-500/20' : 'bg-[#1877F2]/10 border-blue-200'}`} style={{ color: signatureColor }}>
+          {/* Pill 4: Due This Month (Glides Right, Signature Blue) */}
+          <div 
+            className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transform transition-all duration-[600ms] delay-[100ms] ${isMounted ? "translate-x-0 opacity-100" : "-translate-x-12 opacity-0"} ${isDarkMode ? 'bg-blue-500/10 border-blue-500/20' : 'bg-[#1877F2]/10 border-blue-200'}`}
+            style={{ color: signatureColor, transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
+          >
             <span className="text-[10px] font-black uppercase tracking-widest">
               DUE THIS MONTH
             </span>
@@ -303,12 +318,16 @@ export default function Bills({
             </span>
           </div>
 
-          <div className={`${pillBaseClass} ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"} delay-[300ms] ${isDarkMode ? 'bg-blue-500/10 border-blue-500/20' : 'bg-[#1877F2]/10 border-blue-200'}`} style={{ color: signatureColor }}>
+          {/* Pill 5: Annual Forecast (Glides Left, Signature Blue) */}
+          <div 
+            className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transform transition-all duration-[600ms] delay-[0ms] ${isMounted ? "translate-x-0 opacity-100" : "translate-x-12 opacity-0"} ${isDarkMode ? 'bg-blue-500/10 border-blue-500/20' : 'bg-[#1877F2]/10 border-blue-200'}`}
+            style={{ color: signatureColor, transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
+          >
             <span className="text-[10px] font-black uppercase tracking-widest">
               DUE IN {currentYear}
             </span>
             <span className="text-sm sm:text-base font-black leading-none">
-              ${annualTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              ${annualUnpaidTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
 
@@ -572,6 +591,7 @@ export default function Bills({
             const isCollapsed = expandedMonthIdx !== m.idx; 
             const sortedBills = sortBillsSurgically(monthBills.filter((b) => !b.isPaid));
             const isPastMonth = m.idx < currentMonthIndex;
+            const isFutureMonth = m.idx > currentMonthIndex;
 
             const headerTextColor = isPastMonth && totalDue > 0 
               ? "text-red-500 font-black" 
@@ -659,14 +679,24 @@ export default function Bills({
                                   </span>
                                 </div>
                                 <div className="flex-1 flex justify-center px-1">
+                                  
+                                  {/* Fix #5: The Chronological Lock Interceptor Trigger */}
                                   <button
-                                    onClick={(e) => { e.stopPropagation(); handleBillClick?.(bill.id); }}
+                                    onClick={(e) => { 
+                                      e.stopPropagation(); 
+                                      if (useRecurringLabel && isFutureMonth) {
+                                        setChronologicalLock({ isOpen: true, billName: bill.name });
+                                      } else {
+                                        handleBillClick?.(bill.id); 
+                                      }
+                                    }}
                                     className="px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0"
                                   >
                                     <CheckCircle2 size={14} strokeWidth={2.5} />
                                     <span className="hidden min-[360px]:inline">MARK AS PAID</span>
                                     <span className="min-[360px]:hidden">PAY</span>
                                   </button>
+                                
                                 </div>
                                 <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
                                   {(Number(bill.amount) || 0).toFixed(2)}
@@ -763,7 +793,14 @@ export default function Bills({
                             </div>
                             <div className="flex-1 flex justify-center px-1">
                               <button
-                                onClick={(e) => { e.stopPropagation(); handleBillClick?.(bill.id); }}
+                                onClick={(e) => { 
+                                  e.stopPropagation(); 
+                                  if (useRecurringLabel) {
+                                    setChronologicalLock({ isOpen: true, billName: bill.name });
+                                  } else {
+                                    handleBillClick?.(bill.id); 
+                                  }
+                                }}
                                 className="px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0"
                               >
                                 <CheckCircle2 size={14} strokeWidth={2.5} />
@@ -836,6 +873,29 @@ export default function Bills({
         )}
 
       </main>
+
+      {/* FIX #5: The Chronological Lock Alert Modal Built In natively */}
+      {chronoLock.isOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setChronologicalLock({ isOpen: false, billName: "" })}></div>
+          <div className={`relative w-full max-w-sm p-6 rounded-[2rem] shadow-2xl animate-scale-up ${isDarkMode ? "bg-[#1E293B] border border-slate-700" : "bg-white border border-slate-100"}`}>
+            <div className="flex flex-col items-center text-center">
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 bg-red-50 text-red-500`}>
+                <AlertCircle size={32} />
+              </div>
+              <h3 className={`text-lg font-black uppercase tracking-widest mb-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Chronological Lock Active</h3>
+              <p className={`text-sm font-bold leading-relaxed mb-6 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                Please pay the initial bill for <strong>{chronoLock.billName}</strong> first before paying this one.
+              </p>
+              <div className="flex gap-3 w-full">
+                <button onClick={() => setChronologicalLock({ isOpen: false, billName: "" })} className={`flex-1 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest text-white shadow-lg transition-transform active:scale-95 bg-red-500 shadow-[0_8px_16px_rgba(239,68,68,0.3)]`}>
+                  Acknowledge
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

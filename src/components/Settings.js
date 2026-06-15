@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { 
   X, User, CreditCard, RefreshCw, AlertCircle, Trash2, LogOut, 
-  ChevronRight, Sparkles, Globe, Palette, Users, Shield, Check, HelpCircle, Download
+  ChevronRight, Sparkles, Globe, Palette, Users, Shield, Check, HelpCircle
 } from "lucide-react";
 
 export default function Settings({
@@ -18,10 +18,7 @@ export default function Settings({
   signatureColor = "#1877F2",
   setSignatureColor,
   currentCurrency = "USD ($)",
-  setCurrentCurrency,
-  transactions = [],
-  bills = [],
-  accounts = []
+  setCurrentCurrency
 }) {
   const [editName, setEditName] = useState(userName || "");
 
@@ -63,69 +60,6 @@ export default function Settings({
     { name: "Royal Velocity", hex: "#8B5CF6" },
     { name: "Rose Quartz", hex: "#EC4899" }
   ];
-
-  // YEAR-END CSV COMPILER ENGINE (PATH A)
-  const handleExportData = () => {
-    const headers = ["Date", "Name/Payer", "Category", "Amount", "Type", "Source Account", "Vault Mode"];
-    
-    const escapeCsv = (str) => {
-      if (str == null) return '""';
-      const s = String(str);
-      if (s.includes(',') || s.includes('"') || s.includes('\n')) {
-        return `"${s.replace(/"/g, '""')}"`;
-      }
-      return s;
-    };
-
-    const rows = [];
-
-    // 1. Compile Transactions
-    transactions.forEach(t => {
-      const acc = accounts.find(a => a.id === t.accountId);
-      const accName = acc ? acc.name.toUpperCase() : "UNKNOWN ACCOUNT";
-      rows.push([
-        escapeCsv(t.date || t.fullDate || t.rawDate || "N/A"),
-        escapeCsv(t.name || "Unnamed"),
-        escapeCsv(t.category || "Other"),
-        escapeCsv(parseFloat(t.amount || 0).toFixed(2)),
-        escapeCsv(t.type || "Transaction"),
-        escapeCsv(accName),
-        escapeCsv(t.vaultVisibility || "Private")
-      ]);
-    });
-
-    // 2. Compile Bills
-    bills.forEach(b => {
-      const acc = accounts.find(a => a.id === b.paidFromAccountId);
-      const accName = acc ? acc.name.toUpperCase() : (b.isPaid ? "UNKNOWN ACCOUNT" : "PENDING/UNPAID");
-      rows.push([
-        escapeCsv(b.fullDate || b.rawDate || "N/A"),
-        escapeCsv(b.name || "Unnamed"),
-        escapeCsv(b.category || "Other"),
-        escapeCsv(parseFloat(b.amount || 0).toFixed(2)),
-        escapeCsv("Fixed Bill"),
-        escapeCsv(accName),
-        escapeCsv(b.vaultVisibility || "Shared")
-      ]);
-    });
-
-    // Compile to matrix and trigger Blob stream
-    const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute("href", url);
-    link.setAttribute("download", `ledger_planner_vault_export_${new Date().getFullYear()}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    if (openGlobalAction) {
-      openGlobalAction("Export Complete", "Your Vault data has been successfully compiled and downloaded.", "Close", false, () => {}, true);
-    }
-  };
 
   // HIGH-PRECISION RE-ENGINEERED 2-LAYER STACKED ROW CARD COMPONENT
   const SettingRow = ({ icon: Icon, title, statusText, colorClass = "", onClick }) => {
@@ -387,57 +321,40 @@ export default function Settings({
                 onClick={() => openGlobalAction("Support Vector", "Opening secure mail transfer protocols to support documentation channels...", "Close", false, () => {}, true)}
               />
             </div>
+          </div>
 
-            {/* YEAR-END CSV DATA EXPORT ENGINE (Path A) */}
-            <div className={`p-5 rounded-[2rem] border space-y-3 ${isDarkMode ? "bg-slate-800/20 border-slate-800" : "bg-white border-slate-100 shadow-sm"}`}>
-              <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
-                <Download size={12} strokeWidth={2.5} /> Data Export Engine
-              </h4>
-              <p className={`text-[11px] font-medium leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                Compile your continuous rolling ledger into a secure local CSV backup for tax purposes and external auditing. Active cloud arrays remain completely untouched.
-              </p>
-              <button
-                onClick={handleExportData}
-                className="w-full py-3.5 rounded-xl font-black text-xs uppercase tracking-widest text-white shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-                style={{ backgroundColor: signatureColor }}
-              >
-                [ 📥 Export Vault Data ]
-              </button>
-            </div>
-
-            {/* DANGER ZONE CRITICAL STORAGE WIPE OVERLAY CAPTURE SYSTEM BLOCK CARD MODULE */}
-            <div className={`p-5 rounded-[2rem] border ${
-              isDarkMode ? "bg-red-950/10 border-red-900/30" : "bg-red-50/40 border-red-100"
-            }`}>
-              <h4 className="text-[10px] font-black uppercase tracking-widest text-red-500 mb-3 flex items-center gap-2">
-                <AlertCircle size={14} strokeWidth={2.5} /> Critical System Overrides (Nuke Zone)
-              </h4>
-              <p className={`text-[11px] font-medium leading-relaxed mb-4 ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                Executing a Factory Reset wipes all database entities permanently from cloud architecture storage pools. Type <strong className="text-red-500 font-bold">RESET</strong> into the channel lock below to validate authorization parameters.
-              </p>
-              <input
-                type="text"
-                placeholder="TYPE RESET"
-                value={resetConfirm}
-                onChange={(e) => setResetConfirm(e.target.value)}
-                className={`w-full py-3.5 px-4 rounded-xl font-black text-xs tracking-widest text-center uppercase focus:outline-none transition-all border mb-3 ${
-                  isDarkMode 
-                    ? "bg-[#0F172A] border-slate-700/80 text-white focus:border-red-500" 
-                    : "bg-white border-slate-200 text-slate-900 focus:border-red-400 shadow-inner"
-                }`}
-              />
-              <button
-                onClick={handleFactoryReset}
-                disabled={resetConfirm !== "RESET"}
-                className={`w-full py-3.5 rounded-xl font-black text-xs uppercase tracking-widest text-white transition-all border border-transparent flex items-center justify-center gap-2 ${
-                  resetConfirm === "RESET" 
-                    ? "bg-red-600 shadow-[0_6px_16px_rgba(220,38,38,0.3)] active:scale-[0.98] hover:bg-red-700" 
-                    : "bg-slate-300 dark:bg-slate-800 text-slate-400 cursor-not-allowed opacity-50 shadow-none"
-                }`}
-              >
-                <Trash2 size={14} strokeWidth={2.5} /> Destroy Vault Architecture
-              </button>
-            </div>
+          {/* DANGER ZONE CRITICAL STORAGE WIPE OVERLAY CAPTURE SYSTEM BLOCK CARD MODULE */}
+          <div className={`p-5 rounded-[2rem] border ${
+            isDarkMode ? "bg-red-950/10 border-red-900/30" : "bg-red-50/40 border-red-100"
+          }`}>
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-red-500 mb-3 flex items-center gap-2">
+              <AlertCircle size={14} strokeWidth={2.5} /> Critical System Overrides (Nuke Zone)
+            </h4>
+            <p className={`text-[11px] font-medium leading-relaxed mb-4 ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
+              Executing a Factory Reset wipes all database entities permanently from cloud architecture storage pools. Type <strong className="text-red-500 font-bold">RESET</strong> into the channel lock below to validate authorization parameters.
+            </p>
+            <input
+              type="text"
+              placeholder="TYPE RESET"
+              value={resetConfirm}
+              onChange={(e) => setResetConfirm(e.target.value)}
+              className={`w-full py-3.5 px-4 rounded-xl font-black text-xs tracking-widest text-center uppercase focus:outline-none transition-all border mb-3 ${
+                isDarkMode 
+                  ? "bg-[#0F172A] border-slate-700/80 text-white focus:border-red-500" 
+                  : "bg-white border-slate-200 text-slate-900 focus:border-red-400 shadow-inner"
+              }`}
+            />
+            <button
+              onClick={handleFactoryReset}
+              disabled={resetConfirm !== "RESET"}
+              className={`w-full py-3.5 rounded-xl font-black text-xs uppercase tracking-widest text-white transition-all border border-transparent flex items-center justify-center gap-2 ${
+                resetConfirm === "RESET" 
+                  ? "bg-red-600 shadow-[0_6px_16px_rgba(220,38,38,0.3)] active:scale-[0.98] hover:bg-red-700" 
+                  : "bg-slate-300 dark:bg-slate-800 text-slate-400 cursor-not-allowed opacity-50 shadow-none"
+              }`}
+            >
+              <Trash2 size={14} strokeWidth={2.5} /> Destroy Vault Architecture
+            </button>
           </div>
         </div>
       </div>

@@ -152,7 +152,6 @@ export default function Bills({
 
       if (mIdx > currentMonthIndex) {
         if (bMonth === mIdx) return true;
-        // FIX: Only show as recurring if the month index is STRICTLY GREATER than the bill's creation month.
         return b.isRecurring && bMonth < mIdx; 
       }
 

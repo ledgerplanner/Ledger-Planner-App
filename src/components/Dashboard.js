@@ -136,9 +136,8 @@ export default function Dashboard({
     return sum + groupUnpaid.reduce((innerSum, b) => innerSum + (Number(b.amount) || 0), 0);
   }, 0);
 
-  const safeToSpend = totalIncomeBalance < 0 
-    ? -(Math.abs(scheduledUnpaidBillsTotal) - Math.abs(totalIncomeBalance))
-    : totalIncomeBalance - scheduledUnpaidBillsTotal;
+  // FIX: Pure subtraction completely bypassing the absolute value logic trap
+  const safeToSpend = totalIncomeBalance - scheduledUnpaidBillsTotal;
 
   const debtRatio = totalIncomeBalance > 0 ? Math.max(0, Math.min((scheduledUnpaidBillsTotal / totalIncomeBalance) * 100, 100)) : (scheduledUnpaidBillsTotal > 0 ? 100 : 0);
   
@@ -238,8 +237,9 @@ export default function Dashboard({
               <span className="text-[9px] font-black uppercase tracking-wider">Safe to Spend</span>
             </div>
             
+            {/* FIX: Formatted cleanly natively with '-$' if negative */}
             <p className={`text-2xl min-[360px]:text-3xl min-[400px]:text-4xl font-black tracking-tighter mb-1 w-full text-right break-words leading-none transition-colors duration-300 ${safeToSpend < 0 ? "text-red-500" : "text-[#10B981]"}`}>
-              {safeToSpend < 0 ? "-" : ""}${Math.abs(safeToSpend).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+              {safeToSpend < 0 ? "-$" : "$"}{Math.abs(safeToSpend).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
           
@@ -328,7 +328,7 @@ export default function Dashboard({
 
                 <div className="text-center pt-1.5 pb-1">
                    <p className={`text-2xl font-black tracking-tighter leading-none mb-1 ${isDeficit ? "text-red-500" : "text-[#10B981]"}`}>
-                    ${Math.abs(waterfallBalance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    {isDeficit ? "-$" : "$"}{Math.abs(waterfallBalance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                   </p>
                   <span className={`text-[8px] font-black uppercase tracking-[0.15em] ${isDarkMode ? "text-white" : "text-black"} leading-none block`}>
                     {subLabelStr}

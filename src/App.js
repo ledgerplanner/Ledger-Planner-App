@@ -42,7 +42,7 @@ function LedgerApp() {
   const { 
     user, setUser, isDemoMode, setIsDemoMode, 
     accounts, setAccounts, bills, setBills, transactions, setTransactions, todos, setTodos, paydayConfig, setPaydayConfig,
-    isDarkMode, setIsDarkMode, signatureColor
+    isDarkMode, setIsDarkMode, signatureColor, setSignatureColor
   } = useLedger();
 
   // === LOCAL UI & ROUTING STATE ===
@@ -103,6 +103,7 @@ function LedgerApp() {
   const [paymentModalConfig, setPaymentModalConfig] = useState({ isOpen: false, billId: null, accountId: "", isPayInFull: false });
   const [installmentPromptConfig, setInstallmentPromptConfig] = useState({ isOpen: false, billId: null, nextDate: "" });
   const [editPaydayConfig, setEditPaydayConfig] = useState(paydayConfig);
+  const [currentCurrency, setCurrentCurrency] = useState("USD ($)");
   
   // Briefing Engine Consumption Memory
   const [hasConsumedAMBriefing, setHasConsumedAMBriefing] = useState(() => {
@@ -390,6 +391,48 @@ function LedgerApp() {
     );
   };
 
+  const handleFactoryReset = async () => {
+    if (resetConfirm !== "RESET" || isDemoMode) return;
+    try {
+      const collectionsToWipe = ["transactions", "bills", "accounts", "todos"];
+      for (const col of collectionsToWipe) {
+        const querySnapshot = await getDocs(collection(db, "users", user.uid, col));
+        const deletePromises = querySnapshot.docs.map(document => deleteDoc(doc(db, "users", user.uid, col, document.id)));
+        await Promise.all(deletePromises);
+      }
+      setResetConfirm("");
+      triggerVictory();
+    } catch (error) {
+      console.error("Factory reset failed:", error);
+    }
+  };
+
+  const handleRolloverMonth = async () => {
+    if (isDemoMode) return;
+    openGlobalAction("Start New Month", "Advance active tracking timelines. This will archive completed bills.", "Start Over", true, async () => {
+      const completedBills = bills.filter(b => b.isPaid && !b.isRecurring);
+      for (const b of completedBills) {
+        await updateDoc(doc(db, "users", user.uid, "bills", b.id), { isArchived: true });
+      }
+      const recurringBills = bills.filter(b => b.isRecurring);
+      for (const b of recurringBills) {
+        if (b.rawDate) {
+          const d = new Date(b.rawDate);
+          d.setUTCMonth(d.getUTCMonth() + 1);
+          const nextDate = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+          await updateDoc(doc(db, "users", user.uid, "bills", b.id), { 
+            rawDate: nextDate, 
+            date: d.getUTCDate(),
+            fullDate: d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }),
+            isPaid: false,
+            paidAmount: b.isInstallment ? b.paidAmount : 0
+          });
+        }
+      }
+      triggerVictory();
+    });
+  };
+
   // === LIFECYCLE & AUTH HOOKS ===
   useEffect(() => {
     setIsMounted(true);
@@ -653,7 +696,7 @@ function LedgerApp() {
               />
             )}
 
-            {/* === FIX #5: SURGICALLY WIRED BILLS COMPONENT === */}
+            {/* === SURGICALLY WIRED BILLS COMPONENT === */}
             {activeTab === "bills" && (
               <Bills 
                 userName={userName} 
@@ -815,7 +858,24 @@ function LedgerApp() {
         )}
 
         {/* SETTINGS AND GLOBAL ACTIONS */}
-        {isSettingsOpen && <Settings setIsSettingsOpen={setIsSettingsOpen} />}
+        {isSettingsOpen && (
+          <Settings 
+            userName={userName}
+            isDarkMode={isDarkMode}
+            setIsDarkMode={setIsDarkMode}
+            setIsSettingsOpen={setIsSettingsOpen}
+            handleRolloverMonth={handleRolloverMonth}
+            handleFactoryReset={handleFactoryReset}
+            resetConfirm={resetConfirm}
+            setResetConfirm={setResetConfirm}
+            isDemoMode={isDemoMode}
+            openGlobalAction={openGlobalAction}
+            signatureColor={signatureColor}
+            setSignatureColor={setSignatureColor}
+            currentCurrency={currentCurrency}
+            setCurrentCurrency={setCurrentCurrency}
+          />
+        )}
 
         {/* THE GLOBAL ACTION MODAL ENGINE */}
         {globalActionConfig.isOpen && (

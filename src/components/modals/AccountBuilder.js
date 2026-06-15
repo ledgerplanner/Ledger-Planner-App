@@ -15,7 +15,7 @@ export default function AccountBuilder({
   triggerHaptic,
   triggerVictory
 }) {
-  const { user, isDemoMode, accounts, setAccounts, transactions, setTransactions, bills, setBills, isDarkMode, signatureColor } = useLedger();
+  const { user, isDemoMode, accounts, setAccounts, transactions, bills, isDarkMode, signatureColor } = useLedger();
 
   // --- ADD ACCOUNT STATE ---
   const [newAccName, setNewAccName] = useState("");
@@ -39,7 +39,7 @@ export default function AccountBuilder({
   const [editAccountTargetDate, setEditAccountTargetDate] = useState("");
 
   const [isIconSelectorOpen, setIsIconSelectorOpen] = useState(false);
-  const [activeIconField, setActiveIconField] = useState(null); // "goal" or "edit"
+  const [activeIconField, setActiveIconField] = useState(null);
 
   const categoryEmojis = ["💵", "💲", "🤑", "💰", "🏦", "💹", "₿", "💎", "💳", "🧾", "📋", "💼", "🏠", "🏢", "🔑", "🛋️", "🧹", "💧", "⚡", "📶", "📡", "☁️", "📺", "🎬", "🍿", "🎵", "🎧", "🚗", "🚲", "🚂", "✈️", "⛽", "🛠️", "🅿️", "🎫", "🚕", "🚇", "🛒", "🛍️", "📦", "👕", "👗", "👟", "💅", "💄", "💈", "🕶️", "💍", "🍔", "🍕", "🌮", "🍣", "🥗", "🍳", "☕", "🍦", "🍻", "🍹", "🍷", "🏥", "💊", "🦷", "👓", "🧘", "🏋️", "🐾", "🐶", "🎁", "🎉", "🎟️", "🎮", "🕹️", "📱", "💻", "⌚", "🤖", "🚀", "🌴", "🎓", "🏪", "🎯", "🏖️", "👶", "🛡️", "🏍️", "🎸", "⛵"];
   const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
@@ -51,7 +51,6 @@ export default function AccountBuilder({
     return dString;
   };
 
-  // Populate edit fields when selectedAccount changes
   useEffect(() => {
     if (selectedAccount) {
       setEditAccountBalance(Math.abs(selectedAccount.balance || 0).toFixed(2));

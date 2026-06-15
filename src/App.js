@@ -436,6 +436,23 @@ function LedgerApp() {
     });
   };
 
+  // FIX #2: Display Name Updater Logic Handler
+  const handleUpdateDisplayName = async (newName) => {
+    if (!newName || !newName.trim() || !user) return;
+    const finalName = newName.trim();
+    if (isDemoMode) {
+      triggerHaptic(50);
+      return; 
+    }
+    try {
+      await updateProfile(auth.currentUser, { displayName: finalName });
+      await setDoc(doc(db, "users", user.uid), { firstName: finalName }, { merge: true });
+      setUser({ ...user, displayName: finalName });
+    } catch (error) {
+      console.error("Failed to update display name:", error);
+    }
+  };
+
   // === LIFECYCLE & AUTH HOOKS ===
   useEffect(() => {
     setIsMounted(true);
@@ -877,6 +894,7 @@ function LedgerApp() {
             setSignatureColor={setSignatureColor}
             currentCurrency={currentCurrency}
             setCurrentCurrency={setCurrentCurrency}
+            handleUpdateDisplayName={handleUpdateDisplayName}
           />
         )}
 

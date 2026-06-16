@@ -131,9 +131,9 @@ export default function Dashboard({
   const liquidAccounts = accounts.filter(a => !a.isGoal);
   const totalIncomeBalance = liquidAccounts.reduce((sum, a) => sum + (Number(a?.balance) || 0), 0);
 
-  // FIX: True Monthly Calendar Math Hoisted for Hero Calculation
-  const currentMonthBillsTotal = bills.reduce((sum, bill) => {
-    if (bill.isPaid) return sum;
+  // === HERO MATH ENGINE UPGRADE ===
+  // 1. Calculate the GROSS monthly bills (Paid + Unpaid) for the scoreboard anchor
+  const currentMonthBillsTotalGross = bills.reduce((sum, bill) => {
     let include = false;
     if (bill.rawDate) {
       const parts = bill.rawDate.split("-");
@@ -145,14 +145,15 @@ export default function Dashboard({
         }
       }
     }
-    if (bill.isOverdue) include = true;
+    if (bill.isOverdue && !bill.isPaid) include = true;
     return include ? sum + (Number(bill.amount) || 0) : sum;
   }, 0);
 
-  // FIX: Hero engine now natively uses strict calendar month total vs total income
-  const safeToSpend = totalIncomeBalance - currentMonthBillsTotal;
+  // 2. The dynamic equation that moves exactly when bank cash drops
+  const safeToSpend = totalIncomeBalance - currentMonthBillsTotalGross;
 
-  const debtRatio = totalIncomeBalance > 0 ? Math.max(0, Math.min((currentMonthBillsTotal / totalIncomeBalance) * 100, 100)) : (currentMonthBillsTotal > 0 ? 100 : 0);
+  // 3. Keep the visual progress ring accurate to the gross load
+  const debtRatio = totalIncomeBalance > 0 ? Math.max(0, Math.min((currentMonthBillsTotalGross / totalIncomeBalance) * 100, 100)) : (currentMonthBillsTotalGross > 0 ? 100 : 0);
   
   const strokeDasharray = 251.2;
   const targetDashoffset = strokeDasharray - (strokeDasharray * debtRatio) / 100;
@@ -192,7 +193,7 @@ export default function Dashboard({
     }
   }
 
-  // === AUTO-COLLAPSE HEURISTIC ENGINE (ITEM #5 FIX) ===
+  // === AUTO-COLLAPSE HEURISTIC ENGINE ===
   let defaultOpenPayday = null;
   for (const pd of hzPaydays) {
     const groupUnpaid = (billsByRunwayGroup[pd] || []).filter(b => !b.isPaid);
@@ -250,7 +251,6 @@ export default function Dashboard({
               <span className="text-[9px] font-black uppercase tracking-wider">Safe to Spend</span>
             </div>
             
-            {/* FIX: Formatted cleanly natively with '-$' if negative */}
             <p className={`text-2xl min-[360px]:text-3xl min-[400px]:text-4xl font-black tracking-tighter mb-1 w-full text-right break-words leading-none transition-colors duration-300 ${safeToSpend < 0 ? "text-red-500" : "text-[#10B981]"}`}>
               {safeToSpend < 0 ? "-$" : "$"}{Math.abs(safeToSpend).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
@@ -272,6 +272,23 @@ export default function Dashboard({
       </div>
     </div>
   );
+
+  const currentMonthBillsTotal = bills.reduce((sum, bill) => {
+    if (bill.isPaid) return sum;
+    let include = false;
+    if (bill.rawDate) {
+      const parts = bill.rawDate.split("-");
+      if (parts.length === 3) {
+        const bMonth = parseInt(parts[1], 10) - 1;
+        const bYear = parseInt(parts[0], 10);
+        if (bMonth === currentMonthIdx && bYear === currentYearIdx) {
+          include = true;
+        }
+      }
+    }
+    if (bill.isOverdue) include = true;
+    return include ? sum + (Number(bill.amount) || 0) : sum;
+  }, 0);
 
   return (
     <div className={`pb-32 transition-colors duration-500 min-h-screen relative overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
@@ -376,7 +393,6 @@ export default function Dashboard({
             if (isDueNow && activeGroupBills.length === 0) return null;
             if (!isDueNow && !pdSettings?.date) return null;
 
-            // ITEM #5 FIX: Evaluate default state dynamically if no manual click has occurred
             const isCollapsed = collapsedPaydays?.[payday] !== undefined 
               ? collapsedPaydays[payday] 
               : payday !== defaultOpenPayday;

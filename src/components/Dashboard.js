@@ -132,8 +132,9 @@ export default function Dashboard({
   const totalIncomeBalance = liquidAccounts.reduce((sum, a) => sum + (Number(a?.balance) || 0), 0);
 
   // === HERO MATH ENGINE UPGRADE ===
-  // 1. Calculate the GROSS monthly bills (Paid + Unpaid) for the scoreboard anchor
-  const currentMonthBillsTotalGross = bills.reduce((sum, bill) => {
+  // 1. Calculate the active unpaid bills for the current month
+  const currentMonthBillsTotal = bills.reduce((sum, bill) => {
+    if (bill.isPaid) return sum;
     let include = false;
     if (bill.rawDate) {
       const parts = bill.rawDate.split("-");
@@ -145,15 +146,17 @@ export default function Dashboard({
         }
       }
     }
-    if (bill.isOverdue && !bill.isPaid) include = true;
+    if (bill.isOverdue) include = true;
     return include ? sum + (Number(bill.amount) || 0) : sum;
   }, 0);
 
-  // 2. The dynamic equation that moves exactly when bank cash drops
-  const safeToSpend = totalIncomeBalance - currentMonthBillsTotalGross;
+  // 2. The exact Pizza Math equation: Live Bank Cash - Remaining Unpaid Bills
+  const safeToSpend = totalIncomeBalance < 0 
+    ? -(Math.abs(currentMonthBillsTotal) - Math.abs(totalIncomeBalance))
+    : totalIncomeBalance - currentMonthBillsTotal;
 
-  // 3. Keep the visual progress ring accurate to the gross load
-  const debtRatio = totalIncomeBalance > 0 ? Math.max(0, Math.min((currentMonthBillsTotalGross / totalIncomeBalance) * 100, 100)) : (currentMonthBillsTotalGross > 0 ? 100 : 0);
+  // 3. Keep the visual progress ring actively tracking current load vs total liquid
+  const debtRatio = totalIncomeBalance > 0 ? Math.max(0, Math.min((currentMonthBillsTotal / totalIncomeBalance) * 100, 100)) : (currentMonthBillsTotal > 0 ? 100 : 0);
   
   const strokeDasharray = 251.2;
   const targetDashoffset = strokeDasharray - (strokeDasharray * debtRatio) / 100;
@@ -272,23 +275,6 @@ export default function Dashboard({
       </div>
     </div>
   );
-
-  const currentMonthBillsTotal = bills.reduce((sum, bill) => {
-    if (bill.isPaid) return sum;
-    let include = false;
-    if (bill.rawDate) {
-      const parts = bill.rawDate.split("-");
-      if (parts.length === 3) {
-        const bMonth = parseInt(parts[1], 10) - 1;
-        const bYear = parseInt(parts[0], 10);
-        if (bMonth === currentMonthIdx && bYear === currentYearIdx) {
-          include = true;
-        }
-      }
-    }
-    if (bill.isOverdue) include = true;
-    return include ? sum + (Number(bill.amount) || 0) : sum;
-  }, 0);
 
   return (
     <div className={`pb-32 transition-colors duration-500 min-h-screen relative overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>

@@ -10,8 +10,7 @@ export default function Activity({
   setActivityFilter, 
   isDarkMode, 
   setSelectedEntry, 
-  renderHeroShell,
-  signatureColor 
+  renderHeroShell 
 }) {
   const [collapsedMonths, setCollapsedMonths] = useState({});
   const [isTodayCollapsed, setIsTodayCollapsed] = useState(false);
@@ -21,7 +20,6 @@ export default function Activity({
     setIsMounted(true);
   }, []);
 
-  // 1. THE VISUAL FEED ENGINE (Lets everything through for the audit trail)
   const filteredTransactions = transactions.filter(tx => {
     const matchesSearch = tx.name.toLowerCase().includes(activitySearch.toLowerCase()) ||
       (tx.category && tx.category.toLowerCase().includes(activitySearch.toLowerCase()));
@@ -43,19 +41,17 @@ export default function Activity({
     });
   }, [filteredTransactions]);
 
-  // 2. THE SCOREBOARD MATH ENGINE (Strictly firewalled to external wealth)
   const todayTotals = useMemo(() => {
     let pureInflow = 0;
     let rawOutflow = 0;
     let refunds = 0;
     
     todayTransactions.forEach(tx => {
-      // INFLOW: External income counts (including QAB to Goals). Internal Transfers & Cash Outs are ignored.
+      // Localized Math Firewall: QAB counts as Inflow, Cash Outs ignored
       if (tx.type === "Income" && tx.category !== "Transfers (Venmo/Zelle)" && !tx.isCashOut) {
         pureInflow += Number(tx.amount) || 0;
       }
-      // OUTFLOW: External expenses count. Internal Transfers are ignored.
-      if (tx.type === "Expense" && tx.category !== "Transfers (Venmo/Zelle)") {
+      if (tx.type === "Expense" && (tx.category !== "Transfers (Venmo/Zelle)" || tx.isGoalFunding) && !tx.isDirectGoalEntry) {
         rawOutflow += Number(tx.amount) || 0;
       }
       if (tx.isRefund) {
@@ -108,7 +104,7 @@ export default function Activity({
       if (tx.type === "Income" && tx.category !== "Transfers (Venmo/Zelle)" && !tx.isCashOut) {
         groups[monthYear].pureInflow += Number(tx.amount) || 0;
       }
-      if (tx.type === "Expense" && tx.category !== "Transfers (Venmo/Zelle)") {
+      if (tx.type === "Expense" && (tx.category !== "Transfers (Venmo/Zelle)" || tx.isGoalFunding) && !tx.isDirectGoalEntry) {
         groups[monthYear].rawOutflow += Number(tx.amount) || 0;
       }
       if (tx.isRefund) {
@@ -173,7 +169,7 @@ export default function Activity({
     .reduce((sum, t) => sum + t.amount, 0);
 
   const rawExpense = transactions
-    .filter(t => t.type === "Expense" && t.category !== "Transfers (Venmo/Zelle)")
+    .filter(t => t.type === "Expense" && (t.category !== "Transfers (Venmo/Zelle)" || t.isGoalFunding) && !t.isDirectGoalEntry)
     .reduce((sum, t) => sum + t.amount, 0);
 
   const actualRefunds = transactions
@@ -196,7 +192,7 @@ export default function Activity({
   
   const targetTransactions = isIncomeView 
     ? transactions.filter(t => t.type === "Income" && t.category !== "Transfers (Venmo/Zelle)" && !t.isCashOut) 
-    : transactions.filter(t => t.type === "Expense" && t.category !== "Transfers (Venmo/Zelle)"); 
+    : transactions.filter(t => t.type === "Expense" && (t.category !== "Transfers (Venmo/Zelle)" || t.isGoalFunding) && !t.isDirectGoalEntry); 
 
   const totalTargetAmount = targetTransactions.reduce((sum, t) => sum + t.amount, 0);
 
@@ -244,9 +240,9 @@ export default function Activity({
       : "bg-orange-50 text-orange-600 drop-shadow-[0_0_12px_rgba(249,115,22,0.7)]";
   };
 
-  // UI OVERRIDE: Mute the text color for Vaulted/Internal entries to separate them visually
+  // UI OVERRIDE: Mute the text color for Vaulted entries
   const getTxCategoryColor = (tx) => {
-    if (tx.isDirectGoalEntry || tx.isCashOut) return isDarkMode ? "text-slate-400" : "text-slate-500";
+    if (tx.isDirectGoalEntry) return isDarkMode ? "text-slate-400" : "text-slate-500";
     if (tx.isBillPayment || tx.category === "Bill Payment") return "text-[#1877F2]";
     if (tx.type === "Income") return "text-[#10B981]";
     return "text-[#F97316]";
@@ -363,10 +359,9 @@ export default function Activity({
              onClick={() => setActivityFilter(activityFilter === "Income" ? "All" : "Income")} 
              className={`flex-1 flex flex-col items-center justify-center py-3 rounded-2xl transition-all ${
                activityFilter === "Income" 
-                 ? "text-white shadow-[0_8px_20px_rgba(16,185,129,0.3)] transform -translate-y-0.5" 
+                 ? "bg-[#10B981] text-white shadow-[0_8px_20px_rgba(16,185,129,0.3)] transform -translate-y-0.5" 
                  : isDarkMode ? "bg-[#1E293B] text-slate-400 border border-slate-800" : "bg-white text-slate-400 border border-slate-100"
              }`}
-             style={{ backgroundColor: activityFilter === "Income" ? "#10B981" : undefined }}
            >
              <span className="font-black text-xs uppercase tracking-widest">Income</span>
              {activityFilter === "Income" && (
@@ -377,10 +372,9 @@ export default function Activity({
              onClick={() => setActivityFilter(activityFilter === "Expense" ? "All" : "Expense")} 
              className={`flex-1 flex flex-col items-center justify-center py-3 rounded-2xl transition-all ${
                activityFilter === "Expense" 
-                 ? "text-white shadow-[0_8px_20px_rgba(249,115,22,0.3)] transform -translate-y-0.5" 
+                 ? "bg-[#F97316] text-white shadow-[0_8px_20px_rgba(249,115,22,0.3)] transform -translate-y-0.5" 
                  : isDarkMode ? "bg-[#1E293B] text-slate-400 border border-slate-800" : "bg-white text-slate-400 border border-slate-100"
              }`}
-             style={{ backgroundColor: activityFilter === "Expense" ? "#F97316" : undefined }}
            >
              <span className="font-black text-xs uppercase tracking-widest">Expenses</span>
              {activityFilter === "Expense" && (
@@ -415,7 +409,7 @@ export default function Activity({
                   <div className="flex flex-col px-2 py-2 cursor-pointer transition-colors" onClick={() => setIsTodayCollapsed(!isTodayCollapsed)}>
                     <div className="flex justify-between items-center w-full gap-2">
                       <div className="flex items-center gap-2 shrink-0">
-                        <h3 className="text-sm font-black uppercase tracking-widest" style={{ color: signatureColor || "#1877F2" }}>TODAY</h3>
+                        <h3 className="text-sm font-black uppercase tracking-widest text-[#1877F2]">TODAY</h3>
                         <div className="text-slate-500 mb-0.5">{isTodayCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}</div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
@@ -455,8 +449,8 @@ export default function Activity({
                             <div className={`mt-3 pt-3 border-t flex items-center justify-between gap-2 ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
                               <div className="flex-1 min-w-0 flex flex-col">
                                 <span className={`text-[10px] font-black uppercase tracking-widest truncate leading-tight ${getTxCategoryColor(tx)}`}>
-                                  {/* THE AUDIT TRAIL: Clear visual tagging for internal movements */}
-                                  {tx.isCashOut ? "🔄 CASHED OUT" : tx.isDirectGoalEntry ? "🔒 SAVED TO GOAL" : (tx.category || "Uncategorized")}
+                                  {/* UI OVERRIDE: Display Locked Tag */}
+                                  {tx.isDirectGoalEntry ? "🔒 SAVED TO GOAL" : (tx.category || "Uncategorized")}
                                 </span>
                                 <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest truncate leading-tight mt-0.5">
                                   {formatActivityDate(tx.date, null)}
@@ -526,8 +520,8 @@ export default function Activity({
                              <div className={`mt-3 pt-3 border-t flex items-center justify-between gap-2 ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
                                 <div className="flex-1 min-w-0 flex flex-col">
                                   <span className={`text-[10px] font-black uppercase tracking-widest truncate leading-tight ${getTxCategoryColor(tx)}`}>
-                                    {/* THE AUDIT TRAIL: Clear visual tagging for internal movements */}
-                                    {tx.isCashOut ? "🔄 CASHED OUT" : tx.isDirectGoalEntry ? "🔒 SAVED TO GOAL" : (tx.category || "Uncategorized")}
+                                    {/* UI OVERRIDE: Display Locked Tag */}
+                                    {tx.isDirectGoalEntry ? "🔒 SAVED TO GOAL" : (tx.category || "Uncategorized")}
                                   </span>
                                   <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest truncate leading-tight mt-0.5">
                                     {formatActivityDate(tx.date, group.label)}

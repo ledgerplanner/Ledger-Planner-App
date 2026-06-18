@@ -21,7 +21,6 @@ export default function Activity({
   }, []);
 
   const filteredTransactions = transactions.filter(tx => {
-    // THE AUDIT TRAIL: Ghost entries are now allowed through to the visual feed.
     const matchesSearch = tx.name.toLowerCase().includes(activitySearch.toLowerCase()) ||
       (tx.category && tx.category.toLowerCase().includes(activitySearch.toLowerCase()));
     const matchesFilter = activityFilter === "All" || tx.type === activityFilter;
@@ -48,14 +47,14 @@ export default function Activity({
     let refunds = 0;
     
     todayTransactions.forEach(tx => {
-      // Localized Math Firewall: Ignore Ghost Entries in the daily header loop
-      if (tx.type === "Income" && tx.category !== "Transfers (Venmo/Zelle)" && !tx.isDirectGoalEntry) {
+      // Localized Math Firewall: QAB counts as Inflow, Cash Outs ignored
+      if (tx.type === "Income" && tx.category !== "Transfers (Venmo/Zelle)" && !tx.isCashOut) {
         pureInflow += Number(tx.amount) || 0;
       }
       if (tx.type === "Expense" && (tx.category !== "Transfers (Venmo/Zelle)" || tx.isGoalFunding) && !tx.isDirectGoalEntry) {
         rawOutflow += Number(tx.amount) || 0;
       }
-      if (tx.isCashOut) {
+      if (tx.isRefund) {
         refunds += Number(tx.amount) || 0;
       }
     });
@@ -101,14 +100,14 @@ export default function Activity({
       }
       groups[monthYear].transactions.push(tx);
       
-      // Localized Math Firewall: Ignore Ghost Entries in the monthly archive loop
-      if (tx.type === "Income" && tx.category !== "Transfers (Venmo/Zelle)" && !tx.isDirectGoalEntry) {
+      // Localized Math Firewall: Archive Loop
+      if (tx.type === "Income" && tx.category !== "Transfers (Venmo/Zelle)" && !tx.isCashOut) {
         groups[monthYear].pureInflow += Number(tx.amount) || 0;
       }
       if (tx.type === "Expense" && (tx.category !== "Transfers (Venmo/Zelle)" || tx.isGoalFunding) && !tx.isDirectGoalEntry) {
         groups[monthYear].rawOutflow += Number(tx.amount) || 0;
       }
-      if (tx.isCashOut) {
+      if (tx.isRefund) {
         groups[monthYear].refunds += Number(tx.amount) || 0;
       }
     });
@@ -166,18 +165,18 @@ export default function Activity({
   // ==========================================
   
   const pureIncome = transactions
-    .filter(t => t.type === "Income" && t.category !== "Transfers (Venmo/Zelle)" && !t.isDirectGoalEntry)
+    .filter(t => t.type === "Income" && t.category !== "Transfers (Venmo/Zelle)" && !t.isCashOut)
     .reduce((sum, t) => sum + t.amount, 0);
 
   const rawExpense = transactions
     .filter(t => t.type === "Expense" && (t.category !== "Transfers (Venmo/Zelle)" || t.isGoalFunding) && !t.isDirectGoalEntry)
     .reduce((sum, t) => sum + t.amount, 0);
 
-  const refundedCashOuts = transactions
-    .filter(t => t.isCashOut)
+  const actualRefunds = transactions
+    .filter(t => t.isRefund)
     .reduce((sum, t) => sum + t.amount, 0);
 
-  let totalExpense = rawExpense - refundedCashOuts;
+  let totalExpense = rawExpense - actualRefunds;
   let totalIncome = pureIncome;
 
   if (totalExpense < 0) {
@@ -192,7 +191,7 @@ export default function Activity({
   const isIncomeView = activityFilter === "Income";
   
   const targetTransactions = isIncomeView 
-    ? transactions.filter(t => t.type === "Income" && t.category !== "Transfers (Venmo/Zelle)" && !t.isDirectGoalEntry) 
+    ? transactions.filter(t => t.type === "Income" && t.category !== "Transfers (Venmo/Zelle)" && !t.isCashOut) 
     : transactions.filter(t => t.type === "Expense" && (t.category !== "Transfers (Venmo/Zelle)" || t.isGoalFunding) && !t.isDirectGoalEntry); 
 
   const totalTargetAmount = targetTransactions.reduce((sum, t) => sum + t.amount, 0);
@@ -476,7 +475,7 @@ export default function Activity({
 
                 return (
                  <div key={group.label} className="space-y-2">
-                    
+                   
                    <div className="flex flex-col px-2 py-2 cursor-pointer transition-colors" onClick={() => toggleMonth(group.label)}>
                      <div className="flex justify-between items-center w-full gap-2">
                         <div className="flex items-center gap-2 shrink-0">

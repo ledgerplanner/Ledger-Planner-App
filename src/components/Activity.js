@@ -43,19 +43,21 @@ export default function Activity({
     });
   }, [filteredTransactions]);
 
-  // 2. THE SCOREBOARD MATH ENGINE (Strictly firewalled to external wealth)
+  // 2. THE SCOREBOARD MATH ENGINE (Strictly firewalled to external wealth - FIRST TOUCH PRINCIPLE)
   const todayTotals = useMemo(() => {
     let pureInflow = 0;
     let rawOutflow = 0;
     let refunds = 0;
     
     todayTransactions.forEach(tx => {
-      // INFLOW: External income counts (including QAB to Goals). Internal Transfers & Cash Outs are ignored.
-      if (tx.type === "Income" && tx.category !== "Transfers (Venmo/Zelle)" && !tx.isCashOut) {
+      const isInternalTransfer = tx.category === "Transfers (Venmo/Zelle)" && !tx.isDirectGoalEntry;
+
+      // INFLOW: External income counts (including QAB directly to Goals). Internal Transfers & Cash Outs are ignored.
+      if (tx.type === "Income" && !isInternalTransfer && !tx.isCashOut) {
         pureInflow += Number(tx.amount) || 0;
       }
       // OUTFLOW: External expenses count. Internal Transfers are ignored.
-      if (tx.type === "Expense" && tx.category !== "Transfers (Venmo/Zelle)") {
+      if (tx.type === "Expense" && !isInternalTransfer) {
         rawOutflow += Number(tx.amount) || 0;
       }
       if (tx.isRefund) {
@@ -104,11 +106,13 @@ export default function Activity({
       }
       groups[monthYear].transactions.push(tx);
       
-      // Localized Math Firewall: Archive Loop
-      if (tx.type === "Income" && tx.category !== "Transfers (Venmo/Zelle)" && !tx.isCashOut) {
+      // Localized Math Firewall: Archive Loop (FIRST TOUCH PRINCIPLE)
+      const isInternalTransfer = tx.category === "Transfers (Venmo/Zelle)" && !tx.isDirectGoalEntry;
+
+      if (tx.type === "Income" && !isInternalTransfer && !tx.isCashOut) {
         groups[monthYear].pureInflow += Number(tx.amount) || 0;
       }
-      if (tx.type === "Expense" && tx.category !== "Transfers (Venmo/Zelle)") {
+      if (tx.type === "Expense" && !isInternalTransfer) {
         groups[monthYear].rawOutflow += Number(tx.amount) || 0;
       }
       if (tx.isRefund) {
@@ -169,11 +173,17 @@ export default function Activity({
   // ==========================================
   
   const pureIncome = transactions
-    .filter(t => t.type === "Income" && t.category !== "Transfers (Venmo/Zelle)" && !t.isCashOut)
+    .filter(t => {
+      const isInternalTransfer = t.category === "Transfers (Venmo/Zelle)" && !t.isDirectGoalEntry;
+      return t.type === "Income" && !isInternalTransfer && !t.isCashOut;
+    })
     .reduce((sum, t) => sum + t.amount, 0);
 
   const rawExpense = transactions
-    .filter(t => t.type === "Expense" && t.category !== "Transfers (Venmo/Zelle)")
+    .filter(t => {
+      const isInternalTransfer = t.category === "Transfers (Venmo/Zelle)" && !t.isDirectGoalEntry;
+      return t.type === "Expense" && !isInternalTransfer;
+    })
     .reduce((sum, t) => sum + t.amount, 0);
 
   const actualRefunds = transactions
@@ -195,8 +205,14 @@ export default function Activity({
   const isIncomeView = activityFilter === "Income";
   
   const targetTransactions = isIncomeView 
-    ? transactions.filter(t => t.type === "Income" && t.category !== "Transfers (Venmo/Zelle)" && !t.isCashOut) 
-    : transactions.filter(t => t.type === "Expense" && t.category !== "Transfers (Venmo/Zelle)"); 
+    ? transactions.filter(t => {
+        const isInternalTransfer = t.category === "Transfers (Venmo/Zelle)" && !t.isDirectGoalEntry;
+        return t.type === "Income" && !isInternalTransfer && !t.isCashOut;
+      }) 
+    : transactions.filter(t => {
+        const isInternalTransfer = t.category === "Transfers (Venmo/Zelle)" && !t.isDirectGoalEntry;
+        return t.type === "Expense" && !isInternalTransfer;
+      }); 
 
   const totalTargetAmount = targetTransactions.reduce((sum, t) => sum + t.amount, 0);
 
@@ -244,11 +260,12 @@ export default function Activity({
       : "bg-orange-50 text-orange-600 drop-shadow-[0_0_12px_rgba(249,115,22,0.7)]";
   };
 
-  // UI OVERRIDE: Mute the text color for Vaulted/Internal entries to separate them visually
+  // UI OVERRIDE: Mute the text color strictly for internal Transfers and Cash Outs. Outside income is shown in bright green.
   const getTxCategoryColor = (tx) => {
-    if (tx.isDirectGoalEntry || tx.isCashOut) return isDarkMode ? "text-slate-400" : "text-slate-500";
+    const isInternalTransfer = tx.category === "Transfers (Venmo/Zelle)" && !tx.isDirectGoalEntry;
+    if (tx.isCashOut || isInternalTransfer) return isDarkMode ? "text-slate-400" : "text-slate-500";
+    if (tx.isDirectGoalEntry || tx.type === "Income") return "text-[#10B981]";
     if (tx.isBillPayment || tx.category === "Bill Payment") return "text-[#1877F2]";
-    if (tx.type === "Income") return "text-[#10B981]";
     return "text-[#F97316]";
   };
 
@@ -289,7 +306,7 @@ export default function Activity({
           <span className="text-sm font-black uppercase tracking-widest text-emerald-500">
             +${totalIncome.toLocaleString("en-US", { minimumFractionDigits: 2 })} In
           </span>
-          <span className={`text-sm font-black ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>|</span>
+          <span className={`text-[10px] font-black ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>|</span>
           <span className="text-sm font-black uppercase tracking-widest text-[#F97316]">
             {totalExpense >= 0 ? "-" : "+"}${Math.abs(totalExpense).toLocaleString("en-US", { minimumFractionDigits: 2 })} Out
           </span>
@@ -456,7 +473,7 @@ export default function Activity({
                               <div className="flex-1 min-w-0 flex flex-col">
                                 <span className={`text-[10px] font-black uppercase tracking-widest truncate leading-tight ${getTxCategoryColor(tx)}`}>
                                   {/* THE AUDIT TRAIL: Clear visual tagging for internal movements */}
-                                  {tx.isCashOut ? "🔓 CASHED OUT" : tx.isDirectGoalEntry ? "🔒 SAVED TO GOAL" : (tx.category || "Uncategorized")}
+                                  {tx.isCashOut ? "💸 CASHED OUT" : tx.isDirectGoalEntry ? "🔒 SAVED TO GOAL" : (tx.category || "Uncategorized")}
                                 </span>
                                 <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest truncate leading-tight mt-0.5">
                                   {formatActivityDate(tx.date, null)}
@@ -527,7 +544,7 @@ export default function Activity({
                                 <div className="flex-1 min-w-0 flex flex-col">
                                   <span className={`text-[10px] font-black uppercase tracking-widest truncate leading-tight ${getTxCategoryColor(tx)}`}>
                                     {/* THE AUDIT TRAIL: Clear visual tagging for internal movements */}
-                                    {tx.isCashOut ? "🔓 CASHED OUT" : tx.isDirectGoalEntry ? "🔒 SAVED TO GOAL" : (tx.category || "Uncategorized")}
+                                    {tx.isCashOut ? "💸 CASHED OUT" : tx.isDirectGoalEntry ? "🔒 SAVED TO GOAL" : (tx.category || "Uncategorized")}
                                   </span>
                                   <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest truncate leading-tight mt-0.5">
                                     {formatActivityDate(tx.date, group.label)}

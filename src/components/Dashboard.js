@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Circle, CheckCircle2, ChevronUp, ChevronDown, Settings2, List, AlertCircle, RefreshCw, Zap, Calendar as CalendarIcon, Edit2 } from "lucide-react";
 
 export default function Dashboard({
@@ -196,6 +196,79 @@ export default function Dashboard({
     }
   }
 
+  // === COMBINATORIAL MATRIX BRIEFING ENGINE ===
+  const isAM = currentHour >= 5 && currentHour < 17;
+  const unpaidBillsTotalCount = bills.filter(b => !b.isPaid).length;
+
+  const briefingStr = useMemo(() => {
+    const isPayday = daysUntilNext === 0;
+    const isEve = daysUntilNext === 1;
+
+    const seed = todayParts[2] + Math.floor(safeToSpend) + unpaidBillsTotalCount + (isAM ? 1 : 2);
+    const pick = (arr) => arr[Math.abs(seed) % arr.length];
+
+    const hooksAM = [
+      `Top of the morning, ${userName}.`,
+      `Morning ledger audit, ${userName}.`,
+      `Let's get it today, ${userName}.`,
+      `Early morning moves, ${userName}.`
+    ];
+    const hooksPM = [
+      `Evening wrap-up, ${userName}.`,
+      `Late night ledger check, ${userName}.`,
+      `Closing out the day, ${userName}.`,
+      `Evening audit complete, ${userName}.`
+    ];
+    const hooksEve = [
+      `Hold the line, ${userName}. We are on Payday Eve.`,
+      `Almost there, ${userName}. Payday Eve is active.`,
+      `One day out, ${userName}. Keep the discipline.`
+    ];
+    const hooksPayday = [
+      `The vault is reloaded, ${userName}.`,
+      `Fresh funds have landed, ${userName}.`,
+      `Payday is active, ${userName}.`
+    ];
+
+    let slotA = "";
+    if (isPayday) slotA = pick(hooksPayday);
+    else if (isEve) slotA = pick(hooksEve);
+    else if (isAM) slotA = pick(hooksAM);
+    else slotA = pick(hooksPM);
+
+    const activeDueNow = (billsByRunwayGroup["Due Now"] || []).filter(b => !b.isPaid).length;
+    let slotB = "";
+    
+    if (safeToSpend < 0) {
+      slotB = `You are running a -$${Math.abs(safeToSpend).toLocaleString("en-US", { minimumFractionDigits: 2 })} deficit against active bills.`;
+    } else if (safeToSpend < 50) {
+      slotB = `Funds are tight with a safe-to-spend buffer of just $${safeToSpend.toLocaleString("en-US", { minimumFractionDigits: 2 })}.`;
+    } else if (activeDueNow > 0) {
+      slotB = `You have a safe buffer of $${safeToSpend.toLocaleString("en-US", { minimumFractionDigits: 2 })}, but ${activeDueNow === 1 ? "1 bill needs" : `${activeDueNow} bills need`} immediate attention.`;
+    } else {
+      slotB = `You are sitting in the green with a safe runway of $${safeToSpend.toLocaleString("en-US", { minimumFractionDigits: 2 })}.`;
+    }
+
+    let slotC = "";
+    if (safeToSpend < 0) {
+      slotC = "Tap here to shuffle funds and cover the shortfall.";
+    } else if (unpaidBillsTotalCount === 0) {
+      slotC = "All structural bills for this cycle are fully routed.";
+    } else if (isEve) {
+      slotC = "Coast to the finish line.";
+    } else {
+      const kickers = [
+        "Keep that momentum going.",
+        "Everything is tracked and locked.",
+        "Stay disciplined out there.",
+        "Your ledger is looking solid."
+      ];
+      slotC = pick(kickers);
+    }
+
+    return `${slotA} ${slotB} ${slotC}`;
+  }, [isAM, daysUntilNext, safeToSpend, unpaidBillsTotalCount, userName, todayParts, billsByRunwayGroup]);
+
   // === AUTO-COLLAPSE HEURISTIC ENGINE ===
   let defaultOpenPayday = null;
   for (const pd of hzPaydays) {
@@ -210,67 +283,76 @@ export default function Dashboard({
 
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
-      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
+      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
          
         <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
           <span className={`text-[10px] font-black uppercase tracking-widest opacity-80 ${isDarkMode ? "text-white" : "text-black"}`}>
             {currentMonthName}'s Monthly Snapshot
           </span>
         </div>
- 
-        <div className="relative w-28 h-28 flex-shrink-0">
-          <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
-            <defs>
-              <linearGradient id="dashGlow" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#1877F2" />
-                <stop offset="100%" stopColor="#0a56bd" />
-              </linearGradient>
-            </defs>
-            <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "rgba(51, 65, 85, 0.5)" : "rgba(226, 232, 240, 0.9)"} strokeWidth="12" />
-            <circle 
-              cx="50" 
-              cy="50" 
-              r="40" 
-              fill="transparent" 
-              stroke={safeToSpend < 0 ? "#EF4444" : "url(#dashGlow)"} 
-              strokeWidth="12" 
-              strokeLinecap="round" 
-              strokeDasharray={strokeDasharray} 
-              strokeDashoffset={isMounted ? targetDashoffset : strokeDasharray} 
-              className="transition-all duration-1000 delay-150 ease-out" 
-            />
-          </svg>
-          <div className={`absolute inset-0 flex flex-col items-center justify-center transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
-            <span className={`text-[8px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Debt Load</span>
-            <span className={`text-xl font-black ${safeToSpend < 0 ? "text-red-500" : "text-[#1877F2]"}`}>{Math.round(debtRatio)}%</span>
-          </div>
+
+        {/* --- STEALTH INJECTION: THE MATRIX BRIEFING --- */}
+        <div className={`mb-6 mt-1 p-4 rounded-2xl border transition-all duration-700 delay-100 ease-out relative z-20 ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-slate-900/40 border-slate-700/50" : "bg-white/60 border-slate-200/50"}`}>
+          <p className={`text-[13px] font-bold leading-relaxed ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
+            {briefingStr}
+          </p>
         </div>
-   
-        <div className="flex-1 text-right flex flex-col justify-center items-end overflow-hidden">
-          
-          <div className={`flex flex-col items-end transform transition-all duration-700 delay-200 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
-            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border mb-2 shadow-sm ${isDarkMode ? "bg-slate-800/80 border-slate-700 text-slate-300" : "bg-white/80 border-slate-200 text-slate-600"}`}>
-              <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${safeToSpend < 0 ? "bg-red-500" : "bg-emerald-500 animate-pulse"}`}></div>
-              <span className="text-[9px] font-black uppercase tracking-wider">Safe to Spend</span>
+ 
+        <div className="flex items-center justify-between w-full">
+          <div className="relative w-28 h-28 flex-shrink-0">
+            <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
+              <defs>
+                <linearGradient id="dashGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#1877F2" />
+                  <stop offset="100%" stopColor="#0a56bd" />
+                </linearGradient>
+              </defs>
+              <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "rgba(51, 65, 85, 0.5)" : "rgba(226, 232, 240, 0.9)"} strokeWidth="12" />
+              <circle 
+                cx="50" 
+                cy="50" 
+                r="40" 
+                fill="transparent" 
+                stroke={safeToSpend < 0 ? "#EF4444" : "url(#dashGlow)"} 
+                strokeWidth="12" 
+                strokeLinecap="round" 
+                strokeDasharray={strokeDasharray} 
+                strokeDashoffset={isMounted ? targetDashoffset : strokeDasharray} 
+                className="transition-all duration-1000 delay-150 ease-out" 
+              />
+            </svg>
+            <div className={`absolute inset-0 flex flex-col items-center justify-center transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
+              <span className={`text-[8px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Debt Load</span>
+              <span className={`text-xl font-black ${safeToSpend < 0 ? "text-red-500" : "text-[#1877F2]"}`}>{Math.round(debtRatio)}%</span>
+            </div>
+          </div>
+     
+          <div className="flex-1 text-right flex flex-col justify-center items-end overflow-hidden">
+            
+            <div className={`flex flex-col items-end transform transition-all duration-700 delay-200 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+              <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border mb-2 shadow-sm ${isDarkMode ? "bg-slate-800/80 border-slate-700 text-slate-300" : "bg-white/80 border-slate-200 text-slate-600"}`}>
+                <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${safeToSpend < 0 ? "bg-red-500" : "bg-emerald-500 animate-pulse"}`}></div>
+                <span className="text-[9px] font-black uppercase tracking-wider">Safe to Spend</span>
+              </div>
+              
+              <p className={`text-2xl min-[360px]:text-3xl min-[400px]:text-4xl font-black tracking-tighter mb-1 w-full text-right break-words leading-none transition-colors duration-300 ${safeToSpend < 0 ? "text-red-500" : "text-[#10B981]"}`}>
+                {safeToSpend < 0 ? "-$" : "$"}{Math.abs(safeToSpend).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
             </div>
             
-            <p className={`text-2xl min-[360px]:text-3xl min-[400px]:text-4xl font-black tracking-tighter mb-1 w-full text-right break-words leading-none transition-colors duration-300 ${safeToSpend < 0 ? "text-red-500" : "text-[#10B981]"}`}>
-              {safeToSpend < 0 ? "-$" : "$"}{Math.abs(safeToSpend).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </p>
-          </div>
-          
-          {nextPaydayDayName && (
-            <div className={`mt-2 transform transition-all duration-700 delay-500 cubic-bezier(0.16, 1, 0.3, 1) w-full text-right ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-12"}`}>
-              <span className={`text-[9px] font-black uppercase tracking-widest block leading-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-                NEXT PAYDAY: {nextPaydayDayName}{" "}
-                <span className="text-[#10B981]">
-                  {daysUntilNext === 0 && "(TODAY)"}
-                  {daysUntilNext === 1 && "(IN 1 DAY)"}
-                  {daysUntilNext > 1 && `(IN ${daysUntilNext} DAYS)`}
+            {nextPaydayDayName && (
+              <div className={`mt-2 transform transition-all duration-700 delay-500 cubic-bezier(0.16, 1, 0.3, 1) w-full text-right ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-12"}`}>
+                <span className={`text-[9px] font-black uppercase tracking-widest block leading-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                  NEXT PAYDAY: {nextPaydayDayName}{" "}
+                  <span className="text-[#10B981]">
+                    {daysUntilNext === 0 && "(TODAY)"}
+                    {daysUntilNext === 1 && "(IN 1 DAY)"}
+                    {daysUntilNext > 1 && `(IN ${daysUntilNext} DAYS)`}
+                  </span>
                 </span>
-              </span>
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

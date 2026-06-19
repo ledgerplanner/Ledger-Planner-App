@@ -456,7 +456,7 @@ export default function Activity({
                               <div className="flex-1 min-w-0 flex flex-col">
                                 <span className={`text-[10px] font-black uppercase tracking-widest truncate leading-tight ${getTxCategoryColor(tx)}`}>
                                   {/* THE AUDIT TRAIL: Clear visual tagging for internal movements */}
-                                  {tx.isCashOut ? "🔄 CASHED OUT" : tx.isDirectGoalEntry ? "🔒 SAVED TO GOAL" : (tx.category || "Uncategorized")}
+                                  {tx.isCashOut ? "🔓 CASHED OUT" : tx.isDirectGoalEntry ? "🔒 SAVED TO GOAL" : (tx.category || "Uncategorized")}
                                 </span>
                                 <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest truncate leading-tight mt-0.5">
                                   {formatActivityDate(tx.date, null)}
@@ -527,7 +527,7 @@ export default function Activity({
                                 <div className="flex-1 min-w-0 flex flex-col">
                                   <span className={`text-[10px] font-black uppercase tracking-widest truncate leading-tight ${getTxCategoryColor(tx)}`}>
                                     {/* THE AUDIT TRAIL: Clear visual tagging for internal movements */}
-                                    {tx.isCashOut ? "🔄 CASHED OUT" : tx.isDirectGoalEntry ? "🔒 SAVED TO GOAL" : (tx.category || "Uncategorized")}
+                                    {tx.isCashOut ? "🔓 CASHED OUT" : tx.isDirectGoalEntry ? "🔒 SAVED TO GOAL" : (tx.category || "Uncategorized")}
                                   </span>
                                   <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest truncate leading-tight mt-0.5">
                                     {formatActivityDate(tx.date, group.label)}

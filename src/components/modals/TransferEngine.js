@@ -121,13 +121,13 @@ export default function TransferEngine({
         return a;
       }));
       setTransactions([
-        { id: `tx_demo_co_${Date.now()}`, name: txName, icon: "🎯", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: destAcc.id, isCashOut: true },
+        { id: `tx_demo_co_${Date.now()}`, name: txName, icon: "💸", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: destAcc.id, isCashOut: true },
         ...transactions
       ]);
     } else {
       await updateDoc(doc(db, "users", user.uid, "accounts", cashOutGoal.id), { balance: cashOutGoal.balance - amt });
       await updateDoc(doc(db, "users", user.uid, "accounts", destAcc.id), { balance: destAcc.balance + amt });
-      await addDoc(collection(db, "users", user.uid, "transactions"), { name: txName, icon: "🎯", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: destAcc.id, createdAt: serverTimestamp(), isCashOut: true });
+      await addDoc(collection(db, "users", user.uid, "transactions"), { name: txName, icon: "💸", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: destAcc.id, createdAt: serverTimestamp(), isCashOut: true });
     }
 
     // === CONFETTI WIRE-UP: CASH OUT FROM GOALS ===

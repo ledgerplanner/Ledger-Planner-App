@@ -75,11 +75,13 @@ export default function TransferEngine({
       await addDoc(collection(db, "users", user.uid, "transactions"), { name: receivedName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: toAcc.id, createdAt: serverTimestamp() });
     }
 
-    if (isGoalCompleted) {
+    // === CONFETTI WIRE-UP: INFLOW TO GOALS ===
+    if (isGoalCompleted || toAcc.isGoal) {
       triggerVictory(); 
     } else {
       triggerHaptic(50);
     }
+    
     setIsTransferOpen(false); setTransferAmount("0"); setTransferFrom(""); setTransferTo("");
   };
 
@@ -128,7 +130,9 @@ export default function TransferEngine({
       await addDoc(collection(db, "users", user.uid, "transactions"), { name: txName, icon: "🎯", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: destAcc.id, createdAt: serverTimestamp(), isCashOut: true });
     }
 
-    triggerHaptic(50);
+    // === CONFETTI WIRE-UP: CASH OUT FROM GOALS ===
+    triggerVictory();
+    
     setIsCashOutOpen(false);
     setCashOutGoal(null);
     setCashOutAmount("0");

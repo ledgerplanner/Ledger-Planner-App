@@ -64,15 +64,15 @@ export default function TransferEngine({
       const txId1 = `tx_demo_${Date.now()}_1`;
       const txId2 = `tx_demo_${Date.now()}_2`;
       setTransactions([
-        { id: txId1, name: sentName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Expense", category: "Transfers (Venmo/Zelle)", accountId: fromAcc.id },
-        { id: txId2, name: receivedName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: toAcc.id },
+        { id: txId1, name: sentName, icon: "🔀", amount: amt, date: autoTimeStamp, type: "Expense", category: "Transfers (Venmo/Zelle)", accountId: fromAcc.id },
+        { id: txId2, name: receivedName, icon: "🔀", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: toAcc.id },
         ...transactions
       ]);
     } else {
       await updateDoc(doc(db, "users", user.uid, "accounts", fromAcc.id), { balance: fromAcc.balance - amt });
       await updateDoc(doc(db, "users", user.uid, "accounts", toAcc.id), { balance: toAcc.balance + amt });
-      await addDoc(collection(db, "users", user.uid, "transactions"), { name: sentName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Expense", category: "Transfers (Venmo/Zelle)", accountId: fromAcc.id, createdAt: serverTimestamp() });
-      await addDoc(collection(db, "users", user.uid, "transactions"), { name: receivedName, icon: "🔄", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: toAcc.id, createdAt: serverTimestamp() });
+      await addDoc(collection(db, "users", user.uid, "transactions"), { name: sentName, icon: "🔀", amount: amt, date: autoTimeStamp, type: "Expense", category: "Transfers (Venmo/Zelle)", accountId: fromAcc.id, createdAt: serverTimestamp() });
+      await addDoc(collection(db, "users", user.uid, "transactions"), { name: receivedName, icon: "🔀", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: toAcc.id, createdAt: serverTimestamp() });
     }
 
     // === CONFETTI WIRE-UP: INFLOW TO GOALS ===
@@ -112,7 +112,9 @@ export default function TransferEngine({
 
     const currentTime = new Date();
     const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
-    const txName = `Goal Cash Out: ${cashOutGoal.name} → ${destAcc.name}`;
+    
+    // UPDATE 1: Clean Copywriting
+    const txName = `Cash Out: ${cashOutGoal.name} → ${destAcc.name}`;
 
     if (isDemoMode) {
       setAccounts(accounts.map(a => {
@@ -121,13 +123,15 @@ export default function TransferEngine({
         return a;
       }));
       setTransactions([
-        { id: `tx_demo_co_${Date.now()}`, name: txName, icon: "💸", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: destAcc.id, isCashOut: true },
+        // UPDATE 2: Dynamic Icon Inheritance
+        { id: `tx_demo_co_${Date.now()}`, name: txName, icon: cashOutGoal.icon, amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: destAcc.id, isCashOut: true },
         ...transactions
       ]);
     } else {
       await updateDoc(doc(db, "users", user.uid, "accounts", cashOutGoal.id), { balance: cashOutGoal.balance - amt });
       await updateDoc(doc(db, "users", user.uid, "accounts", destAcc.id), { balance: destAcc.balance + amt });
-      await addDoc(collection(db, "users", user.uid, "transactions"), { name: txName, icon: "💸", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: destAcc.id, createdAt: serverTimestamp(), isCashOut: true });
+      // UPDATE 2: Dynamic Icon Inheritance
+      await addDoc(collection(db, "users", user.uid, "transactions"), { name: txName, icon: cashOutGoal.icon, amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: destAcc.id, createdAt: serverTimestamp(), isCashOut: true });
     }
 
     // === CONFETTI WIRE-UP: CASH OUT FROM GOALS ===

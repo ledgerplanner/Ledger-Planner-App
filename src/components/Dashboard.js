@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Circle, CheckCircle2, ChevronUp, ChevronDown, Settings2, List, AlertCircle, RefreshCw, Zap, Calendar as CalendarIcon, Edit2 } from "lucide-react";
 
 export default function Dashboard({
@@ -43,12 +43,6 @@ export default function Dashboard({
   };
 
   const currentHour = new Date().getHours();
-  let greetingStr = `Evening, ${userName}`;
-  if (currentHour >= 5 && currentHour < 12) { greetingStr = `Morning, ${userName}`; }
-  if (currentHour >= 12 && currentHour < 17) { greetingStr = `Afternoon, ${userName}`; }
-  if (currentHour >= 17 && currentHour < 22) { greetingStr = `Evening, ${userName}`; }
-  if (currentHour >= 22 || currentHour < 5) { greetingStr = `Up late, ${userName}?`; }
-
   const todayForMath = new Date();
   const currentMonthName = todayForMath.toLocaleString("en-US", { month: "long" });
   const currentMonthIdx = todayForMath.getMonth(); 
@@ -132,7 +126,6 @@ export default function Dashboard({
   const totalIncomeBalance = liquidAccounts.reduce((sum, a) => sum + (Number(a?.balance) || 0), 0);
 
   // === HERO MATH ENGINE UPGRADE ===
-  // 1. Calculate the active unpaid bills for the current month
   const currentMonthBillsTotal = bills.reduce((sum, bill) => {
     if (bill.isPaid) return sum;
     let include = false;
@@ -150,12 +143,10 @@ export default function Dashboard({
     return include ? sum + (Number(bill.amount) || 0) : sum;
   }, 0);
 
-  // 2. The exact Pizza Math equation: Live Bank Cash - Remaining Unpaid Bills
   const safeToSpend = totalIncomeBalance < 0 
     ? -(Math.abs(currentMonthBillsTotal) - Math.abs(totalIncomeBalance))
     : totalIncomeBalance - currentMonthBillsTotal;
 
-  // 3. Keep the visual progress ring actively tracking current load vs total liquid
   const debtRatio = totalIncomeBalance > 0 ? Math.max(0, Math.min((currentMonthBillsTotal / totalIncomeBalance) * 100, 100)) : (currentMonthBillsTotal > 0 ? 100 : 0);
   
   const strokeDasharray = 251.2;
@@ -195,6 +186,83 @@ export default function Dashboard({
       nextPaydayDayName = localDateObj.toLocaleDateString("en-US", { weekday: 'long' }).toUpperCase();
     }
   }
+
+  // === COMBINATORIAL MATRIX BRIEFING ENGINE ===
+  const isAM = currentHour >= 5 && currentHour < 17;
+  const unpaidBillsTotalCount = bills.filter(b => !b.isPaid).length;
+
+  const briefingStr = useMemo(() => {
+    const isPayday = daysUntilNext === 0;
+    const isEve = daysUntilNext === 1;
+
+    // Deterministic Seed ensures no UI flickering, but reacts dynamically to real math changes
+    const seed = todayParts[2] + Math.floor(safeToSpend) + unpaidBillsTotalCount + (isAM ? 1 : 2);
+    const pick = (arr) => arr[Math.abs(seed) % arr.length];
+
+    // SLOT A: Time & Vibe Hook
+    const hooksAM = [
+      `Top of the morning, ${userName}.`,
+      `Morning ledger audit, ${userName}.`,
+      `Let's get it today, ${userName}.`,
+      `Early morning moves, ${userName}.`
+    ];
+    const hooksPM = [
+      `Evening wrap-up, ${userName}.`,
+      `Late night ledger check, ${userName}.`,
+      `Closing out the day, ${userName}.`,
+      `Evening audit complete, ${userName}.`
+    ];
+    const hooksEve = [
+      `Hold the line, ${userName}. We are on Payday Eve.`,
+      `Almost there, ${userName}. Payday Eve is active.`,
+      `One day out, ${userName}. Keep the discipline.`
+    ];
+    const hooksPayday = [
+      `The vault is reloaded, ${userName}.`,
+      `Fresh funds have landed, ${userName}.`,
+      `Payday is active, ${userName}.`
+    ];
+
+    let slotA = "";
+    if (isPayday) slotA = pick(hooksPayday);
+    else if (isEve) slotA = pick(hooksEve);
+    else if (isAM) slotA = pick(hooksAM);
+    else slotA = pick(hooksPM);
+
+    // SLOT B: Precision Safe-to-Spend Math
+    const activeDueNow = (billsByRunwayGroup["Due Now"] || []).filter(b => !b.isPaid).length;
+    let slotB = "";
+    
+    if (safeToSpend < 0) {
+      slotB = `You are running a -$${Math.abs(safeToSpend).toLocaleString("en-US", { minimumFractionDigits: 2 })} deficit against active bills.`;
+    } else if (safeToSpend < 50) {
+      slotB = `Funds are tight with a safe-to-spend buffer of just $${safeToSpend.toLocaleString("en-US", { minimumFractionDigits: 2 })}.`;
+    } else if (activeDueNow > 0) {
+      slotB = `You have a safe buffer of $${safeToSpend.toLocaleString("en-US", { minimumFractionDigits: 2 })}, but ${activeDueNow === 1 ? "1 bill needs" : `${activeDueNow} bills need`} immediate attention.`;
+    } else {
+      slotB = `You are sitting in the green with a safe runway of $${safeToSpend.toLocaleString("en-US", { minimumFractionDigits: 2 })}.`;
+    }
+
+    // SLOT C: Behavioral Kicker
+    let slotC = "";
+    if (safeToSpend < 0) {
+      slotC = "Tap here to shuffle funds and cover the shortfall.";
+    } else if (unpaidBillsTotalCount === 0) {
+      slotC = "All structural bills for this cycle are fully routed.";
+    } else if (isEve) {
+      slotC = "Coast to the finish line.";
+    } else {
+      const kickers = [
+        "Keep that momentum going.",
+        "Everything is tracked and locked.",
+        "Stay disciplined out there.",
+        "Your ledger is looking solid."
+      ];
+      slotC = pick(kickers);
+    }
+
+    return `${slotA} ${slotB} ${slotC}`;
+  }, [isAM, daysUntilNext, safeToSpend, unpaidBillsTotalCount, userName, todayParts]);
 
   // === AUTO-COLLAPSE HEURISTIC ENGINE ===
   let defaultOpenPayday = null;
@@ -288,7 +356,8 @@ export default function Dashboard({
             font-weight: 900 !important;
           }
         `}</style>
-        {renderHeroShell(greetingStr, graphicContent)}
+        {/* === THE MATRIX INJECTION POINT === */}
+        {renderHeroShell(briefingStr, graphicContent)}
       </div>
 
       <div className="flex justify-center px-6 mb-5 -mt-2 relative z-10">

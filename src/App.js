@@ -43,7 +43,8 @@ function LedgerApp() {
   const { 
     user, setUser, isDemoMode, setIsDemoMode, 
     accounts, setAccounts, bills, setBills, transactions, setTransactions, todos, setTodos, paydayConfig, setPaydayConfig,
-    isDarkMode, setIsDarkMode, signatureColor, setSignatureColor
+    isDarkMode, setIsDarkMode, signatureColor, setSignatureColor,
+    isEntrepreneurMode, setIsEntrepreneurMode // <-- INJECTED FOR ENTREPRENEUR MODE
   } = useLedger();
 
   // === LOCAL UI & ROUTING STATE ===
@@ -732,6 +733,7 @@ function LedgerApp() {
                 setHasConsumedAMBriefing={setHasConsumedAMBriefing}
                 hasConsumedPMBriefing={hasConsumedPMBriefing}
                 setHasConsumedPMBriefing={setHasConsumedPMBriefing}
+                isEntrepreneurMode={isEntrepreneurMode} // <-- INJECTED FOR ENTREPRENEUR MODE
               />
             )}
             
@@ -769,6 +771,7 @@ function LedgerApp() {
                 collapsedPaydays={collapsedPaydays}
                 toggleCollapse={toggleCollapse}
                 liveHeroBalance={currentLiveBalance}
+                isEntrepreneurMode={isEntrepreneurMode} // <-- INJECTED FOR ENTREPRENEUR MODE
               />
             )}
 
@@ -933,6 +936,8 @@ function LedgerApp() {
             currentCurrency={currentCurrency}
             setCurrentCurrency={setCurrentCurrency}
             handleUpdateDisplayName={handleUpdateDisplayName}
+            isEntrepreneurMode={isEntrepreneurMode} // <-- INJECTED FOR ENTREPRENEUR MODE
+            setIsEntrepreneurMode={setIsEntrepreneurMode} // <-- INJECTED FOR ENTREPRENEUR MODE
           />
         )}
 

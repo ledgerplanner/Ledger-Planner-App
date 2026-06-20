@@ -5,7 +5,8 @@ import {
 } from "lucide-react";
 
 // === FIREBASE INITIALIZATION ===
-import { auth, db } from "./firebase";
+import { auth, db, messaging } from "./firebase";
+import { getToken } from "firebase/messaging";
 import { 
   signInWithEmailAndPassword, createUserWithEmailAndPassword, 
   onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup, updateProfile 
@@ -91,6 +92,7 @@ function LedgerApp() {
     message: "",
     confirmText: "Confirm",
     isDestructive: false,
+    isAlertOnly: false,
     onConfirm: null
   });
 
@@ -140,11 +142,38 @@ function LedgerApp() {
     setTimeout(() => setShowConfetti(false), 5200);
   };
 
+  const closeGlobalAction = () => setGlobalActionConfig(prev => ({ ...prev, isOpen: false }));
+
+  const openGlobalAction = (title, message, confirmText, isDestructive, onConfirm, isAlertOnly = false) => {
+    triggerHaptic(20);
+    setGlobalActionConfig({ isOpen: true, title, message, confirmText, isDestructive, isAlertOnly, onConfirm });
+  };
+  
+  const executeGlobalAction = () => {
+    if (globalActionConfig.onConfirm) globalActionConfig.onConfirm();
+    closeGlobalAction();
+  };
+
+  // RESTORED TRUE FIREBASE NOTIFICATION ENGINE
   const enablePushNotifications = async () => {
-    if (typeof window !== "undefined" && "Notification" in window) {
+    triggerHaptic(50);
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    try {
       const permission = await Notification.requestPermission();
-      setIsPushEnabled(permission === "granted");
-      if (permission === "granted") triggerVictory();
+      if (permission === "granted") {
+        setIsPushEnabled(true);
+        if (messaging && user && !isDemoMode) {
+          const token = await getToken(messaging, { vapidKey: "YOUR_PUBLIC_VAPID_KEY" });
+          if (token) {
+            await setDoc(doc(db, "users", user.uid, "settings", "push"), { token, updatedAt: serverTimestamp() }, { merge: true });
+          }
+        }
+        openGlobalAction("Notifications On", "The structural system channel bridges are live.", "Close", false, () => closeGlobalAction(), true);
+      } else {
+        setIsPushEnabled(false);
+      }
+    } catch (e) {
+      console.error("Push system activation fault:", e);
     }
   };
 
@@ -165,19 +194,6 @@ function LedgerApp() {
 
   const openEntryDrawer = (entry) => { setSelectedEntry(entry); setIsEditingEntry(false); };
   const closeEntryDrawer = () => { setSelectedEntry(null); setIsEditingEntry(false); };
-
-  // === GLOBAL MODAL CONTROLLER ===
-  const openGlobalAction = (title, message, confirmText, isDestructive, onConfirm) => {
-    triggerHaptic(20);
-    setGlobalActionConfig({ isOpen: true, title, message, confirmText, isDestructive, onConfirm });
-  };
-  
-  const closeGlobalAction = () => setGlobalActionConfig({ ...globalActionConfig, isOpen: false });
-  
-  const executeGlobalAction = () => {
-    if (globalActionConfig.onConfirm) globalActionConfig.onConfirm();
-    closeGlobalAction();
-  };
 
   // === RESTORED AUTHENTIC LOGIC ENGINES ===
   const toggleCollapse = (payday) => {
@@ -523,14 +539,14 @@ function LedgerApp() {
   const handleLogout = () => {
     openGlobalAction(
       "Log Out",
-      "Are you sure you want to log out of your Master Engine session?",
+      "Are you sure you want to log out of your session?",
       "Log Out",
       true,
       async () => {
         if (isDemoMode) { window.location.href = "https://ledgerplanner.com"; return; }
         try { await signOut(auth); }
         catch (error) { console.error("Logout forced locally:", error); }
-        finally { setUser(null); setActiveTab("home"); }
+        finally { setUser(null); setActiveTab("home"); closeGlobalAction(); }
       }
     );
   };
@@ -618,7 +634,7 @@ function LedgerApp() {
             </button>
             <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-100 text-slate-400"}`} style={{ color: isSettingsOpen ? undefined : signatureColor }}>
               <Bell size={18} />
-              {(hasOverdueOrDueNow || isUnconsumedBriefing) && (
+              {(hasOverdueOrDueNow || isUnconsumedBriefing || (!isPushEnabled && !isDemoMode)) && (
                 <span className={`absolute top-0 right-0 w-2.5 h-2.5 rounded-full border-[1.5px] animate-pulse ${hasOverdueOrDueNow ? "bg-red-500 border-red-500" : isUnconsumedBriefing ? "bg-[#1877F2] border-[#1877F2]" : "bg-red-500 border-red-500"} ${isDarkMode ? "border-t-transparent border-l-transparent" : "border-white"}`} style={{ backgroundColor: isUnconsumedBriefing && !hasOverdueOrDueNow ? signatureColor : undefined, borderColor: isUnconsumedBriefing && !hasOverdueOrDueNow ? signatureColor : undefined }}></span>
               )}
             </button>
@@ -719,7 +735,6 @@ function LedgerApp() {
               />
             )}
             
-            {/* === PROP INJECTIONS FOR ACCOUNTS & ACCOUNT BUILDER === */}
             {activeTab === "accounts" && (
               <Accounts 
                 userName={userName} 
@@ -740,7 +755,6 @@ function LedgerApp() {
               />
             )}
 
-            {/* === SURGICALLY WIRED BILLS COMPONENT === */}
             {activeTab === "bills" && (
               <Bills 
                 userName={userName} 
@@ -827,7 +841,7 @@ function LedgerApp() {
           triggerVictory={triggerVictory} 
         />
 
-        {/* === RESTORED AUTHENTIC MODAL CONTAINERS (FIX FOR ITEMS #1, #2, #3, #4) === */}
+        {/* === RESTORED AUTHENTIC MODAL CONTAINERS === */}
         {isPaydaySetupOpen && (
           <PaydaySetup 
             setIsPaydaySetupOpen={setIsPaydaySetupOpen} 
@@ -929,13 +943,15 @@ function LedgerApp() {
             <div className={`relative w-full max-w-sm p-6 rounded-[2rem] shadow-2xl animate-slide-up ${isDarkMode ? "bg-[#1E293B] border border-slate-700" : "bg-white border border-slate-100"}`}>
               <div className="flex flex-col items-center text-center">
                 <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${globalActionConfig.isDestructive ? "bg-red-50 text-red-500" : "bg-blue-50 text-[#1877F2]"}`}>
-                  <AlertCircle size={32} />
+                  {globalActionConfig.isDestructive ? <AlertCircle size={32} /> : <CheckCircle2 size={32} />}
                 </div>
                 <h3 className={`text-lg font-black uppercase tracking-widest mb-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{globalActionConfig.title}</h3>
                 <p className={`text-sm font-bold leading-relaxed mb-6 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{globalActionConfig.message}</p>
                 <div className="flex gap-3 w-full">
-                  <button onClick={closeGlobalAction} className={`flex-1 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-colors ${isDarkMode ? "bg-slate-800 text-slate-300 hover:bg-slate-700" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>Cancel</button>
-                  <button onClick={executeGlobalAction} className={`flex-1 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest text-white shadow-lg transition-transform active:scale-95 ${globalActionConfig.isDestructive ? "bg-red-500 shadow-[0_8px_16px_rgba(239,68,68,0.3)]" : "bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)]"}`}>{globalActionConfig.confirmText}</button>
+                  {!globalActionConfig.isAlertOnly && (
+                    <button onClick={closeGlobalAction} className={`flex-1 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-colors ${isDarkMode ? "bg-slate-800 text-slate-300 hover:bg-slate-700" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>Cancel</button>
+                  )}
+                  <button onClick={executeGlobalAction} className={`flex-1 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest text-white shadow-lg transition-transform active:scale-95 ${globalActionConfig.isDestructive ? "bg-red-500 shadow-[0_8px_16px_rgba(239,68,68,0.3)]" : "bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)]"}`} style={{ backgroundColor: !globalActionConfig.isDestructive ? signatureColor : undefined }}>{globalActionConfig.confirmText}</button>
                 </div>
               </div>
             </div>

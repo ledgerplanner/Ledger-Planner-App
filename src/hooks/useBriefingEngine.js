@@ -144,8 +144,14 @@ export const useBriefingEngine = ({
   todayForDynamic.setHours(0, 0, 0, 0);
 
   const hours = new Date().getHours();
+  const dayOfWeek = new Date().getDay(); // 0 = Sunday, 1 = Monday, 5 = Friday
   const isAM = hours >= 5 && hours < 12;
+  
   const liquidCash = accounts.filter(a => !a.isGoal && (a.type === "Checking" || a.type === "Cash")).reduce((sum, acc) => sum + (acc.balance || 0), 0);
+  const allUnpaidBills = bills.filter(b => !b.isPaid).reduce((sum, b) => sum + (b.amount || 0), 0);
+  
+  // FIX 1: True Cushion Math
+  const trueSafeToSpend = liquidCash - allUnpaidBills;
 
   let nextPaydayDate = todayForDynamic;
   let activePaydayKey = "Payday 1";
@@ -162,10 +168,13 @@ export const useBriefingEngine = ({
 
   const daysUntilPayday = Math.max(Math.ceil((nextPaydayDate - todayForDynamic) / (1000 * 60 * 60 * 24)), 1);
   const currentCycleBillsTotal = bills.filter(b => b.payday === activePaydayKey && !b.isPaid).reduce((sum, b) => sum + (b.amount || 0), 0);
+  const activeBillsCount = bills.filter(b => b.payday === activePaydayKey && !b.isPaid).length;
+  const pastDueCount = bills.filter(b => b.isOverdue && !b.isPaid).length;
+
   const trueRunwayAmount = Math.max((liquidCash - currentCycleBillsTotal) / daysUntilPayday, 0);
   const totalCycleIncome = parseFloat(paydayConfig?.[activePaydayKey]?.income) || 0;
   const burnPercentage = totalCycleIncome > 0 ? Math.round((currentCycleBillsTotal / totalCycleIncome) * 100) : 0;
-  const excessCushion = liquidCash;
+  
   const isUnconsumedBriefing = isAM ? !hasConsumedAMBriefing : !hasConsumedPMBriefing;
   const userNameDisplay = userName || "Founder";
 
@@ -176,8 +185,21 @@ export const useBriefingEngine = ({
   const pick = (arr, offset) => arr[(seedVal + offset) % arr.length];
 
   let briefingText = "";
+  
   if (isAM) {
-    if (burnPercentage > 60) {
+    if (activeBillsCount === 0) {
+      // FIX 2: Zero Bills Clear Deck
+      const t1 = ["Runway is wide open, {N}.", "Good morning, {N}. Your schedule is clear.", "Optimal start to the day, {N}.", "Zero structural drag detected, {N}."];
+      const t2 = ["Your ledger is completely clear of bills for this current pay cycle.", "We are tracking absolutely zero fixed obligations on the board right now.", "There are no scheduled auto-drafts or bills required this week.", "Your incoming capital has zero fixed destinations scheduled."];
+      const t3 = ["Enjoy the breathing room and consider accelerating a savings goal.", "Perfect time to route some excess cash into your vault.", "Maintain this flexibility and build your defensive cushion.", "Use this gap to make an aggressive manual transfer."];
+      briefingText = `${pick(t1, 0).replace('{N}', userNameDisplay)} ${pick(t2, 1)} ${pick(t3, 2)}`;
+    } else if (dayOfWeek === 1 && burnPercentage <= 60) {
+      // FIX 4a: The Monday Blues (Morning)
+      const t1 = ["New week, new targets, {N}.", "Monday morning sync complete, {N}.", "Let's set the baseline for the week, {N}.", "Vault is online for the week ahead, {N}."];
+      const t2 = ["You have ${A} in daily safe-to-spend runway leading up to {D}.", "We are projecting a steady ${A} daily allowance until {D}.", "Your operational velocity is safely capped at ${A}/day through {D}."];
+      const t3 = ["Start the week strong and protect the cushion.", "Lock in your spending pace early to secure the surplus.", "Command the baseline today to ensure a flawless week."];
+      briefingText = `${pick(t1, 0).replace('{N}', userNameDisplay)} ${pick(t2, 1).replace('{A}', trueRunwayAmount.toFixed(2)).replace('{D}', formatPaydayDateStr ? formatPaydayDateStr(paydayConfig?.[activePaydayKey]?.date) : "TBD")} ${pick(t3, 2)}`;
+    } else if (burnPercentage > 60) {
       const t1 = ["Capital lock-down active, {N}.", "Heads up, {N}, let's play defense today.", "Reviewing the payload trajectory, {N}.", "Defensive posture required, {N}.", "Attention on deck, {N}.", "Operational alert, {N}.", "Let's review the active burn rate, {N}.", "Tactical adjustment needed, {N}."];
       const t2 = ["This cycle is running hot with {P}% of your income locked into fixed bills.", "Fixed obligations are consuming a massive {P}% of your baseline pay.", "A steep {P}% of your incoming capital is strictly allocated.", "Telemetry shows {P}% of this paycheck is already spoken for.", "You are operating at a {P}% fixed-burn capacity.", "The ledger shows a heavy {P}% burn rate.", "Fixed outflow is critically high at {P}% for this cycle.", "We are tracking a heavy {P}% overhead on this capital."];
       const t3 = ["Freeze all non-essential outflows and let automation do the heavy lifting.", "Hold a rigid line on casual swiping until this wave passes.", "Focus purely on maintaining the cushion line.", "Execute strict operational discipline until the next influx clears.", "Minimize discretionary spending and let the system absorb the impact.", "Keep your powder dry and rely on pre-programmed allocations.", "Lock down your daily velocity and trust the vault's defenses.", "Maintain strict capital controls until the next cycle drops."];
@@ -194,11 +216,23 @@ export const useBriefingEngine = ({
       briefingText = `${pick(t1, 6).replace('{N}', userNameDisplay)} ${pick(t2, 7).replace('{A}', trueRunwayAmount.toFixed(2)).replace('{D}', formatPaydayDateStr ? formatPaydayDateStr(paydayConfig?.[activePaydayKey]?.date) : "TBD")} ${pick(t3, 8)}`;
     }
   } else {
-    if (daysUntilPayday === 1) {
+    if (daysUntilPayday === 1 && pastDueCount > 0) {
+      // FIX 3: Payday Eve Ghost Town Intercept
+      const t1 = ["Payday Eve is active, {N}, but we have a red flag.", "Final sweep before tomorrow's drop, {N}.", "We have incoming capital tomorrow, {N}, but action is needed."];
+      const t2 = [`The system detects ${pastDueCount === 1 ? '1 bill' : `${pastDueCount} bills`} currently sitting past due in the ledger.`, `You have ${pastDueCount} overdue obligation(s) dragging on the vault's efficiency.`, `A past-due balance is currently unhandled on the board.`];
+      const t3 = ["Clean that up tonight so tomorrow's paycheck lands on a fresh slate.", "Clear the red off the board before the new cycle officially begins.", "Resolve the deficit now to protect your incoming liquidity."];
+      briefingText = `${pick(t1, 0).replace('{N}', userNameDisplay)} ${pick(t2, 1)} ${pick(t3, 2)}`;
+    } else if (daysUntilPayday === 1) {
       const t1 = ["Payday Eve is active, {N}.", "Final cycle approach, {N}.", "Preparing for payload injection, {N}.", "Payday Eve protocols engaged, {N}.", "Closing out the cycle, {N}.", "Final sweep before the drop, {N}.", "Payday Eve is officially here, {N}.", "Securing the vault for tomorrow, {N}."];
-      const t2 = ["You navigated this wave with a surplus of ${E} remaining in your baseline buffer.", "We are tracking a strong ${E} excess cushion as we cross the finish line.", "You held the line beautifully with ${E} intact before tomorrow's deposit.", "The ledger shows a solid ${E} remaining in liquidity.", "You executed the plan and retained a ${E} tactical reserve.", "We're ending the cycle with a precise ${E} buffer.", "Your discipline preserved a ${E} operational surplus.", "The math holds true—you have ${E} remaining in the primary vault."];
+      const t2 = ["You navigated this wave with a safe-to-spend surplus of ${E} remaining in your buffer.", "We are tracking a true ${E} excess cushion as we cross the finish line.", "You held the line beautifully with ${E} intact before tomorrow's deposit.", "The true math shows a solid ${E} remaining in liquidity after upcoming bills.", "You executed the plan and retained a ${E} tactical reserve.", "We're ending the cycle with a precise ${E} buffer.", "Your discipline preserved a ${E} operational surplus.", "The math holds true—you have ${E} remaining in the primary vault."];
       const t3 = ["Excellent discipline. Preparing the vault to initialize your incoming paycheck tomorrow.", "Outstanding execution. We are primed to receive capital tomorrow.", "Flawless run. The system is ready to route tomorrow's inbound funds.", "Mission accomplished. Stand by for capital deployment in the morning.", "Perfect pacing. Vault doors are open for tomorrow's influx.", "High-level execution. Preparing automated routing for the new cycle.", "Textbook finish. The ledger is clean and ready for tomorrow.", "Commanding performance. Initializing receiving protocols for payday."];
-      briefingText = `${pick(t1, 9).replace('{N}', userNameDisplay)} ${pick(t2, 10).replace('{E}', excessCushion.toFixed(2))} ${pick(t3, 11)}`;
+      briefingText = `${pick(t1, 9).replace('{N}', userNameDisplay)} ${pick(t2, 10).replace('{E}', trueSafeToSpend.toFixed(2))} ${pick(t3, 11)}`;
+    } else if (dayOfWeek === 5) {
+      // FIX 4b: Friday Evening Wrap-up
+      const t1 = ["Weekend wrap-up, {N}.", "Clocking out for the week, {N}.", "Friday evening ledger sync, {N}.", "Week complete, {N}."];
+      const t2 = ["We are holding steady with {D} days remaining until your next paycheck drops.", "The system is tracking a {D}-day timeline to your next funding event.", "The math shows {D} days left until the primary account is replenished."];
+      const t3 = ["Enjoy the weekend. The automated systems are holding the line.", "Disconnect and relax. Your capital is locked and tracked.", "Zero weekend alerts active. The ledger is perfectly balanced."];
+      briefingText = `${pick(t1, 0).replace('{N}', userNameDisplay)} ${pick(t2, 1).replace('{D}', daysUntilPayday)} ${pick(t3, 2)}`;
     } else {
       const t1 = ["Evening analysis complete, {N}.", "Wrapping up daily telemetry, {N}.", "End-of-day ledger sync, {N}.", "Nightly vault check, {N}.", "Reviewing today's velocity, {N}.", "Closing out the day's books, {N}.", "Evening baseline confirmed, {N}.", "System entering night mode, {N}."];
       const t2 = ["We are exactly {D} days out from your next scheduled capital injection.", "You have a {D}-day operational gap until the next paycheck drops.", "The system is tracking a {D}-day timeline to your next funding event.", "We are holding steady with {D} days remaining in this cycle.", "The math shows {D} days left until the primary account is replenished.", "We are pacing toward a payload drop in exactly {D} days.", "The countdown sits at {D} days until the next payday.", "You must sustain this trajectory for another {D} days."];

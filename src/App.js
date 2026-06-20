@@ -118,6 +118,14 @@ function LedgerApp() {
     return false;
   });
 
+  // PUSH NOTIFICATION STATE ENGINE
+  const [isPushEnabled, setIsPushEnabled] = useState(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      return Notification.permission === "granted";
+    }
+    return false;
+  });
+
   const [showConfetti, setShowConfetti] = useState(false);
   const [needsRefresh, setNeedsRefresh] = useState(false);
   const sessionMonth = useRef(new Date().getMonth());
@@ -130,6 +138,14 @@ function LedgerApp() {
     triggerHaptic([30, 50, 30]); 
     setShowConfetti(true); 
     setTimeout(() => setShowConfetti(false), 5200);
+  };
+
+  const enablePushNotifications = async () => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      const permission = await Notification.requestPermission();
+      setIsPushEnabled(permission === "granted");
+      if (permission === "granted") triggerVictory();
+    }
   };
 
   const handleScroll = (e) => { setIsScrolled(e.target.scrollTop > 20); };
@@ -504,11 +520,19 @@ function LedgerApp() {
     catch (error) { setAuthError("Google Sign-In failed."); setIsAuthLoading(false); }
   };
 
-  const handleLogout = async () => {
-    if (isDemoMode) { window.location.href = "https://ledgerplanner.com"; return; }
-    try { await signOut(auth); }
-    catch (error) { console.error("Logout forced locally:", error); }
-    finally { setUser(null); setActiveTab("home"); }
+  const handleLogout = () => {
+    openGlobalAction(
+      "Log Out",
+      "Are you sure you want to log out of your Master Engine session?",
+      "Log Out",
+      true,
+      async () => {
+        if (isDemoMode) { window.location.href = "https://ledgerplanner.com"; return; }
+        try { await signOut(auth); }
+        catch (error) { console.error("Logout forced locally:", error); }
+        finally { setUser(null); setActiveTab("home"); }
+      }
+    );
   };
 
   // === DYNAMIC COMPUTATIONS ===
@@ -787,7 +811,7 @@ function LedgerApp() {
 
         {/* === THE CORE MODAL INJECTIONS === */}
         {isQabOpen && <QuickAddModal onClose={() => setIsQabOpen(false)} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} />}
-        {isNotificationsOpen && <CommandCenter setIsNotificationsOpen={setIsNotificationsOpen} needsRefresh={needsRefresh} dynamicBills={dynamicBills} changeTab={changeTab} userName={userName} hasConsumedAMBriefing={hasConsumedAMBriefing} setHasConsumedAMBriefing={setHasConsumedAMBriefing} hasConsumedPMBriefing={hasConsumedPMBriefing} setHasConsumedPMBriefing={setHasConsumedPMBriefing} formatPaydayDateStr={formatPaydayDateStr} />}
+        {isNotificationsOpen && <CommandCenter setIsNotificationsOpen={setIsNotificationsOpen} needsRefresh={needsRefresh} dynamicBills={dynamicBills} changeTab={changeTab} userName={userName} hasConsumedAMBriefing={hasConsumedAMBriefing} setHasConsumedAMBriefing={setHasConsumedAMBriefing} hasConsumedPMBriefing={hasConsumedPMBriefing} setHasConsumedPMBriefing={setHasConsumedPMBriefing} formatPaydayDateStr={formatPaydayDateStr} isPushEnabled={isPushEnabled} enablePushNotifications={enablePushNotifications} />}
         <TransferEngine isTransferOpen={isTransferOpen} setIsTransferOpen={setIsTransferOpen} isCashOutOpen={isCashOutOpen} setIsCashOutOpen={setIsCashOutOpen} cashOutGoal={cashOutGoal} setCashOutGoal={setCashOutGoal} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} />
         
         {/* === PROP INJECTIONS FOR ACCOUNT BUILDER === */}

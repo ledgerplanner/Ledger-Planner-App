@@ -21,7 +21,8 @@ export default function Dashboard({
   hasConsumedAMBriefing,
   setHasConsumedAMBriefing,
   hasConsumedPMBriefing,
-  setHasConsumedPMBriefing
+  setHasConsumedPMBriefing,
+  isEntrepreneurMode = false // <-- INJECTED FOR ENTREPRENEUR MODE
 }) {
   const [isPushEnabled, setIsPushEnabled] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -57,47 +58,68 @@ export default function Dashboard({
   const todayParts = [todayForMath.getFullYear(), todayForMath.getMonth(), todayForMath.getDate()];
   const todayMidnightMillis = new Date(todayParts[0], todayParts[1], todayParts[2]).getTime();
 
-  // === PAYDAY INTERVAL RANGE ENGINE SYSTEM ===
+  // === PAYDAY INTERVAL RANGE ENGINE SYSTEM (PARALLEL TRACK ENHANCED) ===
   const freq = paydayConfig?.frequency || "Weekly";
   let allowedPaydays = [];
-  if (freq === "Monthly") allowedPaydays = ["Payday 1"];
-  else if (freq === "Semi-Monthly") allowedPaydays = ["Payday 1", "Payday 2"];
-  else if (freq === "Bi-Weekly") allowedPaydays = ["Payday 1", "Payday 2", "Payday 3"];
-  else allowedPaydays = ["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"];
+  
+  if (isEntrepreneurMode) {
+    allowedPaydays = ["Week 1", "Week 2", "Week 3", "Week 4", "Week 5"];
+  } else {
+    if (freq === "Monthly") allowedPaydays = ["Payday 1"];
+    else if (freq === "Semi-Monthly") allowedPaydays = ["Payday 1", "Payday 2"];
+    else if (freq === "Bi-Weekly") allowedPaydays = ["Payday 1", "Payday 2", "Payday 3"];
+    else allowedPaydays = ["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"];
+  }
   
   const hzPaydays = ["Due Now", ...allowedPaydays];
 
-  const paydayWindows = {};
-  
-  const activePaydaysWithDates = allowedPaydays
-    .filter(pd => paydayConfig?.[pd]?.date)
-    .map(pd => ({ key: pd, date: paydayConfig[pd].date, millis: parseLocalDate(paydayConfig[pd].date) }))
-    .sort((a, b) => a.millis - b.millis);
+  let paydayWindows = {};
+  let activePaydaysWithDates = [];
 
-  activePaydaysWithDates.forEach((pd, idx) => {
-    const startMillis = pd.millis;
-    let endMillis = 0;
+  // STANDARD MODE: Build precision windows
+  if (!isEntrepreneurMode) {
+    activePaydaysWithDates = allowedPaydays
+      .filter(pd => paydayConfig?.[pd]?.date)
+      .map(pd => ({ key: pd, date: paydayConfig[pd].date, millis: parseLocalDate(paydayConfig[pd].date) }))
+      .sort((a, b) => a.millis - b.millis);
 
-    if (idx < activePaydaysWithDates.length - 1) {
-      endMillis = activePaydaysWithDates[idx + 1].millis - 1;
-    } else {
-      const lastDateObj = new Date(pd.date.split("-")[0], parseInt(pd.date.split("-")[1], 10) - 1, pd.date.split("-")[2]);
-      if (freq === "Weekly") lastDateObj.setDate(lastDateObj.getDate() + 7);
-      else if (freq === "Bi-Weekly") lastDateObj.setDate(lastDateObj.getDate() + 14);
-      else if (freq === "Semi-Monthly") lastDateObj.setDate(lastDateObj.getDate() + 15);
-      else lastDateObj.setMonth(lastDateObj.getMonth() + 1);
-      endMillis = lastDateObj.getTime() - 1;
-    }
+    activePaydaysWithDates.forEach((pd, idx) => {
+      const startMillis = pd.millis;
+      let endMillis = 0;
 
-    paydayWindows[pd.key] = { start: startMillis, end: endMillis };
-  });
+      if (idx < activePaydaysWithDates.length - 1) {
+        endMillis = activePaydaysWithDates[idx + 1].millis - 1;
+      } else {
+        const lastDateObj = new Date(pd.date.split("-")[0], parseInt(pd.date.split("-")[1], 10) - 1, pd.date.split("-")[2]);
+        if (freq === "Weekly") lastDateObj.setDate(lastDateObj.getDate() + 7);
+        else if (freq === "Bi-Weekly") lastDateObj.setDate(lastDateObj.getDate() + 14);
+        else if (freq === "Semi-Monthly") lastDateObj.setDate(lastDateObj.getDate() + 15);
+        else lastDateObj.setMonth(lastDateObj.getMonth() + 1);
+        endMillis = lastDateObj.getTime() - 1;
+      }
 
+      paydayWindows[pd.key] = { start: startMillis, end: endMillis };
+    });
+  }
+
+  // CORE ROUTING ENGINE
   const getBillRunwayGroup = (bill) => {
     if (bill.isOverdue || bill.payday === "Due Now") return "Due Now";
     if (!bill.rawDate) return null;
     
+    // ENTREPRENEUR MODE: Auto-route by numerical calendar day
+    if (isEntrepreneurMode) {
+      const dateParts = bill.rawDate.split("-");
+      const day = dateParts.length === 3 ? parseInt(dateParts[2], 10) : new Date(bill.rawDate).getDate();
+      if (day <= 7) return "Week 1";
+      if (day <= 14) return "Week 2";
+      if (day <= 21) return "Week 3";
+      if (day <= 28) return "Week 4";
+      return "Week 5";
+    }
+
+    // STANDARD MODE: Route by exact payday window parameters
     const billMillis = parseLocalDate(bill.rawDate);
-    
     for (let i = 0; i < activePaydaysWithDates.length; i++) {
       const pdKey = activePaydaysWithDates[i].key;
       const window = paydayWindows[pdKey];
@@ -132,7 +154,6 @@ export default function Dashboard({
   const totalIncomeBalance = liquidAccounts.reduce((sum, a) => sum + (Number(a?.balance) || 0), 0);
 
   // === HERO MATH ENGINE UPGRADE ===
-  // 1. Calculate the active unpaid bills for the current month
   const currentMonthBillsTotal = bills.reduce((sum, bill) => {
     if (bill.isPaid) return sum;
     let include = false;
@@ -150,12 +171,10 @@ export default function Dashboard({
     return include ? sum + (Number(bill.amount) || 0) : sum;
   }, 0);
 
-  // 2. The exact Pizza Math equation: Live Bank Cash - Remaining Unpaid Bills
   const safeToSpend = totalIncomeBalance < 0 
     ? -(Math.abs(currentMonthBillsTotal) - Math.abs(totalIncomeBalance))
     : totalIncomeBalance - currentMonthBillsTotal;
 
-  // 3. Keep the visual progress ring actively tracking current load vs total liquid
   const debtRatio = totalIncomeBalance > 0 ? Math.max(0, Math.min((currentMonthBillsTotal / totalIncomeBalance) * 100, 100)) : (currentMonthBillsTotal > 0 ? 100 : 0);
   
   const strokeDasharray = 251.2;
@@ -164,29 +183,35 @@ export default function Dashboard({
   let runningBalance = totalIncomeBalance;
   const hzBalances = {};
 
+  // WATERFALL MATH ENGINE
   hzPaydays.forEach((pd) => {
     const groupBills = billsByRunwayGroup[pd] || [];
-    const pdSettings = paydayConfig?.[pd] || {};
-
-    if (pd !== "Due Now" && !pdSettings?.date) {
-      hzBalances[pd] = runningBalance;
-      return;
-    }
-
     const unpaidTotal = groupBills.filter(b => !b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
-    let income = 0;
-    if (pd !== "Due Now") {
-      income = Number(pdSettings.income) || 0;
-    }
 
-    runningBalance = runningBalance + income - unpaidTotal;
-    hzBalances[pd] = runningBalance;
+    if (isEntrepreneurMode) {
+      // Variable flow tracking: Standard decay against active balance
+      runningBalance = runningBalance - unpaidTotal;
+      hzBalances[pd] = runningBalance;
+    } else {
+      // W-2 Standard Mode: Inject fixed expected income at boundaries
+      const pdSettings = paydayConfig?.[pd] || {};
+      if (pd !== "Due Now" && !pdSettings?.date) {
+        hzBalances[pd] = runningBalance;
+        return;
+      }
+      let income = 0;
+      if (pd !== "Due Now") {
+        income = Number(pdSettings.income) || 0;
+      }
+      runningBalance = runningBalance + income - unpaidTotal;
+      hzBalances[pd] = runningBalance;
+    }
   });
 
   let daysUntilNext = 0;
   let nextPaydayDayName = "";
 
-  if (activePaydaysWithDates.length > 0) {
+  if (!isEntrepreneurMode && activePaydaysWithDates.length > 0) {
     const upcoming = activePaydaysWithDates.filter(pd => pd.millis >= todayMidnightMillis);
     if (upcoming.length > 0) {
       daysUntilNext = Math.ceil((upcoming[0].millis - todayMidnightMillis) / (1000 * 60 * 60 * 24));
@@ -203,8 +228,12 @@ export default function Dashboard({
     if (pd === "Due Now" && groupUnpaid.length > 0) {
       defaultOpenPayday = "Due Now";
       break;
-    } else if (pd !== "Due Now" && paydayConfig?.[pd]?.date && !defaultOpenPayday) {
-      defaultOpenPayday = pd;
+    } else if (!defaultOpenPayday) {
+      if (isEntrepreneurMode) {
+        defaultOpenPayday = pd; // Open the first sequential week
+      } else if (pd !== "Due Now" && paydayConfig?.[pd]?.date) {
+        defaultOpenPayday = pd;
+      }
     }
   }
 
@@ -259,7 +288,7 @@ export default function Dashboard({
             </p>
           </div>
           
-          {nextPaydayDayName && (
+          {!isEntrepreneurMode && nextPaydayDayName && (
             <div className={`mt-2 transform transition-all duration-700 delay-500 cubic-bezier(0.16, 1, 0.3, 1) w-full text-right ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-12"}`}>
               <span className={`text-[9px] font-black uppercase tracking-widest block leading-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                 NEXT PAYDAY: {nextPaydayDayName}{" "}
@@ -292,9 +321,15 @@ export default function Dashboard({
       </div>
 
       <div className="flex justify-center px-6 mb-5 -mt-2 relative z-10">
-         <button onClick={() => setIsPaydaySetupOpen(true)} className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border transition-all active:scale-95 ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#10B981] shadow-sm" : "bg-white/80 backdrop-blur-md border-slate-200 text-[#10B981] shadow-[0_4px_20px_rgba(0,0,0,0.03)]"}`}>
-            <Settings2 size={18} strokeWidth={2.5} /> Set {currentMonthName}'s Pay Dates & Amounts
-         </button>
+         {isEntrepreneurMode ? (
+           <button className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#10B981] shadow-sm" : "bg-white/80 backdrop-blur-md border-slate-200 text-[#10B981] shadow-[0_4px_20px_rgba(0,0,0,0.03)]"}`}>
+             <Zap size={18} strokeWidth={2.5} /> Variable Income Engine Active
+           </button>
+         ) : (
+           <button onClick={() => setIsPaydaySetupOpen(true)} className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border transition-all active:scale-95 ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#10B981] shadow-sm" : "bg-white/80 backdrop-blur-md border-slate-200 text-[#10B981] shadow-[0_4px_20px_rgba(0,0,0,0.03)]"}`}>
+             <Settings2 size={18} strokeWidth={2.5} /> Set {currentMonthName}'s Pay Dates & Amounts
+           </button>
+         )}
       </div>
 
       <div className="w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-6 relative z-10">
@@ -302,7 +337,9 @@ export default function Dashboard({
           {hzPaydays.map((pd) => {
             const pdSettings = paydayConfig?.[pd] || {};
             const groupBills = billsByRunwayGroup[pd] || [];
-            if (pd !== "Due Now" && !pdSettings?.date) return null;
+            
+            // Standard check to hide empty unset blocks
+            if (!isEntrepreneurMode && pd !== "Due Now" && !pdSettings?.date) return null;
 
             const unpaidBills = groupBills.filter(b => !b.isPaid);
             const unpaidCount = unpaidBills.length;
@@ -310,8 +347,20 @@ export default function Dashboard({
 
             if (pd === "Due Now" && unpaidCount === 0) return null;
 
-            const totalExpectedIncome = Number(pdSettings.income) || 0;
-            const expectedDateStr = pd === "Due Now" ? "ACTION REQ" : formatPaydayDateStr(pdSettings.date).toUpperCase();
+            let totalExpectedIncome = 0;
+            let expectedDateStr = "";
+
+            if (isEntrepreneurMode) {
+              if (pd === "Due Now") expectedDateStr = "ACTION REQ";
+              else if (pd === "Week 1") expectedDateStr = "DAYS 1-7";
+              else if (pd === "Week 2") expectedDateStr = "DAYS 8-14";
+              else if (pd === "Week 3") expectedDateStr = "DAYS 15-21";
+              else if (pd === "Week 4") expectedDateStr = "DAYS 22-28";
+              else if (pd === "Week 5") expectedDateStr = "DAYS 29-31";
+            } else {
+              totalExpectedIncome = Number(pdSettings.income) || 0;
+              expectedDateStr = pd === "Due Now" ? "ACTION REQ" : formatPaydayDateStr(pdSettings.date).toUpperCase();
+            }
 
             const waterfallBalance = hzBalances[pd];
             const isDeficit = waterfallBalance < 0;
@@ -343,8 +392,17 @@ export default function Dashboard({
                     <div className="flex flex-col flex-1"></div> 
                   ) : (
                     <div className="flex flex-col flex-1">
-                      <span className={`text-[7px] font-black uppercase tracking-widest mb-0.5 ${isDarkMode ? "text-white" : "text-black"}`}>Expected Pay</span>
-                      <span className={`text-[10px] font-black ${isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>+${totalExpectedIncome.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
+                      {isEntrepreneurMode ? (
+                        <>
+                          <span className={`text-[7px] font-black uppercase tracking-widest mb-0.5 ${isDarkMode ? "text-white" : "text-black"}`}>Income</span>
+                          <span className={`text-[10px] font-black ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>VARIABLE</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className={`text-[7px] font-black uppercase tracking-widest mb-0.5 ${isDarkMode ? "text-white" : "text-black"}`}>Expected Pay</span>
+                          <span className={`text-[10px] font-black ${isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>+${totalExpectedIncome.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
+                        </>
+                      )}
                     </div>
                   )}
                   <div className="flex flex-col items-end shrink-0">
@@ -366,26 +424,43 @@ export default function Dashboard({
       <main className="px-6 space-y-4 relative z-10">
         
         <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2 mb-4">
-          {currentMonthName}'s Pay Schedule
+          {isEntrepreneurMode ? `${currentMonthName}'s Weekly Runway` : `${currentMonthName}'s Pay Schedule`}
         </h3>
 
         <div className="space-y-4">
           {["Due Now", ...allowedPaydays].map((payday) => {
             const groupBills = billsByRunwayGroup[payday] || [];
             const activeGroupBills = groupBills.filter(b => !b.isPaid); 
-            const pdSettings = paydayConfig?.[payday] || {};
             const isDueNow = payday === "Due Now";
             
-            if (isDueNow && activeGroupBills.length === 0) return null;
-            if (!isDueNow && !pdSettings?.date) return null;
+            if (!isEntrepreneurMode) {
+              const pdSettings = paydayConfig?.[payday] || {};
+              if (isDueNow && activeGroupBills.length === 0) return null;
+              if (!isDueNow && !pdSettings?.date) return null;
+            } else {
+              // Hide empty blocks in Entrepreneur Mode
+              if (activeGroupBills.length === 0) return null;
+            }
 
             const isCollapsed = collapsedPaydays?.[payday] !== undefined 
               ? collapsedPaydays[payday] 
               : payday !== defaultOpenPayday;
 
             const checkTotal = activeGroupBills.reduce((sum, b) => sum + (Number(b?.amount) || 0), 0);
-            const expectedDateStr = isDueNow ? "Currently Due" : formatPaydayDateStr(pdSettings.date);
             const sortedBills = sortBillsSurgically(activeGroupBills);
+
+            let expectedDateStr = "";
+            if (isEntrepreneurMode) {
+              if (isDueNow) expectedDateStr = "Currently Due";
+              else if (payday === "Week 1") expectedDateStr = "Days 1-7";
+              else if (payday === "Week 2") expectedDateStr = "Days 8-14";
+              else if (payday === "Week 3") expectedDateStr = "Days 15-21";
+              else if (payday === "Week 4") expectedDateStr = "Days 22-28";
+              else if (payday === "Week 5") expectedDateStr = "Days 29-31";
+            } else {
+              const pdSettings = paydayConfig?.[payday] || {};
+              expectedDateStr = isDueNow ? "Currently Due" : formatPaydayDateStr(pdSettings.date);
+            }
 
             return (
               <div key={payday} id={`vert-${payday}`} className="space-y-2 scroll-mt-24">

@@ -52,9 +52,30 @@ export const LedgerProvider = ({ children }) => {
     { group: "Other", items: ["Miscellaneous Expense", "Charity / Gifts", "Other"] }
   ]);
 
-  const [recentBillCategories, setRecentBillCategories] = useState([]);
-  const [recentIncomeCategories, setRecentIncomeCategories] = useState([]);
-  const [recentExpenseCategories, setRecentExpenseCategories] = useState([]);
+  // SURGICAL UPDATE: Memory Notebook Loaders
+  const [recentBillCategories, setRecentBillCategories] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("lp_recent_bill_cat");
+      if (saved) return JSON.parse(saved);
+    }
+    return [];
+  });
+  
+  const [recentIncomeCategories, setRecentIncomeCategories] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("lp_recent_inc_cat");
+      if (saved) return JSON.parse(saved);
+    }
+    return [];
+  });
+  
+  const [recentExpenseCategories, setRecentExpenseCategories] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("lp_recent_exp_cat");
+      if (saved) return JSON.parse(saved);
+    }
+    return [];
+  });
 
   // === THE GLOBAL NERVOUS SYSTEM PAYLOAD ===
   const value = {

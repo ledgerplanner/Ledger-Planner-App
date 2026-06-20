@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { 
   X, User, CreditCard, RefreshCw, AlertCircle, Trash2, LogOut, 
-  ChevronRight, Sparkles, Globe, Palette, Users, Shield, Check, HelpCircle
+  ChevronRight, Sparkles, Globe, Palette, Users, Shield, Check, HelpCircle, Briefcase
 } from "lucide-react";
 
 export default function Settings({
@@ -19,7 +19,9 @@ export default function Settings({
   setSignatureColor,
   currentCurrency = "USD ($)",
   setCurrentCurrency,
-  handleUpdateDisplayName // <-- Injected for Fix #2
+  handleUpdateDisplayName, 
+  isEntrepreneurMode = false, // <-- INJECTED FOR ENTREPRENEUR MODE
+  setIsEntrepreneurMode       // <-- INJECTED FOR ENTREPRENEUR MODE
 }) {
   const [editName, setEditName] = useState(userName || "");
 
@@ -248,6 +250,55 @@ export default function Settings({
                   <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-[3px] transition-transform ${isDarkMode ? "translate-x-5" : "translate-x-1"}`}></div>
                 </div>
               </button>
+
+              {/* [POSITION #2.5 NODE]: NEW Income Structure Toggle */}
+              <div className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left gap-3 ${
+                isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-100 shadow-sm"
+              }`}>
+                <div className="flex items-center gap-3 w-full min-w-0">
+                  <div className={`p-2.5 rounded-xl shrink-0 ${isDarkMode ? "bg-slate-900/60" : "bg-emerald-50"} text-emerald-500`}>
+                    <Briefcase size={16} strokeWidth={2.5} />
+                  </div>
+                  <div className="flex flex-col flex-1 min-w-0">
+                    <span className={`text-xs font-black uppercase tracking-wider truncate ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
+                      INCOME STRUCTURE
+                    </span>
+                    <span className={`text-[9px] font-black uppercase tracking-widest mt-0.5 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
+                      {isEntrepreneurMode ? "Entrepreneur (Variable)" : "Standard (W-2 Paydays)"}
+                    </span>
+                  </div>
+                </div>
+                <div className={`flex p-1 rounded-xl border mt-1 ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
+                  <button
+                    onClick={() => {
+                      if (setIsEntrepreneurMode) setIsEntrepreneurMode(false);
+                      openGlobalAction("Structure Realigned", "Standard W-2 Payday routing restored successfully.", "Close", false, () => {}, true);
+                    }}
+                    className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${
+                      !isEntrepreneurMode
+                        ? "text-white shadow-sm"
+                        : isDarkMode ? "text-slate-500 hover:text-slate-300" : "text-slate-400 hover:text-slate-600"
+                    }`}
+                    style={{ backgroundColor: !isEntrepreneurMode ? signatureColor : undefined }}
+                  >
+                    Standard
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (setIsEntrepreneurMode) setIsEntrepreneurMode(true);
+                      openGlobalAction("Entrepreneur Mode Active", "Variable income routing engaged. Payday schedules bypassed.", "Close", false, () => {}, true);
+                    }}
+                    className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${
+                      isEntrepreneurMode
+                        ? "text-white shadow-sm"
+                        : isDarkMode ? "text-slate-500 hover:text-slate-300" : "text-slate-400 hover:text-slate-600"
+                    }`}
+                    style={{ backgroundColor: isEntrepreneurMode ? signatureColor : undefined }}
+                  >
+                    Entrepreneur
+                  </button>
+                </div>
+              </div>
 
               {/* [POSITION #3 NODE]: Palette Swapper Grid Interface */}
               <div className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left gap-3 ${

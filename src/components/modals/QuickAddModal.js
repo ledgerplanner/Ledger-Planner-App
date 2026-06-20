@@ -206,7 +206,6 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
           updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: newAccBalance }).catch(e => console.log("Offline pipeline sync queued"));
         }
 
-        // UPDATE #1 LOGIC PIVOT: Income triggers victory payload globally
         if (isIncome || isGoalCompleted) {
           triggerVictory(); 
         } else { 
@@ -299,13 +298,13 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
                 <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Amount</label>
                 <div className="relative w-full flex items-center">
                   <span className={`absolute left-5 top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
-                  <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={inputValue} onChange={(e) => setInputValue(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(String(inputValue).replace(/\s+/g, ""))) && inputValue !== "") setInputValue(parseFloat(String(inputValue).replace(/\s+/g, "")).toFixed(2)) }} className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl border font-bold text-base focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                  <input type="text" inputMode="decimal" pattern="[0-9.-]*" autoCorrect="off" autoCapitalize="none" value={inputValue} onChange={(e) => setInputValue(e.target.value.replace(/\s+/g, ""))} onBlur={() => { if(!isNaN(parseFloat(String(inputValue).replace(/\s+/g, ""))) && inputValue !== "") setInputValue(parseFloat(String(inputValue).replace(/\s+/g, "")).toFixed(2)) }} className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl border font-bold text-base focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                 </div>
               </div>
               <div className="relative cursor-pointer" onClick={() => setIsIconSelectorOpen(true)}>
                 <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Icon</label>
                 <div className={`w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
-                  <span className="text-xl leading-none">{entryIcon}</span>
+                  <span className="text-xl leading-none">{entryIcon || "🧾"}</span>
                   <ArrowDown size={14} className={isDarkMode ? "text-slate-400" : "text-slate-500"} />
                 </div>
               </div>
@@ -368,14 +367,14 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
                           <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Total Amount</label>
                           <div className="relative w-full flex items-center">
                             <span className={`absolute left-4 top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
-                            <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={entryTotalAmount} onChange={(e) => setEntryTotalAmount(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(entryTotalAmount)) && entryTotalAmount !== "") setEntryTotalAmount(parseFloat(entryTotalAmount).toFixed(2)) }} className={`w-full pt-6 pb-2 pl-7 pr-4 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                            <input type="text" inputMode="decimal" pattern="[0-9.-]*" autoCorrect="off" autoCapitalize="none" value={entryTotalAmount} onChange={(e) => setEntryTotalAmount(e.target.value.replace(/\s+/g, ""))} onBlur={() => { if(!isNaN(parseFloat(entryTotalAmount)) && entryTotalAmount !== "") setEntryTotalAmount(parseFloat(entryTotalAmount).toFixed(2)) }} className={`w-full pt-6 pb-2 pl-7 pr-4 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                           </div>
                         </div>
                         <div className="relative">
                           <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Already Paid</label>
                           <div className="relative w-full flex items-center">
                             <span className={`absolute left-4 top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
-                            <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={entryPaidAmount} onChange={(e) => setEntryPaidAmount(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(entryPaidAmount)) && entryPaidAmount !== "") setEntryPaidAmount(parseFloat(entryPaidAmount).toFixed(2)) }} className={`w-full pt-6 pb-2 pl-7 pr-4 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                            <input type="text" inputMode="decimal" pattern="[0-9.-]*" autoCorrect="off" autoCapitalize="none" value={entryPaidAmount} onChange={(e) => setEntryPaidAmount(e.target.value.replace(/\s+/g, ""))} onBlur={() => { if(!isNaN(parseFloat(entryPaidAmount)) && entryPaidAmount !== "") setEntryPaidAmount(parseFloat(entryPaidAmount).toFixed(2)) }} className={`w-full pt-6 pb-2 pl-7 pr-4 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                           </div>
                         </div>
                       </div>

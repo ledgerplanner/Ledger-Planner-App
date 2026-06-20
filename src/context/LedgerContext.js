@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 // 1. Initialize the Master Context Engine
 const LedgerContext = createContext();
@@ -37,6 +37,21 @@ export const LedgerProvider = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [signatureColor, setSignatureColor] = useState("#1877F2");
   const [currentCurrency, setCurrentCurrency] = useState("USD ($)");
+
+  // === INJECTED ENTREPRENEUR MODE STATE (With Permanent Memory) ===
+  const [isEntrepreneurMode, setIsEntrepreneurMode] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("lp_entrepreneur_mode");
+      if (saved) return JSON.parse(saved);
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("lp_entrepreneur_mode", JSON.stringify(isEntrepreneurMode));
+    }
+  }, [isEntrepreneurMode]);
 
   // === TAXONOMY & CATEGORY MATRICES ===
   const [modernCategories, setModernCategories] = useState([
@@ -89,6 +104,7 @@ export const LedgerProvider = ({ children }) => {
     isDarkMode, setIsDarkMode,
     signatureColor, setSignatureColor,
     currentCurrency, setCurrentCurrency,
+    isEntrepreneurMode, setIsEntrepreneurMode, // <-- EXPORTED TO ENTIRE APP
     modernCategories, setModernCategories,
     recentBillCategories, setRecentBillCategories,
     recentIncomeCategories, setRecentIncomeCategories,

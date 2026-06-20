@@ -16,7 +16,8 @@ export default function Bills({
   accountsHeroBalance,
   totalLiveIncome,
   accounts = [],
-  signatureColor = "#1877F2"
+  signatureColor = "#1877F2",
+  isEntrepreneurMode = false // <-- INJECTED TO MAINTAIN GLOBAL CONTEXT SYNCHRONIZATION
 }) {
   const [isMounted, setIsMounted] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth());
@@ -500,7 +501,7 @@ export default function Bills({
       <div className={`mx-6 mb-6 border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
 
       <main className="px-6 space-y-8 mt-2">
-          
+         
         {urgentBills.length > 0 && (
           <div className="space-y-4">
             
@@ -696,7 +697,7 @@ export default function Bills({
                                     <span className="hidden min-[360px]:inline">MARK AS PAID</span>
                                     <span className="min-[360px]:hidden">PAY</span>
                                   </button>
-                                
+                                  
                                 </div>
                                 <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
                                   {(Number(bill.amount) || 0).toFixed(2)}

@@ -323,7 +323,7 @@ export default function Dashboard({
       <div className="flex justify-center px-6 mb-5 -mt-2 relative z-10">
          {isEntrepreneurMode ? (
            <button className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#10B981] shadow-sm" : "bg-white/80 backdrop-blur-md border-slate-200 text-[#10B981] shadow-[0_4px_20px_rgba(0,0,0,0.03)]"}`}>
-             <Zap size={18} strokeWidth={2.5} /> Variable Income Engine Active
+             🚀 Entrepreneur Mode Active
            </button>
          ) : (
            <button onClick={() => setIsPaydaySetupOpen(true)} className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border transition-all active:scale-95 ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#10B981] shadow-sm" : "bg-white/80 backdrop-blur-md border-slate-200 text-[#10B981] shadow-[0_4px_20px_rgba(0,0,0,0.03)]"}`}>

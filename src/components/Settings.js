@@ -106,9 +106,9 @@ export default function Settings({
     isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
   }`;
 
-  // REUSABLE SIGNATURE LINE
+  // REUSABLE SIGNATURE LINE (Now with perfectly balanced my-8 spacing)
   const SignatureLine = () => (
-    <div className={`border-t w-full my-5 ${isDarkMode ? "border-white" : "border-slate-300"}`}></div>
+    <div className={`border-t w-full my-8 ${isDarkMode ? "border-white" : "border-slate-300"}`}></div>
   );
 
   return (
@@ -130,14 +130,15 @@ export default function Settings({
           </button>
         </div>
 
-        <div className={`p-6 overflow-y-auto space-y-2 flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${
+        {/* Removed space-y-2 to allow manual module spacing to breathe properly */}
+        <div className={`p-6 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${
           isDemoMode ? "pb-[140px] lg:pb-6" : "pb-12 lg:pb-6"
         }`}>
           
           {/* ========================================= */}
           {/* 1. ACCOUNT STATUS                         */}
           {/* ========================================= */}
-          <div className="p-5 rounded-[2rem] border relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-black border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.5)] transition-all duration-300 mb-8">
+          <div className="p-5 rounded-[2rem] border relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-black border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.5)] transition-all duration-300">
             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-2xl rounded-full pointer-events-none"></div>
             <div className="flex items-center justify-between">
               <div>
@@ -162,7 +163,7 @@ export default function Settings({
           {/* ========================================= */}
           {/* 2. CUSTOM SETTINGS                        */}
           {/* ========================================= */}
-          <div className="space-y-3 mb-8">
+          <div className="space-y-3">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 flex items-center gap-1.5">
               <Palette size={12} strokeWidth={2.5} /> Custom Settings
             </h4>
@@ -295,7 +296,7 @@ export default function Settings({
           {/* ========================================= */}
           {/* 3. ACCOUNT SHARING                        */}
           {/* ========================================= */}
-          <div className="space-y-3 mb-8">
+          <div className="space-y-3">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 flex items-center gap-1.5">
               <Users size={12} strokeWidth={2.5} /> Account Sharing
             </h4>
@@ -335,7 +336,7 @@ export default function Settings({
           {/* ========================================= */}
           {/* 4. HELP                                   */}
           {/* ========================================= */}
-          <div className="space-y-3 mb-8">
+          <div className="space-y-3">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 flex items-center gap-1.5">
               <HelpCircle size={12} strokeWidth={2.5} /> Help
             </h4>

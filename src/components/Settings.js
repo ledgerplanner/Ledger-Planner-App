@@ -137,7 +137,7 @@ export default function Settings({
           {/* ========================================= */}
           {/* 1. ACCOUNT STATUS                         */}
           {/* ========================================= */}
-          <div className="p-5 rounded-[2rem] border relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-black border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.5)] transition-all duration-300">
+          <div className="p-5 rounded-[2rem] border relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-black border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.5)] transition-all duration-300 mb-2">
             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-2xl rounded-full pointer-events-none"></div>
             <div className="flex items-center justify-between">
               <div>
@@ -162,7 +162,7 @@ export default function Settings({
           {/* ========================================= */}
           {/* 2. CUSTOM SETTINGS                        */}
           {/* ========================================= */}
-          <div className="space-y-3">
+          <div className="space-y-3 mb-2">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 flex items-center gap-1.5">
               <Palette size={12} strokeWidth={2.5} /> Custom Settings
             </h4>
@@ -295,7 +295,7 @@ export default function Settings({
           {/* ========================================= */}
           {/* 3. ACCOUNT SHARING                        */}
           {/* ========================================= */}
-          <div className="space-y-3">
+          <div className="space-y-3 mb-2">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 flex items-center gap-1.5">
               <Users size={12} strokeWidth={2.5} /> Account Sharing
             </h4>
@@ -335,7 +335,7 @@ export default function Settings({
           {/* ========================================= */}
           {/* 4. HELP                                   */}
           {/* ========================================= */}
-          <div className="space-y-3">
+          <div className="space-y-3 mb-2">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 flex items-center gap-1.5">
               <HelpCircle size={12} strokeWidth={2.5} /> Help
             </h4>

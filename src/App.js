@@ -963,31 +963,64 @@ function LedgerApp() {
           </div>
         )}
 
+        {/* 3D FALLING CONFETTI 2.0 ENGINE */}
         {showConfetti && (
-         <div className="absolute inset-0 z-[200] pointer-events-none flex items-center justify-center overflow-hidden" style={{ perspective: '800px' }}>
+         <div className="absolute inset-0 z-[200] pointer-events-none flex items-center justify-center overflow-hidden" style={{ perspective: '1000px' }}>
             {[...Array(132)].map((_, i) => {
               const colors = [signatureColor, '#10B981', '#F97316'];
               const isStrip = Math.random() > 0.6;
+              
+              // Confetti 2.0 Physics Constraints: Pneumatic Launch + Gravity Drift
+              const peakX = (Math.random() - 0.5) * 1000; // Wide radial spread
+              const peakY = -(Math.random() * 400 + 200); // Powerful upward burst
+              const endX = peakX + (Math.random() - 0.5) * 500; // Drift horizontally as it falls
+              const endY = 800 + Math.random() * 300; // Fall deep past the bottom viewport bounds
+
               return (
                 <div 
                   key={i} 
-                  className="absolute animate-[explode3D_5.2s_cubic-bezier(0.1,1,0.1,1)_forwards]" 
+                  className="absolute animate-[confettiFall_ease-out_forwards]" 
                   style={{ 
                     backgroundColor: colors[Math.floor(Math.random() * colors.length)], 
-                    left: '50%', top: '50%', 
+                    left: '50%', top: '60%', // Launch from slightly below center for best visual arc
                     width: isStrip ? '8px' : '12px', height: isStrip ? '24px' : '12px',
                     borderRadius: Math.random() > 0.5 && !isStrip ? '50%' : '2px',
                     transformStyle: 'preserve-3d',
-                    '--tx': `${(Math.random() - 0.5) * 1020}px`, 
-                    '--ty': `${(Math.random() - 0.3) * 1020 - 400}px`, 
+                    animationDuration: `${Math.random() * 1.5 + 3.7}s`, // Sustain the float for full 4-5 seconds
+                    animationDelay: `${Math.random() * 0.3}s`, // Micro-stagger for organic physics
+                    animationTimingFunction: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)', 
+                    '--peak-x': `${peakX}px`, 
+                    '--peak-y': `${peakY}px`, 
+                    '--end-x': `${endX}px`, 
+                    '--end-y': `${endY}px`,
                     '--tz': `${(Math.random() - 0.5) * 600}px`,
-                    '--rx': `${Math.random() * 1080}deg`, '--ry': `${Math.random() * 1080}deg`, '--rz': `${Math.random() * 1080}deg`,
-                    '--scale': `${Math.random() * 0.8 + 0.5}`
+                    '--rx': `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 1440 + 720)}deg`, 
+                    '--ry': `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 1440 + 720)}deg`, 
+                    '--rz': `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 720 + 360)}deg`,
+                    '--scale': `${Math.random() * 0.6 + 0.6}`
                   }} 
                 />
               )
             })}
-            <style>{`@keyframes explode3D { 0% { transform: translate3d(-50%, -50%, 0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1); opacity: 1; } 100% { transform: translate3d(calc(-50% + var(--tx)), calc(-50% + var(--ty)), var(--tz)) rotateX(var(--rx)) rotateY(var(--ry)) rotateZ(var(--rz)) scale(var(--scale)); opacity: 0; } }`}</style>
+            <style>{`
+              @keyframes confettiFall { 
+                0% { 
+                  transform: translate3d(-50%, -50%, 0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(0); 
+                  opacity: 1; 
+                } 
+                15% { 
+                  transform: translate3d(calc(-50% + var(--peak-x)), calc(-50% + var(--peak-y)), var(--tz)) rotateX(calc(var(--rx) * 0.15)) rotateY(calc(var(--ry) * 0.15)) rotateZ(calc(var(--rz) * 0.15)) scale(var(--scale)); 
+                  opacity: 1; 
+                } 
+                80% {
+                  opacity: 1; 
+                }
+                100% { 
+                  transform: translate3d(calc(-50% + var(--end-x)), calc(-50% + var(--end-y)), var(--tz)) rotateX(var(--rx)) rotateY(var(--ry)) rotateZ(var(--rz)) scale(var(--scale)); 
+                  opacity: 0; 
+                } 
+              }
+            `}</style>
           </div>
         )}
       </div>

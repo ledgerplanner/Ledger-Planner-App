@@ -7,7 +7,7 @@ import {
 export default function Settings({
   userName,
   isDarkMode,
-  setIsDarkMode,
+  setIsDarkMode, // Retained in props to prevent breaking App.js passing it
   setIsSettingsOpen,
   handleRolloverMonth,
   handleFactoryReset,
@@ -20,8 +20,8 @@ export default function Settings({
   currentCurrency = "USD ($)",
   setCurrentCurrency,
   handleUpdateDisplayName, 
-  isEntrepreneurMode = false, // <-- INJECTED FOR ENTREPRENEUR MODE
-  setIsEntrepreneurMode       // <-- INJECTED FOR ENTREPRENEUR MODE
+  isEntrepreneurMode = false,
+  setIsEntrepreneurMode
 }) {
   const [editName, setEditName] = useState(userName || "");
 
@@ -135,7 +135,7 @@ export default function Settings({
           isDemoMode ? "pb-[140px] lg:pb-6" : "pb-12 lg:pb-6"
         }`}>
           
-          {/* FIX #1: ACCOUNT STATUS - Hardcoded Dark Gradient Canvas (Stays Dark in Light Mode) */}
+          {/* POSITION #1: ACCOUNT STATUS - Hardcoded Dark Gradient Canvas (Stays Dark in Light Mode) */}
           <div className="p-5 rounded-[2rem] border relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-black border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.5)] transition-all duration-300">
             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-2xl rounded-full pointer-events-none"></div>
             <div className="flex items-center justify-between">
@@ -156,10 +156,9 @@ export default function Settings({
             </div>
           </div>
 
-          {/* SIGNATURE SEPARATION LINE TRACK */}
           <div className={`border-t w-full my-2 ${isDarkMode ? "border-slate-800" : "border-slate-300"}`}></div>
 
-          {/* FIX #1: SHARE MY ACCOUNT - Demoted to standard menu style */}
+          {/* POSITION #2: SHARE MY ACCOUNT */}
           <button
             onClick={() => setIsCoOpOpen(true)}
             className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left transition-all active:scale-[0.99] gap-3 ${
@@ -192,14 +191,14 @@ export default function Settings({
 
           <div className={`border-t w-full my-2 ${isDarkMode ? "border-slate-800" : "border-slate-300"}`}></div>
 
-          {/* CENTRAL MASTER MODULE GROUP: Personalization Parameters Layout Shell */}
+          {/* POSITION #3: CUSTOM SETTINGS MODULE GROUP */}
           <div className="space-y-3">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 flex items-center gap-1.5">
               <Palette size={12} strokeWidth={2.5} /> Custom Settings
             </h4>
             <div className={`p-4 rounded-[2rem] border space-y-3 ${isDarkMode ? "bg-slate-800/20 border-slate-800" : "bg-white border-slate-100 shadow-sm"}`}>
               
-              {/* [POSITION #1 NODE]: User Profile Naming Vector Field */}
+              {/* [NODE 3A]: User Profile Naming Vector Field */}
               <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
                 <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-2">PREFERRED DISPLAY NAME</label>
                 <div className="flex flex-col gap-2.5">
@@ -211,7 +210,6 @@ export default function Settings({
                       isDarkMode ? "bg-[#0F172A] border-slate-700 text-white focus:border-slate-500" : "bg-white border-slate-200 text-slate-900 focus:border-slate-400"
                     }`} 
                   />
-                  {/* FIX #2: Wired up the handleUpdateDisplayName function */}
                   <button 
                     onClick={() => {
                       if (handleUpdateDisplayName) handleUpdateDisplayName(editName);
@@ -226,32 +224,51 @@ export default function Settings({
                 </div>
               </div>
 
-              {/* [POSITION #2 NODE]: Theme Swapper */}
-              <button 
-                onClick={() => setIsDarkMode(!isDarkMode)}
-                className={`w-full flex items-center justify-between p-4 rounded-[1.5rem] border text-left transition-all active:scale-[0.99] ${
-                  isDarkMode ? "bg-slate-800/40 border-slate-700/50 hover:bg-slate-800/80" : "bg-white border-slate-100 hover:bg-slate-50/80 shadow-sm"
-                }`}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className={`p-2.5 rounded-xl text-amber-400 shrink-0 ${isDarkMode ? "bg-slate-900/60" : "bg-slate-50"}`}>
-                    <Sparkles size={16} strokeWidth={2.5} />
+              {/* [NODE 3B]: Palette Swapper Grid Interface */}
+              <div className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left gap-3 ${
+                isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-100 shadow-sm"
+              }`}>
+                <div className="flex items-center gap-3 w-full min-w-0">
+                  <div className={`p-2.5 rounded-xl shrink-0 ${isDarkMode ? "bg-slate-900/60" : "bg-slate-50"}`} style={{ color: signatureColor }}>
+                    <Palette size={16} strokeWidth={2.5} />
                   </div>
-                  <div className="flex flex-col">
-                    <span className={`text-xs font-black uppercase tracking-wider ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
-                      THEME COLOR
-                    </span>
-                    <span className={`text-[9px] font-black uppercase tracking-widest mt-0.5 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
-                      {isDarkMode ? "Dark Mode Active" : "Light Mode Active"}
-                    </span>
+                  <span className={`text-xs font-black uppercase tracking-wider truncate flex-1 ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
+                    SELECT THEME COLOR
+                  </span>
+                </div>
+                <div className={`w-full pt-3 border-t ${isDarkMode ? "border-slate-800/60" : "border-slate-100"}`}>
+                  <div className="grid grid-cols-6 gap-2">
+                    {premiumPalette.map((color) => (
+                      <button
+                        key={color.name}
+                        onClick={() => setSignatureColor && setSignatureColor(color.hex)}
+                        className="h-8 rounded-xl relative transition-transform active:scale-90 flex items-center justify-center border shadow-sm"
+                        style={{ backgroundColor: color.hex, borderColor: signatureColor === color.hex ? "#FFFFFF" : "transparent" }}
+                      >
+                        {color.hex === "#1877F2" && (
+                          <span className="absolute -top-3 -right-2 bg-slate-800 text-white text-[5px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest border border-slate-600 shadow-xl z-10">
+                            DEFAULT
+                          </span>
+                        )}
+                        {signatureColor === color.hex && (
+                          <Check size={14} className="text-white drop-shadow-md" strokeWidth={3} />
+                        )}
+                      </button>
+                    ))}
                   </div>
                 </div>
-                <div className="w-10 h-5 rounded-full relative bg-slate-300 dark:bg-slate-700 transition-colors shrink-0" style={{ backgroundColor: isDarkMode ? signatureColor : undefined }}>
-                  <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-[3px] transition-transform ${isDarkMode ? "translate-x-5" : "translate-x-1"}`}></div>
-                </div>
-              </button>
+              </div>
 
-              {/* [POSITION #2.5 NODE]: NEW Income Structure Toggle */}
+              {/* [NODE 3C]: Currency Link Row */}
+              <SettingRow 
+                icon={Globe} 
+                title="SELECT CURRENCY" 
+                statusText={currentCurrency} 
+                colorClass="text-blue-400"
+                onClick={() => setIsCurrencyOpen(true)}
+              />
+
+              {/* [NODE 3D]: Income Structure Toggle */}
               <div className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left gap-3 ${
                 isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-100 shadow-sm"
               }`}>
@@ -300,54 +317,10 @@ export default function Settings({
                 </div>
               </div>
 
-              {/* [POSITION #3 NODE]: Palette Swapper Grid Interface */}
-              <div className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left gap-3 ${
-                isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-100 shadow-sm"
-              }`}>
-                <div className="flex items-center gap-3 w-full min-w-0">
-                  <div className={`p-2.5 rounded-xl shrink-0 ${isDarkMode ? "bg-slate-900/60" : "bg-slate-50"}`} style={{ color: signatureColor }}>
-                    <Palette size={16} strokeWidth={2.5} />
-                  </div>
-                  <span className={`text-xs font-black uppercase tracking-wider truncate flex-1 ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
-                    SELECT THEME COLOR
-                  </span>
-                </div>
-                <div className={`w-full pt-3 border-t ${isDarkMode ? "border-slate-800/60" : "border-slate-100"}`}>
-                  <div className="grid grid-cols-6 gap-2">
-                    {premiumPalette.map((color) => (
-                      <button
-                        key={color.name}
-                        onClick={() => setSignatureColor && setSignatureColor(color.hex)}
-                        className="h-8 rounded-xl relative transition-transform active:scale-90 flex items-center justify-center border shadow-sm"
-                        style={{ backgroundColor: color.hex, borderColor: signatureColor === color.hex ? "#FFFFFF" : "transparent" }}
-                      >
-                        {/* FIX #3: DEFAULT ANCHOR TAG */}
-                        {color.hex === "#1877F2" && (
-                          <span className="absolute -top-3 -right-2 bg-slate-800 text-white text-[5px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest border border-slate-600 shadow-xl z-10">
-                            DEFAULT
-                          </span>
-                        )}
-                        {signatureColor === color.hex && (
-                          <Check size={14} className="text-white drop-shadow-md" strokeWidth={3} />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* [POSITION #4 NODE]: Currency Link Row */}
-              <SettingRow 
-                icon={Globe} 
-                title="SELECT CURRENCY" 
-                statusText={currentCurrency} 
-                colorClass="text-blue-400"
-                onClick={() => setIsCurrencyOpen(true)}
-              />
             </div>
           </div>
 
-          {/* CLUSTER MODULE GROUP 3: Core Maintenance Tools */}
+          {/* POSITION #4: SYSTEM SETTINGS MODULE GROUP */}
           <div className="space-y-3">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 flex items-center gap-1.5">
               <RefreshCw size={12} strokeWidth={2.5} /> SYSTEM SETTINGS
@@ -369,27 +342,27 @@ export default function Settings({
                   START NEW MONTH
                 </span>
               </button>
-
-              {/* FIX #5: Text string updated to Contact Support */}
-              <SettingRow 
-                icon={HelpCircle} 
-                title="Contact Support" 
-                statusText="Support Live" 
-                colorClass="text-sky-400"
-                onClick={() => openGlobalAction("Support Vector", "Opening secure mail transfer protocols to support documentation channels...", "Close", false, () => {}, true)}
-              />
             </div>
           </div>
 
-          {/* DANGER ZONE CRITICAL STORAGE WIPE */}
+          {/* POSITION #5: STANDALONE CONTACT SUPPORT */}
+          <SettingRow 
+            icon={HelpCircle} 
+            title="Contact Support" 
+            statusText="Support Live" 
+            colorClass="text-sky-400"
+            onClick={() => openGlobalAction("Support Vector", "Opening secure mail transfer protocols to support documentation channels...", "Close", false, () => {}, true)}
+          />
+
+          {/* POSITION #6: MASTER LEDGER RESET (NUKE ZONE) */}
           <div className={`p-5 rounded-[2rem] border ${
             isDarkMode ? "bg-red-950/10 border-red-900/30" : "bg-red-50/40 border-red-100"
           }`}>
             <h4 className="text-[10px] font-black uppercase tracking-widest text-red-500 mb-3 flex items-center gap-2">
-              <AlertCircle size={14} strokeWidth={2.5} /> Critical System Overrides (Nuke Zone)
+              <AlertCircle size={14} strokeWidth={2.5} /> Master Ledger Reset
             </h4>
             <p className={`text-[11px] font-medium leading-relaxed mb-4 ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-              Executing a Factory Reset wipes all database entities permanently from cloud architecture storage pools. Type <strong className="text-red-500 font-bold">RESET</strong> into the channel lock below to validate authorization parameters.
+              Performing a Factory Reset wipes your data clean. This action cannot be reversed. Type <strong className="text-red-500 font-bold">RESET</strong> in all caps below to permanently wipe your system.
             </p>
             <input
               type="text"
@@ -402,7 +375,6 @@ export default function Settings({
                   : "bg-white border-slate-200 text-slate-900 focus:border-red-400 shadow-inner"
               }`}
             />
-            {/* FIX #4: Intercepting the execution with openGlobalAction */}
             <button
               onClick={() => {
                 openGlobalAction(
@@ -420,7 +392,7 @@ export default function Settings({
                   : "bg-slate-300 dark:bg-slate-800 text-slate-400 cursor-not-allowed opacity-50 shadow-none"
               }`}
             >
-              <Trash2 size={14} strokeWidth={2.5} /> Destroy Vault Architecture
+              <Trash2 size={14} strokeWidth={2.5} /> RESET MY LEDGER
             </button>
           </div>
         </div>

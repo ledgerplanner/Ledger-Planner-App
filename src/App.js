@@ -44,7 +44,7 @@ function LedgerApp() {
     user, setUser, isDemoMode, setIsDemoMode, 
     accounts, setAccounts, bills, setBills, transactions, setTransactions, todos, setTodos, paydayConfig, setPaydayConfig,
     isDarkMode, setIsDarkMode, signatureColor, setSignatureColor,
-    isEntrepreneurMode, setIsEntrepreneurMode // <-- INJECTED FOR ENTREPRENEUR MODE
+    isEntrepreneurMode, setIsEntrepreneurMode 
   } = useLedger();
 
   // === LOCAL UI & ROUTING STATE ===
@@ -57,6 +57,20 @@ function LedgerApp() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isScrolled, setIsScrolled] = useState(false);
   const scrollRef = useRef(null);
+
+  // === FORT KNOX OFFLINE ENGINE ===
+  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // Auth Forms
   const [firstName, setFirstName] = useState("");
@@ -72,32 +86,24 @@ function LedgerApp() {
   const [isCashOutOpen, setIsCashOutOpen] = useState(false);
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
   const [isAddGoalOpen, setIsAddGoalOpen] = useState(false);
-  
-  // RESTORED DASHBOARD STATES
   const [isPaydaySetupOpen, setIsPaydaySetupOpen] = useState(false);
   const [collapsedPaydays, setCollapsedPaydays] = useState({});
 
-  // RESTORED ACTIVITY STATES
+  // Activity States
   const [activitySearch, setActivitySearch] = useState("");
   const [activityFilter, setActivityFilter] = useState("All");
 
-  // RESTORED TODO STATES
+  // Todo States
   const [newTodoText, setNewTodoText] = useState("");
   const [newTodoPriority, setNewTodoPriority] = useState(3);
   const [newTodoType, setNewTodoType] = useState("task");
 
-  // RESTORED GLOBAL ACTION MODAL
+  // Global Action Modal
   const [globalActionConfig, setGlobalActionConfig] = useState({
-    isOpen: false,
-    title: "",
-    message: "",
-    confirmText: "Confirm",
-    isDestructive: false,
-    isAlertOnly: false,
-    onConfirm: null
+    isOpen: false, title: "", message: "", confirmText: "Confirm", isDestructive: false, isAlertOnly: false, onConfirm: null
   });
 
-  // === RESTORED AUTHENTIC MASTER BUFFERS ===
+  // Master Buffers
   const [cashOutGoal, setCashOutGoal] = useState(null);
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [selectedAccount, setSelectedAccount] = useState(null);
@@ -107,11 +113,9 @@ function LedgerApp() {
   const [installmentPromptConfig, setInstallmentPromptConfig] = useState({ isOpen: false, billId: null, nextDate: "" });
   const [editPaydayConfig, setEditPaydayConfig] = useState(paydayConfig);
   const [currentCurrency, setCurrentCurrency] = useState("USD ($)");
-  
-  // WSOD FIX: Add the missing resetConfirm state definition
   const [resetConfirm, setResetConfirm] = useState("");
   
-  // Briefing Engine Consumption Memory
+  // Briefing Engine
   const [hasConsumedAMBriefing, setHasConsumedAMBriefing] = useState(() => {
     if (typeof window !== "undefined") return localStorage.getItem(`lp_briefing_am_${new Date().toISOString().split('T')[0]}`) === "true";
     return false;
@@ -121,11 +125,9 @@ function LedgerApp() {
     return false;
   });
 
-  // PUSH NOTIFICATION STATE ENGINE
+  // Push Notifications
   const [isPushEnabled, setIsPushEnabled] = useState(() => {
-    if (typeof window !== "undefined" && "Notification" in window) {
-      return Notification.permission === "granted";
-    }
+    if (typeof window !== "undefined" && "Notification" in window) return Notification.permission === "granted";
     return false;
   });
 
@@ -137,6 +139,7 @@ function LedgerApp() {
   const triggerHaptic = (pattern = 50) => {
     if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) window.navigator.vibrate(pattern);
   };
+  
   const triggerVictory = () => { 
     triggerHaptic([30, 50, 30]); 
     setShowConfetti(true); 
@@ -155,8 +158,27 @@ function LedgerApp() {
     closeGlobalAction();
   };
 
-  // RESTORED TRUE FIREBASE NOTIFICATION ENGINE
+  // === OFFLINE INTERCEPTOR ===
+  const triggerOfflineLock = () => {
+    openGlobalAction(
+      "Vault Locked",
+      "You are currently offline. Ledger Planner is in Read-Only mode to protect your data. Please reconnect to log new transactions.",
+      "Understood",
+      false,
+      null,
+      true
+    );
+  };
+
+  // INTERCEPTED MODAL OPENERS
+  const handleOpenQab = () => { if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; } setIsQabOpen(true); };
+  const handleOpenTransfer = () => { if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; } setIsTransferOpen(true); };
+  const handleOpenAddAccount = () => { if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; } setIsAddAccountOpen(true); };
+  const handleOpenAddGoal = () => { if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; } setIsAddGoalOpen(true); };
+  const handleOpenPaydaySetup = () => { if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; } setIsPaydaySetupOpen(true); };
+
   const enablePushNotifications = async () => {
+    if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; }
     triggerHaptic(50);
     if (typeof window === "undefined" || !("Notification" in window)) return;
     try {
@@ -165,9 +187,7 @@ function LedgerApp() {
         setIsPushEnabled(true);
         if (messaging && user && !isDemoMode) {
           const token = await getToken(messaging, { vapidKey: "YOUR_PUBLIC_VAPID_KEY" });
-          if (token) {
-            await setDoc(doc(db, "users", user.uid, "settings", "push"), { token, updatedAt: serverTimestamp() }, { merge: true });
-          }
+          if (token) await setDoc(doc(db, "users", user.uid, "settings", "push"), { token, updatedAt: serverTimestamp() }, { merge: true });
         }
         openGlobalAction("Notifications On", "The structural system channel bridges are live.", "Close", false, () => closeGlobalAction(), true);
       } else {
@@ -196,18 +216,19 @@ function LedgerApp() {
   const openEntryDrawer = (entry) => { setSelectedEntry(entry); setIsEditingEntry(false); };
   const closeEntryDrawer = () => { setSelectedEntry(null); setIsEditingEntry(false); };
 
-  // === RESTORED AUTHENTIC LOGIC ENGINES ===
   const toggleCollapse = (payday) => {
     triggerHaptic(15);
     setCollapsedPaydays(prev => ({ ...prev, [payday]: !prev[payday] }));
   };
 
   const clearPaydayConfig = () => { 
+    if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; }
     setEditPaydayConfig({ frequency: "Weekly", "Payday 1": { date: "", income: "" }, "Payday 2": { date: "", income: "" }, "Payday 3": { date: "", income: "" }, "Payday 4": { date: "", income: "" }, "Payday 5": { date: "", income: "" } });
     triggerHaptic(50); 
   };
   
   const savePaydayConfig = async () => {
+    if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; }
     setPaydayConfig(editPaydayConfig);
     if (!isDemoMode && user) { await setDoc(doc(db, "users", user.uid, "settings", "paydayConfig"), editPaydayConfig); }
     setIsPaydaySetupOpen(false); 
@@ -215,6 +236,7 @@ function LedgerApp() {
   };
 
   const handleSaveNextInstallmentDate = async () => {
+    if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; }
     if (!installmentPromptConfig.nextDate) return;
     const bill = bills.find(b => b.id === installmentPromptConfig.billId);
     if(!bill) return;
@@ -233,13 +255,12 @@ function LedgerApp() {
   };
 
   const handleBillClick = async (id) => {
+    if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; }
     const bill = bills.find(b => b.id === id);
     if (!bill) return;
     if (bill.isPaid) {
       const refundAccountId = bill.paidFromAccountId;
       const targetAcc = accounts.find(a => a.id === refundAccountId);
-      
-      // --- PRECISION REVERT MATH FIX ---
       const linkedTx = transactions.find(t => t.id === bill.linkedTxId);
       const exactRefundAmount = linkedTx ? (linkedTx.amount || 0) : (bill.amount || 0);
 
@@ -262,12 +283,10 @@ function LedgerApp() {
   };
 
   const confirmPaymentRoute = async () => {
+    if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; }
     const bill = bills.find(b => b.id === paymentModalConfig.billId);
-    
     let targetAcc = accounts.find(a => a.id === paymentModalConfig.accountId);
-    if (!targetAcc) {
-      targetAcc = accounts.find(a => !a.isGoal && (a.type === "Checking" || a.type === "Cash")) || accounts[0];
-    }
+    if (!targetAcc) targetAcc = accounts.find(a => !a.isGoal && (a.type === "Checking" || a.type === "Cash")) || accounts[0];
 
     if (!bill || !targetAcc) return;
     const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
@@ -315,6 +334,7 @@ function LedgerApp() {
   };
 
   const handleSaveEntryEdit = async () => {
+    if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; }
     if (!selectedEntry) return;
     
     const isTransaction = !bills.some(b => b.id === selectedEntry.id);
@@ -383,6 +403,7 @@ function LedgerApp() {
 
   const handleAddTodo = async (e) => {
     e.preventDefault();
+    if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; }
     if (!user || !newTodoText.trim()) return;
     try {
       if (!isDemoMode) {
@@ -402,15 +423,15 @@ function LedgerApp() {
   };
 
   const toggleTodoStatus = async (todoId) => {
+    if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; }
     triggerHaptic(20);
     const todo = todos.find(t => t.id === todoId);
     if (!todo) return;
-    if (!isDemoMode) {
-      await updateDoc(doc(db, "users", user.uid, "todos", todoId), { isCompleted: !todo.isCompleted });
-    }
+    if (!isDemoMode) await updateDoc(doc(db, "users", user.uid, "todos", todoId), { isCompleted: !todo.isCompleted });
   };
 
   const clearCompletedTodos = () => {
+    if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; }
     openGlobalAction(
       "Clear Completed",
       "Are you sure you want to permanently delete all completed tasks?",
@@ -419,15 +440,14 @@ function LedgerApp() {
       async () => {
         if (isDemoMode) return;
         const completedTasks = todos.filter(t => t.isCompleted);
-        for (const t of completedTasks) {
-          await deleteDoc(doc(db, "users", user.uid, "todos", t.id));
-        }
+        for (const t of completedTasks) await deleteDoc(doc(db, "users", user.uid, "todos", t.id));
         triggerHaptic(50);
       }
     );
   };
 
   const handleFactoryReset = async () => {
+    if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; }
     if (resetConfirm !== "RESET" || isDemoMode) return;
     try {
       const collectionsToWipe = ["transactions", "bills", "accounts", "todos"];
@@ -444,12 +464,11 @@ function LedgerApp() {
   };
 
   const handleRolloverMonth = async () => {
+    if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; }
     if (isDemoMode) return;
     openGlobalAction("Start New Month", "Advance active tracking timelines. This will archive completed bills.", "Start Over", true, async () => {
       const completedBills = bills.filter(b => b.isPaid && !b.isRecurring);
-      for (const b of completedBills) {
-        await updateDoc(doc(db, "users", user.uid, "bills", b.id), { isArchived: true });
-      }
+      for (const b of completedBills) await updateDoc(doc(db, "users", user.uid, "bills", b.id), { isArchived: true });
       const recurringBills = bills.filter(b => b.isRecurring);
       for (const b of recurringBills) {
         if (b.rawDate) {
@@ -457,11 +476,7 @@ function LedgerApp() {
           d.setUTCMonth(d.getUTCMonth() + 1);
           const nextDate = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
           await updateDoc(doc(db, "users", user.uid, "bills", b.id), { 
-            rawDate: nextDate, 
-            date: d.getUTCDate(),
-            fullDate: d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }),
-            isPaid: false,
-            paidAmount: b.isInstallment ? b.paidAmount : 0
+            rawDate: nextDate, date: d.getUTCDate(), fullDate: d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }), isPaid: false, paidAmount: b.isInstallment ? b.paidAmount : 0
           });
         }
       }
@@ -469,14 +484,11 @@ function LedgerApp() {
     });
   };
 
-  // FIX #2: Display Name Updater Logic Handler
   const handleUpdateDisplayName = async (newName) => {
+    if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; }
     if (!newName || !newName.trim() || !user) return;
     const finalName = newName.trim();
-    if (isDemoMode) {
-      triggerHaptic(50);
-      return; 
-    }
+    if (isDemoMode) { triggerHaptic(50); return; }
     try {
       await updateProfile(auth.currentUser, { displayName: finalName });
       await setDoc(doc(db, "users", user.uid), { firstName: finalName }, { merge: true });
@@ -516,7 +528,9 @@ function LedgerApp() {
   }, [manualThemeOverride, setIsDarkMode]);
 
   const handleAuthSubmit = async (e) => {
-    e.preventDefault(); setIsAuthLoading(true); setAuthError("");
+    e.preventDefault(); 
+    if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; }
+    setIsAuthLoading(true); setAuthError("");
     try {
       if (isLoginMode) { await signInWithEmailAndPassword(auth, email, password); }
       else {
@@ -532,12 +546,14 @@ function LedgerApp() {
   };
 
   const handleGoogleLogin = async () => {
+    if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; }
     setIsAuthLoading(true); setAuthError("");
     try { await signInWithPopup(auth, new GoogleAuthProvider()); }
     catch (error) { setAuthError("Google Sign-In failed."); setIsAuthLoading(false); }
   };
 
   const handleLogout = () => {
+    if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; }
     openGlobalAction(
       "Log Out",
       "Are you sure you want to log out of your session?",
@@ -628,7 +644,15 @@ function LedgerApp() {
 
     return (
       <header className={`px-6 pt-12 pb-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden mb-8 z-30 rounded-b-[3rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
-        <div className="flex justify-between items-center mb-6 relative z-30 h-10">
+        
+        {/* === INJECTED OFFLINE BANNER === */}
+        {!isOnline && (
+          <div className="absolute top-0 left-0 w-full bg-[#F97316] text-white text-[10px] font-black uppercase tracking-widest py-1.5 flex items-center justify-center gap-1.5 z-50 shadow-md animate-slide-up">
+            <AlertCircle size={12} strokeWidth={3} /> Connection Lost: Read-Only Mode
+          </div>
+        )}
+
+        <div className={`flex justify-between items-center mb-6 relative z-30 h-10 ${!isOnline ? "mt-4" : ""}`}>
           <div className="flex items-center gap-2">
             <button onClick={() => { setIsDarkMode(!isDarkMode); setManualThemeOverride(true); triggerHaptic(20); }} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
               {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
@@ -704,7 +728,8 @@ function LedgerApp() {
             ))}
           </div>
           <div className="mt-auto pt-4 shrink-0">
-            <button onClick={() => setIsQabOpen(true)} className="w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-white font-black uppercase tracking-widest text-xs transition-transform active:scale-95 hover:-translate-y-1" style={{ backgroundColor: signatureColor }}><Plus size={18} /> Quick Add</button>
+            {/* INJECTED OFFLINE WRAPPER */}
+            <button onClick={handleOpenQab} className="w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-white font-black uppercase tracking-widest text-xs transition-transform active:scale-95 hover:-translate-y-1" style={{ backgroundColor: signatureColor }}><Plus size={18} /> Quick Add</button>
           </div>
         </div>
 
@@ -724,7 +749,7 @@ function LedgerApp() {
                 changeTab={changeTab} 
                 signatureColor={signatureColor}
                 formatPaydayDateStr={formatPaydayDateStr}
-                setIsPaydaySetupOpen={setIsPaydaySetupOpen}
+                setIsPaydaySetupOpen={handleOpenPaydaySetup} // INJECTED
                 collapsedPaydays={collapsedPaydays}
                 toggleCollapse={toggleCollapse}
                 handleBillClick={handleBillClick}
@@ -733,7 +758,7 @@ function LedgerApp() {
                 setHasConsumedAMBriefing={setHasConsumedAMBriefing}
                 hasConsumedPMBriefing={hasConsumedPMBriefing}
                 setHasConsumedPMBriefing={setHasConsumedPMBriefing}
-                isEntrepreneurMode={isEntrepreneurMode} // <-- INJECTED FOR ENTREPRENEUR MODE
+                isEntrepreneurMode={isEntrepreneurMode} 
               />
             )}
             
@@ -743,9 +768,9 @@ function LedgerApp() {
                 accounts={accounts} 
                 transactions={transactions} 
                 isDarkMode={isDarkMode} 
-                setIsTransferOpen={setIsTransferOpen} 
-                setIsAddAccountOpen={setIsAddAccountOpen} 
-                setIsAddGoalOpen={setIsAddGoalOpen} 
+                setIsTransferOpen={handleOpenTransfer} // INJECTED
+                setIsAddAccountOpen={handleOpenAddAccount} // INJECTED
+                setIsAddGoalOpen={handleOpenAddGoal} // INJECTED
                 setSelectedAccount={setSelectedAccount} 
                 setEditAccountBalance={() => {}} 
                 renderHeroShell={renderHeroShell} 
@@ -771,7 +796,7 @@ function LedgerApp() {
                 collapsedPaydays={collapsedPaydays}
                 toggleCollapse={toggleCollapse}
                 liveHeroBalance={currentLiveBalance}
-                isEntrepreneurMode={isEntrepreneurMode} // <-- INJECTED FOR ENTREPRENEUR MODE
+                isEntrepreneurMode={isEntrepreneurMode} 
               />
             )}
 
@@ -812,7 +837,8 @@ function LedgerApp() {
           </div>
 
           <div className={`fixed lg:hidden ${isDemoMode ? "bottom-[200px]" : "bottom-28"} right-6 z-50`}>
-            <button onClick={() => { triggerHaptic(20); setIsQabOpen(true); }} className={`w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg border-4 ${isDarkMode ? "border-[#0F172A]" : "border-white"}`} style={{ backgroundColor: signatureColor }}><Plus size={28} /></button>
+            {/* INJECTED OFFLINE WRAPPER */}
+            <button onClick={() => { triggerHaptic(20); handleOpenQab(); }} className={`w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg border-4 ${isDarkMode ? "border-[#0F172A]" : "border-white"}`} style={{ backgroundColor: signatureColor }}><Plus size={28} /></button>
           </div>
 
           {/* RESPONSIVE MOBILE NAVIGATION DOCK */}
@@ -936,8 +962,8 @@ function LedgerApp() {
             currentCurrency={currentCurrency}
             setCurrentCurrency={setCurrentCurrency}
             handleUpdateDisplayName={handleUpdateDisplayName}
-            isEntrepreneurMode={isEntrepreneurMode} // <-- INJECTED FOR ENTREPRENEUR MODE
-            setIsEntrepreneurMode={setIsEntrepreneurMode} // <-- INJECTED FOR ENTREPRENEUR MODE
+            isEntrepreneurMode={isEntrepreneurMode} 
+            setIsEntrepreneurMode={setIsEntrepreneurMode} 
           />
         )}
 
@@ -969,12 +995,10 @@ function LedgerApp() {
             {[...Array(132)].map((_, i) => {
               const colors = [signatureColor, '#10B981', '#F97316'];
               const isStrip = Math.random() > 0.6;
-              
-              // Confetti 2.0 Physics Constraints: Pneumatic Launch + Gravity Drift
-              const peakX = (Math.random() - 0.5) * 1000; // Wide radial spread
-              const peakY = -(Math.random() * 400 + 200); // Powerful upward burst
-              const endX = peakX + (Math.random() - 0.5) * 500; // Drift horizontally as it falls
-              const endY = 800 + Math.random() * 300; // Fall deep past the bottom viewport bounds
+              const peakX = (Math.random() - 0.5) * 1000;
+              const peakY = -(Math.random() * 400 + 200); 
+              const endX = peakX + (Math.random() - 0.5) * 500; 
+              const endY = 800 + Math.random() * 300; 
 
               return (
                 <div 
@@ -982,12 +1006,12 @@ function LedgerApp() {
                   className="absolute animate-[confettiFall_ease-out_forwards]" 
                   style={{ 
                     backgroundColor: colors[Math.floor(Math.random() * colors.length)], 
-                    left: '50%', top: '60%', // Launch from slightly below center for best visual arc
+                    left: '50%', top: '60%',
                     width: isStrip ? '8px' : '12px', height: isStrip ? '24px' : '12px',
                     borderRadius: Math.random() > 0.5 && !isStrip ? '50%' : '2px',
                     transformStyle: 'preserve-3d',
-                    animationDuration: `${Math.random() * 1.5 + 3.7}s`, // Sustain the float for full 4-5 seconds
-                    animationDelay: `${Math.random() * 0.3}s`, // Micro-stagger for organic physics
+                    animationDuration: `${Math.random() * 1.5 + 3.7}s`,
+                    animationDelay: `${Math.random() * 0.3}s`,
                     animationTimingFunction: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)', 
                     '--peak-x': `${peakX}px`, 
                     '--peak-y': `${peakY}px`, 
@@ -1004,21 +1028,10 @@ function LedgerApp() {
             })}
             <style>{`
               @keyframes confettiFall { 
-                0% { 
-                  transform: translate3d(-50%, -50%, 0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(0); 
-                  opacity: 1; 
-                } 
-                15% { 
-                  transform: translate3d(calc(-50% + var(--peak-x)), calc(-50% + var(--peak-y)), var(--tz)) rotateX(calc(var(--rx) * 0.15)) rotateY(calc(var(--ry) * 0.15)) rotateZ(calc(var(--rz) * 0.15)) scale(var(--scale)); 
-                  opacity: 1; 
-                } 
-                80% {
-                  opacity: 1; 
-                }
-                100% { 
-                  transform: translate3d(calc(-50% + var(--end-x)), calc(-50% + var(--end-y)), var(--tz)) rotateX(var(--rx)) rotateY(var(--ry)) rotateZ(var(--rz)) scale(var(--scale)); 
-                  opacity: 0; 
-                } 
+                0% { transform: translate3d(-50%, -50%, 0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(0); opacity: 1; } 
+                15% { transform: translate3d(calc(-50% + var(--peak-x)), calc(-50% + var(--peak-y)), var(--tz)) rotateX(calc(var(--rx) * 0.15)) rotateY(calc(var(--ry) * 0.15)) rotateZ(calc(var(--rz) * 0.15)) scale(var(--scale)); opacity: 1; } 
+                80% { opacity: 1; }
+                100% { transform: translate3d(calc(-50% + var(--end-x)), calc(-50% + var(--end-y)), var(--tz)) rotateX(var(--rx)) rotateY(var(--ry)) rotateZ(var(--rz)) scale(var(--scale)); opacity: 0; } 
               }
             `}</style>
           </div>
@@ -1028,7 +1041,7 @@ function LedgerApp() {
   );
 }
 
-// 3. THE GLOBAL WRAPPER: Injects the Context Provider over the App
+// 3. THE GLOBAL WRAPPER
 export default function AppWrapper() {
   return (
     <LedgerProvider>

@@ -106,9 +106,9 @@ export default function Settings({
     isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
   }`;
 
-  // REUSABLE SIGNATURE LINE (Now with perfectly balanced my-8 spacing)
+  // REUSABLE SIGNATURE LINE (Massive space above, snug fit below)
   const SignatureLine = () => (
-    <div className={`border-t w-full my-8 ${isDarkMode ? "border-white" : "border-slate-300"}`}></div>
+    <div className={`border-t w-full mt-10 mb-4 ${isDarkMode ? "border-white" : "border-slate-300"}`}></div>
   );
 
   return (
@@ -130,7 +130,6 @@ export default function Settings({
           </button>
         </div>
 
-        {/* Removed space-y-2 to allow manual module spacing to breathe properly */}
         <div className={`p-6 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${
           isDemoMode ? "pb-[140px] lg:pb-6" : "pb-12 lg:pb-6"
         }`}>

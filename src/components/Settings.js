@@ -73,7 +73,7 @@ export default function Settings({
         className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left transition-all active:scale-[0.99] gap-3 ${
           isDarkMode 
             ? "bg-slate-800/40 border-slate-700/50 hover:bg-slate-800/80" 
-            : "bg-white border-slate-100 hover:bg-slate-50/80 shadow-sm"
+            : "bg-white border-slate-200 hover:bg-slate-50/80 shadow-[0_4px_20px_rgba(0,0,0,0.04)]"
         }`}
       >
         <div className="flex items-center gap-3 w-full min-w-0">
@@ -166,7 +166,7 @@ export default function Settings({
             <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 flex items-center gap-1.5">
               <Palette size={12} strokeWidth={2.5} /> Custom Settings
             </h4>
-            <div className={`p-4 rounded-[2rem] border space-y-3 ${isDarkMode ? "bg-slate-800/20 border-slate-800" : "bg-white border-slate-100 shadow-sm"}`}>
+            <div className={`p-4 rounded-[2rem] border space-y-3 ${isDarkMode ? "bg-slate-800/20 border-slate-800" : "bg-white border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.04)]"}`}>
               
               {/* Preferred Display Name */}
               <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
@@ -196,7 +196,7 @@ export default function Settings({
 
               {/* Select Theme Color (Premium Palette) */}
               <div className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left gap-3 ${
-                isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-100 shadow-sm"
+                isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.04)]"
               }`}>
                 <div className="flex items-center gap-3 w-full min-w-0">
                   <div className={`p-2.5 rounded-xl shrink-0 ${isDarkMode ? "bg-slate-900/60" : "bg-slate-50"}`} style={{ color: signatureColor }}>
@@ -240,7 +240,7 @@ export default function Settings({
 
               {/* Income Structure */}
               <div className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left gap-3 ${
-                isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-100 shadow-sm"
+                isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.04)]"
               }`}>
                 <div className="flex items-center gap-3 w-full min-w-0">
                   <div className={`p-2.5 rounded-xl shrink-0 ${isDarkMode ? "bg-slate-900/60" : "bg-emerald-50"} text-emerald-500`}>
@@ -304,7 +304,7 @@ export default function Settings({
               className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left transition-all active:scale-[0.99] gap-3 ${
                 isDarkMode 
                   ? "bg-slate-800/20 border-slate-800 hover:bg-slate-800/50" 
-                  : "bg-white border-slate-100 hover:bg-slate-50/80 shadow-sm"
+                  : "bg-white border-slate-200 hover:bg-slate-50/80 shadow-[0_4px_20px_rgba(0,0,0,0.04)]"
               }`}
             >
               <div className="flex items-center gap-3 w-full min-w-0">
@@ -354,7 +354,7 @@ export default function Settings({
           {/* 5. MASTER LEDGER RESET (NUKE ZONE)        */}
           {/* ========================================= */}
           <div className={`p-5 rounded-[2rem] border ${
-            isDarkMode ? "bg-red-950/10 border-red-900/30" : "bg-red-50/40 border-red-100"
+            isDarkMode ? "bg-red-950/10 border-red-900/30" : "bg-red-50/40 border-red-200 shadow-[0_4px_20px_rgba(0,0,0,0.04)]"
           }`}>
             <h4 className="text-[10px] font-black uppercase tracking-widest text-red-500 mb-3 flex items-center gap-2">
               <AlertCircle size={14} strokeWidth={2.5} /> Master Ledger Reset

@@ -7,9 +7,9 @@ import {
 export default function Settings({
   userName,
   isDarkMode,
-  setIsDarkMode, // Retained in props to prevent breaking App.js passing it
+  setIsDarkMode, // Retained in props to prevent breaking App.js
   setIsSettingsOpen,
-  handleRolloverMonth,
+  handleRolloverMonth, // Retained in props to prevent breaking App.js
   handleFactoryReset,
   resetConfirm,
   setResetConfirm,
@@ -55,7 +55,7 @@ export default function Settings({
     { code: "JPY (¥)", symbol: "¥" }
   ];
 
-  // FIX #3: OVERHAULED PREMIUM PALETTE (Purple & Yellow added)
+  // OVERHAULED PREMIUM PALETTE
   const premiumPalette = [
     { name: "Classic Ledger Blue", hex: "#1877F2" },
     { name: "Neon Yellow", hex: "#FBBF24" },
@@ -76,7 +76,6 @@ export default function Settings({
             : "bg-white border-slate-100 hover:bg-slate-50/80 shadow-sm"
         }`}
       >
-        {/* Layer 1: Comprehensive Label Block spanning complete horizontal track */}
         <div className="flex items-center gap-3 w-full min-w-0">
           <div className={`p-2.5 rounded-xl shrink-0 ${isDarkMode ? "bg-slate-900/60" : "bg-slate-50"} ${colorClass}`}>
             <Icon size={16} strokeWidth={2.5} />
@@ -86,7 +85,6 @@ export default function Settings({
           </span>
         </div>
 
-        {/* Layer 2: Dedicated Interactive Action Utility Row Panel */}
         <div className={`flex items-center justify-between w-full pt-2 border-t ${
           isDarkMode ? "border-slate-800/60" : "border-slate-100"
         }`}>
@@ -108,17 +106,19 @@ export default function Settings({
     isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
   }`;
 
+  // REUSABLE SIGNATURE LINE
+  const SignatureLine = () => (
+    <div className={`border-t w-full my-5 ${isDarkMode ? "border-white" : "border-slate-300"}`}></div>
+  );
+
   return (
     <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
-      {/* Dimmed Overlay Panel backdrop */}
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsSettingsOpen(false)}></div>
       
-      {/* Master Base Component Layout Shell */}
       <div className={`w-full lg:max-w-md h-[90vh] rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-[0_15px_40px_rgba(0,0,0,0.3)] relative z-[130] flex flex-col overflow-hidden border ${
         isDarkMode ? "bg-[#0F172A] border-slate-800" : "bg-[#F8FAFC] border-slate-100"
       }`}>
         
-        {/* Pinned Title Bar Block */}
         <div className={`p-5 border-b flex justify-between items-center shrink-0 relative z-30 ${
           isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-200/60 shadow-sm"
         }`}>
@@ -130,12 +130,13 @@ export default function Settings({
           </button>
         </div>
 
-        {/* Dynamic Nested Scrolling Content Panel Base Segment */}
-        <div className={`p-6 overflow-y-auto space-y-6 flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${
+        <div className={`p-6 overflow-y-auto space-y-2 flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${
           isDemoMode ? "pb-[140px] lg:pb-6" : "pb-12 lg:pb-6"
         }`}>
           
-          {/* POSITION #1: ACCOUNT STATUS - Hardcoded Dark Gradient Canvas (Stays Dark in Light Mode) */}
+          {/* ========================================= */}
+          {/* 1. ACCOUNT STATUS                         */}
+          {/* ========================================= */}
           <div className="p-5 rounded-[2rem] border relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-black border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.5)] transition-all duration-300">
             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-2xl rounded-full pointer-events-none"></div>
             <div className="flex items-center justify-between">
@@ -156,49 +157,18 @@ export default function Settings({
             </div>
           </div>
 
-          <div className={`border-t w-full my-2 ${isDarkMode ? "border-slate-800" : "border-slate-300"}`}></div>
+          <SignatureLine />
 
-          {/* POSITION #2: SHARE MY ACCOUNT */}
-          <button
-            onClick={() => setIsCoOpOpen(true)}
-            className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left transition-all active:scale-[0.99] gap-3 ${
-              isDarkMode 
-                ? "bg-slate-800/40 border-slate-700/50 hover:bg-slate-800/80" 
-                : "bg-white border-slate-100 hover:bg-slate-50/80 shadow-sm"
-            }`}
-          >
-            <div className="flex items-center gap-3 w-full min-w-0">
-              <div className={`p-2.5 rounded-xl shrink-0 ${isDarkMode ? "bg-slate-900/60" : "bg-purple-50"} text-purple-400`}>
-                <Users size={16} strokeWidth={2.5} />
-              </div>
-              <span className={`text-xs font-black uppercase tracking-wider truncate flex-1 ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
-                SHARE MY ACCOUNT
-              </span>
-            </div>
-
-            <div className={`flex items-center justify-between w-full pt-2 border-t ${isDarkMode ? "border-slate-800/60" : "border-slate-100"}`}>
-              <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border ${
-                isDarkMode ? "bg-slate-900/40 border-slate-700/80 text-slate-400" : "bg-slate-100/60 border-slate-200/60 text-slate-500"
-              }`}>
-                {coOpStep === 3 ? "2 Users Linked" : "Inactive Setup"}
-              </span>
-              <div className="flex items-center gap-1 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
-                <span>Configure</span>
-                <ChevronRight size={12} strokeWidth={2.5} />
-              </div>
-            </div>
-          </button>
-
-          <div className={`border-t w-full my-2 ${isDarkMode ? "border-slate-800" : "border-slate-300"}`}></div>
-
-          {/* POSITION #3: CUSTOM SETTINGS MODULE GROUP */}
+          {/* ========================================= */}
+          {/* 2. CUSTOM SETTINGS                        */}
+          {/* ========================================= */}
           <div className="space-y-3">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 flex items-center gap-1.5">
               <Palette size={12} strokeWidth={2.5} /> Custom Settings
             </h4>
             <div className={`p-4 rounded-[2rem] border space-y-3 ${isDarkMode ? "bg-slate-800/20 border-slate-800" : "bg-white border-slate-100 shadow-sm"}`}>
               
-              {/* [NODE 3A]: User Profile Naming Vector Field */}
+              {/* Preferred Display Name */}
               <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
                 <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-2">PREFERRED DISPLAY NAME</label>
                 <div className="flex flex-col gap-2.5">
@@ -224,7 +194,7 @@ export default function Settings({
                 </div>
               </div>
 
-              {/* [NODE 3B]: Palette Swapper Grid Interface */}
+              {/* Select Theme Color (Premium Palette) */}
               <div className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left gap-3 ${
                 isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-100 shadow-sm"
               }`}>
@@ -259,7 +229,7 @@ export default function Settings({
                 </div>
               </div>
 
-              {/* [NODE 3C]: Currency Link Row */}
+              {/* Select Currency */}
               <SettingRow 
                 icon={Globe} 
                 title="SELECT CURRENCY" 
@@ -268,7 +238,7 @@ export default function Settings({
                 onClick={() => setIsCurrencyOpen(true)}
               />
 
-              {/* [NODE 3D]: Income Structure Toggle */}
+              {/* Income Structure */}
               <div className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left gap-3 ${
                 isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-100 shadow-sm"
               }`}>
@@ -320,49 +290,79 @@ export default function Settings({
             </div>
           </div>
 
-          {/* POSITION #4: SYSTEM SETTINGS MODULE GROUP */}
+          <SignatureLine />
+
+          {/* ========================================= */}
+          {/* 3. ACCOUNT SHARING                        */}
+          {/* ========================================= */}
           <div className="space-y-3">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 flex items-center gap-1.5">
-              <RefreshCw size={12} strokeWidth={2.5} /> SYSTEM SETTINGS
+              <Users size={12} strokeWidth={2.5} /> Account Sharing
             </h4>
-            <div className={`p-4 rounded-[2rem] border space-y-3 ${isDarkMode ? "bg-slate-800/20 border-slate-800" : "bg-white border-slate-100 shadow-sm"}`}>
-              
-              <button
-                onClick={handleRolloverMonth}
-                className={`w-full flex items-center gap-3 p-4 rounded-[1.5rem] border text-left transition-all active:scale-[0.99] ${
-                  isDarkMode 
-                    ? "bg-slate-800/40 border-slate-700/50 hover:bg-slate-800/80 text-slate-200" 
-                    : "bg-white border-slate-100 hover:bg-slate-50/80 text-slate-800 shadow-sm"
-                }`}
-              >
-                <div className={`p-2.5 rounded-xl shrink-0 ${isDarkMode ? "bg-slate-900/60" : "bg-slate-50"} text-emerald-400`}>
-                  <RefreshCw size={16} strokeWidth={2.5} />
+            <button
+              onClick={() => setIsCoOpOpen(true)}
+              className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left transition-all active:scale-[0.99] gap-3 ${
+                isDarkMode 
+                  ? "bg-slate-800/20 border-slate-800 hover:bg-slate-800/50" 
+                  : "bg-white border-slate-100 hover:bg-slate-50/80 shadow-sm"
+              }`}
+            >
+              <div className="flex items-center gap-3 w-full min-w-0">
+                <div className={`p-2.5 rounded-xl shrink-0 ${isDarkMode ? "bg-slate-900/60" : "bg-purple-50"} text-purple-400`}>
+                  <Users size={16} strokeWidth={2.5} />
                 </div>
-                <span className="text-xs font-black uppercase tracking-wider truncate flex-1">
-                  START NEW MONTH
+                <span className={`text-xs font-black uppercase tracking-wider truncate flex-1 ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
+                  SHARE MY ACCOUNT
                 </span>
-              </button>
-            </div>
+              </div>
+
+              <div className={`flex items-center justify-between w-full pt-2 border-t ${isDarkMode ? "border-slate-800/60" : "border-slate-100"}`}>
+                <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border ${
+                  isDarkMode ? "bg-slate-900/40 border-slate-700/80 text-slate-400" : "bg-slate-100/60 border-slate-200/60 text-slate-500"
+                }`}>
+                  {coOpStep === 3 ? "2 Users Linked" : "Inactive Setup"}
+                </span>
+                <div className="flex items-center gap-1 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+                  <span>Configure</span>
+                  <ChevronRight size={12} strokeWidth={2.5} />
+                </div>
+              </div>
+            </button>
           </div>
 
-          {/* POSITION #5: STANDALONE CONTACT SUPPORT */}
-          <SettingRow 
-            icon={HelpCircle} 
-            title="Contact Support" 
-            statusText="Support Live" 
-            colorClass="text-sky-400"
-            onClick={() => openGlobalAction("Support Vector", "Opening secure mail transfer protocols to support documentation channels...", "Close", false, () => {}, true)}
-          />
+          <SignatureLine />
 
-          {/* POSITION #6: MASTER LEDGER RESET (NUKE ZONE) */}
+          {/* ========================================= */}
+          {/* 4. HELP                                   */}
+          {/* ========================================= */}
+          <div className="space-y-3">
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 flex items-center gap-1.5">
+              <HelpCircle size={12} strokeWidth={2.5} /> Help
+            </h4>
+            <SettingRow 
+              icon={HelpCircle} 
+              title="Contact Support" 
+              statusText="Support Live" 
+              colorClass="text-sky-400"
+              onClick={() => openGlobalAction("Support Vector", "Opening secure mail transfer protocols to support documentation channels...", "Close", false, () => {}, true)}
+            />
+          </div>
+
+          <SignatureLine />
+
+          {/* ========================================= */}
+          {/* 5. MASTER LEDGER RESET (NUKE ZONE)        */}
+          {/* ========================================= */}
           <div className={`p-5 rounded-[2rem] border ${
             isDarkMode ? "bg-red-950/10 border-red-900/30" : "bg-red-50/40 border-red-100"
           }`}>
             <h4 className="text-[10px] font-black uppercase tracking-widest text-red-500 mb-3 flex items-center gap-2">
               <AlertCircle size={14} strokeWidth={2.5} /> Master Ledger Reset
             </h4>
-            <p className={`text-[11px] font-medium leading-relaxed mb-4 ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-              Performing a Factory Reset wipes your data clean. This action cannot be reversed. Type <strong className="text-red-500 font-bold">RESET</strong> in all caps below to permanently wipe your system.
+            <p className={`text-[11px] font-medium leading-relaxed mb-4 text-center ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
+              Performing a Factory Reset wipes your data clean. This action cannot be reversed.
+              <br /><br />
+              Type <strong className="text-red-500 font-bold">RESET</strong> in all caps below to permanently wipe your system.
             </p>
             <input
               type="text"
@@ -395,6 +395,7 @@ export default function Settings({
               <Trash2 size={14} strokeWidth={2.5} /> RESET MY LEDGER
             </button>
           </div>
+          
         </div>
       </div>
 

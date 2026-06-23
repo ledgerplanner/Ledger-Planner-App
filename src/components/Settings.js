@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { 
   X, User, CreditCard, RefreshCw, AlertCircle, Trash2, LogOut, 
-  ChevronRight, Sparkles, Globe, Palette, Users, Shield, Check, HelpCircle, Briefcase
+  ChevronRight, Sparkles, Globe, Palette, Users, Shield, Check, HelpCircle, Briefcase,
+  Download, FileText
 } from "lucide-react";
 
 export default function Settings({
@@ -21,7 +22,8 @@ export default function Settings({
   setCurrentCurrency,
   handleUpdateDisplayName, 
   isEntrepreneurMode = false,
-  setIsEntrepreneurMode
+  setIsEntrepreneurMode,
+  handleExportData // <-- INJECTED FOR YEAR-END EXPORTER
 }) {
   const [editName, setEditName] = useState(userName || "");
 
@@ -65,6 +67,9 @@ export default function Settings({
     { name: "Rose Quartz", hex: "#EC4899" }
   ];
 
+  // Dynamic Previous Year Calculation
+  const previousYear = new Date().getFullYear() - 1;
+
   // HIGH-PRECISION RE-ENGINEERED 2-LAYER STACKED ROW CARD COMPONENT
   const SettingRow = ({ icon: Icon, title, statusText, colorClass = "", onClick }) => {
     return (
@@ -106,7 +111,7 @@ export default function Settings({
     isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
   }`;
 
-  // REUSABLE SIGNATURE LINE (Massive space above, snug fit below)
+  // REUSABLE SIGNATURE LINE
   const SignatureLine = () => (
     <div className={`border-t w-full mt-10 mb-4 ${isDarkMode ? "border-white" : "border-slate-300"}`}></div>
   );
@@ -333,7 +338,27 @@ export default function Settings({
           <SignatureLine />
 
           {/* ========================================= */}
-          {/* 4. HELP                                   */}
+          {/* 4. DATA PORTABILITY (INJECTED YEAR-END EXPORT) */}
+          {/* ========================================= */}
+          <div className="space-y-3">
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 flex items-center gap-1.5">
+              <Download size={12} strokeWidth={2.5} /> Data Portability
+            </h4>
+            <SettingRow 
+              icon={FileText} 
+              title={`EXPORT ${previousYear} MASTER LEDGER`} 
+              statusText="CSV Format" 
+              colorClass="text-[#10B981]"
+              onClick={() => {
+                if (handleExportData) handleExportData(previousYear);
+              }}
+            />
+          </div>
+
+          <SignatureLine />
+
+          {/* ========================================= */}
+          {/* 5. HELP                                   */}
           {/* ========================================= */}
           <div className="space-y-3">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 flex items-center gap-1.5">
@@ -351,7 +376,7 @@ export default function Settings({
           <SignatureLine />
 
           {/* ========================================= */}
-          {/* 5. MASTER LEDGER RESET (NUKE ZONE)        */}
+          {/* 6. MASTER LEDGER RESET (NUKE ZONE)        */}
           {/* ========================================= */}
           <div className={`p-5 rounded-[2rem] border ${
             isDarkMode ? "bg-red-950/10 border-red-900/30" : "bg-red-50/40 border-red-200 shadow-[0_4px_20px_rgba(0,0,0,0.04)]"

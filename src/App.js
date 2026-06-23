@@ -498,6 +498,61 @@ function LedgerApp() {
     }
   };
 
+  // === INJECTED YEAR-END EXPORTER ENGINE ===
+  const handleExportData = (targetYear) => {
+    if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; }
+    
+    triggerHaptic(50);
+    try {
+      const yearStr = targetYear.toString();
+      let csvContent = "Type,Name,Amount,Category,Date,Status/Account\n";
+      
+      // 1. Process Bills
+      bills.forEach(b => {
+        if (b.rawDate && b.rawDate.startsWith(yearStr)) {
+          const amount = b.amount || 0;
+          const status = b.isPaid ? "Paid" : "Pending";
+          const safeName = (b.name || "Unnamed").replace(/,/g, " "); 
+          const safeCategory = (b.category || "N/A").replace(/,/g, " ");
+          csvContent += `Bill,${safeName},${amount},${safeCategory},${b.rawDate},${status}\n`;
+        }
+      });
+      
+      // 2. Process Transactions
+      transactions.forEach(t => {
+        let tYear = new Date().getFullYear();
+        if (t.createdAt && t.createdAt.toDate) {
+          tYear = t.createdAt.toDate().getFullYear();
+        }
+        
+        if (tYear === targetYear || isDemoMode) {
+           const amount = t.amount || 0;
+           const accName = accounts.find(a => a.id === t.accountId)?.name || "Unknown Account";
+           const safeName = (t.name || "Unnamed").replace(/,/g, " ");
+           const safeCategory = (t.category || "N/A").replace(/,/g, " ");
+           const safeDate = (t.date || "N/A").replace(/,/g, " ");
+           const safeAcc = accName.replace(/,/g, " ");
+           csvContent += `Transaction (${t.type}),${safeName},${amount},${safeCategory},${safeDate},${safeAcc}\n`;
+        }
+      });
+
+      // 3. Generate Blob Payload & Download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `LP_Financial_Vault_${targetYear}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      triggerVictory();
+      openGlobalAction("Export Complete", `Your ${targetYear} historical master ledger has been successfully compiled and downloaded.`, "Close", false, () => {}, true);
+    } catch (error) {
+      console.error("Export Engine failed:", error);
+    }
+  };
+
   // === LIFECYCLE & AUTH HOOKS ===
   useEffect(() => {
     setIsMounted(true);
@@ -963,7 +1018,8 @@ function LedgerApp() {
             setCurrentCurrency={setCurrentCurrency}
             handleUpdateDisplayName={handleUpdateDisplayName}
             isEntrepreneurMode={isEntrepreneurMode} 
-            setIsEntrepreneurMode={setIsEntrepreneurMode} 
+            setIsEntrepreneurMode={setIsEntrepreneurMode}
+            handleExportData={handleExportData} // <-- INJECTED FOR YEAR-END EXPORTER
           />
         )}
 

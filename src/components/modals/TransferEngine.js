@@ -183,7 +183,7 @@ export default function TransferEngine({
               </div>
 
               <div className="text-center relative flex justify-center items-center mb-4 min-h-[70px] border border-dashed rounded-2xl dark:border-slate-800 border-slate-200/80 px-4 bg-slate-50/20 dark:bg-slate-900/10">
-                <span className="text-5xl font-black tracking-tighter drop-shadow-sm" style={{ color: signatureColor }}>${transferAmount}</span>
+                <span className="text-5xl font-black tracking-tighter drop-shadow-sm text-[#10B981]">${transferAmount}</span>
                 <button onClick={() => { triggerHaptic(15); setTransferAmount(transferAmount.slice(0, -1) || "0"); }} className="absolute right-4 p-3 rounded-full text-2xl active:scale-90 transition-all text-slate-400 hover:text-red-500"> ⌫ </button>
               </div>
 
@@ -195,7 +195,13 @@ export default function TransferEngine({
                 ))}
               </div>
 
-              <button onClick={executeTransfer} disabled={parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo} className="w-full mt-4 h-14 shrink-0 rounded-2xl font-black uppercase tracking-widest text-xs text-white transition-all active:scale-95 flex items-center justify-center gap-2" style={{ backgroundColor: (parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo) ? undefined : signatureColor }}>Execute Transfer <ArrowRightLeft size={16} /></button>
+              <button 
+                onClick={executeTransfer} 
+                disabled={parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo} 
+                className={`w-full mt-4 h-14 shrink-0 rounded-2xl font-black uppercase tracking-widest text-xs text-white transition-all active:scale-95 flex items-center justify-center gap-2 ${parseFloat(transferAmount) <= 0 || !transferFrom || !transferTo ? "bg-slate-300 dark:bg-slate-700 opacity-50 cursor-not-allowed shadow-none" : "bg-[#10B981] shadow-[0_8px_20px_rgba(16,185,129,0.35)]"}`}
+              >
+                Execute Transfer <ArrowRightLeft size={16} />
+              </button>
             </div>
           </div>
         </div>

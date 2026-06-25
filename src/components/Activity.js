@@ -259,7 +259,7 @@ export default function Activity({
 
   // UI OVERRIDE: Mute the text color strictly for internal Transfers and Cash Outs. Outside income is shown in bright green.
   const getTxCategoryColor = (tx) => {
-    const isInternalTransfer = tx.category === "Transfers (Venmo/Zelle)" && !t.isDirectGoalEntry;
+    const isInternalTransfer = tx.category === "Transfers (Venmo/Zelle)" && !tx.isDirectGoalEntry;
     if (tx.isCashOut || isInternalTransfer) return isDarkMode ? "text-slate-400" : "text-slate-500";
     if (tx.isDirectGoalEntry || tx.type === "Income") return "text-[#10B981]";
     if (tx.isBillPayment || tx.category === "Bill Payment") return "text-[#1877F2]";
@@ -316,15 +316,7 @@ export default function Activity({
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
          
-      <div className={`relative z-10 Activity-Master-Header transform transition-all duration-700 delay-150 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-        <style>{`
-          .Activity-Master-Header h1, 
-          .Activity-Master-Header h2,
-          .Activity-Master-Header h3 { 
-            color: ${isDarkMode ? "#FFFFFF" : "#000000"} !important; 
-            font-weight: 900 !important;
-          }
-        `}</style>
+      <div className={`relative z-10 transform transition-all duration-700 delay-150 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
         {renderHeroShell(`${userName}'s Activities`, graphicContent)}
       </div>
 

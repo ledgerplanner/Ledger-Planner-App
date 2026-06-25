@@ -719,6 +719,14 @@ function LedgerApp() {
               )}
             </button>
           </div>
+
+          {/* --- SURGICALLY INJECTED BRAND IDENTITY LOGO START --- */}
+          <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center z-20 origin-top -top-5 lg:hidden">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-[#1877F2]/20 blur-xl rounded-full -z-10 pointer-events-none" style={{ backgroundColor: `${signatureColor}33` }}></div>
+            <img src="/login-logo.png" alt="Ledger Planner" className={`relative z-10 w-16 h-16 rounded-full shadow-[0_12px_24px_rgba(24,119,242,0.3)] object-cover border-[3px] transition-colors ${isDarkMode ? "border-slate-800" : "border-white"}`} style={{ shadowColor: signatureColor }} />
+          </div>
+          {/* --- SURGICALLY INJECTED BRAND IDENTITY LOGO END --- */}
+
           <div className="flex items-center gap-2 relative z-30">
             <button onClick={() => setIsSettingsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-100 text-slate-400"}`} style={{ color: isSettingsOpen ? signatureColor : undefined }}>
               <SettingsIcon size={18} />

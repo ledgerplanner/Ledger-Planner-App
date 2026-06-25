@@ -13,9 +13,24 @@ export default function Activity({
   renderHeroShell,
   signatureColor 
 }) {
-  const [collapsedMonths, setCollapsedMonths] = useState({});
-  const [isTodayCollapsed, setIsTodayCollapsed] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+
+  // === UPGRADED SYNCHRONOUS STATE ENGINE (ZERO-FLASH GUARANTEE) ===
+  const [userToggledMonths, setUserToggledMonths] = useState({});
+  const [userToggledToday, setUserToggledToday] = useState(null);
+  const [prevSearch, setPrevSearch] = useState(activitySearch);
+  const [prevFilter, setPrevFilter] = useState(activityFilter);
+
+  // This block catches tab-switches and filter changes instantly before the screen draws
+  if (activitySearch !== prevSearch || activityFilter !== prevFilter) {
+    setPrevSearch(activitySearch);
+    setPrevFilter(activityFilter);
+    setUserToggledMonths({});
+    setUserToggledToday(null);
+  }
+
+  const isSearching = activitySearch.trim() !== "" || activityFilter !== "All";
+  const actualIsTodayCollapsed = userToggledToday !== null ? userToggledToday : false;
 
   useEffect(() => {
     setIsMounted(true);
@@ -140,26 +155,8 @@ export default function Activity({
     }).sort((a, b) => b.timestamp - a.timestamp);
   }, [filteredTransactions]);
 
-  useEffect(() => {
-    const isSearching = activitySearch.trim() !== "" || activityFilter !== "All";
-    
-    if (isSearching) {
-      setCollapsedMonths({});
-      setIsTodayCollapsed(false);
-    } else {
-      if (groupedTransactions.length > 0) {
-        const defaultCollapsed = {};
-        groupedTransactions.forEach((group, index) => {
-          if (index !== 0 || todayTransactions.length > 0) defaultCollapsed[group.label] = true;
-        });
-        setCollapsedMonths(defaultCollapsed);
-      }
-      setIsTodayCollapsed(false);
-    }
-  }, [activitySearch, activityFilter, groupedTransactions.length, todayTransactions.length]); 
-
-  const toggleMonth = (monthLabel) => {
-    setCollapsedMonths(prev => ({ ...prev, [monthLabel]: !prev[monthLabel] }));
+  const toggleMonth = (monthLabel, currentCollapseState) => {
+    setUserToggledMonths(prev => ({ ...prev, [monthLabel]: !currentCollapseState }));
   };
 
   const formatActivityDate = (dateStr, groupLabel) => {
@@ -262,7 +259,7 @@ export default function Activity({
 
   // UI OVERRIDE: Mute the text color strictly for internal Transfers and Cash Outs. Outside income is shown in bright green.
   const getTxCategoryColor = (tx) => {
-    const isInternalTransfer = tx.category === "Transfers (Venmo/Zelle)" && !tx.isDirectGoalEntry;
+    const isInternalTransfer = tx.category === "Transfers (Venmo/Zelle)" && !t.isDirectGoalEntry;
     if (tx.isCashOut || isInternalTransfer) return isDarkMode ? "text-slate-400" : "text-slate-500";
     if (tx.isDirectGoalEntry || tx.type === "Income") return "text-[#10B981]";
     if (tx.isBillPayment || tx.category === "Bill Payment") return "text-[#1877F2]";
@@ -353,7 +350,7 @@ export default function Activity({
                 </span>
               </div>
             </div>
-             
+              
             <div className="flex-1 space-y-3 max-h-40 overflow-y-auto hide-scrollbar pr-1">
               {chartSegments.map((seg, i) => (
                 <div key={i} className="flex flex-col">
@@ -429,11 +426,11 @@ export default function Activity({
               
               {todayTransactions.length > 0 && (
                 <div className="space-y-2">
-                  <div className="flex flex-col px-2 py-2 cursor-pointer transition-colors" onClick={() => setIsTodayCollapsed(!isTodayCollapsed)}>
+                  <div className="flex flex-col px-2 py-2 cursor-pointer transition-colors" onClick={() => setUserToggledToday(!actualIsTodayCollapsed)}>
                     <div className="flex justify-between items-center w-full gap-2">
                       <div className="flex items-center gap-2 shrink-0">
                         <h3 className="text-sm font-black uppercase tracking-widest" style={{ color: signatureColor || "#1877F2" }}>TODAY</h3>
-                        <div className="text-slate-500 mb-0.5">{isTodayCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}</div>
+                        <div className="text-slate-500 mb-0.5">{actualIsTodayCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}</div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-500">
@@ -447,7 +444,7 @@ export default function Activity({
                     </div>
                   </div>
 
-                  {!isTodayCollapsed && (
+                  {!actualIsTodayCollapsed && (
                     <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
                       <div className="space-y-3">
                         {todayTransactions.map((tx) => (
@@ -493,13 +490,17 @@ export default function Activity({
                 </div>
               )}
 
-              {groupedTransactions.map((group) => {
-                const isCollapsed = collapsedMonths[group.label];
+              {groupedTransactions.map((group, index) => {
+                // Determine layout sync dynamically
+                const isDefaultCollapsed = isSearching ? false : (index !== 0 || todayTransactions.length > 0);
+                const isCollapsed = userToggledMonths[group.label] !== undefined 
+                  ? userToggledMonths[group.label] 
+                  : isDefaultCollapsed;
 
                 return (
                  <div key={group.label} className="space-y-2">
                    
-                   <div className="flex flex-col px-2 py-2 cursor-pointer transition-colors" onClick={() => toggleMonth(group.label)}>
+                   <div className="flex flex-col px-2 py-2 cursor-pointer transition-colors" onClick={() => toggleMonth(group.label, isCollapsed)}>
                      <div className="flex justify-between items-center w-full gap-2">
                         <div className="flex items-center gap-2 shrink-0">
                            <h3 className={`text-sm font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{group.label}</h3>

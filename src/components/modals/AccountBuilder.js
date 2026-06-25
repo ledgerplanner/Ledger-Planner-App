@@ -256,8 +256,7 @@ export default function AccountBuilder({
               <button 
                 onClick={handleAddGoal} 
                 disabled={isAddGoalDisabled} 
-                className={`w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${isAddGoalDisabled ? "bg-slate-300 dark:bg-slate-700 opacity-50 cursor-not-allowed" : "shadow-lg active:scale-95"}`} 
-                style={{ backgroundColor: isAddGoalDisabled ? undefined : signatureColor }}
+                className={`w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${isAddGoalDisabled ? "bg-slate-300 dark:bg-slate-700 opacity-50 cursor-not-allowed shadow-none" : "bg-[#10B981] shadow-[0_8px_20px_rgba(16,185,129,0.35)] active:scale-95"}`} 
               >
                 Lock In Goal <Target size={16} />
               </button>

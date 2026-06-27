@@ -341,12 +341,12 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
               {drawerTab === "bills" && (
                 <>
                   <div className="relative">
-                    <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Due Date</label>
-                    <div className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
-                      <span className={`font-bold text-base ${!entryDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{entryDate ? formatDisplayDate(entryDate) : "mm/dd/yyyy"}</span>
-                      <CalendarIcon size={18} className="shrink-0" style={{ color: signatureColor }} />
-                      <input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                    <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest pointer-events-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Due Date</label>
+                    <div className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors pointer-events-none ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
+                      <span className={`font-bold text-base pointer-events-none ${!entryDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{entryDate ? formatDisplayDate(entryDate) : "mm/dd/yyyy"}</span>
+                      <CalendarIcon size={18} className="shrink-0 pointer-events-none" style={{ color: signatureColor }} />
                     </div>
+                    <input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" />
                   </div>
                   <div className="space-y-3 pt-1 border-t border-slate-100 dark:border-slate-800">
                     <div className="flex items-center justify-between">

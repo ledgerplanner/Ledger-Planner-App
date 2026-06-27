@@ -346,7 +346,7 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
                       <span className={`font-bold text-base pointer-events-none ${!entryDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{entryDate ? formatDisplayDate(entryDate) : "mm/dd/yyyy"}</span>
                       <CalendarIcon size={18} className="shrink-0 pointer-events-none" style={{ color: signatureColor }} />
                     </div>
-                    <input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" />
+                    <input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30" />
                   </div>
                   <div className="space-y-3 pt-1 border-t border-slate-100 dark:border-slate-800">
                     <div className="flex items-center justify-between">

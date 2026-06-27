@@ -15,7 +15,7 @@ export default function PaydaySetup({
   const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
 
   return (
-    <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
+    <div className="fixed inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsPaydaySetupOpen(false)}></div>
       <div className={`w-full lg:max-w-md h-[90vh] lg:h-[80vh] rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl relative z-[130] flex flex-col ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
         <div className="p-6 border-b flex justify-between items-center shrink-0">

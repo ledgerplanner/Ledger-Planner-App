@@ -22,7 +22,7 @@ export default function Dashboard({
   setHasConsumedAMBriefing,
   hasConsumedPMBriefing,
   setHasConsumedPMBriefing,
-  isEntrepreneurMode = false // <-- INJECTED FOR ENTREPRENEUR MODE
+  isEntrepreneurMode = false
 }) {
   const [isPushEnabled, setIsPushEnabled] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -237,6 +237,19 @@ export default function Dashboard({
     }
   }
 
+  // === DYNAMIC COLOR ENGINE ===
+  const getBalanceColor = (amt) => {
+    if (amt > 0) return "text-[#10B981]";
+    if (amt < 0) return "text-red-500";
+    return isDarkMode ? "text-white" : "text-slate-900";
+  };
+
+  const getDotClass = (amt) => {
+    if (amt > 0) return "bg-[#10B981] animate-pulse";
+    if (amt < 0) return "bg-red-500";
+    return isDarkMode ? "bg-white" : "bg-slate-900";
+  };
+
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
       <div className={`relative pt-10 pb-5 px-6 rounded-[2rem] border flex flex-col items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
@@ -280,21 +293,22 @@ export default function Dashboard({
             
             <div className={`flex flex-col items-end transform transition-all duration-700 delay-100 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"} mb-3`}>
               <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border mb-1 shadow-sm ${isDarkMode ? "bg-slate-800/80 border-slate-700 text-slate-300" : "bg-white/80 border-slate-200 text-slate-600"}`}>
+                <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${getDotClass(totalIncomeBalance)}`}></div>
                 <span className="text-[9px] font-black uppercase tracking-wider">My Balance</span>
               </div>
               
-              <p className={`text-xl min-[360px]:text-2xl font-black tracking-tighter w-full text-right break-words leading-none transition-colors duration-300 ${totalIncomeBalance < 0 ? "text-red-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>
+              <p className={`text-xl min-[360px]:text-2xl font-black tracking-tighter w-full text-right break-words leading-none transition-colors duration-300 ${getBalanceColor(totalIncomeBalance)}`}>
                 {totalIncomeBalance < 0 ? "-$" : "$"}{Math.abs(totalIncomeBalance).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
 
             <div className={`flex flex-col items-end transform transition-all duration-700 delay-200 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
               <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border mb-1 shadow-sm ${isDarkMode ? "bg-slate-800/80 border-slate-700 text-slate-300" : "bg-white/80 border-slate-200 text-slate-600"}`}>
-                <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${safeToSpend < 0 ? "bg-red-500" : "bg-emerald-500 animate-pulse"}`}></div>
+                <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${getDotClass(safeToSpend)}`}></div>
                 <span className="text-[9px] font-black uppercase tracking-wider">Safe to Spend</span>
               </div>
               
-              <p className={`text-2xl min-[360px]:text-3xl min-[400px]:text-4xl font-black tracking-tighter w-full text-right break-words leading-none transition-colors duration-300 ${safeToSpend < 0 ? "text-red-500" : "text-[#10B981]"}`}>
+              <p className={`text-xl min-[360px]:text-2xl font-black tracking-tighter w-full text-right break-words leading-none transition-colors duration-300 ${getBalanceColor(safeToSpend)}`}>
                 {safeToSpend < 0 ? "-$" : "$"}{Math.abs(safeToSpend).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
@@ -302,7 +316,7 @@ export default function Dashboard({
         </div>
 
         {!isEntrepreneurMode && nextPaydayDayName && (
-          <div className={`mt-5 pt-3 border-t w-full text-center transform transition-all duration-700 delay-500 cubic-bezier(0.16, 1, 0.3, 1) ${isDarkMode ? "border-slate-700/50" : "border-slate-200/60"} ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+          <div className={`mt-5 w-full text-center transform transition-all duration-700 delay-500 cubic-bezier(0.16, 1, 0.3, 1) ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
             <span className={`text-[9px] font-black uppercase tracking-widest block leading-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
               NEXT PAYDAY: {nextPaydayDayName}{" "}
               <span className="text-[#10B981]">

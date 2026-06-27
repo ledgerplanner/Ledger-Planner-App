@@ -239,68 +239,80 @@ export default function Dashboard({
 
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
-      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
+      <div className={`relative pt-10 pb-5 px-6 rounded-[2rem] border flex flex-col items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
          
         <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
           <span className={`text-[10px] font-black uppercase tracking-widest opacity-80 ${isDarkMode ? "text-white" : "text-black"}`}>
             {currentMonthName}'s Monthly Snapshot
           </span>
         </div>
- 
-        <div className="relative w-28 h-28 flex-shrink-0">
-          <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
-            <defs>
-              <linearGradient id="dashGlow" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#1877F2" />
-                <stop offset="100%" stopColor="#0a56bd" />
-              </linearGradient>
-            </defs>
-            <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "rgba(51, 65, 85, 0.5)" : "rgba(226, 232, 240, 0.9)"} strokeWidth="12" />
-            <circle 
-              cx="50" 
-              cy="50" 
-              r="40" 
-              fill="transparent" 
-              stroke={safeToSpend < 0 ? "#EF4444" : "url(#dashGlow)"} 
-              strokeWidth="12" 
-              strokeLinecap="round" 
-              strokeDasharray={strokeDasharray} 
-              strokeDashoffset={isMounted ? targetDashoffset : strokeDasharray} 
-              className="transition-all duration-1000 delay-150 ease-out" 
-            />
-          </svg>
-          <div className={`absolute inset-0 flex flex-col items-center justify-center transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
-            <span className={`text-[8px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Debt Load</span>
-            <span className={`text-xl font-black ${safeToSpend < 0 ? "text-red-500" : "text-[#1877F2]"}`}>{Math.round(debtRatio)}%</span>
-          </div>
-        </div>
-   
-        <div className="flex-1 text-right flex flex-col justify-center items-end overflow-hidden">
-          
-          <div className={`flex flex-col items-end transform transition-all duration-700 delay-200 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
-            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border mb-2 shadow-sm ${isDarkMode ? "bg-slate-800/80 border-slate-700 text-slate-300" : "bg-white/80 border-slate-200 text-slate-600"}`}>
-              <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${safeToSpend < 0 ? "bg-red-500" : "bg-emerald-500 animate-pulse"}`}></div>
-              <span className="text-[9px] font-black uppercase tracking-wider">Safe to Spend</span>
+
+        <div className="flex w-full items-center justify-between">
+          <div className="relative w-28 h-28 flex-shrink-0">
+            <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
+              <defs>
+                <linearGradient id="dashGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#1877F2" />
+                  <stop offset="100%" stopColor="#0a56bd" />
+                </linearGradient>
+              </defs>
+              <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "rgba(51, 65, 85, 0.5)" : "rgba(226, 232, 240, 0.9)"} strokeWidth="12" />
+              <circle 
+                cx="50" 
+                cy="50" 
+                r="40" 
+                fill="transparent" 
+                stroke={safeToSpend < 0 ? "#EF4444" : "url(#dashGlow)"} 
+                strokeWidth="12" 
+                strokeLinecap="round" 
+                strokeDasharray={strokeDasharray} 
+                strokeDashoffset={isMounted ? targetDashoffset : strokeDasharray} 
+                className="transition-all duration-1000 delay-150 ease-out" 
+              />
+            </svg>
+            <div className={`absolute inset-0 flex flex-col items-center justify-center transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
+              <span className={`text-[8px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Debt Load</span>
+              <span className={`text-xl font-black ${safeToSpend < 0 ? "text-red-500" : "text-[#1877F2]"}`}>{Math.round(debtRatio)}%</span>
             </div>
+          </div>
+      
+          <div className="flex-1 text-right flex flex-col justify-center items-end overflow-hidden pl-2">
             
-            <p className={`text-2xl min-[360px]:text-3xl min-[400px]:text-4xl font-black tracking-tighter mb-1 w-full text-right break-words leading-none transition-colors duration-300 ${safeToSpend < 0 ? "text-red-500" : "text-[#10B981]"}`}>
-              {safeToSpend < 0 ? "-$" : "$"}{Math.abs(safeToSpend).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </p>
-          </div>
-          
-          {!isEntrepreneurMode && nextPaydayDayName && (
-            <div className={`mt-2 transform transition-all duration-700 delay-500 cubic-bezier(0.16, 1, 0.3, 1) w-full text-right ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-12"}`}>
-              <span className={`text-[9px] font-black uppercase tracking-widest block leading-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-                NEXT PAYDAY: {nextPaydayDayName}{" "}
-                <span className="text-[#10B981]">
-                  {daysUntilNext === 0 && "(TODAY)"}
-                  {daysUntilNext === 1 && "(IN 1 DAY)"}
-                  {daysUntilNext > 1 && `(IN ${daysUntilNext} DAYS)`}
-                </span>
-              </span>
+            <div className={`flex flex-col items-end transform transition-all duration-700 delay-100 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"} mb-3`}>
+              <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border mb-1 shadow-sm ${isDarkMode ? "bg-slate-800/80 border-slate-700 text-slate-300" : "bg-white/80 border-slate-200 text-slate-600"}`}>
+                <span className="text-[9px] font-black uppercase tracking-wider">My Balance</span>
+              </div>
+              
+              <p className={`text-xl min-[360px]:text-2xl font-black tracking-tighter w-full text-right break-words leading-none transition-colors duration-300 ${totalIncomeBalance < 0 ? "text-red-500" : isDarkMode ? "text-white" : "text-slate-900"}`}>
+                {totalIncomeBalance < 0 ? "-$" : "$"}{Math.abs(totalIncomeBalance).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
             </div>
-          )}
+
+            <div className={`flex flex-col items-end transform transition-all duration-700 delay-200 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+              <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border mb-1 shadow-sm ${isDarkMode ? "bg-slate-800/80 border-slate-700 text-slate-300" : "bg-white/80 border-slate-200 text-slate-600"}`}>
+                <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${safeToSpend < 0 ? "bg-red-500" : "bg-emerald-500 animate-pulse"}`}></div>
+                <span className="text-[9px] font-black uppercase tracking-wider">Safe to Spend</span>
+              </div>
+              
+              <p className={`text-2xl min-[360px]:text-3xl min-[400px]:text-4xl font-black tracking-tighter w-full text-right break-words leading-none transition-colors duration-300 ${safeToSpend < 0 ? "text-red-500" : "text-[#10B981]"}`}>
+                {safeToSpend < 0 ? "-$" : "$"}{Math.abs(safeToSpend).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            </div>
+          </div>
         </div>
+
+        {!isEntrepreneurMode && nextPaydayDayName && (
+          <div className={`mt-5 pt-3 border-t w-full text-center transform transition-all duration-700 delay-500 cubic-bezier(0.16, 1, 0.3, 1) ${isDarkMode ? "border-slate-700/50" : "border-slate-200/60"} ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+            <span className={`text-[9px] font-black uppercase tracking-widest block leading-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+              NEXT PAYDAY: {nextPaydayDayName}{" "}
+              <span className="text-[#10B981]">
+                {daysUntilNext === 0 && "(TODAY)"}
+                {daysUntilNext === 1 && "(IN 1 DAY)"}
+                {daysUntilNext > 1 && `(IN ${daysUntilNext} DAYS)`}
+              </span>
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

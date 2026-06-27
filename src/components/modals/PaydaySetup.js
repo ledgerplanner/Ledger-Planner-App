@@ -48,10 +48,10 @@ export default function PaydaySetup({
               <h4 className={`text-xs font-black uppercase tracking-widest mb-4 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>{pd}</h4>
               <div className="grid grid-cols-2 gap-2">
                 <div className={`relative w-full h-[54px] rounded-xl border flex flex-col justify-end pb-1.5 px-3 transition-colors ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"}`}>
-                  <label className={`absolute top-2 left-0 w-full text-center text-[8px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Pay Date</label>
-                  <div className="flex items-center justify-between w-full relative z-10">
-                      <span className={`font-bold text-sm text-left truncate flex-1 ${!editPaydayConfig?.[pd]?.date ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{editPaydayConfig?.[pd]?.date ? formatDisplayDate(editPaydayConfig?.[pd]?.date) : "mm/dd/yy"}</span>
-                      <CalendarIcon size={16} className="shrink-0" style={{ color: signatureColor }} />
+                  <label className={`absolute top-2 left-0 w-full text-center text-[8px] font-black uppercase tracking-widest pointer-events-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Pay Date</label>
+                  <div className="flex items-center justify-between w-full relative z-10 pointer-events-none">
+                      <span className={`font-bold text-sm text-left truncate flex-1 pointer-events-none ${!editPaydayConfig?.[pd]?.date ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{editPaydayConfig?.[pd]?.date ? formatDisplayDate(editPaydayConfig?.[pd]?.date) : "mm/dd/yy"}</span>
+                      <CalendarIcon size={16} className="shrink-0 pointer-events-none" style={{ color: signatureColor }} />
                   </div>
                   <input type="date" value={editPaydayConfig?.[pd]?.date || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), date: e.target.value}})} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" />
                 </div>

@@ -238,7 +238,7 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
   const currentRecentCategories = drawerTab === "bills" ? recentBillCategories : drawerTab === "income" ? recentIncomeCategories : recentExpenseCategories;
 
   return (
-    <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
+    <div className="fixed inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeQab}></div>
       <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col h-auto max-h-[95vh] ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
         <div className={`p-6 border-b flex justify-between items-center shrink-0 ${isDarkMode ? "border-slate-800" : "border-slate-100"}`}>

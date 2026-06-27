@@ -244,8 +244,8 @@ export default function Dashboard({
     return isDarkMode ? "text-white" : "text-slate-900";
   };
 
-  const getDotClass = (amt) => {
-    if (amt > 0) return "bg-[#10B981] animate-pulse";
+  const getDotColor = (amt) => {
+    if (amt > 0) return "bg-[#10B981]";
     if (amt < 0) return "bg-red-500";
     return isDarkMode ? "bg-white" : "bg-slate-900";
   };
@@ -298,7 +298,7 @@ export default function Dashboard({
             style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
           >
             <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full shrink-0 ${getDotClass(totalIncomeBalance)}`}></div>
+              <div className={`w-2 h-2 rounded-full shrink-0 animate-pulse ${getDotColor(totalIncomeBalance)}`}></div>
               <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-300" : "text-slate-500"}`}>
                 My Balance
               </span>
@@ -314,7 +314,6 @@ export default function Dashboard({
             style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
           >
             <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full shrink-0 ${getDotClass(safeToSpend)}`}></div>
               <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-300" : "text-slate-500"}`}>
                 Safe to Spend
               </span>

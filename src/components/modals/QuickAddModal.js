@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, ArrowRight, ArrowDown, Search, AlertCircle, CheckCircle2, Calendar as CalendarIcon } from 'lucide-react';
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
@@ -35,6 +35,8 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
   
   const [entryVisibility, setEntryVisibility] = useState("Shared");
   const [coOpStep, setCoOpStep] = useState(1);
+
+  const dateInputRef = useRef(null);
 
   const categoryEmojis = ["💵", "💲", "🤑", "💰", "🏦", "💹", "₿", "💎", "💳", "🧾", "📋", "💼", "🏠", "🏢", "🔑", "🛋️", "🧹", "💧", "⚡", "📶", "📡", "☁️", "📺", "🎬", "🍿", "🎵", "🎧", "🚗", "🚲", "🚂", "✈️", "⛽", "🛠️", "🅿️", "🎫", "🚕", "🚇", "🛒", "🛍️", "📦", "👕", "👗", "👟", "💅", "💄", "💈", "🕶️", "💍", "🍔", "🍕", "🌮", "🍣", "🥗", "🍳", "☕", "🍦", "🍻", "🍹", "🍷", "🏥", "💊", "🦷", "👓", "🧘", "🏋️", "🐾", "🐶", "🎁", "🎉", "🎟️", "🎮", "🕹️", "📱", "💻", "⌚", "🤖", "🚀", "🌴", "🎓", "🏪", "🎯", "🏖️", "👶", "🛡️", "🏍️", "🎸", "⛵"];
   const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
@@ -342,11 +344,18 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
                 <>
                   <div className="relative">
                     <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest pointer-events-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Due Date</label>
-                    <div className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors pointer-events-none ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
+                    <div 
+                      className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors cursor-pointer ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}
+                      onClick={() => {
+                        if (dateInputRef.current && dateInputRef.current.showPicker) {
+                          try { dateInputRef.current.showPicker(); } catch (err) {}
+                        }
+                      }}
+                    >
                       <span className={`font-bold text-base pointer-events-none ${!entryDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{entryDate ? formatDisplayDate(entryDate) : "mm/dd/yyyy"}</span>
                       <CalendarIcon size={18} className="shrink-0 pointer-events-none" style={{ color: signatureColor }} />
+                      <input type="date" ref={dateInputRef} value={entryDate} onChange={(e) => setEntryDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 pointer-events-none" />
                     </div>
-                    <input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30" />
                   </div>
                   <div className="space-y-3 pt-1 border-t border-slate-100 dark:border-slate-800">
                     <div className="flex items-center justify-between">

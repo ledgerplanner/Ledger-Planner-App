@@ -117,8 +117,8 @@ export default function EditEntryDrawer({
                 <div className="relative">
                   <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Amount</label>
                   <div className="relative w-full flex items-center">
-                    <span className={`absolute left-5 top-[22px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
-                    <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={editEntryData.amount || ""} onChange={(e) => setEditEntryData({...editEntryData, amount: e.target.value})} onBlur={() => { if(!isNaN(parseFloat(editEntryData.amount)) && editEntryData.amount !== "") setEditEntryData({...editEntryData, amount: parseFloat(editEntryData.amount).toFixed(2)}) }} className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                    <span className={`absolute left-4 top-[22px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
+                    <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={editEntryData.amount || ""} onChange={(e) => setEditEntryData({...editEntryData, amount: e.target.value})} onBlur={() => { if(!isNaN(parseFloat(editEntryData.amount)) && editEntryData.amount !== "") setEditEntryData({...editEntryData, amount: parseFloat(editEntryData.amount).toFixed(2)}) }} className={`w-full pt-6 pb-2 pl-7 pr-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                   </div>
                 </div>
                 <div className="relative cursor-pointer" onClick={() => setIsIconSelectorOpen(true)}>
@@ -138,12 +138,12 @@ export default function EditEntryDrawer({
                 {selectedEntry.fullDate !== undefined && (
                   <>
                     <div className="relative">
-                      <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Due Date</label>
-                      <div className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
-                         <span className={`font-bold text-base ${!editEntryData.rawDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{editEntryData.rawDate ? formatDisplayDate(editEntryData.rawDate) : "mm/dd/yyyy"}</span>
-                         <CalendarIcon size={18} className="shrink-0" style={{ color: signatureColor }} />
-                         <input type="date" value={editEntryData.rawDate || ""} onChange={(e) => setEditEntryData({...editEntryData, rawDate: e.target.value})} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                      <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest pointer-events-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Due Date</label>
+                      <div className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors pointer-events-none ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
+                         <span className={`font-bold text-base pointer-events-none ${!editEntryData.rawDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{editEntryData.rawDate ? formatDisplayDate(editEntryData.rawDate) : "mm/dd/yyyy"}</span>
+                         <CalendarIcon size={18} className="shrink-0 pointer-events-none" style={{ color: signatureColor }} />
                       </div>
+                      <input type="date" value={editEntryData.rawDate || ""} onChange={(e) => setEditEntryData({...editEntryData, rawDate: e.target.value})} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30" />
                     </div>
                     <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
                       <div className="flex items-center justify-between">

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { X, Calendar as CalendarIcon } from 'lucide-react';
 
 export default function PaydaySetup({
@@ -12,6 +12,7 @@ export default function PaydaySetup({
   isDarkMode,
   isDemoMode
 }) {
+  const dateRefs = useRef({});
   const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
 
   return (
@@ -47,13 +48,20 @@ export default function PaydaySetup({
             <div key={pd} className={`p-4 rounded-2xl border ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-slate-50 border-slate-100"}`}>
               <h4 className={`text-xs font-black uppercase tracking-widest mb-4 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>{pd}</h4>
               <div className="grid grid-cols-2 gap-2">
-                <div className={`relative w-full h-[54px] rounded-xl border flex flex-col justify-end pb-1.5 px-3 transition-colors ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"}`}>
+                <div 
+                  className={`relative w-full h-[54px] rounded-xl border flex flex-col justify-end pb-1.5 px-3 transition-colors cursor-pointer ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"}`}
+                  onClick={() => {
+                    if (dateRefs.current[pd] && dateRefs.current[pd].showPicker) {
+                      try { dateRefs.current[pd].showPicker(); } catch (err) {}
+                    }
+                  }}
+                >
                   <label className={`absolute top-2 left-0 w-full text-center text-[8px] font-black uppercase tracking-widest pointer-events-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Pay Date</label>
                   <div className="flex items-center justify-between w-full relative z-10 pointer-events-none">
                       <span className={`font-bold text-sm text-left truncate flex-1 pointer-events-none ${!editPaydayConfig?.[pd]?.date ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{editPaydayConfig?.[pd]?.date ? formatDisplayDate(editPaydayConfig?.[pd]?.date) : "mm/dd/yy"}</span>
                       <CalendarIcon size={16} className="shrink-0 pointer-events-none" style={{ color: signatureColor }} />
                   </div>
-                  <input type="date" value={editPaydayConfig?.[pd]?.date || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), date: e.target.value}})} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30" />
+                  <input type="date" ref={(el) => { if (el) dateRefs.current[pd] = el; }} value={editPaydayConfig?.[pd]?.date || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), date: e.target.value}})} className="absolute inset-0 w-full h-full opacity-0 pointer-events-none" />
                 </div>
                 <div className={`relative w-full h-[54px] rounded-xl border flex flex-col justify-end pb-1.5 px-3 transition-colors focus-within:border-slate-400 dark:focus-within:border-slate-500 ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"}`}>
                   <label className={`absolute top-2 left-0 w-full text-center z-10 text-[8px] font-black uppercase tracking-widest pointer-events-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Income</label>

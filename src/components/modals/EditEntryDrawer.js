@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { X, Edit2, Calendar as CalendarIcon, ArrowDown, Trash2, CheckCircle2 } from 'lucide-react';
 import { useLedger } from '../../context/LedgerContext';
 import { db } from '../../firebase';
@@ -22,6 +22,7 @@ export default function EditEntryDrawer({
 }) {
   const { user, bills, setBills, transactions, setTransactions, modernCategories } = useLedger();
   const [isIconSelectorOpen, setIsIconSelectorOpen] = useState(false);
+  const dateInputRef = useRef(null);
 
   const categoryEmojis = ["💵", "💲", "🤑", "💰", "🏦", "💹", "₿", "💎", "💳", "🧾", "📋", "💼", "🏠", "🏢", "🔑", "🛋️", "🧹", "💧", "⚡", "📶", "📡", "☁️", "📺", "🎬", "🍿", "🎵", "🎧", "🚗", "🚲", "🚂", "✈️", "⛽", "🛠️", "🅿️", "🎫", "🚕", "🚇", "🛒", "🛍️", "📦", "👕", "👗", "👟", "💅", "💄", "💈", "🕶️", "💍", "🍔", "🍕", "🌮", "🍣", "🥗", "🍳", "☕", "🍦", "🍻", "🍹", "🍷", "🏥", "💊", "🦷", "👓", "🧘", "🏋️", "🐾", "🐶", "🎁", "🎉", "🎟️", "🎮", "🕹️", "📱", "💻", "⌚", "🤖", "🚀", "🌴", "🎓", "🏪", "🎯", "🏖️", "👶", "🛡️", "🏍️", "🎸", "⛵"];
   
@@ -40,7 +41,7 @@ export default function EditEntryDrawer({
   };
 
   return (
-    <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
+    <div className="fixed inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeEntryDrawer}></div>
       <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col max-h-[95vh] transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
         <div className="p-6 border-b flex justify-between items-center shrink-0">
@@ -139,11 +140,18 @@ export default function EditEntryDrawer({
                   <>
                     <div className="relative">
                       <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest pointer-events-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Due Date</label>
-                      <div className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors pointer-events-none ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
+                      <div 
+                        className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors cursor-pointer ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}
+                        onClick={() => {
+                          if (dateInputRef.current && dateInputRef.current.showPicker) {
+                            try { dateInputRef.current.showPicker(); } catch (err) {}
+                          }
+                        }}
+                      >
                          <span className={`font-bold text-base pointer-events-none ${!editEntryData.rawDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{editEntryData.rawDate ? formatDisplayDate(editEntryData.rawDate) : "mm/dd/yyyy"}</span>
                          <CalendarIcon size={18} className="shrink-0 pointer-events-none" style={{ color: signatureColor }} />
+                         <input type="date" ref={dateInputRef} value={editEntryData.rawDate || ""} onChange={(e) => setEditEntryData({...editEntryData, rawDate: e.target.value})} className="absolute inset-0 w-full h-full opacity-0 pointer-events-none" />
                       </div>
-                      <input type="date" value={editEntryData.rawDate || ""} onChange={(e) => setEditEntryData({...editEntryData, rawDate: e.target.value})} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30" />
                     </div>
                     <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
                       <div className="flex items-center justify-between">

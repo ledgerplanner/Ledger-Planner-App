@@ -26,6 +26,9 @@ export default function Dashboard({
 }) {
   const [isPushEnabled, setIsPushEnabled] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  
+  // Strict Single-Open Accordion State
+  const [activePayday, setActivePayday] = useState("init");
 
   useEffect(() => {
     setIsMounted(true);
@@ -221,19 +224,14 @@ export default function Dashboard({
     }
   }
 
-  // === AUTO-COLLAPSE HEURISTIC ENGINE ===
-  let defaultOpenPayday = null;
-  for (const pd of hzPaydays) {
-    const groupUnpaid = (billsByRunwayGroup[pd] || []).filter(b => !b.isPaid);
-    if (pd === "Due Now" && groupUnpaid.length > 0) {
-      defaultOpenPayday = "Due Now";
-      break;
-    } else if (!defaultOpenPayday) {
-      if (isEntrepreneurMode) {
-        defaultOpenPayday = pd; // Open the first sequential week
-      } else if (pd !== "Due Now" && paydayConfig?.[pd]?.date) {
-        defaultOpenPayday = pd;
-      }
+  // === STRICT SINGLE-OPEN AUTO ENGINE ===
+  let displayActiveAccordion = activePayday;
+  if (activePayday === "init") {
+    const groupUnpaid = (billsByRunwayGroup["Due Now"] || []).filter(b => !b.isPaid);
+    if (groupUnpaid.length > 0) {
+      displayActiveAccordion = "Due Now";
+    } else {
+      displayActiveAccordion = null;
     }
   }
 
@@ -324,10 +322,10 @@ export default function Dashboard({
             </span>
           </div>
 
-          {/* Pill 3: Next Payday (Glides Bottom to Top) */}
+          {/* Element 3: Next Payday Text (Glides Bottom to Top) */}
           {!isEntrepreneurMode && nextPaydayDayName && (
             <div 
-              className={`w-full py-3 px-4 rounded-xl border flex items-center justify-center shadow-sm transform transition-all duration-[600ms] delay-[400ms] ${isMounted ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"} ${isDarkMode ? "bg-emerald-500/10 border-emerald-500/20" : "bg-emerald-50 border-emerald-200"}`}
+              className={`w-full pt-3 flex items-center justify-center transform transition-all duration-[600ms] delay-[400ms] ${isMounted ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}
               style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
             >
               <span className="text-[10px] font-black uppercase tracking-widest text-[#10B981] leading-none">
@@ -363,11 +361,11 @@ export default function Dashboard({
 
       <div className="flex justify-center px-6 mb-5 -mt-2 relative z-10">
          {isEntrepreneurMode ? (
-           <button className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#10B981] shadow-sm" : "bg-white/80 backdrop-blur-md border-slate-200 text-[#10B981] shadow-[0_4px_20px_rgba(0,0,0,0.03)]"}`}>
+           <button className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#1877F2] shadow-sm" : "bg-white/80 backdrop-blur-md border-slate-200 text-[#1877F2] shadow-[0_4px_20px_rgba(0,0,0,0.03)]"}`}>
              🚀 Entrepreneur Mode Active
            </button>
          ) : (
-           <button onClick={() => setIsPaydaySetupOpen(true)} className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border transition-all active:scale-95 ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#10B981] shadow-sm" : "bg-white/80 backdrop-blur-md border-slate-200 text-[#10B981] shadow-[0_4px_20px_rgba(0,0,0,0.03)]"}`}>
+           <button onClick={() => setIsPaydaySetupOpen(true)} className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border transition-all active:scale-95 ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#1877F2] shadow-sm" : "bg-white/80 backdrop-blur-md border-slate-200 text-[#1877F2] shadow-[0_4px_20px_rgba(0,0,0,0.03)]"}`}>
              <Settings2 size={18} strokeWidth={2.5} /> Set {currentMonthName}'s Pay Dates & Amounts
            </button>
          )}
@@ -408,7 +406,7 @@ export default function Dashboard({
             const subLabelStr = pd === "Due Now" ? "AVAILABLE NOW" : "AVAILABLE THIS WEEK";
 
             return (
-              <div key={`hz-${pd}`} onClick={() => { if(collapsedPaydays[pd] || collapsedPaydays[pd] === undefined) toggleCollapse(pd); document.getElementById(`vert-${pd}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} className={`shrink-0 w-52 p-5 rounded-[1.75rem] border cursor-pointer active:scale-95 transition-all flex flex-col justify-between h-44 ${pd === "Due Now" ? (isDarkMode ? "bg-red-900/10 border-red-900/40 shadow-md" : "bg-red-50 border-red-100 shadow-[0_4px_20px_rgba(239,68,68,0.1)]") : (isDarkMode ? "bg-[#1E293B] border-slate-700 shadow-md" : "bg-white/90 backdrop-blur-sm border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]")}`}>
+              <div key={`hz-${pd}`} onClick={() => { setActivePayday(pd); document.getElementById(`vert-${pd}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} className={`shrink-0 w-52 p-5 rounded-[1.75rem] border cursor-pointer active:scale-95 transition-all flex flex-col justify-between h-44 ${pd === "Due Now" ? (isDarkMode ? "bg-red-900/10 border-red-900/40 shadow-md" : "bg-red-50 border-red-100 shadow-[0_4px_20px_rgba(239,68,68,0.1)]") : (isDarkMode ? "bg-[#1E293B] border-slate-700 shadow-md" : "bg-white/90 backdrop-blur-sm border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]")}`}>
                 
                 <div className="flex justify-between items-center w-full">
                   <h4 className={`text-[10px] font-black uppercase tracking-widest ${pd === "Due Now" ? "text-red-500" : "text-slate-400"}`}>{pd}</h4>
@@ -483,10 +481,7 @@ export default function Dashboard({
               if (activeGroupBills.length === 0) return null;
             }
 
-            const isCollapsed = collapsedPaydays?.[payday] !== undefined 
-              ? collapsedPaydays[payday] 
-              : payday !== defaultOpenPayday;
-
+            const isCollapsed = displayActiveAccordion !== payday;
             const checkTotal = activeGroupBills.reduce((sum, b) => sum + (Number(b?.amount) || 0), 0);
             const sortedBills = sortBillsSurgically(activeGroupBills);
 
@@ -505,7 +500,7 @@ export default function Dashboard({
 
             return (
               <div key={payday} id={`vert-${payday}`} className="space-y-2 scroll-mt-24">
-                <div className="flex flex-col px-3 py-3 cursor-pointer" onClick={() => toggleCollapse(payday)}>
+                <div className="flex flex-col px-3 py-3 cursor-pointer" onClick={() => setActivePayday(isCollapsed ? payday : null)}>
                   <div className="flex items-center justify-between w-full mb-1">
                      <div className="flex items-center gap-2">
                        <h3 className={`text-sm font-black uppercase tracking-widest ${isDueNow ? "text-red-500" : isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{payday}</h3>

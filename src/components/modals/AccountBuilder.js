@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, CheckCircle2, Target, Calendar as CalendarIcon, ArrowDown, Trash2, Save } from 'lucide-react';
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
@@ -29,6 +29,7 @@ export default function AccountBuilder({
   const [newGoalName, setNewGoalName] = useState("");
   const [newGoalAmount, setNewGoalAmount] = useState("");
   const [newGoalDate, setNewGoalDate] = useState("");
+  const addGoalDateRef = useRef(null);
 
   // --- EDIT ACCOUNT STATE ---
   const [editAccountBalance, setEditAccountBalance] = useState("0");
@@ -37,6 +38,7 @@ export default function AccountBuilder({
   const [editAccountName, setEditAccountName] = useState("");
   const [editAccountIcon, setEditAccountIcon] = useState("🏦");
   const [editAccountTargetDate, setEditAccountTargetDate] = useState("");
+  const editGoalDateRef = useRef(null);
 
   const [isIconSelectorOpen, setIsIconSelectorOpen] = useState(false);
   const [activeIconField, setActiveIconField] = useState(null);
@@ -205,8 +207,7 @@ export default function AccountBuilder({
               <button 
                 onClick={handleAddAccount} 
                 disabled={isAddAccountDisabled} 
-                className={`w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${isAddAccountDisabled ? "bg-slate-300 dark:bg-slate-700 opacity-50 cursor-not-allowed" : "shadow-lg active:scale-95"}`} 
-                style={{ backgroundColor: isAddAccountDisabled ? undefined : signatureColor }}
+                className={`w-full mt-4 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 ${isAddAccountDisabled ? "bg-slate-300 dark:bg-slate-700 opacity-50 cursor-not-allowed shadow-none" : "bg-[#10B981] shadow-[0_8px_20px_rgba(16,185,129,0.35)] active:scale-95"}`} 
               >
                 Save Account <CheckCircle2 size={16} />
               </button>
@@ -245,11 +246,18 @@ export default function AccountBuilder({
                 </div>
               </div>
               <div className="relative">
-                <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Goal Date</label>
-                <div className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
-                  <span className={`font-bold text-base ${!newGoalDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{newGoalDate ? formatDisplayDate(newGoalDate) : "mm/dd/yyyy"}</span>
-                  <CalendarIcon size={18} className="shrink-0" style={{ color: signatureColor }} />
-                  <input type="date" value={newGoalDate} onChange={(e) => setNewGoalDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest pointer-events-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Goal Date</label>
+                <div 
+                  className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors cursor-pointer ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}
+                  onClick={() => {
+                    if (addGoalDateRef.current && addGoalDateRef.current.showPicker) {
+                      try { addGoalDateRef.current.showPicker(); } catch (err) {}
+                    }
+                  }}
+                >
+                  <span className={`font-bold text-base pointer-events-none ${!newGoalDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{newGoalDate ? formatDisplayDate(newGoalDate) : "mm/dd/yyyy"}</span>
+                  <CalendarIcon size={18} className="shrink-0 pointer-events-none" style={{ color: signatureColor }} />
+                  <input type="date" ref={addGoalDateRef} value={newGoalDate} onChange={(e) => setNewGoalDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 pointer-events-none" />
                 </div>
               </div>
 
@@ -311,11 +319,18 @@ export default function AccountBuilder({
                      </div>
                   </div>
                   <div className="relative">
-                     <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Target Goal Date</label>
-                     <div className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
-                        <span className={`font-bold text-base ${!editAccountTargetDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{editAccountTargetDate ? formatDisplayDate(editAccountTargetDate) : "mm/dd/yyyy"}</span>
-                        <CalendarIcon size={18} className="shrink-0" style={{ color: signatureColor }} />
-                        <input type="date" value={editAccountTargetDate || ""} onChange={(e) => setEditAccountTargetDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                     <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest pointer-events-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Target Goal Date</label>
+                     <div 
+                       className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors cursor-pointer ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}
+                       onClick={() => {
+                         if (editGoalDateRef.current && editGoalDateRef.current.showPicker) {
+                           try { editGoalDateRef.current.showPicker(); } catch (err) {}
+                         }
+                       }}
+                     >
+                        <span className={`font-bold text-base pointer-events-none ${!editAccountTargetDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{editAccountTargetDate ? formatDisplayDate(editAccountTargetDate) : "mm/dd/yyyy"}</span>
+                        <CalendarIcon size={18} className="shrink-0 pointer-events-none" style={{ color: signatureColor }} />
+                        <input type="date" ref={editGoalDateRef} value={editAccountTargetDate || ""} onChange={(e) => setEditAccountTargetDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 pointer-events-none" />
                      </div>
                   </div>
                 </>

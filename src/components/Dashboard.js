@@ -156,7 +156,7 @@ export default function Dashboard({
   const liquidAccounts = accounts.filter(a => !a.isGoal);
   const totalIncomeBalance = liquidAccounts.reduce((sum, a) => sum + (Number(a?.balance) || 0), 0);
 
-  // === HERO MATH ENGINE UPGRADE ===
+  // === DASHBOARD FINANCIAL ENGINE ===
   const currentMonthBillsTotal = bills.reduce((sum, bill) => {
     if (bill.isPaid) return sum;
     let include = false;
@@ -178,10 +178,39 @@ export default function Dashboard({
     ? -(Math.abs(currentMonthBillsTotal) - Math.abs(totalIncomeBalance))
     : totalIncomeBalance - currentMonthBillsTotal;
 
-  const debtRatio = totalIncomeBalance > 0 ? Math.max(0, Math.min((currentMonthBillsTotal / totalIncomeBalance) * 100, 100)) : (currentMonthBillsTotal > 0 ? 100 : 0);
-  
+  // === SURGICAL UPGRADE: GAMIFIED "BILLS PAID" RING FORMULA ===
+  let currentMonthTotalBillsCount = 0;
+  let currentMonthSettledBillsCount = 0;
+
+  bills.forEach((bill) => {
+    let includeInMonth = false;
+    if (bill.rawDate) {
+      const parts = bill.rawDate.split("-");
+      if (parts.length === 3) {
+        const bMonth = parseInt(parts[1], 10) - 1;
+        const bYear = parseInt(parts[0], 10);
+        if (bMonth === currentMonthIdx && bYear === currentYearIdx) {
+          includeInMonth = true;
+        }
+      }
+    }
+    if (bill.isOverdue) includeInMonth = true;
+
+    if (includeInMonth) {
+      currentMonthTotalBillsCount++;
+      if (bill.isPaid) {
+        currentMonthSettledBillsCount++;
+      }
+    }
+  });
+
+  const billsPaidPercentage = currentMonthTotalBillsCount === 0 
+    ? 100 
+    : Math.max(0, Math.min((currentMonthSettledBillsCount / currentMonthTotalBillsCount) * 100, 100));
+
   const strokeDasharray = 251.2;
-  const targetDashoffset = strokeDasharray - (strokeDasharray * debtRatio) / 100;
+  const targetDashoffset = strokeDasharray - (strokeDasharray * billsPaidPercentage) / 100;
+  // ==============================================================
 
   let runningBalance = totalIncomeBalance;
   const hzBalances = {};
@@ -264,8 +293,8 @@ export default function Dashboard({
           <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
             <defs>
               <linearGradient id="dashGlow" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#1877F2" />
-                <stop offset="100%" stopColor="#0a56bd" />
+                <stop offset="0%" stopColor="#10B981" />
+                <stop offset="100%" stopColor="#059669" />
               </linearGradient>
             </defs>
             <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "rgba(51, 65, 85, 0.5)" : "rgba(226, 232, 240, 0.9)"} strokeWidth="10" />
@@ -274,7 +303,7 @@ export default function Dashboard({
               cy="50" 
               r="40" 
               fill="transparent" 
-              stroke={safeToSpend < 0 ? "#EF4444" : "url(#dashGlow)"} 
+              stroke="url(#dashGlow)" 
               strokeWidth="10" 
               strokeLinecap="round" 
               strokeDasharray={strokeDasharray} 
@@ -283,11 +312,11 @@ export default function Dashboard({
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center p-1 text-center">
-            <span className={`text-[8px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Debt Load</span>
-            <span className={`text-2xl font-black leading-none mt-0.5 ${safeToSpend < 0 ? "text-red-500" : "text-[#1877F2]"}`}>{Math.round(debtRatio)}%</span>
+            <span className={`text-[8px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Bills Paid</span>
+            <span className={`text-2xl font-black leading-none mt-0.5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{Math.round(billsPaidPercentage)}%</span>
           </div>
         </div>
-      
+       
         {/* The 3-Pill Matrix */}
         <div className="w-full space-y-2 mt-5">
           

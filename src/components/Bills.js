@@ -141,33 +141,41 @@ export default function Bills({
 
       if (bYear !== currentYear) return false;
 
-      if (b.isPaid) {
-        return bMonth === mIdx;
+      // Ensure past months only show what was definitively paid in that month
+      if (mIdx < currentMonthIndex) {
+        return b.isPaid && bMonth === mIdx;
       }
 
+      // Ensure current month shows current month items OR past debts rolling forward
       if (mIdx === currentMonthIndex) {
         const isPastUnpaidDebt = bMonth < currentMonthIndex && !b.isPaid;
         const isCurrentMonthItem = bMonth === currentMonthIndex;
         return isCurrentMonthItem || isPastUnpaidDebt;
       }
 
-      if (mIdx < currentMonthIndex) {
-        return false;
-      }
-
+      // Ensure future months catch future bills AND projected recurrences regardless of current paid status
       if (mIdx > currentMonthIndex) {
         if (bMonth === mIdx) return true;
         return b.isRecurring && bMonth < mIdx; 
       }
 
       return false;
+    }).map(b => {
+      // Map override: If we are projecting a future month, treat the contextual clone as UNPAID 
+      // so it properly calculates in the totalDue and shows securely in the list.
+      if (mIdx > currentMonthIndex) {
+        return { ...b, isPaid: false };
+      }
+      return b;
     });
+
     const totalDue = monthBills
       .filter((b) => !b.isPaid)
       .reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
     const totalPaid = monthBills
       .filter((b) => b.isPaid)
       .reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+      
     return { monthBills, totalDue, totalPaid };
   };
 
@@ -380,9 +388,12 @@ export default function Bills({
               if (historicalBalance === 0) {
                 incomeTextClass = "text-slate-400 dark:text-slate-500 font-bold";
                 displayIncomeValue = "$0.00";
+              } else if (historicalBalance < 0) {
+                incomeTextClass = "text-red-500 font-black";
+                displayIncomeValue = `-$${Math.abs(historicalBalance).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
               } else {
                 incomeTextClass = isDarkMode ? "text-emerald-400 font-black" : "text-emerald-600 font-black";
-                displayIncomeValue = `+$${historicalBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+                displayIncomeValue = `+$${historicalBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
               }
 
               if (isSelected) {
@@ -397,8 +408,14 @@ export default function Bills({
             } else if (isCurrentMonth) {
               customIdAttribute = "current-month-scroll-anchor";
               const currentLiveBalance = getClosingBalanceForMonth(m.idx);
-              incomeTextClass = isDarkMode ? "text-emerald-400 font-black" : "text-emerald-600 font-black";
-              displayIncomeValue = `+$${currentLiveBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+              
+              if (currentLiveBalance < 0) {
+                incomeTextClass = "text-red-500 font-black";
+                displayIncomeValue = `-$${Math.abs(currentLiveBalance).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+              } else {
+                incomeTextClass = isDarkMode ? "text-emerald-400 font-black" : "text-emerald-600 font-black";
+                displayIncomeValue = `+$${currentLiveBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+              }
 
               if (isSelected) {
                 cardBackgroundClass = isDarkMode ? "bg-blue-900/20 border-blue-500 shadow-md scale-[1.01]" : "bg-blue-50/80 border-blue-300 shadow-[0_4px_20px_rgba(24,119,242,0.15)] scale-[1.01]";

@@ -17,7 +17,8 @@ export default function Bills({
   totalLiveIncome,
   accounts = [],
   signatureColor = "#1877F2",
-  isEntrepreneurMode = false // <-- INJECTED TO MAINTAIN GLOBAL CONTEXT SYNCHRONIZATION
+  isEntrepreneurMode = false,
+  openGlobalAction
 }) {
   const [isMounted, setIsMounted] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth());
@@ -219,23 +220,27 @@ export default function Bills({
   const annualPaid = annualBills.filter((b) => b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
   const annualProgressPercentage = annualTotal === 0 ? 0 : Math.max(0, Math.min((annualPaid / annualTotal) * 100, 100));
 
-  // Fix #3: Isolate unpaid bills for the year so the final pill drops to $0.00
-  const annualUnpaidTotal = annualBills.filter(b => !b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+  let trueAnnualDue = 0;
+  for (let i = 0; i < 12; i++) {
+    trueAnnualDue += getMonthMetrics(i).totalDue;
+  }
 
   const { totalDue: remainingThisMonth, monthBills: currentMonthBills } = getMonthMetrics(currentMonthIndex);
   
-  // Fix #1: Clamped Recurring Calculation (Current Month Only)
-  const recurringThisMonth = currentMonthBills.filter(b => b.isRecurring && !b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+  const recurringThisMonth = currentMonthBills.filter(b => b.isRecurring).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
 
-  // Fix #2: Dynamic Heuristic Month Naming
   const currentMonthData = monthsData[currentMonthIndex];
   const displayMonthLabel = currentMonthData.name.length <= 5 ? currentMonthData.name.toUpperCase() : currentMonthData.short.toUpperCase();
+  
   const recurringPillText = `${displayMonthLabel}'S RECURRING`;
+  const paidPillText = `BILLS PAID IN ${displayMonthLabel}`;
+  const dueThisMonthText = `DUE IN ${displayMonthLabel}`;
+  const dueThisYearText = `DUE IN ${currentYear}`;
 
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col items-center w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
-          
+         
         <div className="absolute top-4 w-full flex justify-center pointer-events-none">
           <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-black"}`}>
             Master Bills List
@@ -286,7 +291,7 @@ export default function Bills({
             style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
           >
             <span className="text-[10px] font-black uppercase tracking-widest">
-              TOTAL PAID
+              {paidPillText}
             </span>
             <span className="text-sm sm:text-base font-black leading-none">
               ${annualPaid.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -312,7 +317,7 @@ export default function Bills({
             style={{ color: signatureColor, transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
           >
             <span className="text-[10px] font-black uppercase tracking-widest">
-              DUE THIS MONTH
+              {dueThisMonthText}
             </span>
             <span className="text-sm sm:text-base font-black leading-none">
               ${remainingThisMonth.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -325,10 +330,10 @@ export default function Bills({
             style={{ color: signatureColor, transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
           >
             <span className="text-[10px] font-black uppercase tracking-widest">
-              DUE IN {currentYear}
+              {dueThisYearText}
             </span>
             <span className="text-sm sm:text-base font-black leading-none">
-              ${annualUnpaidTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              ${trueAnnualDue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
 
@@ -856,7 +861,16 @@ export default function Bills({
                       </div>
                       <div className="flex-1 flex justify-center px-1">
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleBillClick?.(bill.id); }}
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            openGlobalAction?.(
+                              "Revert Payment",
+                              "Are you sure this bill has not been paid? Funds will be returned to the original account if you proceed.",
+                              "Revert",
+                              true,
+                              () => handleBillClick?.(bill.id)
+                            );
+                          }}
                           className={`px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 ${isDarkMode ? "bg-red-900/20 border-red-900/50 text-red-400" : "bg-red-50 border-red-200 text-red-600"}`}
                         >
                           <RotateCcw size={14} strokeWidth={2} /> Revert

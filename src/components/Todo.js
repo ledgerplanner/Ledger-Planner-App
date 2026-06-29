@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { CheckCircle2, Circle, Trash2, X, Plus, Zap, ShoppingBag, Flame, Star, CheckSquare, Edit2, Save } from "lucide-react";
+import { CheckCircle2, Circle, Trash2, X, Plus, Zap, ShoppingBag, Flame, Star, CheckSquare, Edit2, Save, ArrowDown } from "lucide-react";
 import { doc, deleteDoc, updateDoc } from "firebase/firestore";
 import { db, auth } from "../firebase"; 
  
@@ -20,8 +20,14 @@ export default function Todo({
   openGlobalAction
 }) {
   const [activeModalTodo, setActiveModalTodo] = useState(null);
-  const [editTaskData, setEditTaskData] = useState({ text: "", priority: 3, type: "task" });
+  const [editTaskData, setEditTaskData] = useState({ text: "", priority: 3, type: "task", emoji: "📝" });
   const [isMounted, setIsMounted] = useState(false);
+
+  // === SURGICAL EMOJI PIPELINE STATE ===
+  const [newTodoEmoji, setNewTodoEmoji] = useState("📝");
+  const [isIconSelectorOpen, setIsIconSelectorOpen] = useState(false);
+  const [isEditIconSelectorOpen, setIsEditIconSelectorOpen] = useState(false);
+  const categoryEmojis = ["📝", "⚡", "💡", "🛒", "🏃‍♂️", "📞", "📧", "📅", "💵", "🔧", "🚗", "🏠", "💊", "📚", "🎁", "🍔", "🐶", "✈️", "🧹", "💻", "💼", "🧘", "🎯", "🔥"];
  
   useEffect(() => {
     setIsMounted(true);
@@ -76,12 +82,20 @@ export default function Todo({
     await updateDoc(doc(db, "users", auth.currentUser.uid, "todos", activeModalTodo.id), {
         text: editTaskData.text,
         priority: editTaskData.priority,
-        type: editTaskData.type
+        type: editTaskData.type,
+        emoji: editTaskData.emoji
     });
     
     triggerHaptic();
     setActiveModalTodo({ ...activeModalTodo, ...editTaskData });
     setActiveModalTodo(null);
+  };
+
+  // INTERCEPTOR: Wrap the parent add function to pass the custom emoji payload, then reset it
+  const executeAddTodo = (e) => {
+    e.preventDefault();
+    handleAddTodo(e, newTodoEmoji);
+    setNewTodoEmoji("📝");
   };
  
   const renderStars = (priorityNum) => {
@@ -149,20 +163,21 @@ export default function Todo({
         `}
       >
         <div className="flex items-center gap-4 truncate flex-1 pr-2">
+          {/* THE EMOJI RADIO REPLACEMENT */}
           <button 
            onClick={(e) => { e.stopPropagation(); toggleTodoStatus(task.id); }}
-           className={`shrink-0 transition-colors 
+           className={`shrink-0 w-10 h-10 flex items-center justify-center rounded-xl border transition-all active:scale-90
              ${task.isCompleted 
-                ? "text-[#F97316]" 
-                : "text-slate-300 hover:text-[#1877F2]"
+                ? "bg-emerald-500/10 border-emerald-500/30 opacity-60" 
+                : isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"
              }
-            `}
+           `}
           >
-           {task.isCompleted ? <CheckCircle2 size={24} /> : <Circle size={24} />}
+           {task.isCompleted ? <CheckCircle2 size={20} className="text-[#10B981]" /> : <span className="text-xl leading-none">{task.emoji || "📝"}</span>}
           </button>
           
           <div className="truncate">
-            <p className={`font-bold text-sm truncate transition-all ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
+            <p className={`font-bold text-sm truncate transition-all ${isDarkMode ? "text-slate-200" : "text-slate-800"} ${task.isCompleted ? "line-through opacity-50" : ""}`}>
               {task.text}
             </p>
             <div className="flex items-center gap-2 mt-1">
@@ -177,7 +192,7 @@ export default function Todo({
           onClick={(e) => { 
               e.stopPropagation(); 
               setActiveModalTodo(task);
-              setEditTaskData({ text: task.text, priority: task.priority, type: task.type }); 
+              setEditTaskData({ text: task.text, priority: task.priority, type: task.type, emoji: task.emoji || "📝" }); 
           }} 
           className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
         >
@@ -209,7 +224,31 @@ export default function Todo({
             <button onClick={() => setNewTodoType("task")} className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors ${newTodoType === "task" ? "bg-[#1877F2] text-white shadow-md shadow-blue-500/20" : isDarkMode ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-400"}`}>Action</button>
             <button onClick={() => setNewTodoType("shopping")} className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors ${newTodoType === "shopping" ? "bg-[#10B981] text-white shadow-md shadow-emerald-500/20" : isDarkMode ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-400"}`}>Shopping</button>
           </div>
-          <form onSubmit={handleAddTodo} className="flex items-center gap-2">
+          <form onSubmit={executeAddTodo} className="flex items-center gap-2 relative">
+            
+            {/* THE NEW EMOJI SELECTOR ANCHOR */}
+            <button 
+              type="button" 
+              onClick={() => setIsIconSelectorOpen(!isIconSelectorOpen)}
+              className={`w-12 h-12 shrink-0 rounded-xl flex items-center justify-center text-xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 hover:bg-slate-800" : "bg-white border-slate-200 hover:bg-slate-50"}`}
+            >
+              {newTodoEmoji}
+            </button>
+
+            {/* EMOJI GRID POPUP FOR TASK CREATION */}
+            {isIconSelectorOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setIsIconSelectorOpen(false)}></div>
+                <div className={`absolute top-14 left-0 z-50 p-4 rounded-[1.5rem] border shadow-2xl grid grid-cols-6 gap-3 animate-fade-in ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+                  {categoryEmojis.map(emoji => (
+                    <button key={emoji} type="button" onClick={() => { setNewTodoEmoji(emoji); setIsIconSelectorOpen(false); }} className={`w-8 h-8 flex items-center justify-center text-xl rounded-lg transition-transform active:scale-90 hover:scale-110`}>
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
             <input 
               type="text" 
               placeholder="New task or future purchase?" 
@@ -319,7 +358,7 @@ export default function Todo({
               </button>
             </div>
             
-            <div className="p-6 space-y-4 animate-fade-in pb-[120px] lg:pb-6">
+            <div className="p-6 space-y-4 animate-fade-in pb-[120px] lg:pb-6 relative">
               <div className="relative">
                <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Task Name</label>
                <input 
@@ -328,7 +367,26 @@ export default function Todo({
                  onChange={(e) => setEditTaskData({...editTaskData, text: e.target.value})} 
                  className={`w-full pt-6 pb-2 px-5 rounded-2xl font-bold text-sm border focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`} 
                 />
-             </div>
+              </div>
+
+              {/* EDIT MODAL EMOJI SELECTOR */}
+              <div className="relative cursor-pointer" onClick={() => setIsEditIconSelectorOpen(!isEditIconSelectorOpen)}>
+                 <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Task Icon</label>
+                 <div className={`w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
+                    <span className="text-xl leading-none">{editTaskData.emoji}</span>
+                    <ArrowDown size={14} className={isDarkMode ? "text-slate-400" : "text-slate-500"} />
+                 </div>
+              </div>
+
+              {isEditIconSelectorOpen && (
+                <div className={`absolute left-6 right-6 top-[150px] z-50 p-4 rounded-[1.5rem] border shadow-2xl grid grid-cols-6 gap-3 animate-fade-in ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+                  {categoryEmojis.map(emoji => (
+                    <button key={emoji} type="button" onClick={() => { setEditTaskData({...editTaskData, emoji}); setIsEditIconSelectorOpen(false); }} className={`w-8 h-8 flex items-center justify-center text-xl rounded-lg transition-transform active:scale-90 hover:scale-110`}>
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
  
               <div className="flex gap-2">
                <button onClick={() => setEditTaskData({...editTaskData, type: "task"})} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors ${editTaskData.type === "task" ? "bg-[#1877F2] text-white shadow-md shadow-blue-500/20" : isDarkMode ? "bg-[#0F172A] text-slate-400 border border-slate-700" : "bg-white text-slate-400 border border-slate-200"}`}>Action</button>

@@ -25,6 +25,27 @@ export default function PaymentModal({
           <button onClick={() => setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false })} className={closeButtonClass}><X size={18} /></button>
         </div>
         <div className="p-6 space-y-4">
+          
+          {/* THE SURGICALLY INJECTED PREVIEW SNAPSHOT CARD */}
+          {activeBill && (
+            <div className={`flex items-center justify-between p-4 rounded-[1.5rem] border shadow-sm mb-2 ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-100"}`}>
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                  {activeBill.icon || "🧾"}
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className={`text-[9px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Target Bill</span>
+                  <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
+                    {activeBill.name}
+                  </p>
+                </div>
+              </div>
+              <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
+                ${(Number(activeBill.amount) || 0).toFixed(2)}
+              </div>
+            </div>
+          )}
+
           <div className="relative">
             <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Pay From Account</label>
             <select value={paymentModalConfig.accountId} onChange={(e) => setPaymentModalConfig({ ...paymentModalConfig, accountId: e.target.value })} className={`w-full pt-6 pb-2 px-5 rounded-2xl border appearance-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>

@@ -860,6 +860,7 @@ function LedgerApp() {
                 toggleCollapse={toggleCollapse}
                 liveHeroBalance={currentLiveBalance}
                 isEntrepreneurMode={isEntrepreneurMode} 
+                openGlobalAction={openGlobalAction} // <-- INJECTED
               />
             )}
 

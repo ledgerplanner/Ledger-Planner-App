@@ -174,11 +174,10 @@ export default function Dashboard({
     return include ? sum + (Number(bill.amount) || 0) : sum;
   }, 0);
 
-  const safeToSpend = totalIncomeBalance < 0 
-    ? -(Math.abs(currentMonthBillsTotal) - Math.abs(totalIncomeBalance))
-    : totalIncomeBalance - currentMonthBillsTotal;
+  // SURGICAL FIX: Restored pure arithmetic to completely eliminate the positive debt illusion
+  const safeToSpend = totalIncomeBalance - currentMonthBillsTotal;
 
-  // === SURGICAL UPGRADE: GAMIFIED "BILLS PAID" RING FORMULA ===
+  // === GAMIFIED "BILLS PAID" RING FORMULA ===
   let currentMonthTotalBillsCount = 0;
   let currentMonthSettledBillsCount = 0;
 
@@ -210,7 +209,6 @@ export default function Dashboard({
 
   const strokeDasharray = 251.2;
   const targetDashoffset = strokeDasharray - (strokeDasharray * billsPaidPercentage) / 100;
-  // ==============================================================
 
   let runningBalance = totalIncomeBalance;
   const hzBalances = {};

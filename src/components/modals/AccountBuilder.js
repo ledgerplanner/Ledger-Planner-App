@@ -117,7 +117,7 @@ export default function AccountBuilder({
     }
     triggerVictory();
     setIsAddGoalOpen(false);
-    setNewGoalName("");
+    newGoalName("");
     setNewGoalAmount("");
     setNewGoalDate("");
     setNewGoalIcon("🎯");
@@ -192,7 +192,7 @@ export default function AccountBuilder({
                 <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Current Balance</label>
                 <div className="relative w-full flex items-center">
                   <span className={`absolute left-5 top-[22px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
-                  <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={newAccBalance} onChange={(e) => setNewAccBalance(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(newAccBalance)) && newAccBalance !== "") setNewAccBalance(parseFloat(newAccBalance).toFixed(2)) }} className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                  <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={newAccBalance} onChange={(e) => setNewAccBalance(e.target.value.replace(/[^0-9.-]/g, ""))} onBlur={() => { if(!isNaN(parseFloat(newAccBalance)) && newAccBalance !== "") setNewAccBalance(parseFloat(newAccBalance).toFixed(2)) }} className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                 </div>
                 <div className="flex items-center justify-between mt-3 ml-2 pr-2">
                   <span className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Negative Balance (Debt)</span>
@@ -242,7 +242,7 @@ export default function AccountBuilder({
                 <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Goal Amount</label>
                 <div className="relative w-full flex items-center">
                   <span className={`absolute left-5 top-[22px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
-                  <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={newGoalAmount} onChange={(e) => setNewGoalAmount(e.target.value)} onBlur={() => { if(!isNaN(parseFloat(newGoalAmount)) && newGoalAmount !== "") setNewGoalAmount(parseFloat(newGoalAmount).toFixed(2)) }} className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl border transition-colors outline-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                  <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={newGoalAmount} onChange={(e) => setNewGoalAmount(e.target.value.replace(/[^0-9.-]/g, ""))} onBlur={() => { if(!isNaN(parseFloat(newGoalAmount)) && newGoalAmount !== "") setNewGoalAmount(parseFloat(newGoalAmount).toFixed(2)) }} className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl border transition-colors outline-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                 </div>
               </div>
               <div className="relative">
@@ -340,7 +340,7 @@ export default function AccountBuilder({
                 <label className="absolute left-4 top-2 text-[9px] font-black uppercase tracking-widest z-10" style={{ color: signatureColor }}>{selectedAccount.isGoal ? "CURRENT BALANCE" : "QUICK BALANCE UPDATE"}</label>
                 <div className="relative w-full flex items-center">
                   <span className={`absolute left-5 top-[22px] font-bold text-lg ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
-                  <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={editAccountBalance} onChange={(e) => setEditAccountBalance(e.target.value)} onFocus={() => setEditAccountBalance(Math.abs(selectedAccount.balance || 0).toFixed(2))} onBlur={() => { if(!isNaN(parseFloat(editAccountBalance)) && editAccountBalance !== "") setEditAccountBalance(parseFloat(editAccountBalance).toFixed(2)) }} className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl border focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`} />
+                  <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={editAccountBalance} onChange={(e) => setEditAccountBalance(e.target.value.replace(/[^0-9.-]/g, ""))} onFocus={() => setEditAccountBalance(Math.abs(selectedAccount.balance || 0).toFixed(2))} onBlur={() => { if(!isNaN(parseFloat(editAccountBalance)) && editAccountBalance !== "") setEditAccountBalance(parseFloat(editAccountBalance).toFixed(2)) }} className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl border focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`} />
                 </div>
                 {!selectedAccount.isGoal && (
                   <div className="flex items-center justify-between mt-3 ml-2 pr-2">

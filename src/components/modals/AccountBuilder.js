@@ -68,7 +68,9 @@ export default function AccountBuilder({
     const startBal = parseFloat(newAccBalance);
     if (!newAccName.trim() || isNaN(startBal)) return;
 
-    const sanitizedName = newAccName.trim().toUpperCase();
+    // === SURGICAL FIX #5: REMOVED .toUpperCase() OVERRIDE ===
+    const sanitizedName = newAccName.trim();
+    
     let finalBalance = Math.abs(startBal);
     if (newAccIsNegative) finalBalance = -finalBalance;
 
@@ -98,7 +100,9 @@ export default function AccountBuilder({
     const targetBal = parseFloat(newGoalAmount);
     if (!newGoalName.trim() || isNaN(targetBal) || targetBal <= 0 || !newGoalDate || !newGoalIcon) return;
 
-    const sanitizedGoalName = newGoalName.trim().toUpperCase();
+    // === SURGICAL FIX #6: REMOVED .toUpperCase() OVERRIDE ===
+    const sanitizedGoalName = newGoalName.trim();
+    
     const newGoal = {
       name: sanitizedGoalName,
       type: "Goal",
@@ -117,7 +121,7 @@ export default function AccountBuilder({
     }
     triggerVictory();
     setIsAddGoalOpen(false);
-    newGoalName("");
+    setNewGoalName("");
     setNewGoalAmount("");
     setNewGoalDate("");
     setNewGoalIcon("🎯");
@@ -135,7 +139,7 @@ export default function AccountBuilder({
     const updatePayload = {
       balance: finalBalance,
       description: editAccountDesc,
-      name: editAccountName,
+      name: editAccountName.trim(), // Keep edit names intact
       icon: editAccountIcon
     };
     if (selectedAccount.isGoal) {
@@ -187,7 +191,8 @@ export default function AccountBuilder({
               <button onClick={() => setIsAddAccountOpen(false)} className={closeButtonClass}><X size={18} /></button>
             </div>
             <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
-              <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Name</label><input type="text" value={newAccName} onChange={(e) => setNewAccName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors uppercase ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
+              {/* SURGICAL FIX #5: STRIPPED 'uppercase' CLASS FROM ACCOUNT NAME INPUT */}
+              <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Name</label><input type="text" value={newAccName} onChange={(e) => setNewAccName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
               <div className="relative">
                 <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Current Balance</label>
                 <div className="relative w-full flex items-center">
@@ -225,9 +230,10 @@ export default function AccountBuilder({
               <button onClick={() => setIsAddGoalOpen(false)} className={closeButtonClass}><X size={18} /></button>
             </div>
             <div className={`p-6 space-y-4 relative ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
+              {/* SURGICAL FIX #6: STRIPPED 'uppercase' CLASS FROM GOAL NAME INPUT */}
               <div className="relative">
                 <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Goal Name</label>
-                <input type="text" value={newGoalName} onChange={(e) => setNewGoalName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors outline-none uppercase ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
+                <input type="text" value={newGoalName} onChange={(e) => setNewGoalName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors outline-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
               </div>
               
               <div className="relative cursor-pointer" onClick={() => { setIsIconSelectorOpen(true); setActiveIconField("goal"); }}>

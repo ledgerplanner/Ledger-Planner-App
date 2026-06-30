@@ -236,8 +236,22 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
   };
 
   const canSubmitQab = isQabFormValid() && isQabAmountValid;
-  const categoriesToRender = drawerTab === 'income' ? modernCategories.filter(g => g.group === "Income & Wealth") : modernCategories;
-  const currentRecentCategories = drawerTab === "bills" ? recentBillCategories : drawerTab === "income" ? recentIncomeCategories : recentExpenseCategories;
+  
+  // === SURGICAL FIX #3: EXCLUDE TRANSFERS FROM INCOME DROPDOWN ===
+  const categoriesToRender = drawerTab === 'income' 
+    ? modernCategories
+        .filter(g => g.group === "Income & Wealth")
+        .map(g => ({
+          ...g,
+          items: g.items.filter(item => item !== "Transfers (Venmo/Zelle)")
+        }))
+    : modernCategories;
+
+  const currentRecentCategories = drawerTab === "bills" 
+    ? recentBillCategories 
+    : drawerTab === "income" 
+      ? recentIncomeCategories.filter(c => c !== "Transfers (Venmo/Zelle)") 
+      : recentExpenseCategories;
 
   return (
     <div className="fixed inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
@@ -284,18 +298,25 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
             </div>
           ) : (
             <div className="p-5 space-y-3 h-auto">
+              
+              {/* === SURGICAL FIXES #1, #2 & #4: PLACEHOLDERS & CAPITALIZATION REMOVAL === */}
               <div className="relative">
                 <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-                  {drawerTab === "income" ? "Payer / Source" : "Name"}
+                  {drawerTab === "income" ? "Payer / Source" : drawerTab === "bills" ? "Bill Name" : "Expense Name"}
                 </label>
                 <input 
                   type="text" 
                   value={entryName} 
                   onChange={(e) => setEntryName(e.target.value)} 
-                  placeholder={drawerTab === "income" ? "ENTER PAYER..." : "ENTER NAME..."}
-                  className={`w-full pt-6 pb-2 px-5 rounded-2xl border font-bold text-xs uppercase tracking-wider focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white focus:border-slate-500" : "bg-white border-slate-200 text-slate-900 focus:border-slate-400"}`} 
+                  placeholder={
+                    drawerTab === "income" ? "Enter payer / source..." : 
+                    drawerTab === "bills" ? "Enter bill name..." : 
+                    "Expense name..."
+                  }
+                  className={`w-full pt-6 pb-2 px-5 rounded-2xl border font-bold text-sm focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white focus:border-slate-500" : "bg-white border-slate-200 text-slate-900 focus:border-slate-400"}`} 
                 />
               </div>
+
               <div className="relative">
                 <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Amount</label>
                 <div className="relative w-full flex items-center">
@@ -336,7 +357,7 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
               <div className="relative cursor-pointer" onClick={() => setIsCategorySelectorOpen(true)}>
                 <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Category Selector</label>
                 <div className={`w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
-                  <span className="text-xs font-bold uppercase tracking-wider text-left truncate">{entryCategory || "TAP TO CHOOSE CATEGORY..."}</span>
+                  <span className={`text-sm font-bold tracking-wide text-left truncate ${!entryCategory ? "text-slate-400" : ""}`}>{entryCategory || "Tap to choose category..."}</span>
                   <ArrowDown size={14} className={isDarkMode ? "text-slate-400" : "text-slate-500"} />
                 </div>
               </div>
@@ -441,10 +462,10 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
                   <Search size={14} className="text-slate-400 shrink-0" />
                   <input 
                     type="text"
-                    placeholder="SEARCH CATEGORIES"
+                    placeholder="Search categories..."
                     value={categorySearchQuery}
                     onChange={(e) => setCategorySearchQuery(e.target.value)}
-                    className="w-full bg-transparent outline-none font-bold text-xs uppercase tracking-wider text-slate-400 placeholder-slate-400/60"
+                    className="w-full bg-transparent outline-none font-bold text-sm text-slate-400 placeholder-slate-400/60"
                   />
                   {categorySearchQuery && (
                     <button onClick={() => setCategorySearchQuery("")} className="text-[10px] font-black text-slate-500">CLEAR</button>
@@ -501,7 +522,7 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
                       </div>
                       <div className="grid grid-cols-1 gap-1.5">
                         {group.items.map(item => (
-                          <button key={item} onClick={() => { triggerHaptic(20); setEntryCategory(item); setIsCategorySelectorOpen(false); setCategorySearchQuery(""); }} className={`w-full p-3.5 text-left rounded-xl text-xs font-black uppercase tracking-wide border transition-all active:scale-[0.99] flex items-center justify-between ${entryCategory === item ? 'text-white border-transparent shadow-sm' : isDarkMode ? "bg-slate-800 border-slate-700/60 text-slate-300 hover:bg-slate-700/80" : "bg-slate-50 border-slate-200/60 text-slate-700 hover:bg-slate-100/80"}`} style={{ backgroundColor: (entryCategory === item && drawerTab === "bills") ? signatureColor : undefined }}>
+                          <button key={item} onClick={() => { triggerHaptic(20); setEntryCategory(item); setIsCategorySelectorOpen(false); setCategorySearchQuery(""); }} className={`w-full p-3.5 text-left rounded-xl text-sm font-bold border transition-all active:scale-[0.99] flex items-center justify-between ${entryCategory === item ? 'text-white border-transparent shadow-sm' : isDarkMode ? "bg-slate-800 border-slate-700/60 text-slate-300 hover:bg-slate-700/80" : "bg-slate-50 border-slate-200/60 text-slate-700 hover:bg-slate-100/80"}`} style={{ backgroundColor: (entryCategory === item && drawerTab === "bills") ? signatureColor : undefined }}>
                             <span>{item}</span>
                             {entryCategory === item && <CheckCircle2 size={14} className="text-white shrink-0" />}
                           </button>

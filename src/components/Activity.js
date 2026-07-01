@@ -171,14 +171,14 @@ export default function Activity({
   
   const pureIncome = transactions
     .filter(t => {
-      const isInternalTransfer = t.category === "Transfers (Venmo/Zelle)" && !tx.isDirectGoalEntry;
+      const isInternalTransfer = t.category === "Transfers (Venmo/Zelle)" && !t.isDirectGoalEntry;
       return t.type === "Income" && !isInternalTransfer && !t.isCashOut;
     })
     .reduce((sum, t) => sum + t.amount, 0);
 
   const rawExpense = transactions
     .filter(t => {
-      const isInternalTransfer = t.category === "Transfers (Venmo/Zelle)" && !tx.isDirectGoalEntry;
+      const isInternalTransfer = t.category === "Transfers (Venmo/Zelle)" && !t.isDirectGoalEntry;
       return t.type === "Expense" && !isInternalTransfer;
     })
     .reduce((sum, t) => sum + t.amount, 0);
@@ -203,11 +203,11 @@ export default function Activity({
   
   const targetTransactions = isIncomeView 
     ? transactions.filter(t => {
-        const isInternalTransfer = t.category === "Transfers (Venmo/Zelle)" && !tx.isDirectGoalEntry;
+        const isInternalTransfer = t.category === "Transfers (Venmo/Zelle)" && !t.isDirectGoalEntry;
         return t.type === "Income" && !isInternalTransfer && !t.isCashOut;
       }) 
     : transactions.filter(t => {
-        const isInternalTransfer = t.category === "Transfers (Venmo/Zelle)" && !tx.isDirectGoalEntry;
+        const isInternalTransfer = t.category === "Transfers (Venmo/Zelle)" && !t.isDirectGoalEntry;
         return t.type === "Expense" && !isInternalTransfer;
       }); 
 
@@ -257,7 +257,7 @@ export default function Activity({
       : "bg-orange-50 text-orange-600 drop-shadow-[0_0_12px_rgba(249,115,22,0.7)]";
   };
 
-  // UI OVERRIDE: Mute the text color strictly for internal Transfers and Cash Outs. Outside income is shown in bright green.
+  // === SURGICAL FIX: Restored tx pointer specifically for the single crash point ===
   const getTxCategoryColor = (tx) => {
     const isInternalTransfer = tx.category === "Transfers (Venmo/Zelle)" && !tx.isDirectGoalEntry;
     if (tx.isCashOut || isInternalTransfer) return isDarkMode ? "text-slate-400" : "text-slate-500";
@@ -266,7 +266,6 @@ export default function Activity({
     return "text-[#F97316]";
   };
 
-  // === SURGICAL FIX: FIREWALL THE HERO GRAPHIC CONTENT ===
   const graphicContent = useMemo(() => (
     <div className="flex flex-col relative z-10 mb-2 w-full">
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
@@ -314,7 +313,6 @@ export default function Activity({
     </div>
   ), [isMounted, isDarkMode, netCashFlow, inPercentage, totalIncome, totalExpense]);
 
-  // === SURGICAL FIX: FIREWALL THE RENDER SHELL EXECUTION ===
   const memoizedHeroShell = useMemo(() => {
     return renderHeroShell(`${userName}'s Activities`, graphicContent);
   }, [userName, graphicContent, renderHeroShell]);

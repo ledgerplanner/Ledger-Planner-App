@@ -273,9 +273,10 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
               
               <div className="text-center relative flex justify-center items-center py-2">
                 <span className={`text-5xl font-black tracking-tighter ${drawerTab === "bills" ? "" : qabActiveText}`} style={{ color: drawerTab === "bills" ? signatureColor : undefined }}>${inputValue}</span>
+                {/* === SURGICAL FIX #4: DYNAMIC BACKSPACE COLOR === */}
                 <button 
                   onPointerDown={(e) => { e.preventDefault(); triggerHaptic(15); setInputValue(inputValue.slice(0, -1) || "0"); }} 
-                  className="absolute right-4 p-2 text-xl active:scale-90 transition-transform opacity-70 hover:opacity-100" 
+                  className={`absolute right-4 p-2 text-xl active:scale-90 transition-transform opacity-70 hover:opacity-100 ${drawerTab !== "bills" ? qabActiveText : ""}`} 
                   style={{ color: drawerTab === "bills" ? signatureColor : undefined }}
                 >
                   ⌫

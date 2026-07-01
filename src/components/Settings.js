@@ -7,7 +7,7 @@ import {
 
 // === SURGICAL INJECTION: FIRESTORE CAPABILITIES FOR BIRTHDAY SYNC ===
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "../../firebase";
+import { db } from "../firebase";
 
 export default function Settings({
   userName,

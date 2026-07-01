@@ -10,10 +10,7 @@ export default function CommandCenter({
   changeTab,
   handleOpenPaydaySetup,
   userName,
-  hasConsumedAMBriefing,
-  setHasConsumedAMBriefing,
-  hasConsumedPMBriefing,
-  setHasConsumedPMBriefing,
+  // === SURGICAL FIX: REMOVED BRIEFING PROPS (hasConsumedAMBriefing, etc.) ===
   formatPaydayDateStr,
   isPushEnabled,
   enablePushNotifications
@@ -21,34 +18,18 @@ export default function CommandCenter({
   // 1. PULL GLOBAL STATE FROM THE CLOUD
   const { isDarkMode, signatureColor, isDemoMode } = useLedger();
 
-  // 2. INITIALIZE THE BRIEFING ENGINE
-  const { activeAlerts, briefingData } = useBriefingEngine({
+  // 2. INITIALIZE THE NOTIFICATION ENGINE (BRIEFING DATA IGNORED/REMOVED)
+  const { activeAlerts } = useBriefingEngine({
     needsRefresh,
     dynamicBills,
     changeTab,
     setIsNotificationsOpen,
     handleOpenPaydaySetup,
     userName,
-    hasConsumedAMBriefing,
-    hasConsumedPMBriefing,
     formatPaydayDateStr
   });
 
   const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
-
-  const handleConsumeBriefing = () => {
-    if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) {
-      window.navigator.vibrate(30);
-    }
-    const todayKey = new Date().toISOString().split('T')[0];
-    if (briefingData.isAM) {
-      setHasConsumedAMBriefing(true);
-      localStorage.setItem(`lp_briefing_am_${todayKey}`, "true");
-    } else {
-      setHasConsumedPMBriefing(true);
-      localStorage.setItem(`lp_briefing_pm_${todayKey}`, "true");
-    }
-  };
 
   return (
     <div className="fixed inset-0 z-[120] flex justify-end">
@@ -70,22 +51,9 @@ export default function CommandCenter({
             </div>
           )}
 
-          {briefingData.isUnconsumed && (
-            <div className={`p-5 rounded-[1.8rem] border flex items-start gap-4 shadow-sm transition-all duration-500 ${isDarkMode ? "bg-slate-900/90 border-amber-500/20" : "bg-amber-50/80 border-amber-200/60"}`}>
-              <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-amber-500/10 text-xl">✨</div>
-              <div className="flex-1">
-                <div className="flex justify-between items-start">
-                  <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${isDarkMode ? "text-amber-400" : "text-amber-800"}`}>{briefingData.isAM ? "Morning Strategy" : "Evening Analysis"}</p>
-                  <button onClick={handleConsumeBriefing} className="text-slate-400 hover:text-slate-600 p-0.5">×</button>
-                </div>
-                <p className={`text-xs font-bold leading-relaxed ${isDarkMode ? "text-slate-300" : "text-amber-950"}`}>
-                  {briefingData.text}
-                </p>
-              </div>
-            </div>
-          )}
+          {/* === SURGICAL FIX: BRIEFING UI BLOCK COMPLETELY REMOVED === */}
 
-          {activeAlerts.length === 0 && !briefingData.isUnconsumed ? (
+          {activeAlerts.length === 0 ? (
             <div className="text-center py-20 opacity-100 flex flex-col items-center justify-center h-full">
               <div className="p-4 rounded-full bg-emerald-50 mb-4 dark:bg-emerald-900/20">
                 <CheckCircle2 size={36} className="text-[#10B981] drop-shadow-sm" />

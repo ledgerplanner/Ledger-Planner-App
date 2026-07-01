@@ -18,10 +18,6 @@ export default function Dashboard({
   formatPaydayDateStr,
   renderHeroShell,
   changeTab,
-  hasConsumedAMBriefing,
-  setHasConsumedAMBriefing,
-  hasConsumedPMBriefing,
-  setHasConsumedPMBriefing,
   isEntrepreneurMode = false
 }) {
   const [isPushEnabled, setIsPushEnabled] = useState(false);

@@ -648,6 +648,38 @@ function LedgerApp() {
     return dateString;
   };
 
+  // === SURGICAL FIX: RESTORED calculatePaydayGroup UTILITY ===
+  const calculatePaydayGroup = (dateString) => {
+    if (!dateString) return "Unscheduled";
+    const billDate = new Date(dateString);
+    if (isNaN(billDate.getTime())) return "Unscheduled";
+
+    const todayLocal = new Date(); todayLocal.setHours(0, 0, 0, 0);
+    const localBillDate = new Date(billDate.getUTCFullYear(), billDate.getUTCMonth(), billDate.getUTCDate());
+    if (localBillDate < todayLocal || localBillDate.getTime() === todayLocal.getTime()) return "Due Now";
+    const activePaydays = [];
+    for (let i = 1; i <= 5; i++) {
+      const pdId = `Payday ${i}`;
+      if (paydayConfig && paydayConfig[pdId] && paydayConfig[pdId].date) {
+        const d = new Date(paydayConfig[pdId].date);
+        if (!isNaN(d.getTime())) activePaydays.push({ id: pdId, date: d });
+      }
+    }
+    if (activePaydays.length === 0) return "Unscheduled";
+    activePaydays.sort((a, b) => a.date - b.date);
+    const lastPayday = activePaydays[activePaydays.length - 1].date;
+    const horizonDate = new Date(lastPayday);
+    horizonDate.setDate(horizonDate.getDate() + 7);
+    if (localBillDate > horizonDate) return "Unscheduled";
+    if (billDate < activePaydays[0].date) return activePaydays[0].id;
+    let assignedPd = activePaydays[0].id;
+    for (let i = 0; i < activePaydays.length; i++) {
+      if (billDate >= activePaydays[i].date) assignedPd = activePaydays[i].id;
+      else break;
+    }
+    return assignedPd;
+  };
+
   const todayForDynamic = new Date(); todayForDynamic.setHours(0, 0, 0, 0);
   const dynamicBills = bills.map(bill => {
     let currentPayday = bill.payday;

@@ -1,16 +1,21 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   X, User, CreditCard, RefreshCw, AlertCircle, Trash2, LogOut, 
   ChevronRight, Sparkles, Globe, Palette, Users, Shield, Check, HelpCircle, Briefcase,
   Download, FileText
 } from "lucide-react";
 
+// === SURGICAL INJECTION: FIRESTORE CAPABILITIES FOR BIRTHDAY SYNC ===
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { db } from "../../firebase";
+
 export default function Settings({
   userName,
+  user, // <-- INJECTED TO SYNC SETTINGS TO THE USER PROFILE
   isDarkMode,
-  setIsDarkMode, // Retained in props to prevent breaking App.js
+  setIsDarkMode, 
   setIsSettingsOpen,
-  handleRolloverMonth, // Retained in props to prevent breaking App.js
+  handleRolloverMonth, 
   handleFactoryReset,
   resetConfirm,
   setResetConfirm,
@@ -23,9 +28,10 @@ export default function Settings({
   handleUpdateDisplayName, 
   isEntrepreneurMode = false,
   setIsEntrepreneurMode,
-  handleExportData // <-- INJECTED FOR YEAR-END EXPORTER
+  handleExportData
 }) {
   const [editName, setEditName] = useState(userName || "");
+  const [editBirthday, setEditBirthday] = useState(""); // <-- INJECTED BIRTHDAY STATE
 
   // Slide-up Drawers and Sub-Modals
   const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
@@ -34,7 +40,7 @@ export default function Settings({
 
   // Co-Op Invitation Workflow State Variables
   const [inviteEmail, setInviteEmail] = useState("");
-  const [coOpStep, setCoOpStep] = useState(1); // 1: Input, 2: Active Alert, 3: Linked Vault Details
+  const [coOpStep, setCoOpStep] = useState(1); 
 
   // Mock Checklist State Matrix for the Vault Merge Wizard
   const [mergeAccounts, setMergeAccounts] = useState({
@@ -67,10 +73,39 @@ export default function Settings({
     { name: "Rose Quartz", hex: "#EC4899" }
   ];
 
-  // Dynamic Previous Year Calculation
   const previousYear = new Date().getFullYear() - 1;
 
-  // HIGH-PRECISION RE-ENGINEERED 2-LAYER STACKED ROW CARD COMPONENT
+  // === SURGICAL INJECTION: FETCH EXISTING BIRTHDAY ON LOAD ===
+  useEffect(() => {
+    if (!user || isDemoMode) return;
+    const fetchBirthday = async () => {
+      try {
+        const docSnap = await getDoc(doc(db, "users", user.uid));
+        if (docSnap.exists() && docSnap.data().birthday) {
+          setEditBirthday(docSnap.data().birthday);
+        }
+      } catch (err) {
+        console.error("Failed to load user foundation date:", err);
+      }
+    };
+    fetchBirthday();
+  }, [user, isDemoMode]);
+
+  // === SURGICAL INJECTION: SAVE BIRTHDAY TO FIRESTORE ===
+  const handleUpdateBirthday = async (newDate) => {
+    if (!newDate || !user) return;
+    if (isDemoMode) {
+       openGlobalAction("Demo Mode Active", "Data synchronization disabled in demo environment.", "Close", false, () => {}, true);
+       return;
+    }
+    try {
+      await updateDoc(doc(db, "users", user.uid), { birthday: newDate });
+      openGlobalAction("Foundation Date Secured", "Your birthday profile parameters have been synchronized with the vault.", "Close", false, () => {}, true);
+    } catch (err) {
+      console.error("Failed to sync foundation date:", err);
+    }
+  };
+
   const SettingRow = ({ icon: Icon, title, statusText, colorClass = "", onClick }) => {
     return (
       <button
@@ -111,7 +146,6 @@ export default function Settings({
     isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
   }`;
 
-  // REUSABLE SIGNATURE LINE
   const SignatureLine = () => (
     <div className={`border-t w-full mt-10 mb-4 ${isDarkMode ? "border-white" : "border-slate-300"}`}></div>
   );
@@ -195,6 +229,29 @@ export default function Settings({
                     style={{ backgroundColor: (editName.trim() && editName !== userName) ? signatureColor : isDarkMode ? "#1E293B" : "#E2E8F0", color: (editName.trim() && editName !== userName) ? "#FFFFFF" : "#94A3B8" }}
                   >
                     UPDATE DISPLAY NAME
+                  </button>
+                </div>
+              </div>
+
+              {/* === SURGICALLY INJECTED BIRTHDAY PICKER === */}
+              <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
+                <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-2">FOUNDATION DATE (BIRTHDAY)</label>
+                <div className="flex flex-col gap-2.5">
+                  <input 
+                    type="date" 
+                    value={editBirthday} 
+                    onChange={(e) => setEditBirthday(e.target.value)} 
+                    className={`w-full py-3 px-4 rounded-xl font-bold text-xs border focus:outline-none transition-colors ${
+                      isDarkMode ? "bg-[#0F172A] border-slate-700 text-white focus:border-slate-500" : "bg-white border-slate-200 text-slate-900 focus:border-slate-400"
+                    }`} 
+                  />
+                  <button 
+                    onClick={() => handleUpdateBirthday(editBirthday)}
+                    disabled={!editBirthday}
+                    className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-[0.98]"
+                    style={{ backgroundColor: editBirthday ? signatureColor : isDarkMode ? "#1E293B" : "#E2E8F0", color: editBirthday ? "#FFFFFF" : "#94A3B8" }}
+                  >
+                    SYNC FOUNDATION DATE
                   </button>
                 </div>
               </div>

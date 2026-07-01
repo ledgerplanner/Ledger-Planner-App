@@ -171,14 +171,14 @@ export default function Activity({
   
   const pureIncome = transactions
     .filter(t => {
-      const isInternalTransfer = t.category === "Transfers (Venmo/Zelle)" && !t.isDirectGoalEntry;
+      const isInternalTransfer = t.category === "Transfers (Venmo/Zelle)" && !tx.isDirectGoalEntry;
       return t.type === "Income" && !isInternalTransfer && !t.isCashOut;
     })
     .reduce((sum, t) => sum + t.amount, 0);
 
   const rawExpense = transactions
     .filter(t => {
-      const isInternalTransfer = t.category === "Transfers (Venmo/Zelle)" && !t.isDirectGoalEntry;
+      const isInternalTransfer = t.category === "Transfers (Venmo/Zelle)" && !tx.isDirectGoalEntry;
       return t.type === "Expense" && !isInternalTransfer;
     })
     .reduce((sum, t) => sum + t.amount, 0);
@@ -203,11 +203,11 @@ export default function Activity({
   
   const targetTransactions = isIncomeView 
     ? transactions.filter(t => {
-        const isInternalTransfer = t.category === "Transfers (Venmo/Zelle)" && !t.isDirectGoalEntry;
+        const isInternalTransfer = t.category === "Transfers (Venmo/Zelle)" && !tx.isDirectGoalEntry;
         return t.type === "Income" && !isInternalTransfer && !t.isCashOut;
       }) 
     : transactions.filter(t => {
-        const isInternalTransfer = t.category === "Transfers (Venmo/Zelle)" && !t.isDirectGoalEntry;
+        const isInternalTransfer = t.category === "Transfers (Venmo/Zelle)" && !tx.isDirectGoalEntry;
         return t.type === "Expense" && !isInternalTransfer;
       }); 
 
@@ -259,7 +259,7 @@ export default function Activity({
 
   // UI OVERRIDE: Mute the text color strictly for internal Transfers and Cash Outs. Outside income is shown in bright green.
   const getTxCategoryColor = (tx) => {
-    const isInternalTransfer = tx.category === "Transfers (Venmo/Zelle)" && !t.isDirectGoalEntry;
+    const isInternalTransfer = tx.category === "Transfers (Venmo/Zelle)" && !tx.isDirectGoalEntry;
     if (tx.isCashOut || isInternalTransfer) return isDarkMode ? "text-slate-400" : "text-slate-500";
     if (tx.isDirectGoalEntry || tx.type === "Income") return "text-[#10B981]";
     if (tx.isBillPayment || tx.category === "Bill Payment") return "text-[#1877F2]";

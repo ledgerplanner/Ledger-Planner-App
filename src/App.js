@@ -11,7 +11,7 @@ import {
   signInWithEmailAndPassword, createUserWithEmailAndPassword, 
   onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup, updateProfile 
 } from "firebase/auth";
-import { doc, setDoc, serverTimestamp, updateDoc, collection, addDoc, deleteDoc, getDocs } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp, updateDoc, collection, addDoc, deleteDoc, getDocs, getDoc } from "firebase/firestore";
 
 // === CONTEXT & HOOKS ===
 import { LedgerProvider, useLedger } from "./context/LedgerContext";
@@ -114,16 +114,6 @@ function LedgerApp() {
   const [editPaydayConfig, setEditPaydayConfig] = useState(paydayConfig);
   const [currentCurrency, setCurrentCurrency] = useState("USD ($)");
   const [resetConfirm, setResetConfirm] = useState("");
-  
-  // Briefing Engine
-  const [hasConsumedAMBriefing, setHasConsumedAMBriefing] = useState(() => {
-    if (typeof window !== "undefined") return localStorage.getItem(`lp_briefing_am_${new Date().toISOString().split('T')[0]}`) === "true";
-    return false;
-  });
-  const [hasConsumedPMBriefing, setHasConsumedPMBriefing] = useState(() => {
-    if (typeof window !== "undefined") return localStorage.getItem(`lp_briefing_pm_${new Date().toISOString().split('T')[0]}`) === "true";
-    return false;
-  });
 
   // Push Notifications
   const [isPushEnabled, setIsPushEnabled] = useState(() => {
@@ -204,13 +194,6 @@ function LedgerApp() {
     triggerHaptic(20);
     setActiveTab(tabId);
     if (scrollRef.current) scrollRef.current.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const formatDisplayDate = (dString) => {
-    if (!dString) return "";
-    const parts = dString.split('-');
-    if (parts.length === 3) return `${parts[1]}/${parts[2]}/${parts[0]}`;
-    return dString;
   };
 
   const openEntryDrawer = (entry) => { setSelectedEntry(entry); setIsEditingEntry(false); };
@@ -569,6 +552,36 @@ function LedgerApp() {
     return () => unsubscribeAuth();
   }, [isMounted, isDemoMode, setUser]);
 
+  // === SURGICAL FIX: BIRTHDAY CONFETTI ENGINE ===
+  useEffect(() => {
+    if (!user || isDemoMode) return;
+    const fetchBirthday = async () => {
+      try {
+        const docSnap = await getDoc(doc(db, "users", user.uid));
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.birthday) {
+            const today = new Date();
+            const todayStr = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            // Extract MM-DD regardless of format (YYYY-MM-DD or MM-DD)
+            const bdayStr = data.birthday.length > 5 ? data.birthday.substring(5) : data.birthday; 
+            const bdayYear = today.getFullYear();
+            const storageKey = `lp_bday_celebrated_${bdayYear}`;
+            
+            if (bdayStr === todayStr && localStorage.getItem(storageKey) !== "true") {
+              triggerVictory();
+              openGlobalAction("Happy Birthday! 🎂", `Happy Birthday, ${data.firstName || "Founder"}! Enjoy the clean slate today.`, "Let's Go", false, () => {}, true);
+              localStorage.setItem(storageKey, "true");
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to check birthday status:", err);
+      }
+    };
+    fetchBirthday();
+  }, [user, isDemoMode]); // Run once when user is authenticated
+
   useEffect(() => {
     const timer = setInterval(() => {
       const now = new Date();
@@ -628,37 +641,6 @@ function LedgerApp() {
   const getOrdinalNum = (n) => n + (n > 0 ? ['th', 'st', 'nd', 'rd'][(n > 3 && n < 21) || n % 10 > 3 ? 0 : n % 10] : '');
   const heroDateTimeStr = `${currentTime.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase()}, ${currentTime.toLocaleDateString("en-US", { month: "long" }).toUpperCase()} ${getOrdinalNum(currentTime.getDate()).toUpperCase()}, ${currentTime.getFullYear()} — ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toUpperCase()}`;
 
-  const calculatePaydayGroup = (dateString) => {
-    if (!dateString) return "Unscheduled";
-    const billDate = new Date(dateString);
-    if (isNaN(billDate.getTime())) return "Unscheduled";
-
-    const todayLocal = new Date(); todayLocal.setHours(0, 0, 0, 0);
-    const localBillDate = new Date(billDate.getUTCFullYear(), billDate.getUTCMonth(), billDate.getUTCDate());
-    if (localBillDate < todayLocal || localBillDate.getTime() === todayLocal.getTime()) return "Due Now";
-    const activePaydays = [];
-    for (let i = 1; i <= 5; i++) {
-      const pdId = `Payday ${i}`;
-      if (paydayConfig && paydayConfig[pdId] && paydayConfig[pdId].date) {
-        const d = new Date(paydayConfig[pdId].date);
-        if (!isNaN(d.getTime())) activePaydays.push({ id: pdId, date: d });
-      }
-    }
-    if (activePaydays.length === 0) return "Unscheduled";
-    activePaydays.sort((a, b) => a.date - b.date);
-    const lastPayday = activePaydays[activePaydays.length - 1].date;
-    const horizonDate = new Date(lastPayday);
-    horizonDate.setDate(horizonDate.getDate() + 7);
-    if (localBillDate > horizonDate) return "Unscheduled";
-    if (billDate < activePaydays[0].date) return activePaydays[0].id;
-    let assignedPd = activePaydays[0].id;
-    for (let i = 0; i < activePaydays.length; i++) {
-      if (billDate >= activePaydays[i].date) assignedPd = activePaydays[i].id;
-      else break;
-    }
-    return assignedPd;
-  };
-
   const formatPaydayDateStr = (dateString) => {
     if (!dateString) return "TBD";
     const parts = dateString.split("-");
@@ -692,10 +674,8 @@ function LedgerApp() {
   const currentLiveBalance = accounts.filter(a => !a.isGoal && (a.type === "Checking" || a.type === "Cash")).reduce((sum, acc) => sum + (acc.balance || 0), 0);
 
   const renderHeroShell = (title, graphicContent) => {
+    // === SURGICAL FIX: BADGE LOGIC STREAMLINED (NO BRIEFINGS) ===
     const hasOverdueOrDueNow = dynamicBills.some(b => !b.isPaid && (b.isOverdue || b.payday === "Due Now"));
-    const hours = new Date().getHours();
-    const isAM = hours >= 5 && hours < 12;
-    const isUnconsumedBriefing = isAM ? !hasConsumedAMBriefing : !hasConsumedPMBriefing;
 
     return (
       <header className={`px-6 pt-12 pb-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden mb-8 z-30 rounded-b-[3rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
@@ -714,8 +694,8 @@ function LedgerApp() {
             </button>
             <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-100 text-slate-400"}`} style={{ color: isSettingsOpen ? undefined : signatureColor }}>
               <Bell size={18} />
-              {(hasOverdueOrDueNow || isUnconsumedBriefing || (!isPushEnabled && !isDemoMode)) && (
-                <span className={`absolute top-0 right-0 w-2.5 h-2.5 rounded-full border-[1.5px] animate-pulse ${hasOverdueOrDueNow ? "bg-red-500 border-red-500" : isUnconsumedBriefing ? "bg-[#1877F2] border-[#1877F2]" : "bg-red-500 border-red-500"} ${isDarkMode ? "border-t-transparent border-l-transparent" : "border-white"}`} style={{ backgroundColor: isUnconsumedBriefing && !hasOverdueOrDueNow ? signatureColor : undefined, borderColor: isUnconsumedBriefing && !hasOverdueOrDueNow ? signatureColor : undefined }}></span>
+              {(hasOverdueOrDueNow || (!isPushEnabled && !isDemoMode)) && (
+                <span className={`absolute top-0 right-0 w-2.5 h-2.5 rounded-full border-[1.5px] animate-pulse ${hasOverdueOrDueNow ? "bg-red-500 border-red-500" : "bg-red-500 border-red-500"} ${isDarkMode ? "border-t-transparent border-l-transparent" : "border-white"}`}></span>
               )}
             </button>
           </div>
@@ -817,10 +797,6 @@ function LedgerApp() {
                 toggleCollapse={toggleCollapse}
                 handleBillClick={handleBillClick}
                 setSelectedEntry={openEntryDrawer}
-                hasConsumedAMBriefing={hasConsumedAMBriefing}
-                setHasConsumedAMBriefing={setHasConsumedAMBriefing}
-                hasConsumedPMBriefing={hasConsumedPMBriefing}
-                setHasConsumedPMBriefing={setHasConsumedPMBriefing}
                 isEntrepreneurMode={isEntrepreneurMode} 
               />
             )}
@@ -918,7 +894,7 @@ function LedgerApp() {
 
         {/* === THE CORE MODAL INJECTIONS === */}
         {isQabOpen && <QuickAddModal onClose={() => setIsQabOpen(false)} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} />}
-        {isNotificationsOpen && <CommandCenter setIsNotificationsOpen={setIsNotificationsOpen} needsRefresh={needsRefresh} dynamicBills={dynamicBills} changeTab={changeTab} userName={userName} hasConsumedAMBriefing={hasConsumedAMBriefing} setHasConsumedAMBriefing={setHasConsumedAMBriefing} hasConsumedPMBriefing={hasConsumedPMBriefing} setHasConsumedPMBriefing={setHasConsumedPMBriefing} formatPaydayDateStr={formatPaydayDateStr} isPushEnabled={isPushEnabled} enablePushNotifications={enablePushNotifications} />}
+        {isNotificationsOpen && <CommandCenter setIsNotificationsOpen={setIsNotificationsOpen} needsRefresh={needsRefresh} dynamicBills={dynamicBills} changeTab={changeTab} userName={userName} formatPaydayDateStr={formatPaydayDateStr} isPushEnabled={isPushEnabled} enablePushNotifications={enablePushNotifications} />}
         <TransferEngine isTransferOpen={isTransferOpen} setIsTransferOpen={setIsTransferOpen} isCashOutOpen={isCashOutOpen} setIsCashOutOpen={setIsCashOutOpen} cashOutGoal={cashOutGoal} setCashOutGoal={setCashOutGoal} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} />
         
         {/* === PROP INJECTIONS FOR ACCOUNT BUILDER === */}
@@ -1012,6 +988,7 @@ function LedgerApp() {
         {isSettingsOpen && (
           <Settings 
             userName={userName}
+            user={user} // SURGICAL INJECTION: Passed user so Settings can save to the DB
             isDarkMode={isDarkMode}
             setIsDarkMode={setIsDarkMode}
             setIsSettingsOpen={setIsSettingsOpen}

@@ -85,13 +85,13 @@ export default function Settings({
           setEditBirthday(docSnap.data().birthday);
         }
       } catch (err) {
-        console.error("Failed to load user foundation date:", err);
+        console.error("Failed to load user birthday:", err);
       }
     };
     fetchBirthday();
   }, [user, isDemoMode]);
 
-  // === SURGICAL INJECTION: SAVE BIRTHDAY TO FIRESTORE ===
+  // === SURGICAL FIX #1: UPDATED BIRTHDAY PHRASING & NOTIFICATION PAYLOAD ===
   const handleUpdateBirthday = async (newDate) => {
     if (!newDate || !user) return;
     if (isDemoMode) {
@@ -100,9 +100,9 @@ export default function Settings({
     }
     try {
       await updateDoc(doc(db, "users", user.uid), { birthday: newDate });
-      openGlobalAction("Foundation Date Secured", "Your birthday profile parameters have been synchronized with the vault.", "Close", false, () => {}, true);
+      openGlobalAction("Birthday Date Set", "Your birthday has been set. Merry Birthday to you, and to you many more!", "Close", false, () => {}, true);
     } catch (err) {
-      console.error("Failed to sync foundation date:", err);
+      console.error("Failed to sync birthday date:", err);
     }
   };
 
@@ -233,9 +233,9 @@ export default function Settings({
                 </div>
               </div>
 
-              {/* === SURGICALLY INJECTED BIRTHDAY PICKER === */}
+              {/* === SURGICALLY INJECTED BIRTHDAY PICKER (WITH WARM PHRASING) === */}
               <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
-                <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-2">FOUNDATION DATE (BIRTHDAY)</label>
+                <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-2">SET BIRTHDAY</label>
                 <div className="flex flex-col gap-2.5">
                   <input 
                     type="date" 
@@ -251,7 +251,7 @@ export default function Settings({
                     className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-[0.98]"
                     style={{ backgroundColor: editBirthday ? signatureColor : isDarkMode ? "#1E293B" : "#E2E8F0", color: editBirthday ? "#FFFFFF" : "#94A3B8" }}
                   >
-                    SYNC FOUNDATION DATE
+                    SET BIRTHDAY DATE
                   </button>
                 </div>
               </div>

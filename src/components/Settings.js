@@ -166,14 +166,16 @@ export default function Settings({
           {/* 2. CUSTOM SETTINGS                        */}
           {/* ========================================= */}
           <div className="space-y-3">
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 flex items-center gap-1.5">
+            <h4 className={`text-[10px] font-black uppercase tracking-widest px-2 flex items-center gap-1.5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
               <Palette size={12} strokeWidth={2.5} /> Custom Settings
             </h4>
             <div className={`p-4 rounded-[2rem] border space-y-3 ${isDarkMode ? "bg-slate-800/20 border-slate-800" : "bg-white border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.04)]"}`}>
               
               {/* Preferred Display Name */}
               <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
-                <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-2">PREFERRED DISPLAY NAME</label>
+                <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                  👤 PREFERRED DISPLAY NAME
+                </label>
                 <div className="flex flex-col gap-2.5">
                   <input 
                     type="text" 
@@ -199,7 +201,9 @@ export default function Settings({
 
               {/* Set Birthday Picker */}
               <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
-                <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-2">SET BIRTHDAY</label>
+                <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                  🎂 SET BIRTHDAY
+                </label>
                 <div className="flex flex-col gap-2.5">
                   <input 
                     type="date" 
@@ -221,43 +225,36 @@ export default function Settings({
               </div>
 
               {/* Select Theme Color (Premium Palette) */}
-              <div className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left gap-3 ${
-                isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.04)]"
-              }`}>
-                <div className="flex items-center gap-3 w-full min-w-0">
-                  <div className={`p-2.5 rounded-xl shrink-0 ${isDarkMode ? "bg-slate-900/60" : "bg-slate-50"}`} style={{ color: signatureColor }}>
-                    <Palette size={16} strokeWidth={2.5} />
-                  </div>
-                  <span className={`text-xs font-black uppercase tracking-wider truncate flex-1 ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
-                    SELECT THEME COLOR
-                  </span>
-                </div>
-                <div className={`w-full pt-3 border-t ${isDarkMode ? "border-slate-800/60" : "border-slate-100"}`}>
-                  <div className="grid grid-cols-6 gap-2">
-                    {premiumPalette.map((color) => (
-                      <button
-                        key={color.name}
-                        onClick={() => setSignatureColor && setSignatureColor(color.hex)}
-                        className="h-8 rounded-xl relative transition-transform active:scale-90 flex items-center justify-center border shadow-sm"
-                        style={{ backgroundColor: color.hex, borderColor: signatureColor === color.hex ? "#FFFFFF" : "transparent" }}
-                      >
-                        {color.hex === "#1877F2" && (
-                          <span className="absolute -top-3 -right-2 bg-slate-800 text-white text-[5px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest border border-slate-600 shadow-xl z-10">
-                            DEFAULT
-                          </span>
-                        )}
-                        {signatureColor === color.hex && (
-                          <Check size={14} className="text-white drop-shadow-md" strokeWidth={3} />
-                        )}
-                      </button>
-                    ))}
-                  </div>
+              <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
+                <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                  🎨 SELECT THEME COLOR
+                </label>
+                <div className="grid grid-cols-6 gap-2">
+                  {premiumPalette.map((color) => (
+                    <button
+                      key={color.name}
+                      onClick={() => setSignatureColor && setSignatureColor(color.hex)}
+                      className="h-10 rounded-xl relative transition-transform active:scale-90 flex items-center justify-center border shadow-sm"
+                      style={{ backgroundColor: color.hex, borderColor: signatureColor === color.hex ? "#FFFFFF" : "transparent" }}
+                    >
+                      {color.hex === "#1877F2" && (
+                        <span className="absolute -top-3 -right-2 bg-slate-800 text-white text-[5px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest border border-slate-600 shadow-xl z-10">
+                          DEFAULT
+                        </span>
+                      )}
+                      {signatureColor === color.hex && (
+                        <Check size={14} className="text-white drop-shadow-md" strokeWidth={3} />
+                      )}
+                    </button>
+                  ))}
                 </div>
               </div>
 
               {/* Select Currency */}
               <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
-                <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-2">SELECT CURRENCY</label>
+                <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                  🌐 SELECT CURRENCY
+                </label>
                 <div className="flex flex-col gap-2.5">
                   <div className={`w-full py-3 px-4 rounded-xl font-bold text-xs border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-600"}`}>
                     <div className="flex items-center gap-2">
@@ -277,51 +274,50 @@ export default function Settings({
               </div>
 
               {/* Income Structure */}
-              <div className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left gap-3 ${
-                isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.04)]"
-              }`}>
-                <div className="flex items-center gap-3 w-full min-w-0">
-                  <div className={`p-2.5 rounded-xl shrink-0 ${isDarkMode ? "bg-slate-900/60" : "bg-emerald-50"} text-emerald-500`}>
-                    <Briefcase size={16} strokeWidth={2.5} />
-                  </div>
-                  <div className="flex flex-col flex-1 min-w-0">
-                    <span className={`text-xs font-black uppercase tracking-wider truncate ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
-                      INCOME STRUCTURE
+              <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
+                <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                  💼 INCOME STRUCTURE
+                </label>
+                <div className="flex flex-col gap-2.5">
+                  <div className={`w-full py-3 px-4 rounded-xl font-bold text-xs border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-600"}`}>
+                    <div className="flex items-center gap-2">
+                      <Briefcase size={14} className="text-emerald-500" />
+                      <span>Active Mode</span>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded border ${isDarkMode ? "bg-slate-800 border-slate-600 text-white" : "bg-slate-100 border-slate-200 text-slate-900"}`}>
+                      {isEntrepreneurMode ? "Entrepreneur" : "Standard"}
                     </span>
-                    <span className={`text-[9px] font-black uppercase tracking-widest mt-0.5 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
-                      {isEntrepreneurMode ? "Entrepreneur (Variable)" : "Standard (W-2 Paydays)"}
-                    </span>
                   </div>
-                </div>
-                <div className={`flex p-1 rounded-xl border mt-1 ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
-                  <button
-                    onClick={() => {
-                      if (setIsEntrepreneurMode) setIsEntrepreneurMode(false);
-                      openGlobalAction("Structure Realigned", "Standard W-2 Payday routing restored successfully.", "Close", false, () => {}, true);
-                    }}
-                    className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${
-                      !isEntrepreneurMode
-                        ? "text-white shadow-sm"
-                        : isDarkMode ? "text-slate-500 hover:text-slate-300" : "text-slate-400 hover:text-slate-600"
-                    }`}
-                    style={{ backgroundColor: !isEntrepreneurMode ? signatureColor : undefined }}
-                  >
-                    Standard
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (setIsEntrepreneurMode) setIsEntrepreneurMode(true);
-                      openGlobalAction("Entrepreneur Mode Active", "Variable income routing engaged. Payday schedules bypassed.", "Close", false, () => {}, true);
-                    }}
-                    className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${
-                      isEntrepreneurMode
-                        ? "text-white shadow-sm"
-                        : isDarkMode ? "text-slate-500 hover:text-slate-300" : "text-slate-400 hover:text-slate-600"
-                    }`}
-                    style={{ backgroundColor: isEntrepreneurMode ? signatureColor : undefined }}
-                  >
-                    Entrepreneur
-                  </button>
+                  <div className={`flex p-1 rounded-xl border ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-slate-100 border-slate-200"}`}>
+                    <button
+                      onClick={() => {
+                        if (setIsEntrepreneurMode) setIsEntrepreneurMode(false);
+                        openGlobalAction("Structure Realigned", "Standard W-2 Payday routing restored successfully.", "Close", false, () => {}, true);
+                      }}
+                      className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${
+                        !isEntrepreneurMode
+                          ? "text-white shadow-sm"
+                          : isDarkMode ? "text-slate-500 hover:text-slate-300" : "text-slate-400 hover:text-slate-600"
+                      }`}
+                      style={{ backgroundColor: !isEntrepreneurMode ? signatureColor : undefined }}
+                    >
+                      Standard
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (setIsEntrepreneurMode) setIsEntrepreneurMode(true);
+                        openGlobalAction("Entrepreneur Mode Active", "Variable income routing engaged. Payday schedules bypassed.", "Close", false, () => {}, true);
+                      }}
+                      className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${
+                        isEntrepreneurMode
+                          ? "text-white shadow-sm"
+                          : isDarkMode ? "text-slate-500 hover:text-slate-300" : "text-slate-400 hover:text-slate-600"
+                      }`}
+                      style={{ backgroundColor: isEntrepreneurMode ? signatureColor : undefined }}
+                    >
+                      Entrepreneur
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -334,11 +330,13 @@ export default function Settings({
           {/* 3. ACCOUNT SHARING                        */}
           {/* ========================================= */}
           <div className="space-y-3">
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 flex items-center gap-1.5">
+            <h4 className={`text-[10px] font-black uppercase tracking-widest px-2 flex items-center gap-1.5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
               <Users size={12} strokeWidth={2.5} /> Account Sharing
             </h4>
             <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
-              <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-2">SHARE MY ACCOUNT</label>
+              <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                👥 SHARE MY ACCOUNT
+              </label>
               <div className="flex flex-col gap-2.5">
                 <div className={`w-full py-3 px-4 rounded-xl font-bold text-xs border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-600"}`}>
                   <div className="flex items-center gap-2">
@@ -364,11 +362,13 @@ export default function Settings({
           {/* 4. DATA PORTABILITY (INJECTED YEAR-END EXPORT) */}
           {/* ========================================= */}
           <div className="space-y-3">
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 flex items-center gap-1.5">
+            <h4 className={`text-[10px] font-black uppercase tracking-widest px-2 flex items-center gap-1.5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
               <Download size={12} strokeWidth={2.5} /> Data Portability
             </h4>
             <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
-              <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-2">EXPORT MASTER LEDGER</label>
+              <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                📄 EXPORT MASTER LEDGER
+              </label>
               <div className="flex flex-col gap-2.5">
                 <div className={`w-full py-3 px-4 rounded-xl font-bold text-xs border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-600"}`}>
                   <div className="flex items-center gap-2">
@@ -394,11 +394,13 @@ export default function Settings({
           {/* 5. HELP                                   */}
           {/* ========================================= */}
           <div className="space-y-3">
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 flex items-center gap-1.5">
+            <h4 className={`text-[10px] font-black uppercase tracking-widest px-2 flex items-center gap-1.5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
               <HelpCircle size={12} strokeWidth={2.5} /> Help
             </h4>
             <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
-              <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-2">CONTACT SUPPORT</label>
+              <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                🛠️ CONTACT SUPPORT
+              </label>
               <div className="flex flex-col gap-2.5">
                 <div className={`w-full py-3 px-4 rounded-xl font-bold text-xs border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-600"}`}>
                   <div className="flex items-center gap-2">
@@ -423,47 +425,52 @@ export default function Settings({
           {/* ========================================= */}
           {/* 6. MASTER LEDGER RESET (NUKE ZONE)        */}
           {/* ========================================= */}
-          <div className={`p-5 rounded-[2rem] border ${
-            isDarkMode ? "bg-red-950/10 border-red-900/30" : "bg-red-50/40 border-red-200 shadow-[0_4px_20px_rgba(0,0,0,0.04)]"
-          }`}>
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-red-500 mb-3 flex items-center gap-2">
-              <AlertCircle size={14} strokeWidth={2.5} /> Master Ledger Reset
+          <div className="space-y-3">
+            <h4 className={`text-[10px] font-black uppercase tracking-widest px-2 flex items-center gap-1.5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+              <AlertCircle size={12} strokeWidth={2.5} /> Master Ledger Reset
             </h4>
-            <p className={`text-[11px] font-medium leading-relaxed mb-4 text-center ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-              Performing a Factory Reset wipes your data clean. This action cannot be reversed.
-              <br /><br />
-              Type <strong className="text-red-500 font-bold">RESET</strong> in all caps below to permanently wipe your system.
-            </p>
-            <input
-              type="text"
-              placeholder="TYPE RESET"
-              value={resetConfirm}
-              onChange={(e) => setResetConfirm(e.target.value)}
-              className={`w-full py-3.5 px-4 rounded-xl font-black text-xs tracking-widest text-center uppercase focus:outline-none transition-all border mb-3 ${
-                isDarkMode 
-                  ? "bg-[#0F172A] border-slate-700/80 text-white focus:border-red-500" 
-                  : "bg-white border-slate-200 text-slate-900 focus:border-red-400 shadow-inner"
-              }`}
-            />
-            <button
-              onClick={() => {
-                openGlobalAction(
-                  "Destroy Vault Architecture", 
-                  "Are you absolutely certain you want to permanently wipe all tracking ledgers? This action cannot be undone.", 
-                  "Execute Wipe", 
-                  true, 
-                  handleFactoryReset
-                );
-              }}
-              disabled={resetConfirm !== "RESET"}
-              className={`w-full py-3.5 rounded-xl font-black text-xs uppercase tracking-widest text-white transition-all border border-transparent flex items-center justify-center gap-2 ${
-                resetConfirm === "RESET" 
-                  ? "bg-red-600 shadow-[0_6px_16px_rgba(220,38,38,0.3)] active:scale-[0.98] hover:bg-red-700" 
-                  : "bg-slate-300 dark:bg-slate-800 text-slate-400 cursor-not-allowed opacity-50 shadow-none"
-              }`}
-            >
-              <Trash2 size={14} strokeWidth={2.5} /> RESET MY LEDGER
-            </button>
+            <div className={`p-5 rounded-[2rem] border ${
+              isDarkMode ? "bg-red-950/10 border-red-900/30" : "bg-red-50/40 border-red-200 shadow-[0_4px_20px_rgba(0,0,0,0.04)]"
+            }`}>
+              <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-red-400" : "text-red-500"}`}>
+                ⚠️ MASTER LEDGER RESET
+              </label>
+              <p className={`text-[11px] font-medium leading-relaxed mb-4 text-center ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
+                Performing a Factory Reset wipes your data clean. This action cannot be reversed.
+                <br /><br />
+                Type <strong className="text-red-500 font-bold">RESET</strong> in all caps below to permanently wipe your system.
+              </p>
+              <input
+                type="text"
+                placeholder="TYPE RESET"
+                value={resetConfirm}
+                onChange={(e) => setResetConfirm(e.target.value)}
+                className={`w-full py-3.5 px-4 rounded-xl font-black text-xs tracking-widest text-center uppercase focus:outline-none transition-all border mb-3 ${
+                  isDarkMode 
+                    ? "bg-[#0F172A] border-slate-700/80 text-white focus:border-red-500" 
+                    : "bg-white border-slate-200 text-slate-900 focus:border-red-400 shadow-inner"
+                }`}
+              />
+              <button
+                onClick={() => {
+                  openGlobalAction(
+                    "Destroy Vault Architecture", 
+                    "Are you absolutely certain you want to permanently wipe all tracking ledgers? This action cannot be undone.", 
+                    "Execute Wipe", 
+                    true, 
+                    handleFactoryReset
+                  );
+                }}
+                disabled={resetConfirm !== "RESET"}
+                className={`w-full py-3.5 rounded-xl font-black text-xs uppercase tracking-widest text-white transition-all border border-transparent flex items-center justify-center gap-2 ${
+                  resetConfirm === "RESET" 
+                    ? "bg-red-600 shadow-[0_6px_16px_rgba(220,38,38,0.3)] active:scale-[0.98] hover:bg-red-700" 
+                    : "bg-slate-300 dark:bg-slate-800 text-slate-400 cursor-not-allowed opacity-50 shadow-none"
+                }`}
+              >
+                <Trash2 size={14} strokeWidth={2.5} /> RESET MY LEDGER
+              </button>
+            </div>
           </div>
           
         </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { 
   X, User, CreditCard, RefreshCw, AlertCircle, Trash2, LogOut, 
   ChevronRight, Sparkles, Globe, Palette, Users, Shield, Check, HelpCircle, Briefcase,
-  Download, FileText
+  Download, FileText, ChevronLeft
 } from "lucide-react";
 
 // === SURGICAL INJECTION: FIRESTORE CAPABILITIES FOR BIRTHDAY SYNC ===
@@ -31,7 +31,10 @@ export default function Settings({
   handleExportData
 }) {
   const [editName, setEditName] = useState(userName || "");
-  const [editBirthday, setEditBirthday] = useState(""); // <-- INJECTED BIRTHDAY STATE
+  const [editBirthday, setEditBirthday] = useState(""); 
+
+  // === SURGICAL FIX: MULTI-VIEW ROUTING STATE ===
+  const [activeView, setActiveView] = useState("main"); // "main", "profile", "personalization", "sharing", "security"
 
   // Slide-up Drawers and Sub-Modals
   const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
@@ -63,7 +66,6 @@ export default function Settings({
     { code: "JPY (¥)", symbol: "¥" }
   ];
 
-  // OVERHAULED PREMIUM PALETTE
   const premiumPalette = [
     { name: "Classic Ledger Blue", hex: "#1877F2" },
     { name: "Neon Yellow", hex: "#FBBF24" },
@@ -75,7 +77,6 @@ export default function Settings({
 
   const previousYear = new Date().getFullYear() - 1;
 
-  // === SURGICAL INJECTION: FETCH EXISTING BIRTHDAY ON LOAD ===
   useEffect(() => {
     if (!user || isDemoMode) return;
     const fetchBirthday = async () => {
@@ -91,7 +92,6 @@ export default function Settings({
     fetchBirthday();
   }, [user, isDemoMode]);
 
-  // === SURGICAL FIX #1: UPDATED BIRTHDAY PHRASING & NOTIFICATION PAYLOAD ===
   const handleUpdateBirthday = async (newDate) => {
     if (!newDate || !user) return;
     if (isDemoMode) {
@@ -110,8 +110,29 @@ export default function Settings({
     isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
   }`;
 
-  const SignatureLine = () => (
-    <div className={`border-t w-full mt-10 mb-4 ${isDarkMode ? "border-white" : "border-slate-300"}`}></div>
+  // === REUSABLE DIRECTORY ROW FOR MAIN HUB ===
+  const DirectoryRow = ({ icon: Icon, title, description, colorClass, targetView }) => (
+    <button
+      onClick={() => setActiveView(targetView)}
+      className={`w-full flex items-center p-4 rounded-[1.5rem] border text-left transition-all active:scale-[0.99] gap-4 mb-3 ${
+        isDarkMode 
+          ? "bg-slate-800/40 border-slate-700/50 hover:bg-slate-800/80" 
+          : "bg-white border-slate-200 hover:bg-slate-50/80 shadow-[0_4px_20px_rgba(0,0,0,0.04)]"
+      }`}
+    >
+      <div className={`p-3 rounded-2xl shrink-0 ${isDarkMode ? "bg-slate-900/60" : "bg-slate-50"} ${colorClass}`}>
+        <Icon size={20} strokeWidth={2.5} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <h4 className={`text-xs font-black uppercase tracking-wider truncate ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
+          {title}
+        </h4>
+        <p className={`text-[10px] font-bold mt-1 leading-snug truncate ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
+          {description}
+        </p>
+      </div>
+      <ChevronRight size={16} className={isDarkMode ? "text-slate-600" : "text-slate-300"} strokeWidth={2.5} />
+    </button>
   );
 
   return (
@@ -122,12 +143,19 @@ export default function Settings({
         isDarkMode ? "bg-[#0F172A] border-slate-800" : "bg-[#F8FAFC] border-slate-100"
       }`}>
         
-        <div className={`p-5 border-b flex justify-between items-center shrink-0 relative z-30 ${
+        {/* DYNAMIC HEADER */}
+        <div className={`p-5 border-b flex justify-between items-center shrink-0 relative z-30 transition-colors ${
           isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-200/60 shadow-sm"
         }`}>
-          <h3 className={`font-black uppercase tracking-widest text-sm flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-            <Shield size={16} style={{ color: signatureColor }} strokeWidth={2.5} /> Settings Vault
-          </h3>
+          {activeView === "main" ? (
+            <h3 className={`font-black uppercase tracking-widest text-sm flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+              <Shield size={16} style={{ color: signatureColor }} strokeWidth={2.5} /> Settings Vault
+            </h3>
+          ) : (
+            <button onClick={() => setActiveView("main")} className={`flex items-center gap-1.5 text-xs font-black uppercase tracking-widest transition-colors ${isDarkMode ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"}`}>
+              <ChevronLeft size={16} strokeWidth={2.5} /> Back to Hub
+            </button>
+          )}
           <button onClick={() => setIsSettingsOpen(false)} className={closeButtonClass}>
             <X size={18} strokeWidth={2.5} />
           </button>
@@ -136,43 +164,78 @@ export default function Settings({
         <div className={`p-6 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${
           isDemoMode ? "pb-[140px] lg:pb-6" : "pb-12 lg:pb-6"
         }`}>
-          
+
           {/* ========================================= */}
-          {/* 1. ACCOUNT STATUS                         */}
+          {/* VIEW: MAIN DIRECTORY HUB                  */}
           {/* ========================================= */}
-          <div className="p-5 rounded-[2rem] border relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-black border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.5)] transition-all duration-300">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-2xl rounded-full pointer-events-none"></div>
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-0.5">Account Status</span>
-                <p className="text-base font-black text-white">Ledger Planner Pro</p>
-                <div className="flex items-center gap-1.5 mt-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse"></div>
-                  <p className="text-[10px] font-black text-[#10B981] uppercase tracking-widest">Account Active</p>
+          {activeView === "main" && (
+            <div className="animate-fade-in space-y-2">
+              <div className="p-5 rounded-[2rem] border relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-black border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.5)] transition-all duration-300 mb-8">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-2xl rounded-full pointer-events-none"></div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-0.5">Account Status</span>
+                    <p className="text-base font-black text-white">Ledger Planner Pro</p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse"></div>
+                      <p className="text-[10px] font-black text-[#10B981] uppercase tracking-widest">Account Active</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => openGlobalAction("Subscription Portal", "Establishing secure handshakes to billing validation channels...", "Close", false, () => {}, true)}
+                    className="px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-700 bg-slate-800/80 text-white hover:bg-slate-700 shadow-sm transition-all active:scale-95"
+                  >
+                    Manage
+                  </button>
                 </div>
               </div>
-              <button 
-                onClick={() => openGlobalAction("Subscription Portal", "Establishing secure handshakes to billing validation channels...", "Close", false, () => {}, true)}
-                className="px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-700 bg-slate-800/80 text-white hover:bg-slate-700 shadow-sm transition-all active:scale-95"
-              >
-                Manage
-              </button>
+
+              <h4 className={`text-[10px] font-black uppercase tracking-widest px-2 pb-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                Configuration Directory
+              </h4>
+
+              <DirectoryRow 
+                icon={User} 
+                title="Profile" 
+                description="Display Name, Foundation Date" 
+                colorClass="text-blue-500" 
+                targetView="profile" 
+              />
+              <DirectoryRow 
+                icon={Palette} 
+                title="Personalization & System" 
+                description="Theme Color, Currency, Income Structure" 
+                colorClass="text-orange-500" 
+                targetView="personalization" 
+              />
+              <DirectoryRow 
+                icon={Users} 
+                title="Account Sharing" 
+                description="Manage Co-Op Ledger Access" 
+                colorClass="text-purple-500" 
+                targetView="sharing" 
+              />
+              <DirectoryRow 
+                icon={Shield} 
+                title="Security & Export" 
+                description="Data Downloads, Support, Vault Reset" 
+                colorClass="text-emerald-500" 
+                targetView="security" 
+              />
             </div>
-          </div>
-
-          <SignatureLine />
+          )}
 
           {/* ========================================= */}
-          {/* 2. CUSTOM SETTINGS                        */}
+          {/* VIEW: PROFILE                             */}
           {/* ========================================= */}
-          <div className="space-y-3">
-            <h4 className={`text-[10px] font-black uppercase tracking-widest px-2 flex items-center gap-1.5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-              <Palette size={12} strokeWidth={2.5} /> Custom Settings
-            </h4>
-            <div className={`p-4 rounded-[2rem] border space-y-3 ${isDarkMode ? "bg-slate-800/20 border-slate-800" : "bg-white border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.04)]"}`}>
-              
+          {activeView === "profile" && (
+            <div className="animate-slide-up space-y-4">
+              <h4 className={`text-[14px] font-black uppercase tracking-widest px-2 mb-2 flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                <User size={16} strokeWidth={2.5} className="text-blue-500" /> Profile
+              </h4>
+
               {/* Preferred Display Name */}
-              <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
+              <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-sm"}`}>
                 <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                   👤 PREFERRED DISPLAY NAME
                 </label>
@@ -182,7 +245,7 @@ export default function Settings({
                     value={editName} 
                     onChange={(e) => setEditName(e.target.value)} 
                     className={`w-full py-3 px-4 rounded-xl font-bold text-xs border focus:outline-none transition-colors ${
-                      isDarkMode ? "bg-[#0F172A] border-slate-700 text-white focus:border-slate-500" : "bg-white border-slate-200 text-slate-900 focus:border-slate-400"
+                      isDarkMode ? "bg-[#0F172A] border-slate-700 text-white focus:border-slate-500" : "bg-slate-50 border-slate-200 text-slate-900 focus:border-slate-400"
                     }`} 
                   />
                   <button 
@@ -200,7 +263,7 @@ export default function Settings({
               </div>
 
               {/* Set Birthday Picker */}
-              <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
+              <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-sm"}`}>
                 <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                   🎂 SET BIRTHDAY
                 </label>
@@ -210,7 +273,7 @@ export default function Settings({
                     value={editBirthday} 
                     onChange={(e) => setEditBirthday(e.target.value)} 
                     className={`w-full py-3 px-4 rounded-xl font-bold text-xs border focus:outline-none transition-colors ${
-                      isDarkMode ? "bg-[#0F172A] border-slate-700 text-white focus:border-slate-500" : "bg-white border-slate-200 text-slate-900 focus:border-slate-400"
+                      isDarkMode ? "bg-[#0F172A] border-slate-700 text-white focus:border-slate-500" : "bg-slate-50 border-slate-200 text-slate-900 focus:border-slate-400"
                     }`} 
                   />
                   <button 
@@ -223,9 +286,20 @@ export default function Settings({
                   </button>
                 </div>
               </div>
+            </div>
+          )}
 
-              {/* Select Theme Color (Premium Palette) */}
-              <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
+          {/* ========================================= */}
+          {/* VIEW: PERSONALIZATION & SYSTEM            */}
+          {/* ========================================= */}
+          {activeView === "personalization" && (
+            <div className="animate-slide-up space-y-4">
+              <h4 className={`text-[14px] font-black uppercase tracking-widest px-2 mb-2 flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                <Palette size={16} strokeWidth={2.5} className="text-orange-500" /> Personalization
+              </h4>
+
+              {/* Select Theme Color */}
+              <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-sm"}`}>
                 <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                   🎨 SELECT THEME COLOR
                 </label>
@@ -251,17 +325,17 @@ export default function Settings({
               </div>
 
               {/* Select Currency */}
-              <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
+              <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-sm"}`}>
                 <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                   🌐 SELECT CURRENCY
                 </label>
                 <div className="flex flex-col gap-2.5">
-                  <div className={`w-full py-3 px-4 rounded-xl font-bold text-xs border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-600"}`}>
+                  <div className={`w-full py-3 px-4 rounded-xl font-bold text-xs border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-600"}`}>
                     <div className="flex items-center gap-2">
                       <Globe size={14} className="text-blue-400" />
                       <span>Active Configuration</span>
                     </div>
-                    <span className={`px-2 py-0.5 rounded border ${isDarkMode ? "bg-slate-800 border-slate-600 text-white" : "bg-slate-100 border-slate-200 text-slate-900"}`}>{currentCurrency}</span>
+                    <span className={`px-2 py-0.5 rounded border ${isDarkMode ? "bg-slate-800 border-slate-600 text-white" : "bg-white border-slate-200 text-slate-900"}`}>{currentCurrency}</span>
                   </div>
                   <button
                     onClick={() => setIsCurrencyOpen(true)}
@@ -274,17 +348,17 @@ export default function Settings({
               </div>
 
               {/* Income Structure */}
-              <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
+              <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-sm"}`}>
                 <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                   💼 INCOME STRUCTURE
                 </label>
                 <div className="flex flex-col gap-2.5">
-                  <div className={`w-full py-3 px-4 rounded-xl font-bold text-xs border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-600"}`}>
+                  <div className={`w-full py-3 px-4 rounded-xl font-bold text-xs border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-600"}`}>
                     <div className="flex items-center gap-2">
                       <Briefcase size={14} className="text-emerald-500" />
                       <span>Active Mode</span>
                     </div>
-                    <span className={`px-2 py-0.5 rounded border ${isDarkMode ? "bg-slate-800 border-slate-600 text-white" : "bg-slate-100 border-slate-200 text-slate-900"}`}>
+                    <span className={`px-2 py-0.5 rounded border ${isDarkMode ? "bg-slate-800 border-slate-600 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
                       {isEntrepreneurMode ? "Entrepreneur" : "Standard"}
                     </span>
                   </div>
@@ -322,156 +396,140 @@ export default function Settings({
               </div>
 
             </div>
-          </div>
-
-          <SignatureLine />
+          )}
 
           {/* ========================================= */}
-          {/* 3. ACCOUNT SHARING                        */}
+          {/* VIEW: ACCOUNT SHARING                     */}
           {/* ========================================= */}
-          <div className="space-y-3">
-            <h4 className={`text-[10px] font-black uppercase tracking-widest px-2 flex items-center gap-1.5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-              <Users size={12} strokeWidth={2.5} /> Account Sharing
-            </h4>
-            <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
-              <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-                👥 SHARE MY ACCOUNT
-              </label>
-              <div className="flex flex-col gap-2.5">
-                <div className={`w-full py-3 px-4 rounded-xl font-bold text-xs border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-600"}`}>
-                  <div className="flex items-center gap-2">
-                    <Users size={14} className="text-purple-400" />
-                    <span>Connection Status</span>
+          {activeView === "sharing" && (
+            <div className="animate-slide-up space-y-4">
+              <h4 className={`text-[14px] font-black uppercase tracking-widest px-2 mb-2 flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                <Users size={16} strokeWidth={2.5} className="text-purple-500" /> Sharing
+              </h4>
+              
+              <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-sm"}`}>
+                <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                  👥 SHARE MY ACCOUNT
+                </label>
+                <div className="flex flex-col gap-2.5">
+                  <div className={`w-full py-3 px-4 rounded-xl font-bold text-xs border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-600"}`}>
+                    <div className="flex items-center gap-2">
+                      <Users size={14} className="text-purple-400" />
+                      <span>Connection Status</span>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded border ${isDarkMode ? "bg-slate-800 border-slate-600 text-white" : "bg-white border-slate-200 text-slate-900"}`}>{coOpStep === 3 ? "2 Users Linked" : "Inactive Setup"}</span>
                   </div>
-                  <span className={`px-2 py-0.5 rounded border ${isDarkMode ? "bg-slate-800 border-slate-600 text-white" : "bg-slate-100 border-slate-200 text-slate-900"}`}>{coOpStep === 3 ? "2 Users Linked" : "Inactive Setup"}</span>
+                  <button
+                    onClick={() => setIsCoOpOpen(true)}
+                    className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-[0.98]"
+                    style={{ backgroundColor: signatureColor }}
+                  >
+                    MANAGE ACCESS
+                  </button>
                 </div>
-                <button
-                  onClick={() => setIsCoOpOpen(true)}
-                  className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-[0.98]"
-                  style={{ backgroundColor: signatureColor }}
-                >
-                  MANAGE ACCESS
-                </button>
               </div>
             </div>
-          </div>
-
-          <SignatureLine />
+          )}
 
           {/* ========================================= */}
-          {/* 4. DATA PORTABILITY (INJECTED YEAR-END EXPORT) */}
+          {/* VIEW: SECURITY & EXPORT                   */}
           {/* ========================================= */}
-          <div className="space-y-3">
-            <h4 className={`text-[10px] font-black uppercase tracking-widest px-2 flex items-center gap-1.5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-              <Download size={12} strokeWidth={2.5} /> Data Portability
-            </h4>
-            <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
-              <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-                📄 EXPORT MASTER LEDGER
-              </label>
-              <div className="flex flex-col gap-2.5">
-                <div className={`w-full py-3 px-4 rounded-xl font-bold text-xs border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-600"}`}>
-                  <div className="flex items-center gap-2">
-                    <FileText size={14} className="text-[#10B981]" />
-                    <span>File Format</span>
+          {activeView === "security" && (
+            <div className="animate-slide-up space-y-4">
+              <h4 className={`text-[14px] font-black uppercase tracking-widest px-2 mb-2 flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                <Shield size={16} strokeWidth={2.5} className="text-emerald-500" /> Security
+              </h4>
+
+              {/* Export Ledger */}
+              <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-sm"}`}>
+                <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                  📄 EXPORT MASTER LEDGER
+                </label>
+                <div className="flex flex-col gap-2.5">
+                  <div className={`w-full py-3 px-4 rounded-xl font-bold text-xs border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-600"}`}>
+                    <div className="flex items-center gap-2">
+                      <FileText size={14} className="text-[#10B981]" />
+                      <span>File Format</span>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded border ${isDarkMode ? "bg-slate-800 border-slate-600 text-white" : "bg-white border-slate-200 text-slate-900"}`}>CSV Spreadsheet</span>
                   </div>
-                  <span className={`px-2 py-0.5 rounded border ${isDarkMode ? "bg-slate-800 border-slate-600 text-white" : "bg-slate-100 border-slate-200 text-slate-900"}`}>CSV Spreadsheet</span>
+                  <button
+                    onClick={() => { if (handleExportData) handleExportData(previousYear); }}
+                    className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-[0.98]"
+                    style={{ backgroundColor: signatureColor }}
+                  >
+                    EXPORT {previousYear} DATA
+                  </button>
                 </div>
+              </div>
+
+              {/* Support */}
+              <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-sm"}`}>
+                <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                  🛠️ CONTACT SUPPORT
+                </label>
+                <div className="flex flex-col gap-2.5">
+                  <div className={`w-full py-3 px-4 rounded-xl font-bold text-xs border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-600"}`}>
+                    <div className="flex items-center gap-2">
+                      <HelpCircle size={14} className="text-sky-400" />
+                      <span>System Status</span>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded border font-black tracking-wider text-[#10B981] ${isDarkMode ? "bg-emerald-900/30 border-emerald-800/50" : "bg-emerald-50 border-emerald-200"}`}>Online</span>
+                  </div>
+                  <button
+                    onClick={() => openGlobalAction("Support Vector", "Opening secure mail transfer protocols to support documentation channels...", "Close", false, () => {}, true)}
+                    className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-[0.98]"
+                    style={{ backgroundColor: signatureColor }}
+                  >
+                    OPEN SUPPORT TICKET
+                  </button>
+                </div>
+              </div>
+
+              {/* Nuke Zone */}
+              <div className={`p-5 rounded-[2rem] border ${isDarkMode ? "bg-red-950/10 border-red-900/30" : "bg-red-50/40 border-red-200 shadow-sm"}`}>
+                <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-red-400" : "text-red-500"}`}>
+                  ⚠️ MASTER LEDGER RESET
+                </label>
+                <p className={`text-[11px] font-medium leading-relaxed mb-4 text-center ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
+                  Performing a Factory Reset wipes your data clean. This action cannot be reversed.
+                  <br /><br />
+                  Type <strong className="text-red-500 font-bold">RESET</strong> in all caps below to permanently wipe your system.
+                </p>
+                <input
+                  type="text"
+                  placeholder="TYPE RESET"
+                  value={resetConfirm}
+                  onChange={(e) => setResetConfirm(e.target.value)}
+                  className={`w-full py-3.5 px-4 rounded-xl font-black text-xs tracking-widest text-center uppercase focus:outline-none transition-all border mb-3 ${
+                    isDarkMode 
+                      ? "bg-[#0F172A] border-slate-700/80 text-white focus:border-red-500" 
+                      : "bg-white border-slate-200 text-slate-900 focus:border-red-400 shadow-inner"
+                  }`}
+                />
                 <button
-                  onClick={() => { if (handleExportData) handleExportData(previousYear); }}
-                  className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-[0.98]"
-                  style={{ backgroundColor: signatureColor }}
+                  onClick={() => {
+                    openGlobalAction(
+                      "Destroy Vault Architecture", 
+                      "Are you absolutely certain you want to permanently wipe all tracking ledgers? This action cannot be undone.", 
+                      "Execute Wipe", 
+                      true, 
+                      handleFactoryReset
+                    );
+                  }}
+                  disabled={resetConfirm !== "RESET"}
+                  className={`w-full py-3.5 rounded-xl font-black text-xs uppercase tracking-widest text-white transition-all border border-transparent flex items-center justify-center gap-2 ${
+                    resetConfirm === "RESET" 
+                      ? "bg-red-600 shadow-[0_6px_16px_rgba(220,38,38,0.3)] active:scale-[0.98] hover:bg-red-700" 
+                      : "bg-slate-300 dark:bg-slate-800 text-slate-400 cursor-not-allowed opacity-50 shadow-none"
+                  }`}
                 >
-                  EXPORT {previousYear} DATA
+                  <Trash2 size={14} strokeWidth={2.5} /> RESET MY LEDGER
                 </button>
               </div>
+
             </div>
-          </div>
-
-          <SignatureLine />
-
-          {/* ========================================= */}
-          {/* 5. HELP                                   */}
-          {/* ========================================= */}
-          <div className="space-y-3">
-            <h4 className={`text-[10px] font-black uppercase tracking-widest px-2 flex items-center gap-1.5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-              <HelpCircle size={12} strokeWidth={2.5} /> Help
-            </h4>
-            <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
-              <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-                🛠️ CONTACT SUPPORT
-              </label>
-              <div className="flex flex-col gap-2.5">
-                <div className={`w-full py-3 px-4 rounded-xl font-bold text-xs border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-600"}`}>
-                  <div className="flex items-center gap-2">
-                    <HelpCircle size={14} className="text-sky-400" />
-                    <span>System Status</span>
-                  </div>
-                  <span className={`px-2 py-0.5 rounded border font-black tracking-wider text-[#10B981] ${isDarkMode ? "bg-emerald-900/30 border-emerald-800/50" : "bg-emerald-50 border-emerald-200"}`}>Online</span>
-                </div>
-                <button
-                  onClick={() => openGlobalAction("Support Vector", "Opening secure mail transfer protocols to support documentation channels...", "Close", false, () => {}, true)}
-                  className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-[0.98]"
-                  style={{ backgroundColor: signatureColor }}
-                >
-                  OPEN SUPPORT TICKET
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <SignatureLine />
-
-          {/* ========================================= */}
-          {/* 6. MASTER LEDGER RESET (NUKE ZONE)        */}
-          {/* ========================================= */}
-          <div className="space-y-3">
-            <h4 className={`text-[10px] font-black uppercase tracking-widest px-2 flex items-center gap-1.5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-              <AlertCircle size={12} strokeWidth={2.5} /> Master Ledger Reset
-            </h4>
-            <div className={`p-5 rounded-[2rem] border ${
-              isDarkMode ? "bg-red-950/10 border-red-900/30" : "bg-red-50/40 border-red-200 shadow-[0_4px_20px_rgba(0,0,0,0.04)]"
-            }`}>
-              <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-red-400" : "text-red-500"}`}>
-                ⚠️ MASTER LEDGER RESET
-              </label>
-              <p className={`text-[11px] font-medium leading-relaxed mb-4 text-center ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                Performing a Factory Reset wipes your data clean. This action cannot be reversed.
-                <br /><br />
-                Type <strong className="text-red-500 font-bold">RESET</strong> in all caps below to permanently wipe your system.
-              </p>
-              <input
-                type="text"
-                placeholder="TYPE RESET"
-                value={resetConfirm}
-                onChange={(e) => setResetConfirm(e.target.value)}
-                className={`w-full py-3.5 px-4 rounded-xl font-black text-xs tracking-widest text-center uppercase focus:outline-none transition-all border mb-3 ${
-                  isDarkMode 
-                    ? "bg-[#0F172A] border-slate-700/80 text-white focus:border-red-500" 
-                    : "bg-white border-slate-200 text-slate-900 focus:border-red-400 shadow-inner"
-                }`}
-              />
-              <button
-                onClick={() => {
-                  openGlobalAction(
-                    "Destroy Vault Architecture", 
-                    "Are you absolutely certain you want to permanently wipe all tracking ledgers? This action cannot be undone.", 
-                    "Execute Wipe", 
-                    true, 
-                    handleFactoryReset
-                  );
-                }}
-                disabled={resetConfirm !== "RESET"}
-                className={`w-full py-3.5 rounded-xl font-black text-xs uppercase tracking-widest text-white transition-all border border-transparent flex items-center justify-center gap-2 ${
-                  resetConfirm === "RESET" 
-                    ? "bg-red-600 shadow-[0_6px_16px_rgba(220,38,38,0.3)] active:scale-[0.98] hover:bg-red-700" 
-                    : "bg-slate-300 dark:bg-slate-800 text-slate-400 cursor-not-allowed opacity-50 shadow-none"
-                }`}
-              >
-                <Trash2 size={14} strokeWidth={2.5} /> RESET MY LEDGER
-              </button>
-            </div>
-          </div>
+          )}
           
         </div>
       </div>

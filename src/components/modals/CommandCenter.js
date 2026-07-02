@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { X, Bell, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useLedger } from '../../context/LedgerContext';
 import { useBriefingEngine } from '../../hooks/useBriefingEngine';
@@ -16,7 +16,7 @@ export default function CommandCenter({
   enablePushNotifications
 }) {
   // 1. PULL GLOBAL STATE FROM THE CLOUD
-  const { isDarkMode, signatureColor, isDemoMode } = useLedger();
+  const { user, isDarkMode, signatureColor, isDemoMode } = useLedger();
 
   // 2. INITIALIZE THE NOTIFICATION ENGINE (BRIEFING DATA IGNORED/REMOVED)
   const { activeAlerts } = useBriefingEngine({
@@ -31,6 +31,18 @@ export default function CommandCenter({
 
   const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
 
+  // === SURGICAL FIX: INJECTED BIRTHDAY PINNED OVERRIDE ===
+  const isBirthdayToday = useMemo(() => {
+    // Default to July 2nd for testing/demo if no user data, otherwise use actual DB param
+    let bdayStr = "07-02"; 
+    if (user?.birthday) {
+      bdayStr = user.birthday.length > 5 ? user.birthday.substring(5) : user.birthday;
+    }
+    const today = new Date();
+    const todayStr = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    return bdayStr === todayStr;
+  }, [user]);
+
   return (
     <div className="fixed inset-0 z-[120] flex justify-end">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsNotificationsOpen(false)}></div>
@@ -41,6 +53,26 @@ export default function CommandCenter({
         </div>
         
         <div className="p-6 overflow-y-auto space-y-4 flex-1 hide-scrollbar">
+          
+          {/* === PINNED BIRTHDAY BANNER INJECTION === */}
+          {isBirthdayToday && (
+            <div className="p-4 rounded-2xl shadow-lg relative overflow-hidden bg-gradient-to-r from-blue-500 via-orange-500 to-emerald-500">
+              {/* Internal dark/light overlay to make text pop while keeping gradient vibrant */}
+              <div className={`absolute inset-0.5 rounded-xl ${isDarkMode ? "bg-slate-900/90" : "bg-white/95"}`}></div>
+              <div className="relative z-10 flex gap-3 items-center">
+                <div className="p-2.5 text-2xl drop-shadow-sm self-start">🎂</div>
+                <div className="flex-1 min-w-0 py-1">
+                  <p className="font-black text-xs uppercase tracking-wide truncate bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-orange-500 to-emerald-500 drop-shadow-sm">
+                    Happy Birthday, {userName}!
+                  </p>
+                  <p className={`text-[10px] font-bold leading-snug mt-1 ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
+                    We at Ledger Planner wish you many more!
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {!isPushEnabled && !isDemoMode && (
             <div className={`p-4 rounded-2xl border flex items-center justify-between shadow-sm ${isDarkMode ? "bg-[#10B981]/10 border-[#10B981]/20" : "bg-emerald-50 border-emerald-100"}`}>
               <div className="flex items-center gap-3">
@@ -53,7 +85,7 @@ export default function CommandCenter({
 
           {/* === SURGICAL FIX: BRIEFING UI BLOCK COMPLETELY REMOVED === */}
 
-          {activeAlerts.length === 0 ? (
+          {activeAlerts.length === 0 && !isBirthdayToday ? (
             <div className="text-center py-20 opacity-100 flex flex-col items-center justify-center h-full">
               <div className="p-4 rounded-full bg-emerald-50 mb-4 dark:bg-emerald-900/20">
                 <CheckCircle2 size={36} className="text-[#10B981] drop-shadow-sm" />

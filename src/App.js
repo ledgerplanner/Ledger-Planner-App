@@ -570,7 +570,9 @@ function LedgerApp() {
             
             if (bdayStr === todayStr && localStorage.getItem(storageKey) !== "true") {
               triggerVictory();
-              openGlobalAction("Happy Birthday! 🎂", `Happy Birthday, ${data.firstName || "Founder"}! Enjoy the clean slate today.`, "Let's Go", false, () => {}, true);
+              // Injected custom greeting with dynamic name mapping
+              const activeName = data.firstName || user?.displayName?.split(' ')[0] || "Founder";
+              openGlobalAction("Happy Birthday! 🎂", `Happy Birthday, ${activeName}. We at Ledger Planner wish you many more!`, "Let's Go", false, () => {}, true);
               localStorage.setItem(storageKey, "true");
             }
           }

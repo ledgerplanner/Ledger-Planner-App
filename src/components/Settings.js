@@ -106,42 +106,6 @@ export default function Settings({
     }
   };
 
-  const SettingRow = ({ icon: Icon, title, statusText, colorClass = "", onClick }) => {
-    return (
-      <button
-        onClick={onClick}
-        className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left transition-all active:scale-[0.99] gap-3 ${
-          isDarkMode 
-            ? "bg-slate-800/40 border-slate-700/50 hover:bg-slate-800/80" 
-            : "bg-white border-slate-200 hover:bg-slate-50/80 shadow-[0_4px_20px_rgba(0,0,0,0.04)]"
-        }`}
-      >
-        <div className="flex items-center gap-3 w-full min-w-0">
-          <div className={`p-2.5 rounded-xl shrink-0 ${isDarkMode ? "bg-slate-900/60" : "bg-slate-50"} ${colorClass}`}>
-            <Icon size={16} strokeWidth={2.5} />
-          </div>
-          <span className={`text-xs font-black uppercase tracking-wider truncate flex-1 ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
-            {title}
-          </span>
-        </div>
-
-        <div className={`flex items-center justify-between w-full pt-2 border-t ${
-          isDarkMode ? "border-slate-800/60" : "border-slate-100"
-        }`}>
-          <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border ${
-            isDarkMode ? "bg-slate-900/40 border-slate-700/80 text-slate-400" : "bg-slate-100/60 border-slate-200/60 text-slate-500"
-          }`}>
-            {statusText}
-          </span>
-          <div className="flex items-center gap-1 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
-            <span>Configure</span>
-            <ChevronRight size={12} strokeWidth={2.5} />
-          </div>
-        </div>
-      </button>
-    );
-  };
-
   const closeButtonClass = `p-2 rounded-full transition-colors ${
     isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
   }`;
@@ -233,7 +197,7 @@ export default function Settings({
                 </div>
               </div>
 
-              {/* === SURGICALLY INJECTED BIRTHDAY PICKER (WITH WARM PHRASING) === */}
+              {/* Set Birthday Picker */}
               <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
                 <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-2">SET BIRTHDAY</label>
                 <div className="flex flex-col gap-2.5">
@@ -292,13 +256,25 @@ export default function Settings({
               </div>
 
               {/* Select Currency */}
-              <SettingRow 
-                icon={Globe} 
-                title="SELECT CURRENCY" 
-                statusText={currentCurrency} 
-                colorClass="text-blue-400"
-                onClick={() => setIsCurrencyOpen(true)}
-              />
+              <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
+                <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-2">SELECT CURRENCY</label>
+                <div className="flex flex-col gap-2.5">
+                  <div className={`w-full py-3 px-4 rounded-xl font-bold text-xs border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-600"}`}>
+                    <div className="flex items-center gap-2">
+                      <Globe size={14} className="text-blue-400" />
+                      <span>Active Configuration</span>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded border ${isDarkMode ? "bg-slate-800 border-slate-600 text-white" : "bg-slate-100 border-slate-200 text-slate-900"}`}>{currentCurrency}</span>
+                  </div>
+                  <button
+                    onClick={() => setIsCurrencyOpen(true)}
+                    className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-[0.98]"
+                    style={{ backgroundColor: signatureColor }}
+                  >
+                    CHANGE CURRENCY
+                  </button>
+                </div>
+              </div>
 
               {/* Income Structure */}
               <div className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left gap-3 ${
@@ -361,35 +337,25 @@ export default function Settings({
             <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 flex items-center gap-1.5">
               <Users size={12} strokeWidth={2.5} /> Account Sharing
             </h4>
-            <button
-              onClick={() => setIsCoOpOpen(true)}
-              className={`w-full flex flex-col p-4 rounded-[1.5rem] border text-left transition-all active:scale-[0.99] gap-3 ${
-                isDarkMode 
-                  ? "bg-slate-800/20 border-slate-800 hover:bg-slate-800/50" 
-                  : "bg-white border-slate-200 hover:bg-slate-50/80 shadow-[0_4px_20px_rgba(0,0,0,0.04)]"
-              }`}
-            >
-              <div className="flex items-center gap-3 w-full min-w-0">
-                <div className={`p-2.5 rounded-xl shrink-0 ${isDarkMode ? "bg-slate-900/60" : "bg-purple-50"} text-purple-400`}>
-                  <Users size={16} strokeWidth={2.5} />
+            <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
+              <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-2">SHARE MY ACCOUNT</label>
+              <div className="flex flex-col gap-2.5">
+                <div className={`w-full py-3 px-4 rounded-xl font-bold text-xs border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-600"}`}>
+                  <div className="flex items-center gap-2">
+                    <Users size={14} className="text-purple-400" />
+                    <span>Connection Status</span>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded border ${isDarkMode ? "bg-slate-800 border-slate-600 text-white" : "bg-slate-100 border-slate-200 text-slate-900"}`}>{coOpStep === 3 ? "2 Users Linked" : "Inactive Setup"}</span>
                 </div>
-                <span className={`text-xs font-black uppercase tracking-wider truncate flex-1 ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
-                  SHARE MY ACCOUNT
-                </span>
+                <button
+                  onClick={() => setIsCoOpOpen(true)}
+                  className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-[0.98]"
+                  style={{ backgroundColor: signatureColor }}
+                >
+                  MANAGE ACCESS
+                </button>
               </div>
-
-              <div className={`flex items-center justify-between w-full pt-2 border-t ${isDarkMode ? "border-slate-800/60" : "border-slate-100"}`}>
-                <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border ${
-                  isDarkMode ? "bg-slate-900/40 border-slate-700/80 text-slate-400" : "bg-slate-100/60 border-slate-200/60 text-slate-500"
-                }`}>
-                  {coOpStep === 3 ? "2 Users Linked" : "Inactive Setup"}
-                </span>
-                <div className="flex items-center gap-1 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
-                  <span>Configure</span>
-                  <ChevronRight size={12} strokeWidth={2.5} />
-                </div>
-              </div>
-            </button>
+            </div>
           </div>
 
           <SignatureLine />
@@ -401,15 +367,25 @@ export default function Settings({
             <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 flex items-center gap-1.5">
               <Download size={12} strokeWidth={2.5} /> Data Portability
             </h4>
-            <SettingRow 
-              icon={FileText} 
-              title={`EXPORT ${previousYear} MASTER LEDGER`} 
-              statusText="CSV Format" 
-              colorClass="text-[#10B981]"
-              onClick={() => {
-                if (handleExportData) handleExportData(previousYear);
-              }}
-            />
+            <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
+              <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-2">EXPORT MASTER LEDGER</label>
+              <div className="flex flex-col gap-2.5">
+                <div className={`w-full py-3 px-4 rounded-xl font-bold text-xs border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-600"}`}>
+                  <div className="flex items-center gap-2">
+                    <FileText size={14} className="text-[#10B981]" />
+                    <span>File Format</span>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded border ${isDarkMode ? "bg-slate-800 border-slate-600 text-white" : "bg-slate-100 border-slate-200 text-slate-900"}`}>CSV Spreadsheet</span>
+                </div>
+                <button
+                  onClick={() => { if (handleExportData) handleExportData(previousYear); }}
+                  className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-[0.98]"
+                  style={{ backgroundColor: signatureColor }}
+                >
+                  EXPORT {previousYear} DATA
+                </button>
+              </div>
+            </div>
           </div>
 
           <SignatureLine />
@@ -421,13 +397,25 @@ export default function Settings({
             <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 flex items-center gap-1.5">
               <HelpCircle size={12} strokeWidth={2.5} /> Help
             </h4>
-            <SettingRow 
-              icon={HelpCircle} 
-              title="Contact Support" 
-              statusText="Support Live" 
-              colorClass="text-sky-400"
-              onClick={() => openGlobalAction("Support Vector", "Opening secure mail transfer protocols to support documentation channels...", "Close", false, () => {}, true)}
-            />
+            <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-[#0F172A]/40 border-slate-700/50" : "bg-slate-50/60 border-slate-200/50"}`}>
+              <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-2">CONTACT SUPPORT</label>
+              <div className="flex flex-col gap-2.5">
+                <div className={`w-full py-3 px-4 rounded-xl font-bold text-xs border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-600"}`}>
+                  <div className="flex items-center gap-2">
+                    <HelpCircle size={14} className="text-sky-400" />
+                    <span>System Status</span>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded border font-black tracking-wider text-[#10B981] ${isDarkMode ? "bg-emerald-900/30 border-emerald-800/50" : "bg-emerald-50 border-emerald-200"}`}>Online</span>
+                </div>
+                <button
+                  onClick={() => openGlobalAction("Support Vector", "Opening secure mail transfer protocols to support documentation channels...", "Close", false, () => {}, true)}
+                  className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-[0.98]"
+                  style={{ backgroundColor: signatureColor }}
+                >
+                  OPEN SUPPORT TICKET
+                </button>
+              </div>
+            </div>
           </div>
 
           <SignatureLine />

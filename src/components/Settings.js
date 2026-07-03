@@ -170,12 +170,16 @@ export default function Settings({
           {/* ========================================= */}
           {activeView === "main" && (
             <div className="animate-fade-in space-y-2">
-              <div className="p-5 rounded-[2rem] border relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-black border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.5)] transition-all duration-300 mb-8">
+              <div className={`p-5 rounded-[2rem] border relative overflow-hidden bg-gradient-to-br transition-all duration-300 mb-8 ${
+                isDarkMode 
+                  ? "from-slate-900 via-slate-800 to-black border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.5)]" 
+                  : "from-white via-slate-50 to-slate-100 border-slate-200 shadow-[0_12px_24px_rgba(0,0,0,0.08)]"
+              }`}>
                 <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-2xl rounded-full pointer-events-none"></div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-0.5">Account Status</span>
-                    <p className="text-base font-black text-white">Ledger Planner Pro</p>
+                    <span className={`text-[9px] font-black uppercase tracking-widest block mb-0.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Status</span>
+                    <p className={`text-base font-black ${isDarkMode ? "text-white" : "text-slate-900"}`}>Ledger Planner Pro</p>
                     <div className="flex items-center gap-1.5 mt-1">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse"></div>
                       <p className="text-[10px] font-black text-[#10B981] uppercase tracking-widest">Account Active</p>
@@ -183,7 +187,11 @@ export default function Settings({
                   </div>
                   <button 
                     onClick={() => openGlobalAction("Subscription Portal", "Establishing secure handshakes to billing validation channels...", "Close", false, () => {}, true)}
-                    className="px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-700 bg-slate-800/80 text-white hover:bg-slate-700 shadow-sm transition-all active:scale-95"
+                    className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all active:scale-95 shadow-sm ${
+                      isDarkMode 
+                        ? "border-slate-700 bg-slate-800/80 text-white hover:bg-slate-700" 
+                        : "border-slate-200 bg-white text-slate-800 hover:bg-slate-50"
+                    }`}
                   >
                     Manage
                   </button>
@@ -218,7 +226,7 @@ export default function Settings({
               <DirectoryRow 
                 icon={Shield} 
                 title="Security & Export" 
-                description="Data Downloads, Support, Vault Reset" 
+                description="Data Downloads, Support, Factory Reset" 
                 colorClass="text-emerald-500" 
                 targetView="security" 
               />
@@ -489,7 +497,7 @@ export default function Settings({
               {/* Nuke Zone */}
               <div className={`p-5 rounded-[2rem] border ${isDarkMode ? "bg-red-950/10 border-red-900/30" : "bg-red-50/40 border-red-200 shadow-sm"}`}>
                 <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-red-400" : "text-red-500"}`}>
-                  ⚠️ MASTER LEDGER RESET
+                  ⚠️ LEDGER PLANNER FACTORY RESET
                 </label>
                 <p className={`text-[11px] font-medium leading-relaxed mb-4 text-center ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
                   Performing a Factory Reset wipes your data clean. This action cannot be reversed.

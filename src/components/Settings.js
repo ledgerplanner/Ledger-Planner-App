@@ -185,13 +185,13 @@ export default function Settings({
               </div>
 
               <h4 className={`text-[10px] font-black uppercase tracking-widest px-2 pb-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                Configuration Directory
+                Ledger Planner Settings
               </h4>
 
               <DirectoryRow 
                 icon={User} 
                 title="Profile" 
-                description="Display Name, Foundation Date" 
+                description="Display Name, Set Birthday" 
                 colorClass="text-blue-500" 
                 targetView="profile" 
               />

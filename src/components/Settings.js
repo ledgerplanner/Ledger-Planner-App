@@ -486,7 +486,7 @@ export default function Settings({
                 <button
                   onClick={() => {
                     openGlobalAction(
-                      "Destroy Vault Architecture", 
+                      "Factory Reset", 
                       "Are you absolutely certain you want to permanently wipe all tracking ledgers? This action cannot be undone.", 
                       "Execute Wipe", 
                       true, 

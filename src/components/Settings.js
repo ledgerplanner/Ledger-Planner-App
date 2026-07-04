@@ -1,17 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import { 
   X, User, CreditCard, RefreshCw, AlertCircle, Trash2, LogOut, 
-  ChevronRight, Sparkles, Globe, Palette, Users, Shield, Check, HelpCircle, Briefcase,
+  ChevronRight, Sparkles, Globe, Palette, Shield, Check, HelpCircle, Briefcase,
   Download, FileText, ChevronLeft
 } from "lucide-react";
 
-// === SURGICAL INJECTION: FIRESTORE CAPABILITIES FOR BIRTHDAY SYNC ===
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
 export default function Settings({
   userName,
-  user, // <-- INJECTED TO SYNC SETTINGS TO THE USER PROFILE
+  user,
   isDarkMode,
   setIsDarkMode, 
   setIsSettingsOpen,
@@ -29,37 +28,14 @@ export default function Settings({
   isEntrepreneurMode = false,
   setIsEntrepreneurMode,
   handleExportData,
-  triggerVictory // <-- INJECTED CONFETTI ENGINE PROP
+  triggerVictory
 }) {
   const [editName, setEditName] = useState(userName || "");
   const [editBirthday, setEditBirthday] = useState(""); 
   
-  // === SURGICAL FIX: BIRTHDAY CALENDAR PROGRAMMATIC REF ===
   const birthdayInputRef = useRef(null);
-
-  // === SURGICAL FIX: MULTI-VIEW ROUTING STATE ===
-  const [activeView, setActiveView] = useState("main"); // "main", "profile", "personalization", "sharing", "security"
-
-  // Slide-up Drawers and Sub-Modals
+  const [activeView, setActiveView] = useState("main"); // "main", "profile", "personalization", "security"
   const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
-  const [isCoOpOpen, setIsCoOpOpen] = useState(false);
-  const [isMergeWizardOpen, setIsMergeWizardOpen] = useState(false);
-
-  // Co-Op Invitation Workflow State Variables
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [coOpStep, setCoOpStep] = useState(1); 
-
-  // Mock Checklist State Matrix for the Vault Merge Wizard
-  const [mergeAccounts, setMergeAccounts] = useState({
-    "Primary Checking": true,
-    "Emergency Savings": true,
-    "Amex Gold Credit Card": false
-  });
-  const [mergeBills, setMergeBills] = useState({
-    "Monthly House Rent": true,
-    "Electric Utility Bill": true,
-    "Netflix Subscription": false
-  });
 
   const availableCurrencies = [
     { code: "USD ($)", symbol: "$" },
@@ -70,7 +46,6 @@ export default function Settings({
     { code: "JPY (¥)", symbol: "¥" }
   ];
 
-  // === SURGICAL FIX: EXPANDED 12-COLOR MATRIX ===
   const premiumPalette = [
     { name: "Classic Ledger Blue", hex: "#1877F2" },
     { name: "Neon Yellow", hex: "#FBBF24" },
@@ -112,7 +87,7 @@ export default function Settings({
     try {
       await updateDoc(doc(db, "users", user.uid), { birthday: newDate });
       openGlobalAction("Birthday Date Set", "Happy Birthday to you, and to you many more!", "Close", false, () => {}, true);
-      if (triggerVictory) triggerVictory(); // SURGICAL FIX: WIRED CONFETTI
+      if (triggerVictory) triggerVictory(); 
     } catch (err) {
       console.error("Failed to sync birthday date:", err);
     }
@@ -122,7 +97,6 @@ export default function Settings({
     isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
   }`;
 
-  // === REUSABLE DIRECTORY ROW FOR MAIN HUB ===
   const DirectoryRow = ({ icon: Icon, title, description, colorClass, targetView }) => (
     <button
       onClick={() => setActiveView(targetView)}
@@ -229,13 +203,6 @@ export default function Settings({
                 targetView="personalization" 
               />
               <DirectoryRow 
-                icon={Users} 
-                title="Account Sharing" 
-                description="Manage Co-Op Ledger Access" 
-                colorClass="text-purple-500" 
-                targetView="sharing" 
-              />
-              <DirectoryRow 
                 icon={Shield} 
                 title="Security & Export" 
                 description="Data Downloads, Support, Factory Reset" 
@@ -271,7 +238,6 @@ export default function Settings({
                   <button 
                     onClick={() => {
                       if (handleUpdateDisplayName) handleUpdateDisplayName(editName);
-                      // SURGICAL FIX: NEW COPY + CONFETTI
                       openGlobalAction("Display Name Updated", "Your name has been successfully updated.", "Close", false, () => {}, true);
                       if (triggerVictory) triggerVictory();
                     }}
@@ -290,8 +256,6 @@ export default function Settings({
                   🎂 SET BIRTHDAY
                 </label>
                 <div className="flex flex-col gap-2.5">
-                  
-                  {/* SURGICAL FIX: CLICK ANYWHERE INTERCEPTOR */}
                   <div 
                     className="relative cursor-pointer"
                     onClick={() => {
@@ -314,7 +278,6 @@ export default function Settings({
                       }`} 
                     />
                   </div>
-
                   <button 
                     onClick={() => handleUpdateBirthday(editBirthday)}
                     disabled={!editBirthday}
@@ -372,7 +335,7 @@ export default function Settings({
                   <div className={`w-full py-3 px-4 rounded-xl font-bold text-xs border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-600"}`}>
                     <div className="flex items-center gap-2">
                       <Globe size={14} className="text-blue-400" />
-                      <span>Active Currency</span> {/* SURGICAL FIX */}
+                      <span>Active Currency</span>
                     </div>
                     <span className={`px-2 py-0.5 rounded border ${isDarkMode ? "bg-slate-800 border-slate-600 text-white" : "bg-white border-slate-200 text-slate-900"}`}>{currentCurrency}</span>
                   </div>
@@ -403,10 +366,9 @@ export default function Settings({
                   </div>
                   <div className={`flex p-1 rounded-xl border ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-slate-100 border-slate-200"}`}>
                     
-                    {/* SURGICAL FIX: STANDARD MODE STATE LOCK */}
                     <button
                       onClick={() => {
-                        if (!isEntrepreneurMode) return; // Prevents re-firing if already active
+                        if (!isEntrepreneurMode) return; 
                         if (setIsEntrepreneurMode) setIsEntrepreneurMode(false);
                         openGlobalAction("Standard Mode Active", "Standard W-2 Payday routing restored successfully.", "Close", false, () => {}, true);
                       }}
@@ -421,10 +383,9 @@ export default function Settings({
                       Standard
                     </button>
 
-                    {/* SURGICAL FIX: ENTREPRENEUR MODE STATE LOCK */}
                     <button
                       onClick={() => {
-                        if (isEntrepreneurMode) return; // Prevents re-firing if already active
+                        if (isEntrepreneurMode) return; 
                         if (setIsEntrepreneurMode) setIsEntrepreneurMode(true);
                         openGlobalAction("Entrepreneur Mode Active", "Entrepreneur income routing successfully activated.", "Close", false, () => {}, true);
                       }}
@@ -443,39 +404,6 @@ export default function Settings({
                 </div>
               </div>
 
-            </div>
-          )}
-
-          {/* ========================================= */}
-          {/* VIEW: ACCOUNT SHARING                     */}
-          {/* ========================================= */}
-          {activeView === "sharing" && (
-            <div className="animate-slide-up space-y-4">
-              <h4 className={`text-[14px] font-black uppercase tracking-widest px-2 mb-2 flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                <Users size={16} strokeWidth={2.5} className="text-purple-500" /> Sharing
-              </h4>
-              
-              <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-sm"}`}>
-                <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-                  👥 SHARE MY ACCOUNT
-                </label>
-                <div className="flex flex-col gap-2.5">
-                  <div className={`w-full py-3 px-4 rounded-xl font-bold text-xs border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-600"}`}>
-                    <div className="flex items-center gap-2">
-                      <Users size={14} className="text-purple-400" />
-                      <span>Connection Status</span>
-                    </div>
-                    <span className={`px-2 py-0.5 rounded border ${isDarkMode ? "bg-slate-800 border-slate-600 text-white" : "bg-white border-slate-200 text-slate-900"}`}>{coOpStep === 3 ? "2 Users Linked" : "Inactive Setup"}</span>
-                  </div>
-                  <button
-                    onClick={() => setIsCoOpOpen(true)}
-                    className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-[0.98]"
-                    style={{ backgroundColor: signatureColor }}
-                  >
-                    MANAGE ACCESS
-                  </button>
-                </div>
-              </div>
             </div>
           )}
 
@@ -502,7 +430,9 @@ export default function Settings({
                     <span className={`px-2 py-0.5 rounded border ${isDarkMode ? "bg-slate-800 border-slate-600 text-white" : "bg-white border-slate-200 text-slate-900"}`}>CSV Spreadsheet</span>
                   </div>
                   <button
-                    onClick={() => { if (handleExportData) handleExportData(previousYear); }}
+                    onClick={() => { 
+                      if (handleExportData) handleExportData(previousYear); 
+                    }}
                     className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-[0.98]"
                     style={{ backgroundColor: signatureColor }}
                   >
@@ -517,15 +447,13 @@ export default function Settings({
                   🛠️ CONTACT SUPPORT
                 </label>
                 <div className="flex flex-col gap-2.5">
-                  <div className={`w-full py-3 px-4 rounded-xl font-bold text-xs border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-600"}`}>
-                    <div className="flex items-center gap-2">
-                      <HelpCircle size={14} className="text-sky-400" />
-                      <span>System Status</span>
-                    </div>
-                    <span className={`px-2 py-0.5 rounded border font-black tracking-wider text-[#10B981] ${isDarkMode ? "bg-emerald-900/30 border-emerald-800/50" : "bg-emerald-50 border-emerald-200"}`}>Online</span>
+                  <div className={`w-full py-3 px-4 rounded-xl font-bold text-xs border text-center transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-600"}`}>
+                    Response Window: Under 24 Hours
                   </div>
                   <button
-                    onClick={() => openGlobalAction("Support Vector", "Opening secure mail transfer protocols to support documentation channels...", "Close", false, () => {}, true)}
+                    onClick={() => {
+                      window.location.href = `mailto:support@ledgerplanner.com?subject=Ledger Planner 2.0 - Support Ticket [${userName || "User"}]`;
+                    }}
                     className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-[0.98]"
                     style={{ backgroundColor: signatureColor }}
                   >
@@ -602,7 +530,6 @@ export default function Settings({
                   onClick={() => {
                     if (setCurrentCurrency) setCurrentCurrency(currency.code);
                     setIsCurrencyOpen(false);
-                    // SURGICAL FIX: DYNAMIC CURRENCY CONFIRMATION COPY
                     openGlobalAction("Currency Updated", `Ledger Planner has been set to ${currency.symbol}. Your currency has been updated.`, "Close", false, () => {}, true);
                   }}
                   className={`w-full p-4 rounded-xl border font-black text-xs uppercase tracking-wider flex items-center justify-between transition-colors ${
@@ -616,228 +543,6 @@ export default function Settings({
                   <span className="text-sm font-black">{currency.symbol}</span>
                 </button>
               ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* SUBSYSTEM INTERACTIVE SLIDE-UP DRAWER LAYER 2: CO-OP COLLABORATIVE ACCESS DRAWER */}
-      {/* ========================================================================= */}
-      {isCoOpOpen && (
-        <div className="absolute inset-0 z-[140] flex items-end">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsCoOpOpen(false)}></div>
-          <div className={`w-full rounded-t-[2.5rem] shadow-2xl animate-slide-up relative z-[150] flex flex-col max-h-[80vh] ${
-            isDarkMode ? "bg-[#1E293B]" : "bg-white"
-          }`}>
-            <div className={`p-5 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
-              <h3 className={`font-black uppercase text-xs tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Co-Op Node Shared Operations Engine</h3>
-              <button onClick={() => setIsCoOpOpen(false)} className={closeButtonClass}><X size={18} strokeWidth={2.5} /></button>
-            </div>
-            
-            <div className="p-6 overflow-y-auto space-y-6 flex-1">
-              {coOpStep === 1 && (
-                <div className="space-y-4">
-                  <div className={`p-4 rounded-2xl border flex gap-3 ${isDarkMode ? "bg-slate-900/40 border-slate-800" : "bg-blue-50/50 border-blue-100"}`}>
-                    <AlertCircle size={16} className="text-blue-400 shrink-0 mt-0.5" strokeWidth={2.5} />
-                    <p className={`text-[11px] font-medium leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                      Enter your partner or roommate's registry document email configuration coordinate below to map an outbound synchronization invitation thread payload vector.
-                    </p>
-                  </div>
-                  <div className="relative">
-                    <label className="absolute left-4 top-2 text-[8px] font-black uppercase tracking-widest text-slate-400">Target User Coordinate Email</label>
-                    <input
-                      type="email"
-                      placeholder="partner@ledgerplanner.com"
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                      className={`w-full pt-5 pb-1.5 px-4 rounded-xl font-bold text-xs border focus:outline-none transition-all ${
-                        isDarkMode ? "bg-[#0F172A] border-slate-700 text-white focus:border-slate-500" : "bg-white border-slate-200 text-slate-900 focus:border-slate-400"
-                      }`}
-                    />
-                  </div>
-                  <button
-                    onClick={() => {
-                      if (!inviteEmail.trim()) return;
-                      setCoOpStep(2);
-                    }}
-                    disabled={!inviteEmail.trim()}
-                    className="w-full py-4 rounded-xl font-black text-xs uppercase tracking-widest text-white transition-all active:scale-[0.98]"
-                    style={{ backgroundColor: inviteEmail.trim() ? signatureColor : isDarkMode ? "bg-slate-800" : "#E2E8F0", color: inviteEmail.trim() ? "#FFFFFF" : "#94A3B8" }}
-                  >
-                    Dispatch Vault Outbound Request
-                  </button>
-
-                  <div className={`border-t pt-4 ${isDarkMode ? "border-slate-800" : "border-slate-100"}`}>
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Simulate Mock Incoming Vectors (Testing Node)</p>
-                    <button 
-                      onClick={() => setCoOpStep(2)}
-                      className={`w-full py-2.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-colors ${
-                        isDarkMode ? "bg-purple-950/20 border-purple-900/40 text-purple-300 hover:bg-purple-900/30" : "bg-purple-50 border-purple-100 text-purple-700 hover:bg-purple-100"
-                      }`}
-                    >
-                      Trigger Pending Remote Incoming Invitation Simulation
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {coOpStep === 2 && (
-                <div className="space-y-5 animate-fade-in">
-                  <div className={`p-5 rounded-2xl border text-center ${
-                    isDarkMode ? "bg-purple-950/20 border-purple-900/40" : "bg-purple-50/60 border-purple-100"
-                  }`}>
-                    <span className="w-10 h-10 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-lg mx-auto mb-3">🤝</span>
-                    <h4 className={`text-sm font-black uppercase tracking-wider mb-1 ${isDarkMode ? "text-purple-300" : "text-purple-800"}`}>
-                      Incoming Connection Request Detected
-                    </h4>
-                    <p className={`text-[11px] font-medium leading-relaxed max-w-xs mx-auto mb-4 ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                      An external account entity (<span className="font-bold underline text-slate-400">co-op-partner@ledgerplanner.com</span>) is requesting authorization to bridge structural synchronization ledgers.
-                    </p>
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => setCoOpStep(1)}
-                        className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest border transition-colors ${
-                          isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-600"
-                        }`}
-                      >
-                        Decline
-                      </button>
-                      <button
-                        onClick={() => {
-                          setIsMergeWizardOpen(true);
-                        }}
-                        className="flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest text-white shadow-md active:scale-95 transition-transform"
-                        style={{ backgroundColor: signatureColor }}
-                      >
-                        Accept & Deploy Bridge
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {coOpStep === 3 && (
-                <div className="space-y-4 animate-fade-in">
-                  <div className={`p-4 rounded-2xl border flex items-center justify-between ${isDarkMode ? "bg-slate-900/40 border-slate-800" : "bg-slate-50 border-slate-100"}`}>
-                    <div>
-                      <p className={`text-xs font-black uppercase tracking-wider ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>Connected Partner Ledger</p>
-                      <p className="text-[10px] font-bold text-slate-400 mt-0.5">co-op-partner@ledgerplanner.com</p>
-                    </div>
-                    <span className="text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-2.5 py-1 rounded-md">
-                      Linked Synchronized
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setCoOpStep(1);
-                      openGlobalAction("Vault Disconnection", "Severing asynchronous cryptographic synchronization tokens. Data branches separated.", "Close", true, () => {}, false);
-                    }}
-                    className="w-full py-4 rounded-xl font-black text-xs uppercase tracking-widest text-white bg-red-600 hover:bg-red-700 transition-all active:scale-95 shadow-md flex items-center justify-center gap-2"
-                  >
-                    Sever Collaborative Node Connection
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* SUBSYSTEM INTERACTIVE MODAL INTERCEPTOR LAYER 3: THE VAULT MERGE WIZARD */}
-      {/* ========================================================================= */}
-      {isMergeWizardOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-          <div className={`w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden border animate-scale-up flex flex-col max-h-[85vh] ${
-            isDarkMode ? "bg-[#0F172A] border-slate-800" : "bg-white border-slate-100"
-          }`}>
-            <div className={`p-5 border-b flex justify-between items-center shrink-0 ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-slate-50 border-slate-200/60"}`}>
-              <div className="flex items-center gap-2">
-                <Sparkles size={16} className="text-purple-400" strokeWidth={2.5} />
-                <h3 className={`font-black uppercase text-xs tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                  Vault Merge Wizard (Bulk Initialization)
-                </h3>
-              </div>
-              <span className="text-[10px] font-black bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded-md uppercase tracking-widest">
-                Onboarding Step 1/1
-              </span>
-            </div>
-
-            <div className="p-6 overflow-y-auto space-y-5 flex-1 hide-scrollbar">
-              <div className="text-center max-w-xs mx-auto">
-                <h4 className={`font-black text-sm uppercase tracking-wider mb-1 ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
-                  Batch Update Backlog Allocation
-                </h4>
-                <p className="text-[11px] font-medium leading-relaxed text-slate-400">
-                  Select which existing historical nodes to migrate from private boundaries into the shared workspace environment framework automatically.
-                </p>
-              </div>
-
-              {/* Checklist Group Component 1: Accounts Migration Matrix */}
-              <div className="space-y-2.5">
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block px-1">Historical Account Entities Visibility Checklist</span>
-                <div className="space-y-2">
-                  {Object.keys(mergeAccounts).map((accName) => (
-                    <button
-                      key={accName}
-                      onClick={() => setMergeAccounts({ ...mergeAccounts, [accName]: !mergeAccounts[accName] })}
-                      className={`w-full p-3.5 rounded-xl border flex items-center justify-between text-left transition-all ${
-                        mergeAccounts[accName]
-                          ? isDarkMode ? "bg-slate-800/80 border-slate-600 text-white" : "bg-slate-50 border-slate-300 text-slate-900 font-bold"
-                          : isDarkMode ? "bg-slate-900/30 border-slate-800 text-slate-500" : "bg-white border-slate-200 text-slate-400"
-                      }`}
-                    >
-                      <span className="text-xs font-bold uppercase tracking-wide truncate pr-4">{accName}</span>
-                      <div className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-all ${
-                        mergeAccounts[accName] ? "bg-purple-500 border-transparent text-white" : "border-slate-300 dark:border-slate-700"
-                      }`}>
-                        {mergeAccounts[accName] && <Check size={12} strokeWidth={3} />}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Checklist Group Component 2: Recurring Bills Migration Matrix */}
-              <div className="space-y-2.5">
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block px-1">Historical Recurring Expense Elements Checklist</span>
-                <div className="space-y-2">
-                  {Object.keys(mergeBills).map((billName) => (
-                    <button
-                      key={billName}
-                      onClick={() => setMergeBills({ ...mergeBills, [billName]: !mergeBills[billName] })}
-                      className={`w-full p-3.5 rounded-xl border flex items-center justify-between text-left transition-all ${
-                        mergeBills[billName]
-                          ? isDarkMode ? "bg-slate-800/80 border-slate-600 text-white" : "bg-slate-50 border-slate-300 text-slate-900 font-bold"
-                          : isDarkMode ? "bg-slate-900/30 border-slate-800 text-slate-500" : "bg-white border-slate-200 text-slate-400"
-                      }`}
-                    >
-                      <span className="text-xs font-bold uppercase tracking-wide truncate pr-4">{billName}</span>
-                      <div className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-all ${
-                        mergeBills[billName] ? "bg-purple-500 border-transparent text-white" : "border-slate-300 dark:border-slate-700"
-                      }`}>
-                        {mergeBills[billName] && <Check size={12} strokeWidth={3} />}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className={`p-5 border-t shrink-0 ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-slate-50 border-slate-100"}`}>
-              <button
-                onClick={() => {
-                  setIsMergeWizardOpen(false);
-                  setCoOpStep(3); // Set sharing connection active
-                  setIsCoOpOpen(false); // Close out sheets back to main view panel tree
-                  openGlobalAction("Handshake Finalized", "Batch transformation execution processed successfully in 12.4 seconds.", "Close", false, () => {}, true);
-                }}
-                className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-lg active:scale-95 transition-transform"
-                style={{ backgroundColor: signatureColor }}
-              >
-                Execute Batch Vault Synchronization Merge
-              </button>
             </div>
           </div>
         </div>

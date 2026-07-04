@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { 
   X, User, CreditCard, RefreshCw, AlertCircle, Trash2, LogOut, 
   ChevronRight, Sparkles, Globe, Palette, Users, Shield, Check, HelpCircle, Briefcase,
@@ -28,10 +28,14 @@ export default function Settings({
   handleUpdateDisplayName, 
   isEntrepreneurMode = false,
   setIsEntrepreneurMode,
-  handleExportData
+  handleExportData,
+  triggerVictory // <-- INJECTED CONFETTI ENGINE PROP
 }) {
   const [editName, setEditName] = useState(userName || "");
   const [editBirthday, setEditBirthday] = useState(""); 
+  
+  // === SURGICAL FIX: BIRTHDAY CALENDAR PROGRAMMATIC REF ===
+  const birthdayInputRef = useRef(null);
 
   // === SURGICAL FIX: MULTI-VIEW ROUTING STATE ===
   const [activeView, setActiveView] = useState("main"); // "main", "profile", "personalization", "sharing", "security"
@@ -66,13 +70,20 @@ export default function Settings({
     { code: "JPY (¥)", symbol: "¥" }
   ];
 
+  // === SURGICAL FIX: EXPANDED 12-COLOR MATRIX ===
   const premiumPalette = [
     { name: "Classic Ledger Blue", hex: "#1877F2" },
     { name: "Neon Yellow", hex: "#FBBF24" },
     { name: "Midnight Purple", hex: "#8B5CF6" },
     { name: "Crimson Forge", hex: "#EF4444" },
     { name: "Cyan Wave", hex: "#0EA5E9" },
-    { name: "Rose Quartz", hex: "#EC4899" }
+    { name: "Rose Quartz", hex: "#EC4899" },
+    { name: "Slate Charcoal", hex: "#64748B" },
+    { name: "Volcanic Amber", hex: "#B45309" },
+    { name: "Amethyst Wine", hex: "#6B21A8" },
+    { name: "Teal Glacier", hex: "#0D9488" },
+    { name: "Burnt Coral", hex: "#E11D48" },
+    { name: "Electric Lavender", hex: "#C084FC" }
   ];
 
   const previousYear = new Date().getFullYear() - 1;
@@ -100,7 +111,8 @@ export default function Settings({
     }
     try {
       await updateDoc(doc(db, "users", user.uid), { birthday: newDate });
-      openGlobalAction("Birthday Date Set", "Your birthday has been set. Merry Birthday to you, and to you many more!", "Close", false, () => {}, true);
+      openGlobalAction("Birthday Date Set", "Happy Birthday to you, and to you many more!", "Close", false, () => {}, true);
+      if (triggerVictory) triggerVictory(); // SURGICAL FIX: WIRED CONFETTI
     } catch (err) {
       console.error("Failed to sync birthday date:", err);
     }
@@ -259,7 +271,9 @@ export default function Settings({
                   <button 
                     onClick={() => {
                       if (handleUpdateDisplayName) handleUpdateDisplayName(editName);
-                      openGlobalAction("Identity Updated", "Local cache verification synchronized successfully.", "Close", false, () => {}, true);
+                      // SURGICAL FIX: NEW COPY + CONFETTI
+                      openGlobalAction("Username Updated", "Your name has been successfully updated.", "Close", false, () => {}, true);
+                      if (triggerVictory) triggerVictory();
                     }}
                     disabled={!editName.trim() || editName === userName}
                     className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-[0.98]"
@@ -276,14 +290,31 @@ export default function Settings({
                   🎂 SET BIRTHDAY
                 </label>
                 <div className="flex flex-col gap-2.5">
-                  <input 
-                    type="date" 
-                    value={editBirthday} 
-                    onChange={(e) => setEditBirthday(e.target.value)} 
-                    className={`w-full py-3 px-4 rounded-xl font-bold text-xs border focus:outline-none transition-colors ${
-                      isDarkMode ? "bg-[#0F172A] border-slate-700 text-white focus:border-slate-500" : "bg-slate-50 border-slate-200 text-slate-900 focus:border-slate-400"
-                    }`} 
-                  />
+                  
+                  {/* SURGICAL FIX: CLICK ANYWHERE INTERCEPTOR */}
+                  <div 
+                    className="relative cursor-pointer"
+                    onClick={() => {
+                      try {
+                        if (birthdayInputRef.current && typeof birthdayInputRef.current.showPicker === 'function') {
+                          birthdayInputRef.current.showPicker();
+                        }
+                      } catch (e) {
+                        if (birthdayInputRef.current) birthdayInputRef.current.focus();
+                      }
+                    }}
+                  >
+                    <input 
+                      type="date" 
+                      ref={birthdayInputRef}
+                      value={editBirthday} 
+                      onChange={(e) => setEditBirthday(e.target.value)} 
+                      className={`w-full py-3 px-4 rounded-xl font-bold text-xs border focus:outline-none transition-colors cursor-pointer ${
+                        isDarkMode ? "bg-[#0F172A] border-slate-700 text-white focus:border-slate-500" : "bg-slate-50 border-slate-200 text-slate-900 focus:border-slate-400"
+                      }`} 
+                    />
+                  </div>
+
                   <button 
                     onClick={() => handleUpdateBirthday(editBirthday)}
                     disabled={!editBirthday}
@@ -341,7 +372,7 @@ export default function Settings({
                   <div className={`w-full py-3 px-4 rounded-xl font-bold text-xs border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-600"}`}>
                     <div className="flex items-center gap-2">
                       <Globe size={14} className="text-blue-400" />
-                      <span>Active Configuration</span>
+                      <span>Active Currency</span> {/* SURGICAL FIX */}
                     </div>
                     <span className={`px-2 py-0.5 rounded border ${isDarkMode ? "bg-slate-800 border-slate-600 text-white" : "bg-white border-slate-200 text-slate-900"}`}>{currentCurrency}</span>
                   </div>
@@ -371,34 +402,43 @@ export default function Settings({
                     </span>
                   </div>
                   <div className={`flex p-1 rounded-xl border ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-slate-100 border-slate-200"}`}>
+                    
+                    {/* SURGICAL FIX: STANDARD MODE STATE LOCK */}
                     <button
                       onClick={() => {
+                        if (!isEntrepreneurMode) return; // Prevents re-firing if already active
                         if (setIsEntrepreneurMode) setIsEntrepreneurMode(false);
-                        openGlobalAction("Structure Realigned", "Standard W-2 Payday routing restored successfully.", "Close", false, () => {}, true);
+                        openGlobalAction("Standard Mode Active", "Standard W-2 Payday routing restored successfully.", "Close", false, () => {}, true);
                       }}
+                      disabled={!isEntrepreneurMode}
                       className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${
                         !isEntrepreneurMode
-                          ? "text-white shadow-sm"
+                          ? "text-white shadow-sm cursor-not-allowed opacity-90"
                           : isDarkMode ? "text-slate-500 hover:text-slate-300" : "text-slate-400 hover:text-slate-600"
                       }`}
                       style={{ backgroundColor: !isEntrepreneurMode ? signatureColor : undefined }}
                     >
                       Standard
                     </button>
+
+                    {/* SURGICAL FIX: ENTREPRENEUR MODE STATE LOCK */}
                     <button
                       onClick={() => {
+                        if (isEntrepreneurMode) return; // Prevents re-firing if already active
                         if (setIsEntrepreneurMode) setIsEntrepreneurMode(true);
-                        openGlobalAction("Entrepreneur Mode Active", "Variable income routing engaged. Payday schedules bypassed.", "Close", false, () => {}, true);
+                        openGlobalAction("Entrepreneur Mode Active", "Entrepreneurial income routing successfully activated.", "Close", false, () => {}, true);
                       }}
+                      disabled={isEntrepreneurMode}
                       className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${
                         isEntrepreneurMode
-                          ? "text-white shadow-sm"
+                          ? "text-white shadow-sm cursor-not-allowed opacity-90"
                           : isDarkMode ? "text-slate-500 hover:text-slate-300" : "text-slate-400 hover:text-slate-600"
                       }`}
                       style={{ backgroundColor: isEntrepreneurMode ? signatureColor : undefined }}
                     >
                       Entrepreneur
                     </button>
+
                   </div>
                 </div>
               </div>
@@ -562,7 +602,8 @@ export default function Settings({
                   onClick={() => {
                     if (setCurrentCurrency) setCurrentCurrency(currency.code);
                     setIsCurrencyOpen(false);
-                    openGlobalAction("Currency Realignment", `Recalibrating layout engines to real-time translation metrics (${currency.symbol})`, "Close", false, () => {}, true);
+                    // SURGICAL FIX: DYNAMIC CURRENCY CONFIRMATION COPY
+                    openGlobalAction("Currency Updated", `Ledger Planner has been set to ${currency.symbol}. Your currency has been updated.`, "Close", false, () => {}, true);
                   }}
                   className={`w-full p-4 rounded-xl border font-black text-xs uppercase tracking-wider flex items-center justify-between transition-colors ${
                     currentCurrency === currency.code

@@ -1049,6 +1049,7 @@ function LedgerApp() {
             isEntrepreneurMode={isEntrepreneurMode} 
             setIsEntrepreneurMode={setIsEntrepreneurMode}
             handleExportData={handleExportData} // <-- INJECTED FOR YEAR-END EXPORTER
+            triggerVictory={triggerVictory} // <-- INJECTED CONFETTI ENGINE
           />
         )}
 

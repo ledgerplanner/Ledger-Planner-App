@@ -272,7 +272,7 @@ export default function Settings({
                     onClick={() => {
                       if (handleUpdateDisplayName) handleUpdateDisplayName(editName);
                       // SURGICAL FIX: NEW COPY + CONFETTI
-                      openGlobalAction("Username Updated", "Your name has been successfully updated.", "Close", false, () => {}, true);
+                      openGlobalAction("Display Name Updated", "Your name has been successfully updated.", "Close", false, () => {}, true);
                       if (triggerVictory) triggerVictory();
                     }}
                     disabled={!editName.trim() || editName === userName}
@@ -426,7 +426,7 @@ export default function Settings({
                       onClick={() => {
                         if (isEntrepreneurMode) return; // Prevents re-firing if already active
                         if (setIsEntrepreneurMode) setIsEntrepreneurMode(true);
-                        openGlobalAction("Entrepreneur Mode Active", "Entrepreneurial income routing successfully activated.", "Close", false, () => {}, true);
+                        openGlobalAction("Entrepreneur Mode Active", "Entrepreneur income routing successfully activated.", "Close", false, () => {}, true);
                       }}
                       disabled={isEntrepreneurMode}
                       className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${

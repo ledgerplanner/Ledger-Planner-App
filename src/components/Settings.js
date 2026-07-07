@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { 
   X, User, CreditCard, RefreshCw, AlertCircle, Trash2, LogOut, 
   ChevronRight, Sparkles, Globe, Palette, Shield, Check, HelpCircle, Briefcase,
-  Download, FileText, ChevronLeft
+  Download, FileText, ChevronLeft, TrendingUp
 } from "lucide-react";
 
 import { doc, getDoc, updateDoc } from "firebase/firestore";
@@ -34,7 +34,7 @@ export default function Settings({
   const [editBirthday, setEditBirthday] = useState(""); 
   
   const birthdayInputRef = useRef(null);
-  const [activeView, setActiveView] = useState("main"); // "main", "profile", "personalization", "security"
+  const [activeView, setActiveView] = useState("main"); // "main", "profile", "personalization", "offers", "security"
   const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
 
   const availableCurrencies = [
@@ -202,6 +202,16 @@ export default function Settings({
                 colorClass="text-orange-500" 
                 targetView="personalization" 
               />
+              
+              {/* SURGICAL INJECTION: CREDIT MONITORING & OFFERS */}
+              <DirectoryRow 
+                icon={TrendingUp} 
+                title="Credit Monitoring & Offers" 
+                description="Credit Score Offer, More Offers" 
+                colorClass="text-purple-500" 
+                targetView="offers" 
+              />
+
               <DirectoryRow 
                 icon={Shield} 
                 title="Security & Export" 
@@ -404,6 +414,40 @@ export default function Settings({
                 </div>
               </div>
 
+            </div>
+          )}
+
+          {/* ========================================= */}
+          {/* VIEW: LEDGER EXCLUSIVES & OFFERS          */}
+          {/* ========================================= */}
+          {activeView === "offers" && (
+            <div className="animate-slide-up space-y-4">
+              <h4 className={`text-[14px] font-black uppercase tracking-widest px-2 mb-2 flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                <TrendingUp size={16} strokeWidth={2.5} className="text-purple-500" /> Ledger Exclusives
+              </h4>
+
+              {/* Exclusive Credit Offer Card */}
+              <div className={`relative rounded-[2rem] p-5 border flex flex-col text-center transition-all ${isDarkMode ? "bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700 shadow-sm" : "bg-gradient-to-br from-white to-slate-50 border-slate-300 shadow-md"}`}>
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 bg-[#1877F2]/5 blur-3xl rounded-full pointer-events-none"></div>
+                <h3 className={`text-sm font-black tracking-tight mb-1 relative z-10 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Exclusive Credit Offer</h3>
+                <p className={`text-[10px] font-bold mb-4 relative z-10 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Access your 3-Bureau Credit Score with 24/7 monitoring and identity protection.</p>
+                <a 
+                  href={`https://www.smartcredit.com/join/?pid=65366&sid=${user?.uid || "UNKNOWN_USER"}`}
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="relative z-10 w-full py-4 rounded-xl font-black text-[10px] uppercase tracking-widest text-white shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2"
+                  style={{ backgroundColor: user?.creditStatus === "trial_active" ? "#64748B" : "#1877F2" }}
+                >
+                  {user?.creditStatus === "trial_active" ? "⏳ Credit Trial Linked" : "🔓 Unlock My 7-Day Credit Trial for $1"}
+                </a>
+              </div>
+
+              {/* Placeholder Card */}
+              <div className={`p-6 rounded-[2rem] border border-dashed flex items-center justify-center text-center transition-all ${isDarkMode ? "bg-slate-800/20 border-slate-700" : "bg-slate-50/50 border-slate-200"}`}>
+                <p className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
+                  More partner offers coming soon...
+                </p>
+              </div>
             </div>
           )}
 

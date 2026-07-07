@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ArrowRightLeft, PlusCircle, Edit2, Target, CheckCircle2, Calendar as CalendarIcon, ArrowDown, X } from "lucide-react";
- 
+import { useLedger } from "../context/LedgerContext";
+
 export default function Accounts({
   userName,
   accounts = [],
@@ -17,6 +18,11 @@ export default function Accounts({
   setIsCashOutOpen,
   setCashOutGoal
 }) {
+  // === INJECTED: FIREBASE DATA PIPELINE ===
+  const { user } = useLedger();
+  const creditStatus = user?.creditStatus || null;
+  const userId = user?.uid || "UNKNOWN_USER";
+
   const [activeChartNode, setActiveChartNode] = useState(5);
   const [timeframe, setTimeframe] = useState("6M");
   
@@ -170,7 +176,6 @@ export default function Accounts({
         </div>
       </div>
  
-      {/* UPDATE: Horizontal Scroll Wrapper mapped dynamically to node count */}
       <div className={`relative mt-4 transform transition-all duration-1000 ease-out origin-bottom ${showChart ? "opacity-100 scale-y-100" : "opacity-0 scale-y-95"}`}>
         <div className="w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
           <div 
@@ -245,7 +250,7 @@ export default function Accounts({
  
   return (
     <div className={`pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
-       
+        
       <div className="relative z-10 Accounts-Master-Header">
         <style>{`
           .Accounts-Master-Header h1, 
@@ -259,7 +264,25 @@ export default function Accounts({
       </div>
  
       <main className="px-6 space-y-8 mt-4">
-        
+
+        {/* === SURGICAL INJECTION: SMARTCREDIT NATIVE BANNER === */}
+        {creditStatus !== "active" && (
+          <div className={`rounded-[2rem] p-5 border shadow-sm flex flex-col items-center text-center transition-all ${isDarkMode ? "bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700" : "bg-gradient-to-br from-white to-slate-50 border-slate-200"}`}>
+            <h3 className={`text-sm font-black tracking-tight mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Credit Vault Link</h3>
+            <p className={`text-[10px] font-bold mb-4 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Connect your 3-bureau scores directly to your financial profile.</p>
+            <a 
+              href={`https://www.smartcredit.com/join/?pid=65366&sid=${userId}`}
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="w-full py-4 rounded-xl font-black text-[10px] uppercase tracking-widest text-white shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2"
+              style={{ backgroundColor: creditStatus === "trial_active" ? "#64748B" : "#1877F2" }}
+            >
+              {creditStatus === "trial_active" ? "⏳ Credit Trial Linked" : "🔓 Unlock My 7-Day Credit Trial for $1"}
+            </a>
+          </div>
+        )}
+        {/* === END SURGICAL INJECTION === */}
+
         <div className="space-y-4">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">All Accounts</h3>
           <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
@@ -428,7 +451,6 @@ export default function Accounts({
       </main>
  
       {/* ICON DRAWER WRAPPER */}
-      {/* FIXED PIPELINE: Removed the fragile document.querySelector input-scraping logic. Emojis now safely route directly through parent handler state updates */}
       {isIconSelectorOpen && (
          <div className={`absolute inset-0 z-[150] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
             <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>

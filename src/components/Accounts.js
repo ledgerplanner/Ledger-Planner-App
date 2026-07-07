@@ -23,6 +23,24 @@ export default function Accounts({
   const creditStatus = user?.creditStatus || null;
   const userId = user?.uid || "UNKNOWN_USER";
 
+  // === INJECTED: SMARTCREDIT BANNER DISMISSAL LOGIC ===
+  const [isBannerDismissed, setIsBannerDismissed] = useState(false);
+
+  useEffect(() => {
+    // Check if the user dismissed the banner this month
+    const dismissedMonth = localStorage.getItem('ledger_credit_dismissed_month');
+    const currentMonth = new Date().getMonth().toString();
+    if (dismissedMonth === currentMonth) {
+      setIsBannerDismissed(true);
+    }
+  }, []);
+
+  const handleDismissBanner = () => {
+    // Set the current month in local storage and hide the banner
+    localStorage.setItem('ledger_credit_dismissed_month', new Date().getMonth().toString());
+    setIsBannerDismissed(true);
+  };
+
   const [activeChartNode, setActiveChartNode] = useState(5);
   const [timeframe, setTimeframe] = useState("6M");
   
@@ -266,10 +284,18 @@ export default function Accounts({
       <main className="px-6 space-y-8 mt-4">
 
         {/* === SURGICAL INJECTION: SMARTCREDIT NATIVE BANNER === */}
-        {creditStatus !== "active" && (
-          <div className={`rounded-[2rem] p-5 border shadow-sm flex flex-col items-center text-center transition-all ${isDarkMode ? "bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700" : "bg-gradient-to-br from-white to-slate-50 border-slate-200"}`}>
-            <h3 className={`text-sm font-black tracking-tight mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Credit Vault Link</h3>
-            <p className={`text-[10px] font-bold mb-4 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Connect your 3-bureau scores directly to your financial profile.</p>
+        {creditStatus !== "active" && !isBannerDismissed && (
+          <div className={`relative rounded-[2rem] p-5 border flex flex-col items-center text-center transition-all ${isDarkMode ? "bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700 shadow-sm" : "bg-gradient-to-br from-white to-slate-50 border-slate-300 shadow-md"}`}>
+            
+            <button 
+              onClick={handleDismissBanner}
+              className={`absolute top-4 right-4 p-1.5 rounded-full transition-colors ${isDarkMode ? "text-slate-600 hover:text-slate-400 hover:bg-slate-800" : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"}`}
+            >
+              <X size={16} strokeWidth={3} />
+            </button>
+
+            <h3 className={`text-sm font-black tracking-tight mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Exclusive Credit Offer</h3>
+            <p className={`text-[10px] font-bold mb-4 px-4 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Access your 3-Bureau Credit Score with 24/7 monitoring and identity protection.</p>
             <a 
               href={`https://www.smartcredit.com/join/?pid=65366&sid=${userId}`}
               target="_blank" 

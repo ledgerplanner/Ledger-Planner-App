@@ -139,7 +139,7 @@ export default function Settings({
             </h3>
           ) : (
             <button onClick={() => setActiveView("main")} className={`flex items-center gap-1.5 text-xs font-black uppercase tracking-widest transition-colors ${isDarkMode ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"}`}>
-              <ChevronLeft size={16} strokeWidth={2.5} /> Back to Hub
+              <ChevronLeft size={16} strokeWidth={2.5} /> Back to Settings Vault
             </button>
           )}
           <button onClick={() => setIsSettingsOpen(false)} className={closeButtonClass}>
@@ -260,6 +260,9 @@ export default function Settings({
                 </div>
               </div>
 
+              {/* Signature Line */}
+              <div className={`border-t mx-2 ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}></div>
+
               {/* Set Birthday Picker */}
               <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-sm"}`}>
                 <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
@@ -336,6 +339,9 @@ export default function Settings({
                 </div>
               </div>
 
+              {/* Signature Line */}
+              <div className={`border-t mx-2 ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}></div>
+
               {/* Select Currency */}
               <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-sm"}`}>
                 <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
@@ -358,6 +364,9 @@ export default function Settings({
                   </button>
                 </div>
               </div>
+
+              {/* Signature Line */}
+              <div className={`border-t mx-2 ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}></div>
 
               {/* Income Structure */}
               <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-sm"}`}>
@@ -427,10 +436,17 @@ export default function Settings({
               </h4>
 
               {/* Exclusive Credit Offer Card */}
-              <div className={`relative rounded-[2rem] p-5 border flex flex-col text-center transition-all ${isDarkMode ? "bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700 shadow-sm" : "bg-gradient-to-br from-white to-slate-50 border-slate-300 shadow-md"}`}>
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 bg-[#1877F2]/5 blur-3xl rounded-full pointer-events-none"></div>
-                <h3 className={`text-sm font-black tracking-tight mb-1 relative z-10 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Exclusive Credit Offer</h3>
-                <p className={`text-[10px] font-bold mb-4 relative z-10 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Access your 3-Bureau Credit Score with 24/7 monitoring and identity protection.</p>
+              <div className={`relative rounded-[2rem] p-5 border flex flex-col text-center overflow-hidden transition-all duration-300 ${
+                isDarkMode 
+                  ? "bg-gradient-to-br from-slate-900 via-slate-800 to-black border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.5)]" 
+                  : "bg-gradient-to-br from-white via-slate-50 to-slate-100 border-slate-200 shadow-[0_12px_24px_rgba(0,0,0,0.08)]"
+              }`}>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-2xl rounded-full pointer-events-none"></div>
+                <h3 className={`text-sm font-black tracking-tight mb-2 relative z-10 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Exclusive Credit Offer!</h3>
+                <p className={`text-[10px] font-bold mb-5 px-4 relative z-10 leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                  <span className="block">Access your 3-Bureau Credit Score</span>
+                  <span className="block">with 24/7 monitoring and identity protection.</span>
+                </p>
                 <a 
                   href={`https://www.smartcredit.com/join/?pid=65366&sid=${user?.uid || "UNKNOWN_USER"}`}
                   target="_blank" 
@@ -438,9 +454,16 @@ export default function Settings({
                   className="relative z-10 w-full py-4 rounded-xl font-black text-[10px] uppercase tracking-widest text-white shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2"
                   style={{ backgroundColor: user?.creditStatus === "trial_active" ? "#64748B" : "#1877F2" }}
                 >
-                  {user?.creditStatus === "trial_active" ? "⏳ Credit Trial Linked" : "🔓 Unlock My 7-Day Credit Trial for $1"}
+                  {user?.creditStatus === "trial_active" ? (
+                    <>⏳ Credit Trial Linked</>
+                  ) : (
+                    <><TrendingUp size={16} strokeWidth={2.5} /> Unlock My 7-Day Credit Trial for $1</>
+                  )}
                 </a>
               </div>
+
+              {/* Signature Line */}
+              <div className={`border-t mx-2 ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}></div>
 
               {/* Placeholder Card */}
               <div className={`p-6 rounded-[2rem] border border-dashed flex items-center justify-center text-center transition-all ${isDarkMode ? "bg-slate-800/20 border-slate-700" : "bg-slate-50/50 border-slate-200"}`}>
@@ -485,6 +508,9 @@ export default function Settings({
                 </div>
               </div>
 
+              {/* Signature Line */}
+              <div className={`border-t mx-2 ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}></div>
+
               {/* Support */}
               <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-sm"}`}>
                 <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
@@ -505,6 +531,9 @@ export default function Settings({
                   </button>
                 </div>
               </div>
+
+              {/* Signature Line */}
+              <div className={`border-t mx-2 ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}></div>
 
               {/* Nuke Zone */}
               <div className={`p-5 rounded-[2rem] border ${isDarkMode ? "bg-red-950/10 border-red-900/30" : "bg-red-50/40 border-red-200 shadow-sm"}`}>

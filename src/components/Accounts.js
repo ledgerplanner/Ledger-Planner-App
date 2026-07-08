@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ArrowRightLeft, PlusCircle, Edit2, Target, CheckCircle2, Calendar as CalendarIcon, ArrowDown, X } from "lucide-react";
+import { ArrowRightLeft, PlusCircle, Edit2, Target, CheckCircle2, Calendar as CalendarIcon, ArrowDown, X, TrendingUp } from "lucide-react";
 import { useLedger } from "../context/LedgerContext";
 
 export default function Accounts({
@@ -285,25 +285,39 @@ export default function Accounts({
 
         {/* === SURGICAL INJECTION: SMARTCREDIT NATIVE BANNER === */}
         {creditStatus !== "active" && !isBannerDismissed && (
-          <div className={`relative rounded-[2rem] p-5 border flex flex-col items-center text-center transition-all ${isDarkMode ? "bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700 shadow-sm" : "bg-gradient-to-br from-white to-slate-50 border-slate-300 shadow-md"}`}>
+          <div className={`relative rounded-[2rem] p-5 border flex flex-col items-center text-center overflow-hidden transition-all duration-300 mb-4 ${
+            isDarkMode 
+              ? "bg-gradient-to-br from-slate-900 via-slate-800 to-black border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.5)]" 
+              : "bg-gradient-to-br from-white via-slate-50 to-slate-100 border-slate-200 shadow-[0_12px_24px_rgba(0,0,0,0.08)]"
+          }`}>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-2xl rounded-full pointer-events-none"></div>
             
             <button 
               onClick={handleDismissBanner}
-              className={`absolute top-4 right-4 p-1.5 rounded-full transition-colors ${isDarkMode ? "text-slate-600 hover:text-slate-400 hover:bg-slate-800" : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"}`}
+              className={`absolute top-4 right-4 p-1.5 rounded-full z-20 transition-colors ${isDarkMode ? "text-slate-600 hover:text-slate-400 hover:bg-slate-800" : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"}`}
             >
               <X size={16} strokeWidth={3} />
             </button>
 
-            <h3 className={`text-sm font-black tracking-tight mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Exclusive Credit Offer</h3>
-            <p className={`text-[10px] font-bold mb-4 px-4 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Access your 3-Bureau Credit Score with 24/7 monitoring and identity protection.</p>
+            <h3 className={`text-sm font-black tracking-tight mb-2 relative z-10 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Exclusive Credit Offer!</h3>
+            
+            <p className={`text-[10px] font-bold mb-5 px-4 relative z-10 leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+              <span className="block">Access your 3-Bureau Credit Score</span>
+              <span className="block">with 24/7 monitoring and identity protection.</span>
+            </p>
+            
             <a 
               href={`https://www.smartcredit.com/join/?pid=65366&sid=${userId}`}
               target="_blank" 
               rel="noopener noreferrer"
-              className="w-full py-4 rounded-xl font-black text-[10px] uppercase tracking-widest text-white shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2"
+              className="relative z-10 w-full py-4 rounded-xl font-black text-[10px] uppercase tracking-widest text-white shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2"
               style={{ backgroundColor: creditStatus === "trial_active" ? "#64748B" : "#1877F2" }}
             >
-              {creditStatus === "trial_active" ? "⏳ Credit Trial Linked" : "🔓 Unlock My 7-Day Credit Trial for $1"}
+              {creditStatus === "trial_active" ? (
+                <>⏳ Credit Trial Linked</>
+              ) : (
+                <><TrendingUp size={16} strokeWidth={2.5} /> Unlock My 7-Day Credit Trial for $1</>
+              )}
             </a>
           </div>
         )}

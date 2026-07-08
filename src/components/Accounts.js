@@ -290,7 +290,7 @@ export default function Accounts({
               ? "bg-gradient-to-br from-slate-900 via-slate-800 to-black border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.5)]" 
               : "bg-gradient-to-br from-white via-slate-50 to-slate-100 border-slate-200 shadow-[0_12px_24px_rgba(0,0,0,0.08)]"
           }`}>
-            <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/15 blur-2xl rounded-full pointer-events-none"></div>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/15 blur-2xl rounded-full pointer-events-none"></div>
             
             <button 
               onClick={handleDismissBanner}

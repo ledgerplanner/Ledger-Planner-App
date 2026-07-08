@@ -260,8 +260,8 @@ export default function Settings({
                 </div>
               </div>
 
-              {/* Signature Line */}
-              <div className={`border-t mx-2 ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}></div>
+              {/* Master Signature Line */}
+              <div className={`border-t ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
 
               {/* Set Birthday Picker */}
               <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-sm"}`}>
@@ -339,8 +339,8 @@ export default function Settings({
                 </div>
               </div>
 
-              {/* Signature Line */}
-              <div className={`border-t mx-2 ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}></div>
+              {/* Master Signature Line */}
+              <div className={`border-t ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
 
               {/* Select Currency */}
               <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-sm"}`}>
@@ -365,8 +365,8 @@ export default function Settings({
                 </div>
               </div>
 
-              {/* Signature Line */}
-              <div className={`border-t mx-2 ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}></div>
+              {/* Master Signature Line */}
+              <div className={`border-t ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
 
               {/* Income Structure */}
               <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-sm"}`}>
@@ -432,7 +432,7 @@ export default function Settings({
           {activeView === "offers" && (
             <div className="animate-slide-up space-y-4">
               <h4 className={`text-[14px] font-black uppercase tracking-widest px-2 mb-2 flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                <TrendingUp size={16} strokeWidth={2.5} className="text-purple-500" /> Ledger Exclusives
+                <TrendingUp size={16} strokeWidth={2.5} className="text-purple-500" /> Credit Monitoring & Offers
               </h4>
 
               {/* Exclusive Credit Offer Card */}
@@ -441,7 +441,7 @@ export default function Settings({
                   ? "bg-gradient-to-br from-slate-900 via-slate-800 to-black border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.5)]" 
                   : "bg-gradient-to-br from-white via-slate-50 to-slate-100 border-slate-200 shadow-[0_12px_24px_rgba(0,0,0,0.08)]"
               }`}>
-                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-2xl rounded-full pointer-events-none"></div>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/15 blur-2xl rounded-full pointer-events-none"></div>
                 <h3 className={`text-sm font-black tracking-tight mb-2 relative z-10 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Exclusive Credit Offer!</h3>
                 <p className={`text-[10px] font-bold mb-5 px-4 relative z-10 leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                   <span className="block">Access your 3-Bureau Credit Score</span>
@@ -462,8 +462,8 @@ export default function Settings({
                 </a>
               </div>
 
-              {/* Signature Line */}
-              <div className={`border-t mx-2 ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}></div>
+              {/* Master Signature Line */}
+              <div className={`border-t ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
 
               {/* Placeholder Card */}
               <div className={`p-6 rounded-[2rem] border border-dashed flex items-center justify-center text-center transition-all ${isDarkMode ? "bg-slate-800/20 border-slate-700" : "bg-slate-50/50 border-slate-200"}`}>
@@ -508,8 +508,8 @@ export default function Settings({
                 </div>
               </div>
 
-              {/* Signature Line */}
-              <div className={`border-t mx-2 ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}></div>
+              {/* Master Signature Line */}
+              <div className={`border-t ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
 
               {/* Support */}
               <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-sm"}`}>
@@ -532,8 +532,8 @@ export default function Settings({
                 </div>
               </div>
 
-              {/* Signature Line */}
-              <div className={`border-t mx-2 ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}></div>
+              {/* Master Signature Line */}
+              <div className={`border-t ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
 
               {/* Nuke Zone */}
               <div className={`p-5 rounded-[2rem] border ${isDarkMode ? "bg-red-950/10 border-red-900/30" : "bg-red-50/40 border-red-200 shadow-sm"}`}>

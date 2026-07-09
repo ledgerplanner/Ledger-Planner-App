@@ -47,6 +47,9 @@ function LedgerApp() {
     isEntrepreneurMode, setIsEntrepreneurMode 
   } = useLedger();
 
+  // === DYNAMIC COMPUTATIONS (MOVED UP FOR SAFE INITIALIZATION) ===
+  const userNameDisplay = isDemoMode ? "Aaron" : user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || "Founder";
+
   // === LOCAL UI & ROUTING STATE ===
   const [isMounted, setIsMounted] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
@@ -713,7 +716,6 @@ function LedgerApp() {
   };
 
   // === DYNAMIC COMPUTATIONS ===
-  const userNameDisplay = isDemoMode ? "Aaron" : user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || "Founder";
   const getOrdinalNum = (n) => n + (n > 0 ? ['th', 'st', 'nd', 'rd'][(n > 3 && n < 21) || n % 10 > 3 ? 0 : n % 10] : '');
   const heroDateTimeStr = `${currentTime.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase()}, ${currentTime.toLocaleDateString("en-US", { month: "long" }).toUpperCase()} ${getOrdinalNum(currentTime.getDate()).toUpperCase()}, ${currentTime.getFullYear()} — ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toUpperCase()}`;
 

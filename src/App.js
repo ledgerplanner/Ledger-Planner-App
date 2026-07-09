@@ -617,7 +617,7 @@ function LedgerApp() {
                method: 'POST',
                headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({
-                   userName,
+                   userName: userNameDisplay,
                    currentPeriod: period,
                    accounts: distilledAccounts,
                    bills: distilledBills,
@@ -645,7 +645,7 @@ function LedgerApp() {
     }, 3500);
 
     return () => clearTimeout(timer);
-  }, [user, isDemoMode, accounts, bills, transactions, userName]);
+  }, [user, isDemoMode, accounts, bills, transactions, userNameDisplay]);
 
   const handleDismissAIBriefing = () => {
        const now = new Date();

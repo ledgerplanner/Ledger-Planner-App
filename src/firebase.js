@@ -18,6 +18,10 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const messaging = getMessaging(app);
 
+// === INJECTED: PUBLIC VAPID KEY EXPORT ===
+// Replace this string with your actual Web Push Certificate (VAPID) key from the Firebase Console 
+const VAPID_KEY = "REPLACE_WITH_YOUR_ACTUAL_VAPID_KEY";
+
 // === OFFLINE PERSISTENCE ENGINE ===
 // This creates the local cache that allows the app to survive network drops
 // and syncs seamlessly across multiple browser tabs.
@@ -29,4 +33,4 @@ enableMultiTabIndexedDbPersistence(db).catch((err) => {
   }
 });
 
-export { auth, db, messaging };
+export { auth, db, messaging, VAPID_KEY };

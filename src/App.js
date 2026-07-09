@@ -5,7 +5,6 @@ import {
 } from "lucide-react";
 
 // === FIREBASE INITIALIZATION ===
-// SURGICAL UPDATE: Imported VAPID_KEY from the central config
 import { auth, db, messaging, VAPID_KEY } from "./firebase";
 import { getToken } from "firebase/messaging";
 import { 
@@ -178,7 +177,6 @@ function LedgerApp() {
       if (permission === "granted") {
         setIsPushEnabled(true);
         if (messaging && user && !isDemoMode) {
-          // SURGICAL UPDATE: Validated VAPID_KEY implementation & flattened token storage path
           const token = await getToken(messaging, { vapidKey: VAPID_KEY });
           if (token) {
             await setDoc(doc(db, "users", user.uid), { pushToken: token, pushTokenUpdatedAt: serverTimestamp() }, { merge: true });
@@ -588,7 +586,7 @@ function LedgerApp() {
     fetchBirthday();
   }, [user, isDemoMode]); // Run once when user is authenticated
 
-  // === SURGICAL INJECTION: TWICE-DAILY AI BRIEFING SCHEDULER ===
+  // === SURGICAL INJECTION: LIVE AI STRATEGIST ROUTING ===
   useEffect(() => {
     if (!user || isDemoMode) return;
     
@@ -608,19 +606,46 @@ function LedgerApp() {
            return;
        }
 
-       // Awaiting Vercel Edge Route wiring. Placing dynamic structural hook for testing the Command Center UI:
-       const placeholderText = `Your net worth grew by 2.4% this week, outpacing your target velocity. However, a major utility bill is due in 3 days. Adjust your liquid reserves accordingly.`;
-       
-       setAiBriefingText(placeholderText);
-       localStorage.setItem(cacheKey, placeholderText);
+       try {
+           // DISTILLATION FILTER: Strip out massive UI cruft/SVGs to ensure ultra-low token usage and fast API response
+           const distilledAccounts = accounts.map(a => ({ name: a.name, type: a.type, balance: a.balance, isGoal: a.isGoal }));
+           const distilledBills = bills.map(b => ({ name: b.name, amount: b.amount, isPaid: b.isPaid, dueDate: b.fullDate || b.rawDate, isOverdue: b.isOverdue }));
+           // Limit to last 15 recent transactions to prevent blowing out the context window
+           const distilledTx = transactions.slice(0, 15).map(t => ({ name: t.name, amount: t.amount, type: t.type, date: t.date }));
+
+           const response = await fetch('/api/briefing', {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({
+                   userName,
+                   currentPeriod: period,
+                   accounts: distilledAccounts,
+                   bills: distilledBills,
+                   transactions: distilledTx
+               })
+           });
+
+           if (response.ok) {
+               const data = await response.json();
+               if (data.briefing) {
+                   setAiBriefingText(data.briefing);
+                   localStorage.setItem(cacheKey, data.briefing);
+               }
+           } else {
+               console.error("AI Briefing Engine Fault:", await response.text());
+           }
+       } catch (error) {
+           console.error("Failed to establish secure relay link to AI engine:", error);
+       }
     };
 
+    // Slight architectural delay ensures Firebase finishes hydrating state arrays before we ping the model
     const timer = setTimeout(() => {
        fetchAIBriefing();
-    }, 2500);
+    }, 3500);
 
     return () => clearTimeout(timer);
-  }, [user, isDemoMode]);
+  }, [user, isDemoMode, accounts, bills, transactions, userName]);
 
   const handleDismissAIBriefing = () => {
        const now = new Date();
@@ -688,7 +713,7 @@ function LedgerApp() {
   };
 
   // === DYNAMIC COMPUTATIONS ===
-  const userName = isDemoMode ? "Aaron" : user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || "Founder";
+  const userNameDisplay = isDemoMode ? "Aaron" : user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || "Founder";
   const getOrdinalNum = (n) => n + (n > 0 ? ['th', 'st', 'nd', 'rd'][(n > 3 && n < 21) || n % 10 > 3 ? 0 : n % 10] : '');
   const heroDateTimeStr = `${currentTime.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase()}, ${currentTime.toLocaleDateString("en-US", { month: "long" }).toUpperCase()} ${getOrdinalNum(currentTime.getDate()).toUpperCase()}, ${currentTime.getFullYear()} — ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toUpperCase()}`;
 
@@ -870,7 +895,7 @@ function LedgerApp() {
           <div className={`flex-1 overflow-y-auto hide-scrollbar lg:pb-0 ${isDemoMode ? "pb-[220px]" : "pb-28"}`} ref={scrollRef} onScroll={handleScroll}>
             {activeTab === "home" && (
               <Dashboard 
-                userName={userName} 
+                userName={userNameDisplay} 
                 accounts={accounts} 
                 bills={dynamicBills} 
                 transactions={transactions} 
@@ -892,7 +917,7 @@ function LedgerApp() {
             
             {activeTab === "accounts" && (
               <Accounts 
-                userName={userName} 
+                userName={userNameDisplay} 
                 accounts={accounts} 
                 transactions={transactions} 
                 isDarkMode={isDarkMode} 
@@ -912,7 +937,7 @@ function LedgerApp() {
 
             {activeTab === "bills" && (
               <Bills 
-                userName={userName} 
+                userName={userNameDisplay} 
                 bills={dynamicBills} 
                 paydayConfig={paydayConfig}
                 isDarkMode={isDarkMode} 
@@ -931,7 +956,7 @@ function LedgerApp() {
 
             {activeTab === "activity" && (
               <Activity 
-                userName={userName} 
+                userName={userNameDisplay} 
                 transactions={transactions} 
                 isDarkMode={isDarkMode} 
                 setSelectedEntry={openEntryDrawer} 
@@ -945,7 +970,7 @@ function LedgerApp() {
             )}
             {activeTab === "todo" && (
               <Todo 
-                userName={userName} 
+                userName={userNameDisplay} 
                 todos={todos} 
                 isDarkMode={isDarkMode} 
                 renderHeroShell={renderHeroShell} 
@@ -990,7 +1015,7 @@ function LedgerApp() {
           needsRefresh={needsRefresh} 
           dynamicBills={dynamicBills} 
           changeTab={changeTab} 
-          userName={userName} 
+          userName={userNameDisplay} 
           formatPaydayDateStr={formatPaydayDateStr} 
           isPushEnabled={isPushEnabled} 
           enablePushNotifications={enablePushNotifications}
@@ -1091,7 +1116,7 @@ function LedgerApp() {
         {/* SETTINGS AND GLOBAL ACTIONS */}
         {isSettingsOpen && (
           <Settings 
-            userName={userName}
+            userName={userNameDisplay}
             user={user} 
             isDarkMode={isDarkMode}
             setIsDarkMode={setIsDarkMode}

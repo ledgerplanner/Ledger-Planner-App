@@ -5,7 +5,8 @@ import {
 } from "lucide-react";
 
 // === FIREBASE INITIALIZATION ===
-import { auth, db, messaging } from "./firebase";
+// SURGICAL UPDATE: Imported VAPID_KEY from the central config
+import { auth, db, messaging, VAPID_KEY } from "./firebase";
 import { getToken } from "firebase/messaging";
 import { 
   signInWithEmailAndPassword, createUserWithEmailAndPassword, 
@@ -56,6 +57,7 @@ function LedgerApp() {
   const [manualThemeOverride, setManualThemeOverride] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isScrolled, setIsScrolled] = useState(false);
+  const [aiBriefingText, setAiBriefingText] = useState("");
   const scrollRef = useRef(null);
 
   // === FORT KNOX OFFLINE ENGINE ===
@@ -176,8 +178,11 @@ function LedgerApp() {
       if (permission === "granted") {
         setIsPushEnabled(true);
         if (messaging && user && !isDemoMode) {
-          const token = await getToken(messaging, { vapidKey: "YOUR_PUBLIC_VAPID_KEY" });
-          if (token) await setDoc(doc(db, "users", user.uid, "settings", "push"), { token, updatedAt: serverTimestamp() }, { merge: true });
+          // SURGICAL UPDATE: Validated VAPID_KEY implementation & flattened token storage path
+          const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+          if (token) {
+            await setDoc(doc(db, "users", user.uid), { pushToken: token, pushTokenUpdatedAt: serverTimestamp() }, { merge: true });
+          }
         }
         openGlobalAction("Notifications On", "The structural system channel bridges are live.", "Close", false, () => closeGlobalAction(), true);
       } else {
@@ -481,7 +486,6 @@ function LedgerApp() {
     }
   };
 
-  // === INJECTED YEAR-END EXPORTER ENGINE ===
   const handleExportData = (targetYear) => {
     if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; }
     
@@ -583,6 +587,51 @@ function LedgerApp() {
     };
     fetchBirthday();
   }, [user, isDemoMode]); // Run once when user is authenticated
+
+  // === SURGICAL INJECTION: TWICE-DAILY AI BRIEFING SCHEDULER ===
+  useEffect(() => {
+    if (!user || isDemoMode) return;
+    
+    const fetchAIBriefing = async () => {
+       const now = new Date();
+       const hour = now.getHours();
+       // Determines the time block: AM is 5:00 AM to 3:59 PM, PM is 4:00 PM to 4:59 AM
+       const period = hour >= 5 && hour < 16 ? "AM" : "PM";
+       const dateStr = now.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
+       const cacheKey = `lp_ai_briefing_${dateStr}_${period}`;
+       
+       const cachedBriefing = localStorage.getItem(cacheKey);
+       if (cachedBriefing) {
+           if (cachedBriefing !== "DISMISSED") {
+               setAiBriefingText(cachedBriefing);
+           }
+           return;
+       }
+
+       // Awaiting Vercel Edge Route wiring. Placing dynamic structural hook for testing the Command Center UI:
+       const placeholderText = `Your net worth grew by 2.4% this week, outpacing your target velocity. However, a major utility bill is due in 3 days. Adjust your liquid reserves accordingly.`;
+       
+       setAiBriefingText(placeholderText);
+       localStorage.setItem(cacheKey, placeholderText);
+    };
+
+    const timer = setTimeout(() => {
+       fetchAIBriefing();
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, [user, isDemoMode]);
+
+  const handleDismissAIBriefing = () => {
+       const now = new Date();
+       const hour = now.getHours();
+       const period = hour >= 5 && hour < 16 ? "AM" : "PM";
+       const dateStr = now.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
+       const cacheKey = `lp_ai_briefing_${dateStr}_${period}`;
+       
+       localStorage.setItem(cacheKey, "DISMISSED");
+       setAiBriefingText("");
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -716,7 +765,7 @@ function LedgerApp() {
   const currentLiveBalance = accounts.filter(a => !a.isGoal && (a.type === "Checking" || a.type === "Cash")).reduce((sum, acc) => sum + (acc.balance || 0), 0);
 
   const renderHeroShell = (title, graphicContent) => {
-    // === SURGICAL FIX: BADGE LOGIC STREAMLINED (NO BRIEFINGS) ===
+    // === SURGICAL FIX: BADGE LOGIC STREAMLINED ===
     const hasOverdueOrDueNow = dynamicBills.some(b => !b.isPaid && (b.isOverdue || b.payday === "Due Now"));
 
     return (
@@ -742,12 +791,10 @@ function LedgerApp() {
             </button>
           </div>
 
-          {/* --- SURGICALLY INJECTED BRAND IDENTITY LOGO START --- */}
           <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center z-20 origin-top -top-5 lg:hidden">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-[#1877F2]/20 blur-xl rounded-full -z-10 pointer-events-none" style={{ backgroundColor: `${signatureColor}33` }}></div>
             <img src="/login-logo.png" alt="Ledger Planner" className={`relative z-10 w-16 h-16 rounded-full shadow-[0_12px_24px_rgba(24,119,242,0.3)] object-cover border-[3px] transition-colors ${isDarkMode ? "border-slate-800" : "border-white"}`} style={{ shadowColor: signatureColor }} />
           </div>
-          {/* --- SURGICALLY INJECTED BRAND IDENTITY LOGO END --- */}
 
           <div className="flex items-center gap-2 relative z-30">
             <button onClick={() => setIsSettingsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-100 text-slate-400"}`} style={{ color: isSettingsOpen ? signatureColor : undefined }}>
@@ -834,7 +881,7 @@ function LedgerApp() {
                 changeTab={changeTab} 
                 signatureColor={signatureColor}
                 formatPaydayDateStr={formatPaydayDateStr}
-                setIsPaydaySetupOpen={handleOpenPaydaySetup} // INJECTED
+                setIsPaydaySetupOpen={handleOpenPaydaySetup}
                 collapsedPaydays={collapsedPaydays}
                 toggleCollapse={toggleCollapse}
                 handleBillClick={handleBillClick}
@@ -849,9 +896,9 @@ function LedgerApp() {
                 accounts={accounts} 
                 transactions={transactions} 
                 isDarkMode={isDarkMode} 
-                setIsTransferOpen={handleOpenTransfer} // INJECTED
-                setIsAddAccountOpen={handleOpenAddAccount} // INJECTED
-                setIsAddGoalOpen={handleOpenAddGoal} // INJECTED
+                setIsTransferOpen={handleOpenTransfer}
+                setIsAddAccountOpen={handleOpenAddAccount}
+                setIsAddGoalOpen={handleOpenAddGoal}
                 setSelectedAccount={setSelectedAccount} 
                 setEditAccountBalance={() => {}} 
                 renderHeroShell={renderHeroShell} 
@@ -878,7 +925,7 @@ function LedgerApp() {
                 toggleCollapse={toggleCollapse}
                 liveHeroBalance={currentLiveBalance}
                 isEntrepreneurMode={isEntrepreneurMode} 
-                openGlobalAction={openGlobalAction} // <-- INJECTED
+                openGlobalAction={openGlobalAction}
               />
             )}
 
@@ -936,7 +983,21 @@ function LedgerApp() {
 
         {/* === THE CORE MODAL INJECTIONS === */}
         {isQabOpen && <QuickAddModal onClose={() => setIsQabOpen(false)} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} />}
-        {isNotificationsOpen && <CommandCenter setIsNotificationsOpen={setIsNotificationsOpen} needsRefresh={needsRefresh} dynamicBills={dynamicBills} changeTab={changeTab} userName={userName} formatPaydayDateStr={formatPaydayDateStr} isPushEnabled={isPushEnabled} enablePushNotifications={enablePushNotifications} />}
+        
+        {/* === SURGICAL INJECTION: WIRED LP AI ASSISTANT PROPS TO COMMAND CENTER === */}
+        {isNotificationsOpen && <CommandCenter 
+          setIsNotificationsOpen={setIsNotificationsOpen} 
+          needsRefresh={needsRefresh} 
+          dynamicBills={dynamicBills} 
+          changeTab={changeTab} 
+          userName={userName} 
+          formatPaydayDateStr={formatPaydayDateStr} 
+          isPushEnabled={isPushEnabled} 
+          enablePushNotifications={enablePushNotifications}
+          aiBriefingText={aiBriefingText}
+          handleDismissAIBriefing={handleDismissAIBriefing}
+        />}
+        
         <TransferEngine isTransferOpen={isTransferOpen} setIsTransferOpen={setIsTransferOpen} isCashOutOpen={isCashOutOpen} setIsCashOutOpen={setIsCashOutOpen} cashOutGoal={cashOutGoal} setCashOutGoal={setCashOutGoal} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} />
         
         {/* === PROP INJECTIONS FOR ACCOUNT BUILDER === */}
@@ -1031,7 +1092,7 @@ function LedgerApp() {
         {isSettingsOpen && (
           <Settings 
             userName={userName}
-            user={user} // SURGICAL INJECTION: Passed user so Settings can save to the DB
+            user={user} 
             isDarkMode={isDarkMode}
             setIsDarkMode={setIsDarkMode}
             setIsSettingsOpen={setIsSettingsOpen}
@@ -1048,8 +1109,8 @@ function LedgerApp() {
             handleUpdateDisplayName={handleUpdateDisplayName}
             isEntrepreneurMode={isEntrepreneurMode} 
             setIsEntrepreneurMode={setIsEntrepreneurMode}
-            handleExportData={handleExportData} // <-- INJECTED FOR YEAR-END EXPORTER
-            triggerVictory={triggerVictory} // <-- INJECTED CONFETTI ENGINE
+            handleExportData={handleExportData} 
+            triggerVictory={triggerVictory} 
           />
         )}
 

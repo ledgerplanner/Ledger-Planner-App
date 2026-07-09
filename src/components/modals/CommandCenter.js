@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { X, Bell, AlertCircle, CheckCircle2 } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { X, Bell, AlertCircle, CheckCircle2, TrendingUp } from 'lucide-react';
 import { useLedger } from '../../context/LedgerContext';
 import { useBriefingEngine } from '../../hooks/useBriefingEngine';
 
@@ -10,15 +10,20 @@ export default function CommandCenter({
   changeTab,
   handleOpenPaydaySetup,
   userName,
-  // === SURGICAL FIX: REMOVED BRIEFING PROPS (hasConsumedAMBriefing, etc.) ===
   formatPaydayDateStr,
   isPushEnabled,
-  enablePushNotifications
+  enablePushNotifications,
+  // === INJECTED: AI BRIEFING PROPS ===
+  aiBriefingText = "Your net worth grew by 2.4% this week, outpacing your target velocity. However, a major utility bill is due in 3 days. Adjust your liquid reserves accordingly.",
+  handleDismissAIBriefing
 }) {
   // 1. PULL GLOBAL STATE FROM THE CLOUD
   const { user, isDarkMode, signatureColor, isDemoMode } = useLedger();
 
-  // 2. INITIALIZE THE NOTIFICATION ENGINE (BRIEFING DATA IGNORED/REMOVED)
+  // === LOCAL UI DISMISSAL STATE FOR AI BANNER ===
+  const [isAiBannerDismissed, setIsAiBannerDismissed] = useState(false);
+
+  // 2. INITIALIZE THE NOTIFICATION ENGINE 
   const { activeAlerts } = useBriefingEngine({
     needsRefresh,
     dynamicBills,
@@ -33,7 +38,6 @@ export default function CommandCenter({
 
   // === SURGICAL FIX: INJECTED BIRTHDAY PINNED OVERRIDE ===
   const isBirthdayToday = useMemo(() => {
-    // Default to July 2nd for testing/demo if no user data, otherwise use actual DB param
     let bdayStr = "07-02"; 
     if (user?.birthday) {
       bdayStr = user.birthday.length > 5 ? user.birthday.substring(5) : user.birthday;
@@ -42,6 +46,13 @@ export default function CommandCenter({
     const todayStr = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     return bdayStr === todayStr;
   }, [user]);
+
+  const onDismissAI = () => {
+    setIsAiBannerDismissed(true);
+    if (typeof handleDismissAIBriefing === 'function') {
+       handleDismissAIBriefing();
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[120] flex justify-end">
@@ -57,7 +68,6 @@ export default function CommandCenter({
           {/* === PINNED BIRTHDAY BANNER INJECTION === */}
           {isBirthdayToday && (
             <div className="p-4 rounded-2xl shadow-lg relative overflow-hidden bg-gradient-to-r from-blue-500 via-orange-500 to-emerald-500">
-              {/* Internal dark/light overlay to make text pop while keeping gradient vibrant */}
               <div className={`absolute inset-0.5 rounded-xl ${isDarkMode ? "bg-slate-900/90" : "bg-white/95"}`}></div>
               <div className="relative z-10 flex gap-3 items-center">
                 <div className="p-2.5 text-2xl drop-shadow-sm self-start">🎂</div>
@@ -83,9 +93,37 @@ export default function CommandCenter({
             </div>
           )}
 
-          {/* === SURGICAL FIX: BRIEFING UI BLOCK COMPLETELY REMOVED === */}
+          {/* === SURGICAL INJECTION: LP AI ASSISTANT PREMIUM BANNER === */}
+          {aiBriefingText && !isAiBannerDismissed && (
+            <div className={`relative p-5 rounded-[2rem] border overflow-hidden shadow-lg transition-all duration-300 ${
+              isDarkMode 
+                ? "bg-gradient-to-br from-slate-900 to-slate-800 border-amber-500/40" 
+                : "bg-gradient-to-br from-amber-50/50 to-white border-amber-400/50"
+            }`}>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/15 blur-2xl rounded-full pointer-events-none"></div>
+              
+              <div className="flex justify-between items-start mb-3 relative z-10">
+                <div className="flex items-center gap-2">
+                  <TrendingUp size={16} strokeWidth={3} className={isDarkMode ? "text-amber-400" : "text-amber-500"} />
+                  <h4 className={`font-black uppercase tracking-widest text-[11px] ${isDarkMode ? "text-amber-400" : "text-amber-600"}`}>
+                    LP AI Assistant
+                  </h4>
+                </div>
+                <button 
+                  onClick={onDismissAI}
+                  className={`p-1 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-400 hover:text-slate-900 hover:bg-slate-100"}`}
+                >
+                  <X size={14} strokeWidth={3} />
+                </button>
+              </div>
+              
+              <p className={`text-[11px] font-bold leading-relaxed relative z-10 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
+                {aiBriefingText}
+              </p>
+            </div>
+          )}
 
-          {activeAlerts.length === 0 && !isBirthdayToday ? (
+          {activeAlerts.length === 0 && !isBirthdayToday && (!aiBriefingText || isAiBannerDismissed) ? (
             <div className="text-center py-20 opacity-100 flex flex-col items-center justify-center h-full">
               <div className="p-4 rounded-full bg-emerald-50 mb-4 dark:bg-emerald-900/20">
                 <CheckCircle2 size={36} className="text-[#10B981] drop-shadow-sm" />

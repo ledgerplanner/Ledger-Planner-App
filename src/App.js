@@ -605,10 +605,17 @@ function LedgerApp() {
        
        const cachedBriefing = localStorage.getItem(cacheKey);
        if (cachedBriefing) {
-           if (cachedBriefing !== "DISMISSED") {
-               setAiBriefingText(cachedBriefing);
+           if (cachedBriefing === "DISMISSED") {
+               return;
            }
-           return;
+           try {
+               // SURGICAL FIX: Parse the stored JSON string back into a live React object state
+               setAiBriefingText(JSON.parse(cachedBriefing));
+               return; 
+           } catch (e) {
+               // Failsafe: If the old "[object Object]" string is stuck, wipe it and fetch fresh JSON
+               localStorage.removeItem(cacheKey);
+           }
        }
 
        try {
@@ -618,7 +625,8 @@ function LedgerApp() {
            // Limit to last 15 recent transactions to prevent blowing out the context window
            const distilledTx = transactions.slice(0, 15).map(t => ({ name: t.name, amount: t.amount, type: t.type, date: t.date }));
 
-           const response = await fetch('/api/briefing', {
+           // SURGICAL FIX: Cache-busting timestamp appended to bypass Service Worker POST blocks
+           const response = await fetch(`/api/briefing?cb=${Date.now()}`, {
                method: 'POST',
                headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({
@@ -634,7 +642,8 @@ function LedgerApp() {
                const data = await response.json();
                if (data.briefing) {
                    setAiBriefingText(data.briefing);
-                   localStorage.setItem(cacheKey, data.briefing);
+                   // SURGICAL FIX: Stringify the payload to prevent coercion to "[object Object]"
+                   localStorage.setItem(cacheKey, JSON.stringify(data.briefing));
                }
            } else {
                console.error("AI Briefing Engine Fault:", await response.text());

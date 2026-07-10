@@ -91,7 +91,10 @@ Evaluation Window: ${currentPeriod || 'AM'}`;
     }
 
     const data = await response.json();
-    const rawJsonText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+    let rawJsonText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+
+    // STRICT FIX: Strip rogue markdown formatting that bypasses the prompt instructions
+    rawJsonText = rawJsonText.replace(/```json/gi, '').replace(/```/g, '').trim();
 
     // 8. Parse and pass secure structured objects down to frontend context
     let parsedBriefing;

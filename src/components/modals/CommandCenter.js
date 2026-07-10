@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { X, Bell, AlertCircle, CheckCircle2, TrendingUp, Sparkles } from 'lucide-react';
+import { X, Bell, AlertCircle, CheckCircle2, TrendingUp } from 'lucide-react';
 import { useLedger } from '../../context/LedgerContext';
 import { useBriefingEngine } from '../../hooks/useBriefingEngine';
 
@@ -66,8 +66,8 @@ export default function CommandCenter({
           insightType: "BUDGET INSIGHT",
           title: "Quick Insight",
           body: aiBriefingText,
-          primaryMetric: "Optimal",
-          metricLabel: "Vault Status"
+          primaryMetric: null,
+          metricLabel: null
         };
       }
     }
@@ -125,14 +125,10 @@ export default function CommandCenter({
               {/* Header section containing segmented type and dismiss controller */}
               <div className="flex justify-between items-center mb-3 relative z-10">
                 <div className="flex items-center gap-2">
-                  <div className={`p-1.5 rounded-xl ${isDarkMode ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-100 text-amber-600'}`}>
-                    <Sparkles size={13} strokeWidth={2.5} />
-                  </div>
-                  <div>
-                    <h5 className={`font-black uppercase tracking-widest text-[9px] ${isDarkMode ? "text-amber-400/80" : "text-amber-600"}`}>
-                      {aiData.insightType || "QUICK INSIGHT"}
-                    </h5>
-                  </div>
+                  <span className="text-sm">🤖</span>
+                  <h4 className={`font-black uppercase tracking-widest text-[11px] ${isDarkMode ? "text-amber-400" : "text-amber-600"}`}>
+                    LP AI ASSISTANT
+                  </h4>
                 </div>
                 <button 
                   onClick={onDismissAI}

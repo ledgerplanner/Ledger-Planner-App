@@ -599,7 +599,9 @@ function LedgerApp() {
        // Determines the time block: AM is 5:00 AM to 3:59 PM, PM is 4:00 PM to 4:59 AM
        const period = hour >= 5 && hour < 16 ? "AM" : "PM";
        const dateStr = now.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
-       const cacheKey = `lp_ai_briefing_${dateStr}_${period}`;
+       
+       // SURGICAL FIX: Tied cache key directly to user ID for multi-tenant isolation
+       const cacheKey = `lp_ai_briefing_${user.uid}_${dateStr}_${period}`;
        
        const cachedBriefing = localStorage.getItem(cacheKey);
        if (cachedBriefing) {
@@ -655,7 +657,9 @@ function LedgerApp() {
        const hour = now.getHours();
        const period = hour >= 5 && hour < 16 ? "AM" : "PM";
        const dateStr = now.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
-       const cacheKey = `lp_ai_briefing_${dateStr}_${period}`;
+       
+       // SURGICAL FIX: Match the user-isolated cache key syntax
+       const cacheKey = `lp_ai_briefing_${user?.uid || 'demo'}_${dateStr}_${period}`;
        
        localStorage.setItem(cacheKey, "DISMISSED");
        setAiBriefingText("");

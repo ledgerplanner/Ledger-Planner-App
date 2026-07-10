@@ -1,5 +1,5 @@
 // api/briefing.js
-// VERCEL SERVERLESS EDGE ROUTE FOR LP 2.0 TWICE-DAILY AI WEALTH STRATEGIST
+// VERCEL SERVERLESS EDGE ROUTE FOR LP 2.0 TWICE-DAILY AI WEALTH STRATEGIST (STRUCTURED ANALYTICS ENGINE)
 
 export const config = {
   runtime: 'edge', // Utilizing ultra-low latency Edge runtime
@@ -39,22 +39,26 @@ export default async function handler(req) {
     // 4. Ingest financial metrics sent from the frontend client
     const { userName, accounts, bills, transactions, currentPeriod } = await req.json();
 
-    // 5. Build our highly customized, elite wealth strategist prompt guidelines
+    // 5. Build our elite structured analytics guidelines
     const systemInstruction = `You are the ultimate Lead Financial Architect and elite wealth strategist inside Ledger Planner 2.0. 
-Your objective is to provide a brief, high-impact, actionable financial brief for the user based on their current data.
-- Keep the briefing strictly under 3 sentences. Be punchy, clear, and direct.
-- Do not use markdown bolding formatting (like **) or bullets in your sentence text block.
-- Address the user directly by their name: ${userName || 'Founder'}.
-- Review their accounts data, upcoming bills, and recent transactions to pinpoint trends, anomalies, optimization strategies, or critical due dates.
-- Current Time Horizon: This is their ${currentPeriod || 'current'} evaluation window.`;
+Your objective is to analyze real-time user financial ledger states and produce structured, premium financial metrics.
+You must return your response as a raw JSON object following this schema exactly, with no additional text or markdown formatting:
+{
+  "insightType": "BUDGET INSIGHT" | "SUBSCRIPTION ALERT" | "SPENDING TREND",
+  "title": "A short, punchy header under 5 words",
+  "body": "A highly actionable strategic sentence under 20 words addressing ${userName || 'Founder'} directly based on real data metrics.",
+  "primaryMetric": "A string representing money values, percentages, or ratios (e.g., '+$4,420', '$120/mo', '18%')",
+  "metricLabel": "A short context label for the primaryMetric (e.g., 'Potential Savings', 'Spending Increase', 'Monthly Cost')"
+}
+Do not use markdown blocks (such as \`\`\`json). Return only the raw minified JSON payload block. Check your mathematical calculations against the ledger data before writing.`;
 
-    const promptText = `Analyze this real-time financial ledger state data and produce my briefing:
+    const promptText = `Analyze this live financial vault state data to populate your required structured schema keys:
 Accounts: ${JSON.stringify(accounts || [])}
 Upcoming Bills: ${JSON.stringify(bills || [])}
-Recent Activity Ledger: ${JSON.stringify(transactions || [])}`;
+Recent Activity Ledger: ${JSON.stringify(transactions || [])}
+Evaluation Window: ${currentPeriod || 'AM'}`;
 
-    // 6. Build request payload matching Google AI Studio's generation API layout
-    // SURGICAL FIX: Upgraded endpoint to the latest gemini-3.5-flash architecture
+    // 6. Target the live Gemini 3.5 Flash Content Endpoint
     const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
 
     const geminiPayload = {
@@ -65,8 +69,9 @@ Recent Activity Ledger: ${JSON.stringify(transactions || [])}`;
         parts: [{ text: systemInstruction }]
       },
       generationConfig: {
-        temperature: 0.4,
-        maxOutputTokens: 250
+        temperature: 0.2, // Low temperature enforces rigid adherence to formatting rules
+        maxOutputTokens: 300,
+        responseMimeType: "application/json" // Force strict engine level JSON mapping
       }
     };
 
@@ -86,13 +91,24 @@ Recent Activity Ledger: ${JSON.stringify(transactions || [])}`;
     }
 
     const data = await response.json();
-    
-    // 8. Safely extract raw text block from Gemini structure response
-    const generatedBriefing = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 
-      "Ledger engine running optimal velocity pipelines. Continue monitoring accounts normally.";
+    const rawJsonText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
 
-    // 9. Send response back down to frontend client
-    return new Response(JSON.stringify({ briefing: generatedBriefing }), {
+    // 8. Parse and pass secure structured objects down to frontend context
+    let parsedBriefing;
+    try {
+      parsedBriefing = JSON.parse(rawJsonText);
+    } catch (e) {
+      // Robust structural fallback if any string format mismatch occurs
+      parsedBriefing = {
+        insightType: "BUDGET INSIGHT",
+        title: "Vault Running Optimal",
+        body: "Ledger pipelines are operating at maximum velocity. Continue normal account tracking metrics.",
+        primaryMetric: "100%",
+        metricLabel: "Engine Status"
+      };
+    }
+
+    return new Response(JSON.stringify({ briefing: parsedBriefing }), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',

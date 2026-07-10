@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { X, Bell, AlertCircle, CheckCircle2, TrendingUp } from 'lucide-react';
+import { X, Bell, AlertCircle, CheckCircle2, TrendingUp, Sparkles } from 'lucide-react';
 import { useLedger } from '../../context/LedgerContext';
 import { useBriefingEngine } from '../../hooks/useBriefingEngine';
 
@@ -13,8 +13,8 @@ export default function CommandCenter({
   formatPaydayDateStr,
   isPushEnabled,
   enablePushNotifications,
-  // === INJECTED: AI BRIEFING PROPS ===
-  aiBriefingText = "Your net worth grew by 2.4% this week, outpacing your target velocity. However, a major utility bill is due in 3 days. Adjust your liquid reserves accordingly.",
+  // === INJECTED: AI BRIEFING STRUCTURED PAYLOAD OBJECT DEFAULT ===
+  aiBriefingText = null,
   handleDismissAIBriefing
 }) {
   // 1. PULL GLOBAL STATE FROM THE CLOUD
@@ -53,6 +53,26 @@ export default function CommandCenter({
        handleDismissAIBriefing();
     }
   };
+
+  // === SURGICAL PARSING PIECE FOR RECOVERY AND STABILITY ===
+  const aiData = useMemo(() => {
+    if (!aiBriefingText) return null;
+    // Handle parsing recovery if a stray text string slips through instead of an object
+    if (typeof aiBriefingText === 'string') {
+      try {
+        return JSON.parse(aiBriefingText);
+      } catch (e) {
+        return {
+          insightType: "BUDGET INSIGHT",
+          title: "Quick Insight",
+          body: aiBriefingText,
+          primaryMetric: "Optimal",
+          metricLabel: "Vault Status"
+        };
+      }
+    }
+    return aiBriefingText;
+  }, [aiBriefingText]);
 
   return (
     <div className="fixed inset-0 z-[120] flex justify-end">
@@ -93,37 +113,62 @@ export default function CommandCenter({
             </div>
           )}
 
-          {/* === SURGICAL INJECTION: LP AI ASSISTANT PREMIUM BANNER === */}
-          {aiBriefingText && !isAiBannerDismissed && (
+          {/* === SURGICAL INJECTION: COMPETITOR-GRADE STRUCTURED LP AI ASSISTANT CARD === */}
+          {aiData && !isAiBannerDismissed && (
             <div className={`relative p-5 rounded-[2rem] border overflow-hidden shadow-lg transition-all duration-300 ${
               isDarkMode 
-                ? "bg-gradient-to-br from-slate-900 to-slate-800 border-amber-500/40" 
-                : "bg-gradient-to-br from-amber-50/50 to-white border-amber-400/50"
+                ? "bg-gradient-to-br from-slate-900 to-slate-800 border-amber-500/30" 
+                : "bg-gradient-to-br from-amber-50/40 via-white to-white border-amber-400/40"
             }`}>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/15 blur-2xl rounded-full pointer-events-none"></div>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-2xl rounded-full pointer-events-none"></div>
               
-              <div className="flex justify-between items-start mb-3 relative z-10">
+              {/* Header section containing segmented type and dismiss controller */}
+              <div className="flex justify-between items-center mb-3 relative z-10">
                 <div className="flex items-center gap-2">
-                  <TrendingUp size={16} strokeWidth={3} className={isDarkMode ? "text-amber-400" : "text-amber-500"} />
-                  <h4 className={`font-black uppercase tracking-widest text-[11px] ${isDarkMode ? "text-amber-400" : "text-amber-600"}`}>
-                    LP AI Assistant
-                  </h4>
+                  <div className={`p-1.5 rounded-xl ${isDarkMode ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-100 text-amber-600'}`}>
+                    <Sparkles size={13} strokeWidth={2.5} />
+                  </div>
+                  <div>
+                    <h5 className={`font-black uppercase tracking-widest text-[9px] ${isDarkMode ? "text-amber-400/80" : "text-amber-600"}`}>
+                      {aiData.insightType || "QUICK INSIGHT"}
+                    </h5>
+                  </div>
                 </div>
                 <button 
                   onClick={onDismissAI}
-                  className={`p-1 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-400 hover:text-slate-900 hover:bg-slate-100"}`}
+                  className={`p-1 rounded-full transition-colors ${isDarkMode ? "text-slate-500 hover:text-white hover:bg-slate-800" : "text-slate-400 hover:text-slate-900 hover:bg-slate-100"}`}
                 >
-                  <X size={14} strokeWidth={3} />
+                  <X size={13} strokeWidth={3} />
                 </button>
               </div>
               
-              <p className={`text-[11px] font-bold leading-relaxed relative z-10 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
-                {aiBriefingText}
-              </p>
+              {/* Metric Card Body Layout */}
+              <div className="relative z-10 space-y-2.5">
+                <h4 className={`text-sm font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                  {aiData.title}
+                </h4>
+                <p className={`text-[11px] font-bold leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
+                  {aiData.body}
+                </p>
+                
+                {/* Premium sub-metric visualization pill layout */}
+                {aiData.primaryMetric && (
+                  <div className={`mt-3 p-3 rounded-2xl flex items-center justify-between border ${
+                    isDarkMode ? "bg-slate-900/60 border-slate-800" : "bg-amber-50/30 border-amber-100"
+                  }`}>
+                    <span className={`text-[10px] font-extrabold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
+                      {aiData.metricLabel || "Metric Target"}
+                    </span>
+                    <span className="text-sm font-black tracking-tight text-emerald-500" style={{ color: signatureColor }}>
+                      {aiData.primaryMetric}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
-          {activeAlerts.length === 0 && !isBirthdayToday && (!aiBriefingText || isAiBannerDismissed) ? (
+          {activeAlerts.length === 0 && !isBirthdayToday && (!aiData || isAiBannerDismissed) ? (
             <div className="text-center py-20 opacity-100 flex flex-col items-center justify-center h-full">
               <div className="p-4 rounded-full bg-emerald-50 mb-4 dark:bg-emerald-900/20">
                 <CheckCircle2 size={36} className="text-[#10B981] drop-shadow-sm" />
@@ -135,18 +180,18 @@ export default function CommandCenter({
             <div className="space-y-3">
               {activeAlerts.map(alert => (
                 <div key={alert.id} onClick={alert.action} className={`p-4 rounded-2xl border cursor-pointer transition-transform active:scale-[0.98] ${isDarkMode ? "bg-slate-800/40 border-slate-700/60 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50 hover:border-slate-200"}`}>
-                   <div className="flex gap-3">
-                     <div className={`p-2.5 rounded-xl self-start ${isDarkMode ? "bg-slate-900" : "bg-slate-50"}`}>
-                       {alert.icon}
-                     </div>
-                     <div className="flex-1 min-w-0">
-                       <div className="flex items-start justify-between gap-2 mb-1">
-                         <p className={`font-black text-xs uppercase tracking-wide truncate ${isDarkMode ? "text-white" : "text-slate-900"}`}>{alert.title}</p>
-                         <span className={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md ${alert.type === 'danger' ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"}`}>{alert.time}</span>
-                       </div>
-                       <p className={`text-[10px] font-bold leading-snug ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{alert.message}</p>
-                     </div>
-                   </div>
+                    <div className="flex gap-3">
+                      <div className={`p-2.5 rounded-xl self-start ${isDarkMode ? "bg-slate-900" : "bg-slate-50"}`}>
+                        {alert.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <p className={`font-black text-xs uppercase tracking-wide truncate ${isDarkMode ? "text-white" : "text-slate-900"}`}>{alert.title}</p>
+                          <span className={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md ${alert.type === 'danger' ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"}`}>{alert.time}</span>
+                        </div>
+                        <p className={`text-[10px] font-bold leading-snug ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{alert.message}</p>
+                      </div>
+                    </div>
                 </div>
               ))}
             </div>

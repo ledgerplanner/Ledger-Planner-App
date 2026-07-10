@@ -54,7 +54,8 @@ Upcoming Bills: ${JSON.stringify(bills || [])}
 Recent Activity Ledger: ${JSON.stringify(transactions || [])}`;
 
     // 6. Build request payload matching Google AI Studio's generation API layout
-    const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    // SURGICAL FIX: Upgraded endpoint to gemini-2.5-flash
+    const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
     const geminiPayload = {
       contents: [{

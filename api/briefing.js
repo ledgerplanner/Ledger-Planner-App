@@ -58,8 +58,8 @@ Upcoming Bills: ${JSON.stringify(bills || [])}
 Recent Activity Ledger: ${JSON.stringify(transactions || [])}
 Evaluation Window: ${currentPeriod || 'AM'}`;
 
-    // 6. Target the rigorous Gemini 3.1 Pro Content Endpoint
-    const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro:generateContent?key=${apiKey}`;
+    // 6. Target the live, stable Gemini 3.5 Flash Content Endpoint
+    const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
 
     const geminiPayload = {
       contents: [{
@@ -108,7 +108,7 @@ Evaluation Window: ${currentPeriod || 'AM'}`;
       if (!sanitizedJsonText) throw new Error("No valid JSON structure found in AI response.");
       parsedBriefing = JSON.parse(sanitizedJsonText);
     } catch (e) {
-      // DIAGNOSTIC MIRROR RESTORED: Exposing the raw failure directly to the UI to intercept the void
+      // DIAGNOSTIC MIRROR: Exposing the raw failure directly to the UI to intercept the void
       parsedBriefing = {
         insightType: "SYSTEM DIAGNOSTIC",
         title: "Engine Parse Error",

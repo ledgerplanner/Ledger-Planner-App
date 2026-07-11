@@ -81,7 +81,8 @@ Evaluation Window: ${currentPeriod || 'AM'}`;
     });
 
     if (!response.ok) {
-      throw new Error('Google Engine API Fault or Network Cutoff');
+      const errorDetails = await response.text();
+      throw new Error(`Google API Fault: ${response.status} - ${errorDetails}`);
     }
 
     const data = await response.json();
@@ -90,9 +91,17 @@ Evaluation Window: ${currentPeriod || 'AM'}`;
     // 8. DIRECT PARSE: Slicer deleted. The engine natively guarantees perfectly closed JSON now.
     let parsedBriefing;
     try {
+      if (!rawContent) throw new Error("Empty response from AI");
       parsedBriefing = JSON.parse(rawContent);
     } catch (e) {
-      throw new Error('Final Parse Exception');
+      // DIAGNOSTIC MIRROR RESTORED: Exposing parse failures directly to UI
+      parsedBriefing = {
+        insightType: "SYSTEM DIAGNOSTIC",
+        title: "JSON Parse Error",
+        body: `ERR: ${e.message} | RAW: ${rawContent.substring(0, 100)}`,
+        primaryMetric: "FAIL",
+        metricLabel: "Status"
+      };
     }
 
     return new Response(JSON.stringify({ briefing: parsedBriefing }), {
@@ -104,13 +113,13 @@ Evaluation Window: ${currentPeriod || 'AM'}`;
     });
 
   } catch (error) {
-    // 9. THE IRONCLAD CEO FALLBACK: Hides all traffic limits, parse errors, and safety cutoffs from the user
+    // 9. DIAGNOSTIC MIRROR RESTORED: Exposing top-level connection/API errors directly to UI
     const emergencyBriefing = {
-        insightType: "BUDGET INSIGHT",
-        title: "Stay on Track",
-        body: "Review your upcoming bills for the week to ensure your ledger remains perfectly balanced.",
-        primaryMetric: "Review",
-        metricLabel: "Action Required"
+        insightType: "SYSTEM DIAGNOSTIC",
+        title: "Server Error",
+        body: `ERR: ${error.message.substring(0, 150)}`,
+        primaryMetric: "FAIL",
+        metricLabel: "Status"
     };
     
     return new Response(JSON.stringify({ briefing: emergencyBriefing }), {

@@ -71,7 +71,6 @@ Evaluation Window: ${currentPeriod || 'AM'}`;
       generationConfig: {
         temperature: 0.2, // Low temperature enforces rigid adherence to formatting rules
         maxOutputTokens: 600 // EXTENDED RUNWAY: Ensures the model finishes writing the entire JSON object
-        // STRICT FIX: responseMimeType removed. The mechanical slicer handles raw text extraction without choking the engine.
       }
     };
 
@@ -108,13 +107,13 @@ Evaluation Window: ${currentPeriod || 'AM'}`;
       if (!sanitizedJsonText) throw new Error("No valid JSON structure found in AI response.");
       parsedBriefing = JSON.parse(sanitizedJsonText);
     } catch (e) {
-      // PREMIUM CEO FALLBACK: Graceful degradation to a natural financial tip if token cutoff or empty array breaks parsing
+      // DIAGNOSTIC MIRROR: Exposing the raw failure directly to the UI to see what the AI is outputting
       parsedBriefing = {
-        insightType: "BUDGET INSIGHT",
-        title: "Stay on Track",
-        body: "Review your upcoming bills for the week to ensure your ledger remains perfectly balanced.",
-        primaryMetric: "Review",
-        metricLabel: "Action Required"
+        insightType: "SYSTEM DIAGNOSTIC",
+        title: "Engine Parse Error",
+        body: `ERR: ${e.message} | RAW: ${rawContent.substring(0, 150)}`,
+        primaryMetric: "FAIL",
+        metricLabel: "Status"
       };
     }
 
@@ -127,13 +126,13 @@ Evaluation Window: ${currentPeriod || 'AM'}`;
     });
 
   } catch (error) {
-    // Top level catch also returns the CEO Fallback instead of a 500 error to keep the UI unbreakable
+    // Top level catch returning a diagnostic state so we don't blind ourselves during debugging
     const emergencyBriefing = {
-        insightType: "BUDGET INSIGHT",
-        title: "Stay on Track",
-        body: "Review your upcoming bills for the week to ensure your ledger remains perfectly balanced.",
-        primaryMetric: "Review",
-        metricLabel: "Action Required"
+        insightType: "SYSTEM DIAGNOSTIC",
+        title: "Server Error",
+        body: `ERR: ${error.message}`,
+        primaryMetric: "FAIL",
+        metricLabel: "Status"
     };
     
     return new Response(JSON.stringify({ briefing: emergencyBriefing }), {

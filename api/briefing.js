@@ -70,7 +70,7 @@ Evaluation Window: ${currentPeriod || 'AM'}`;
       },
       generationConfig: {
         temperature: 0.2, // Low temperature enforces rigid adherence to formatting rules
-        maxOutputTokens: 300
+        maxOutputTokens: 600 // EXTENDED RUNWAY: Ensures the model finishes writing the entire JSON object
         // STRICT FIX: responseMimeType removed. The mechanical slicer handles raw text extraction without choking the engine.
       }
     };
@@ -93,7 +93,7 @@ Evaluation Window: ${currentPeriod || 'AM'}`;
     const data = await response.json();
     const rawContent = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
 
-    // STRICT FIX: Mechanical index slicing to isolate the JSON object and destroy all conversational filler
+    // 8. STRICT FIX: Mechanical index slicing to isolate the JSON object and destroy all conversational filler
     let sanitizedJsonText = "";
     const startIndex = rawContent.indexOf('{');
     const endIndex = rawContent.lastIndexOf('}');
@@ -102,19 +102,19 @@ Evaluation Window: ${currentPeriod || 'AM'}`;
       sanitizedJsonText = rawContent.substring(startIndex, endIndex + 1);
     }
 
-    // 8. Parse and pass secure structured objects down to frontend context
+    // 9. Parse and pass secure structured objects down to frontend context
     let parsedBriefing;
     try {
       if (!sanitizedJsonText) throw new Error("No valid JSON structure found in AI response.");
       parsedBriefing = JSON.parse(sanitizedJsonText);
     } catch (e) {
-      // DIAGNOSTIC MIRROR: Exposing the raw failure directly to the UI to intercept the void
+      // PREMIUM CEO FALLBACK: Graceful degradation to a natural financial tip if token cutoff or empty array breaks parsing
       parsedBriefing = {
-        insightType: "SYSTEM DIAGNOSTIC",
-        title: "Engine Parse Error",
-        body: `ERR: ${e.message} | RAW: ${rawContent.substring(0, 150)}`,
-        primaryMetric: "FAIL",
-        metricLabel: "Status"
+        insightType: "BUDGET INSIGHT",
+        title: "Stay on Track",
+        body: "Review your upcoming bills for the week to ensure your ledger remains perfectly balanced.",
+        primaryMetric: "Review",
+        metricLabel: "Action Required"
       };
     }
 
@@ -127,8 +127,17 @@ Evaluation Window: ${currentPeriod || 'AM'}`;
     });
 
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Internal Relay Exception Handler Triggered', message: error.message }), {
-      status: 500,
+    // Top level catch also returns the CEO Fallback instead of a 500 error to keep the UI unbreakable
+    const emergencyBriefing = {
+        insightType: "BUDGET INSIGHT",
+        title: "Stay on Track",
+        body: "Review your upcoming bills for the week to ensure your ledger remains perfectly balanced.",
+        primaryMetric: "Review",
+        metricLabel: "Action Required"
+    };
+    
+    return new Response(JSON.stringify({ briefing: emergencyBriefing }), {
+      status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
   }

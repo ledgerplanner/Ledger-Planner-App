@@ -108,13 +108,13 @@ Evaluation Window: ${currentPeriod || 'AM'}`;
       if (!sanitizedJsonText) throw new Error("No valid JSON structure found in AI response.");
       parsedBriefing = JSON.parse(sanitizedJsonText);
     } catch (e) {
-      // Robust structural fallback if any string format mismatch occurs
+      // DIAGNOSTIC MIRROR: Exposing the raw failure directly to the UI
       parsedBriefing = {
-        insightType: "BUDGET INSIGHT",
-        title: "Vault Running Optimal",
-        body: "Ledger pipelines are operating at maximum velocity. Continue normal account tracking metrics.",
-        primaryMetric: "100%",
-        metricLabel: "Engine Status"
+        insightType: "SYSTEM DIAGNOSTIC",
+        title: "Engine Parse Error",
+        body: `ERR: ${e.message} | RAW: ${rawContent.substring(0, 150)}`,
+        primaryMetric: "FAIL",
+        metricLabel: "Status"
       };
     }
 

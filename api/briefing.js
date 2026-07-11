@@ -73,7 +73,7 @@ Evaluation Window: ${currentPeriod || 'AM'}`;
       generationConfig: {
         temperature: 0.1, // Ironclad adherence to JSON rules
         maxOutputTokens: 600,
-        responseMimeType: "application/json" // NATIVE STRAITJACKET RESTORED: Guarantees perfect syntax
+        responseMimeType: "application/json" // NATIVE STRAITJACKET RESTORED
       }
     };
 
@@ -85,18 +85,30 @@ Evaluation Window: ${currentPeriod || 'AM'}`;
     });
 
     if (!response.ok) {
-      throw new Error('Google Engine API Fault or Network Cutoff');
+      const errorDetails = await response.text();
+      throw new Error(`Google API Fault: ${response.status} - ${errorDetails}`);
     }
 
     const data = await response.json();
-    const rawContent = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+    
+    // 9. METADATA EXTRACTION: Isolating the exact kill-code from Google's servers
+    const candidate = data?.candidates?.[0] || {};
+    const rawContent = candidate?.content?.parts?.[0]?.text?.trim() || "";
+    const finishReason = candidate?.finishReason || "UNKNOWN";
 
-    // 9. DIRECT PARSE: The engine natively guarantees perfectly closed JSON now.
     let parsedBriefing;
     try {
+      if (!rawContent) throw new Error(`Empty AI Response. Flag: ${finishReason}`);
       parsedBriefing = JSON.parse(rawContent);
     } catch (e) {
-      throw new Error('Final Parse Exception');
+      // 10. ADVANCED DIAGNOSTIC MIRROR: Forcing the kill-code to print directly to the React UI
+      parsedBriefing = {
+        insightType: "SYSTEM DIAGNOSTIC",
+        title: `Reason: ${finishReason}`,
+        body: `ERR: ${e.message} | RAW: ${rawContent.substring(0, 100)}`,
+        primaryMetric: "FAIL",
+        metricLabel: "Status"
+      };
     }
 
     return new Response(JSON.stringify({ briefing: parsedBriefing }), {
@@ -108,13 +120,12 @@ Evaluation Window: ${currentPeriod || 'AM'}`;
     });
 
   } catch (error) {
-    // 10. THE IRONCLAD CEO FALLBACK: Hides all traffic limits, parse errors, and safety cutoffs from the user
     const emergencyBriefing = {
-        insightType: "BUDGET INSIGHT",
-        title: "Stay on Track",
-        body: "Review your upcoming bills for the week to ensure your ledger remains perfectly balanced.",
-        primaryMetric: "Review",
-        metricLabel: "Action Required"
+        insightType: "SYSTEM DIAGNOSTIC",
+        title: "Server Error",
+        body: `ERR: ${error.message.substring(0, 150)}`,
+        primaryMetric: "FAIL",
+        metricLabel: "Status"
     };
     
     return new Response(JSON.stringify({ briefing: emergencyBriefing }), {

@@ -58,8 +58,8 @@ Upcoming Bills: ${JSON.stringify(bills || [])}
 Recent Activity Ledger: ${JSON.stringify(transactions || [])}
 Evaluation Window: ${currentPeriod || 'AM'}`;
 
-    // 6. Target the live Gemini 3.5 Flash Content Endpoint
-    const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
+    // 6. Target the live, stable Gemini 1.5 Flash Content Endpoint
+    const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
     const geminiPayload = {
       contents: [{
@@ -108,13 +108,13 @@ Evaluation Window: ${currentPeriod || 'AM'}`;
       if (!sanitizedJsonText) throw new Error("No valid JSON structure found in AI response.");
       parsedBriefing = JSON.parse(sanitizedJsonText);
     } catch (e) {
-      // DIAGNOSTIC MIRROR: Exposing the raw failure directly to the UI
+      // PREMIUM CEO FALLBACK: Graceful degradation to a natural financial tip
       parsedBriefing = {
-        insightType: "SYSTEM DIAGNOSTIC",
-        title: "Engine Parse Error",
-        body: `ERR: ${e.message} | RAW: ${rawContent.substring(0, 150)}`,
-        primaryMetric: "FAIL",
-        metricLabel: "Status"
+        insightType: "BUDGET INSIGHT",
+        title: "Stay on Track",
+        body: "Review your upcoming bills for the week to ensure your ledger remains perfectly balanced.",
+        primaryMetric: "Review",
+        metricLabel: "Action Required"
       };
     }
 

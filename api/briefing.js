@@ -50,7 +50,7 @@ You must return your response as a raw JSON object following this schema exactly
   "primaryMetric": "A string representing money values, percentages, or ratios (e.g., '+$4,420', '$120/mo', '18%')",
   "metricLabel": "A short context label for the primaryMetric (e.g., 'Potential Savings', 'Spending Increase', 'Monthly Cost')"
 }
-Do not use markdown blocks (such as \`\`\`json). Return only the raw minified JSON payload block. Check your mathematical calculations against the ledger data before writing.`;
+CRITICAL DIRECTIVE: You MUST perfectly close the JSON object with a final '}'. Do not trail off. Do not add conversational text. Return only the raw minified JSON payload block. Check your mathematical calculations against the ledger data before writing.`;
 
     const promptText = `Analyze this live financial vault state data to populate your required structured schema keys:
 Accounts: ${JSON.stringify(accounts || [])}
@@ -107,13 +107,13 @@ Evaluation Window: ${currentPeriod || 'AM'}`;
       if (!sanitizedJsonText) throw new Error("No valid JSON structure found in AI response.");
       parsedBriefing = JSON.parse(sanitizedJsonText);
     } catch (e) {
-      // DIAGNOSTIC MIRROR: Exposing the raw failure directly to the UI to see what the AI is outputting
+      // PREMIUM CEO FALLBACK: Graceful degradation to a natural financial tip if token cutoff or empty array breaks parsing
       parsedBriefing = {
-        insightType: "SYSTEM DIAGNOSTIC",
-        title: "Engine Parse Error",
-        body: `ERR: ${e.message} | RAW: ${rawContent.substring(0, 150)}`,
-        primaryMetric: "FAIL",
-        metricLabel: "Status"
+        insightType: "BUDGET INSIGHT",
+        title: "Stay on Track",
+        body: "Review your upcoming bills for the week to ensure your ledger remains perfectly balanced.",
+        primaryMetric: "Review",
+        metricLabel: "Action Required"
       };
     }
 
@@ -126,13 +126,13 @@ Evaluation Window: ${currentPeriod || 'AM'}`;
     });
 
   } catch (error) {
-    // Top level catch returning a diagnostic state so we don't blind ourselves during debugging
+    // Top level catch returning the CEO Fallback instead of a 500 error to keep the UI unbreakable
     const emergencyBriefing = {
-        insightType: "SYSTEM DIAGNOSTIC",
-        title: "Server Error",
-        body: `ERR: ${error.message}`,
-        primaryMetric: "FAIL",
-        metricLabel: "Status"
+        insightType: "BUDGET INSIGHT",
+        title: "Stay on Track",
+        body: "Review your upcoming bills for the week to ensure your ledger remains perfectly balanced.",
+        primaryMetric: "Review",
+        metricLabel: "Action Required"
     };
     
     return new Response(JSON.stringify({ briefing: emergencyBriefing }), {

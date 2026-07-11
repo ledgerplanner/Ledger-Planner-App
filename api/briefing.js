@@ -58,8 +58,8 @@ Upcoming Bills: ${JSON.stringify(bills || [])}
 Recent Activity Ledger: ${JSON.stringify(transactions || [])}
 Evaluation Window: ${currentPeriod || 'AM'}`;
 
-    // 6. Target the live, stable Gemini 1.5 Flash Content Endpoint
-    const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    // 6. Target the live, stable Gemini 3.5 Flash Content Endpoint
+    const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
 
     const geminiPayload = {
       contents: [{
@@ -70,8 +70,8 @@ Evaluation Window: ${currentPeriod || 'AM'}`;
       },
       generationConfig: {
         temperature: 0.2, // Low temperature enforces rigid adherence to formatting rules
-        maxOutputTokens: 300,
-        responseMimeType: "application/json" // Force strict engine level JSON mapping
+        maxOutputTokens: 300
+        // STRICT FIX: responseMimeType removed. The mechanical slicer handles raw text extraction without choking the engine.
       }
     };
 

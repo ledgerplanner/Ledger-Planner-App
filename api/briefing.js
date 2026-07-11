@@ -58,8 +58,8 @@ Upcoming Bills: ${JSON.stringify(bills || [])}
 Recent Activity Ledger: ${JSON.stringify(transactions || [])}
 Evaluation Window: ${currentPeriod || 'AM'}`;
 
-    // 6. Target the live Gemini 3.5 Flash Content Endpoint
-    const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
+    // 6. Target the live Gemini 2.5 Flash Content Endpoint
+    const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
     const geminiPayload = {
       contents: [{

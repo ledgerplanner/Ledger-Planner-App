@@ -91,15 +91,17 @@ Evaluation Window: ${currentPeriod || 'AM'}`;
     }
 
     const data = await response.json();
-    let rawJsonText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+    const rawContent = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
 
-    // STRICT FIX: Strip rogue markdown formatting that bypasses the prompt instructions
-    rawJsonText = rawJsonText.replace(/```json/gi, '').replace(/```/g, '').trim();
+    // STRICT FIX: Surgical Regex extraction to isolate the JSON object and destroy all conversational filler
+    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+    const sanitizedJsonText = jsonMatch ? jsonMatch[0] : "";
 
     // 8. Parse and pass secure structured objects down to frontend context
     let parsedBriefing;
     try {
-      parsedBriefing = JSON.parse(rawJsonText);
+      if (!sanitizedJsonText) throw new Error("No valid JSON structure found in AI response.");
+      parsedBriefing = JSON.parse(sanitizedJsonText);
     } catch (e) {
       // Robust structural fallback if any string format mismatch occurs
       parsedBriefing = {

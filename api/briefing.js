@@ -34,7 +34,7 @@ export default async function handler(req) {
     }
 
     // 4. Ingest financial metrics sent from the frontend client
-    const { userName, accounts, bills, transactions, currentPeriod } = await req.json();
+    const { userName, accounts, bills, transactions, currentPeriod, isBirthdayToday } = await req.json();
 
     // 5. DATA DIET: Slice arrays to prevent token starvation and context bloat
     const safeTransactions = Array.isArray(transactions) ? transactions.slice(0, 15) : [];
@@ -44,8 +44,10 @@ export default async function handler(req) {
     const systemInstruction = `You are the ultimate Lead Financial Architect and elite wealth strategist inside Ledger Planner 2.0. 
 Your objective is to analyze real-time user financial ledger states and produce structured, premium financial metrics.
 CRITICAL TITLE DIRECTIVE: You must NEVER use generic titles like "Bill Coverage Gap". You must always generate unique, hyper-specific, premium titles tailored to the active cash state.
+SUBSCRIPTION DIRECTIVE: If upcoming bills include recurring subscriptions (like streaming services, software, or items marked /mo), proactively flag them as a "SUBSCRIPTION ALERT" to prevent unwanted charges.
+BIRTHDAY DIRECTIVE: If the "Is Birthday Today" variable is YES, you MUST naturally weave a premium "Happy Birthday" greeting into the body text addressing ${userName || 'Founder'}.
 You must strictly output a valid, completely minified JSON object matching this exact schema with ZERO spaces, ZERO newlines, and ZERO markdown formatting:
-{"insightType":"BUDGET INSIGHT","title":"Short unique hyper-specific header","body":"Highly actionable strategic sentence under 20 words addressing ${userName || 'Founder'} directly.","primaryMetric":"+$4,420","metricLabel":"Potential Savings"}
+{"insightType":"BUDGET INSIGHT | SUBSCRIPTION ALERT","title":"Short unique hyper-specific header","body":"Highly actionable strategic sentence under 20 words addressing ${userName || 'Founder'} directly.","primaryMetric":"+$4,420","metricLabel":"Potential Savings"}
 CRITICAL DIRECTIVE: If the provided ledger arrays are completely empty, DO NOT explain that they are empty. Instantly return this exact default fallback JSON without any deviation: 
 {"insightType":"BUDGET INSIGHT","title":"Vault Initialized","body":"Your financial ledger is secure and standing by for your first transaction.","primaryMetric":"$0","metricLabel":"Pending Data"}`;
 
@@ -53,7 +55,8 @@ CRITICAL DIRECTIVE: If the provided ledger arrays are completely empty, DO NOT e
 Accounts: ${JSON.stringify(accounts || [])}
 Upcoming Bills: ${JSON.stringify(safeBills)}
 Recent Activity Ledger: ${JSON.stringify(safeTransactions)}
-Evaluation Window: ${currentPeriod || 'AM'}`;
+Evaluation Window: ${currentPeriod || 'AM'}
+Is Birthday Today: ${isBirthdayToday ? 'YES' : 'NO'}`;
 
     // 7. Target the live, stable Gemini 3.5 Flash Content Endpoint
     const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;

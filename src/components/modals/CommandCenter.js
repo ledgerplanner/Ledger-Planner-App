@@ -115,9 +115,13 @@ export default function CommandCenter({
 
           {/* === SURGICAL INJECTION: PREMIUM ELITE LP AI ASSISTANT CARD === */}
           {aiData && !isAiBannerDismissed && (
-            <div className="relative p-5 rounded-[2rem] border overflow-hidden shadow-2xl transition-all duration-300 bg-gradient-to-br from-slate-900 to-[#0A0F1C] border-[#D4AF37]/30 shadow-[0_8px_30px_rgba(212,175,55,0.08)]">
+            <div className={`relative p-5 rounded-[2rem] border overflow-hidden shadow-2xl transition-all duration-300 ${
+              isDarkMode 
+                ? "bg-gradient-to-br from-slate-900 to-[#0A0F1C] border-[#D4AF37]/30 shadow-[0_8px_30px_rgba(212,175,55,0.08)]" 
+                : "bg-gradient-to-br from-[#FFFAF0] to-white border-[#D4AF37]/40 shadow-[0_8px_30px_rgba(212,175,55,0.15)]"
+            }`}>
               {/* Subtle gold ambient glow */}
-              <div className="absolute top-[-20%] right-[-10%] w-40 h-40 bg-[#D4AF37]/15 blur-3xl rounded-full pointer-events-none"></div>
+              <div className="absolute top-[-20%] right-[-10%] w-40 h-40 bg-[#D4AF37]/20 blur-3xl rounded-full pointer-events-none"></div>
               
               {/* Header section containing segmented type and dismiss controller */}
               <div className="flex justify-between items-center mb-3 relative z-10">
@@ -129,7 +133,11 @@ export default function CommandCenter({
                 </div>
                 <button 
                   onClick={onDismissAI}
-                  className="p-1 rounded-full transition-colors text-slate-400 hover:text-white hover:bg-slate-800"
+                  className={`p-1 rounded-full transition-colors ${
+                    isDarkMode 
+                      ? "text-slate-400 hover:text-white hover:bg-slate-800" 
+                      : "text-slate-400 hover:text-slate-900 hover:bg-slate-100"
+                  }`}
                 >
                   <X size={13} strokeWidth={3} />
                 </button>
@@ -137,10 +145,10 @@ export default function CommandCenter({
               
               {/* Metric Card Body Layout */}
               <div className="relative z-10 space-y-2.5">
-                <h4 className="text-sm font-black tracking-tight text-white">
+                <h4 className={`text-sm font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                   {aiData.title}
                 </h4>
-                <p className="text-[11px] font-bold leading-relaxed text-slate-300">
+                <p className={`text-[11px] font-bold leading-relaxed ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
                   {aiData.body}
                 </p>
                 
@@ -157,16 +165,16 @@ export default function CommandCenter({
                     className={`mt-3 w-full p-3 rounded-2xl flex items-center justify-between border transition-all text-left ${
                       (aiData.primaryMetric === "Review" || aiData.metricLabel === "Action Required")
                         ? "bg-[#D4AF37]/10 border-[#D4AF37]/40 hover:bg-[#D4AF37]/20 cursor-pointer shadow-[0_0_10px_rgba(212,175,55,0.1)]" 
-                        : "bg-slate-800/60 border-slate-700/50 cursor-default"
+                        : (isDarkMode ? "bg-slate-800/60 border-slate-700/50 cursor-default" : "bg-slate-50 border-slate-200 cursor-default")
                     }`}
                   >
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+                    <span className={`text-[10px] font-extrabold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                       {aiData.metricLabel || "Metric Target"}
                     </span>
                     <span className={`text-sm font-black tracking-tight ${
                         (aiData.primaryMetric === "Review" || aiData.metricLabel === "Action Required") 
                             ? "text-[#D4AF37]" 
-                            : "text-emerald-400"
+                            : (isDarkMode ? "text-emerald-400" : "text-emerald-600")
                     }`}>
                       {aiData.primaryMetric}
                     </span>

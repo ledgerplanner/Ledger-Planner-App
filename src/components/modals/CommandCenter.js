@@ -65,9 +65,7 @@ export default function CommandCenter({
         return {
           insightType: "BUDGET INSIGHT",
           title: "Quick Insight",
-          body: aiBriefingText,
-          primaryMetric: null,
-          metricLabel: null
+          body: aiBriefingText
         };
       }
     }
@@ -151,35 +149,6 @@ export default function CommandCenter({
                 <p className={`text-[11px] font-bold leading-relaxed ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
                   {aiData.body}
                 </p>
-                
-                {/* Premium sub-metric visualization pill layout / Action Button */}
-                {aiData.primaryMetric && (
-                  <button 
-                    onClick={() => {
-                      if (aiData.primaryMetric === "Review" || aiData.metricLabel === "Action Required") {
-                        changeTab('bills');
-                        setIsNotificationsOpen(false);
-                      }
-                    }}
-                    disabled={aiData.primaryMetric !== "Review" && aiData.metricLabel !== "Action Required"}
-                    className={`mt-3 w-full p-3 rounded-2xl flex items-center justify-between border transition-all text-left ${
-                      (aiData.primaryMetric === "Review" || aiData.metricLabel === "Action Required")
-                        ? "bg-[#D4AF37]/10 border-[#D4AF37]/40 hover:bg-[#D4AF37]/20 cursor-pointer shadow-[0_0_10px_rgba(212,175,55,0.1)]" 
-                        : (isDarkMode ? "bg-slate-800/60 border-slate-700/50 cursor-default" : "bg-slate-50 border-slate-200 cursor-default")
-                    }`}
-                  >
-                    <span className={`text-[10px] font-extrabold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-                      {aiData.metricLabel || "Metric Target"}
-                    </span>
-                    <span className={`text-sm font-black tracking-tight ${
-                        (aiData.primaryMetric === "Review" || aiData.metricLabel === "Action Required") 
-                            ? "text-[#D4AF37]" 
-                            : (isDarkMode ? "text-emerald-400" : "text-emerald-600")
-                    }`}>
-                      {aiData.primaryMetric}
-                    </span>
-                  </button>
-                )}
               </div>
             </div>
           )}

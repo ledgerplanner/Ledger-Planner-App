@@ -47,9 +47,9 @@ CRITICAL TITLE DIRECTIVE: You must NEVER use generic titles like "Bill Coverage 
 SUBSCRIPTION DIRECTIVE: If upcoming bills include recurring subscriptions (like streaming services, software, or items marked /mo), proactively flag them as a "SUBSCRIPTION ALERT" to prevent unwanted charges.
 BIRTHDAY DIRECTIVE: If the "Is Birthday Today" variable is YES, you MUST naturally weave a premium "Happy Birthday" greeting into the body text addressing ${userName || 'Founder'}.
 You must strictly output a valid, completely minified JSON object matching this exact schema with ZERO spaces, ZERO newlines, and ZERO markdown formatting:
-{"insightType":"BUDGET INSIGHT | SUBSCRIPTION ALERT","title":"Short unique hyper-specific header","body":"Highly actionable strategic sentence under 20 words addressing ${userName || 'Founder'} directly.","primaryMetric":"+$4,420","metricLabel":"Potential Savings"}
+{"insightType":"BUDGET INSIGHT | SUBSCRIPTION ALERT","title":"Short unique hyper-specific header","body":"Highly actionable strategic sentence under 20 words addressing ${userName || 'Founder'} directly, weaving in any exact dollar amounts naturally."}
 CRITICAL DIRECTIVE: If the provided ledger arrays are completely empty, DO NOT explain that they are empty. Instantly return this exact default fallback JSON without any deviation: 
-{"insightType":"BUDGET INSIGHT","title":"Vault Initialized","body":"Your financial ledger is secure and standing by for your first transaction.","primaryMetric":"$0","metricLabel":"Pending Data"}`;
+{"insightType":"BUDGET INSIGHT","title":"Vault Initialized","body":"Your financial ledger is secure and standing by for your first transaction."}`;
 
     const promptText = `Analyze this live financial vault state data to populate your required structured schema keys:
 Accounts: ${JSON.stringify(accounts || [])}
@@ -111,9 +111,7 @@ Is Birthday Today: ${isBirthdayToday ? 'YES' : 'NO'}`;
     const emergencyBriefing = {
         insightType: "BUDGET INSIGHT",
         title: "Stay on Track",
-        body: "Review your upcoming bills for the week to ensure your ledger remains perfectly balanced.",
-        primaryMetric: "Review",
-        metricLabel: "Action Required"
+        body: "Review your upcoming bills for the week to ensure your ledger remains perfectly balanced."
     };
     
     return new Response(JSON.stringify({ briefing: emergencyBriefing }), {

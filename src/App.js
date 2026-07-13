@@ -634,7 +634,8 @@ function LedgerApp() {
                    currentPeriod: period,
                    accounts: distilledAccounts,
                    bills: distilledBills,
-                   transactions: distilledTx
+                   transactions: distilledTx,
+                   isEntrepreneurMode: isEntrepreneurMode
                })
            });
 
@@ -659,7 +660,7 @@ function LedgerApp() {
     }, 3500);
 
     return () => clearTimeout(timer);
-  }, [user, isDemoMode, accounts, bills, transactions, userNameDisplay]);
+  }, [user, isDemoMode, accounts, bills, transactions, userNameDisplay, isEntrepreneurMode]);
 
   const handleDismissAIBriefing = () => {
        const now = new Date();
@@ -1179,49 +1180,49 @@ function LedgerApp() {
         {/* 3D FALLING CONFETTI 2.0 ENGINE */}
         {showConfetti && (
          <div className="absolute inset-0 z-[200] pointer-events-none flex items-center justify-center overflow-hidden" style={{ perspective: '1000px' }}>
-            {[...Array(132)].map((_, i) => {
-              const colors = [signatureColor, '#10B981', '#F97316'];
-              const isStrip = Math.random() > 0.6;
-              const peakX = (Math.random() - 0.5) * 1000;
-              const peakY = -(Math.random() * 400 + 200); 
-              const endX = peakX + (Math.random() - 0.5) * 500; 
-              const endY = 800 + Math.random() * 300; 
+           {[...Array(132)].map((_, i) => {
+             const colors = [signatureColor, '#10B981', '#F97316'];
+             const isStrip = Math.random() > 0.6;
+             const peakX = (Math.random() - 0.5) * 1000;
+             const peakY = -(Math.random() * 400 + 200); 
+             const endX = peakX + (Math.random() - 0.5) * 500; 
+             const endY = 800 + Math.random() * 300; 
 
-              return (
-                <div 
-                  key={i} 
-                  className="absolute animate-[confettiFall_ease-out_forwards]" 
-                  style={{ 
-                    backgroundColor: colors[Math.floor(Math.random() * colors.length)], 
-                    left: '50%', top: '60%',
-                    width: isStrip ? '8px' : '12px', height: isStrip ? '24px' : '12px',
-                    borderRadius: Math.random() > 0.5 && !isStrip ? '50%' : '2px',
-                    transformStyle: 'preserve-3d',
-                    animationDuration: `${Math.random() * 1.5 + 3.7}s`,
-                    animationDelay: `${Math.random() * 0.3}s`,
-                    animationTimingFunction: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)', 
-                    '--peak-x': `${peakX}px`, 
-                    '--peak-y': `${peakY}px`, 
-                    '--end-x': `${endX}px`, 
-                    '--end-y': `${endY}px`,
-                    '--tz': `${(Math.random() - 0.5) * 600}px`,
-                    '--rx': `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 1440 + 720)}deg`, 
-                    '--ry': `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 1440 + 720)}deg`, 
-                    '--rz': `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 720 + 360)}deg`,
-                    '--scale': `${Math.random() * 0.6 + 0.6}`
-                  }} 
-                />
-              )
-            })}
-            <style>{`
-              @keyframes confettiFall { 
-                0% { transform: translate3d(-50%, -50%, 0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(0); opacity: 1; } 
-                15% { transform: translate3d(calc(-50% + var(--peak-x)), calc(-50% + var(--peak-y)), var(--tz)) rotateX(calc(var(--rx) * 0.15)) rotateY(calc(var(--ry) * 0.15)) rotateZ(calc(var(--rz) * 0.15)) scale(var(--scale)); opacity: 1; } 
-                80% { opacity: 1; }
-                100% { transform: translate3d(calc(-50% + var(--end-x)), calc(-50% + var(--end-y)), var(--tz)) rotateX(var(--rx)) rotateY(var(--ry)) rotateZ(var(--rz)) scale(var(--scale)); opacity: 0; } 
-              }
-            `}</style>
-          </div>
+             return (
+               <div 
+                 key={i} 
+                 className="absolute animate-[confettiFall_ease-out_forwards]" 
+                 style={{ 
+                   backgroundColor: colors[Math.floor(Math.random() * colors.length)], 
+                   left: '50%', top: '60%',
+                   width: isStrip ? '8px' : '12px', height: isStrip ? '24px' : '12px',
+                   borderRadius: Math.random() > 0.5 && !isStrip ? '50%' : '2px',
+                   transformStyle: 'preserve-3d',
+                   animationDuration: `${Math.random() * 1.5 + 3.7}s`,
+                   animationDelay: `${Math.random() * 0.3}s`,
+                   animationTimingFunction: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)', 
+                   '--peak-x': `${peakX}px`, 
+                   '--peak-y': `${peakY}px`, 
+                   '--end-x': `${endX}px`, 
+                   '--end-y': `${endY}px`,
+                   '--tz': `${(Math.random() - 0.5) * 600}px`,
+                   '--rx': `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 1440 + 720)}deg`, 
+                   '--ry': `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 1440 + 720)}deg`, 
+                   '--rz': `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 720 + 360)}deg`,
+                   '--scale': `${Math.random() * 0.6 + 0.6}`
+                 }} 
+               />
+             )
+           })}
+           <style>{`
+             @keyframes confettiFall { 
+               0% { transform: translate3d(-50%, -50%, 0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(0); opacity: 1; } 
+               15% { transform: translate3d(calc(-50% + var(--peak-x)), calc(-50% + var(--peak-y)), var(--tz)) rotateX(calc(var(--rx) * 0.15)) rotateY(calc(var(--ry) * 0.15)) rotateZ(calc(var(--rz) * 0.15)) scale(var(--scale)); opacity: 1; } 
+               80% { opacity: 1; }
+               100% { transform: translate3d(calc(-50% + var(--end-x)), calc(-50% + var(--end-y)), var(--tz)) rotateX(var(--rx)) rotateY(var(--ry)) rotateZ(var(--rz)) scale(var(--scale)); opacity: 0; } 
+             }
+           `}</style>
+         </div>
         )}
       </div>
     </div>

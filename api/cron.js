@@ -37,6 +37,9 @@ export default async function handler(req, res) {
       const userData = userDoc.data();
       const fcmToken = userData.fcmToken;
       const userName = userData.firstName || userData.name || 'Founder';
+      
+      // SURGICAL INJECTION: Extract entrepreneur mode from the user document
+      const isEntrepreneurMode = userData.isEntrepreneurMode || false;
 
       // If they haven't enabled push notifications, skip them
       if (!fcmToken) continue;
@@ -77,6 +80,7 @@ Your objective is to analyze real-time user financial ledger states and produce 
 CRITICAL TITLE DIRECTIVE: You must NEVER use generic titles like "Bill Coverage Gap". You must always generate unique, hyper-specific, premium titles tailored to the active cash state.
 SUBSCRIPTION DIRECTIVE: If upcoming bills include recurring subscriptions (like streaming services, software, or items marked /mo), proactively flag them as a "SUBSCRIPTION ALERT" to prevent unwanted charges.
 BIRTHDAY DIRECTIVE: If the "Is Birthday Today" variable is YES, you MUST naturally weave a premium "Happy Birthday" greeting into the body text addressing ${userName}.
+ENTREPRENEUR DIRECTIVE: If "Is Entrepreneur Mode" is YES, you must pivot context completely. Do not advise the user that a standard payday or W-2 payroll deposit is upcoming. Focus entirely on variable client collections, business overhead tracking, and protecting cash runway consistency.
 You must strictly output a valid, completely minified JSON object matching this exact schema with ZERO spaces, ZERO newlines, and ZERO markdown formatting:
 {"insightType":"BUDGET INSIGHT | SUBSCRIPTION ALERT","title":"Short unique hyper-specific header","body":"Highly actionable strategic sentence under 20 words addressing ${userName} directly, weaving in any exact dollar amounts naturally."}
 CRITICAL DIRECTIVE: If the provided ledger arrays are completely empty, DO NOT explain that they are empty. Instantly return this exact default fallback JSON without any deviation: 
@@ -87,7 +91,8 @@ Accounts: ${JSON.stringify(accounts)}
 Upcoming Bills: ${JSON.stringify(safeBills)}
 Recent Activity Ledger: ${JSON.stringify(safeTransactions)}
 Evaluation Window: ${new Date().getHours() < 12 ? 'AM' : 'PM'}
-Is Birthday Today: ${isBirthdayToday ? 'YES' : 'NO'}`;
+Is Birthday Today: ${isBirthdayToday ? 'YES' : 'NO'}
+Is Entrepreneur Mode: ${isEntrepreneurMode ? 'YES' : 'NO'}`;
 
       const geminiPayload = {
         contents: [{ parts: [{ text: promptText }] }],

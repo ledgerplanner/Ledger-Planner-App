@@ -54,6 +54,9 @@ export default function Dashboard({
   const currentMonthIdx = todayForMath.getMonth(); 
   const currentYearIdx = todayForMath.getFullYear(); 
 
+  // SURGICAL FIX: Calculate dynamic end of month date boundary
+  const lastDayOfMonth = new Date(currentYearIdx, currentMonthIdx + 1, 0).getDate();
+
   const todayParts = [todayForMath.getFullYear(), todayForMath.getMonth(), todayForMath.getDate()];
   const todayMidnightMillis = new Date(todayParts[0], todayParts[1], todayParts[2]).getTime();
 
@@ -62,7 +65,8 @@ export default function Dashboard({
   let allowedPaydays = [];
   
   if (isEntrepreneurMode) {
-    allowedPaydays = ["Week 1", "Week 2", "Week 3", "Week 4", "Week 5"];
+    // SURGICAL FIX: Removed extraneous Week 5 - Week 4 handles end-of-month organically
+    allowedPaydays = ["Week 1", "Week 2", "Week 3", "Week 4"];
   } else {
     if (freq === "Monthly") allowedPaydays = ["Payday 1"];
     else if (freq === "Semi-Monthly") allowedPaydays = ["Payday 1", "Payday 2"];
@@ -113,8 +117,7 @@ export default function Dashboard({
       if (day <= 7) return "Week 1";
       if (day <= 14) return "Week 2";
       if (day <= 21) return "Week 3";
-      if (day <= 28) return "Week 4";
-      return "Week 5";
+      return "Week 4"; // Handles day 22 through the absolute end of month
     }
 
     // STANDARD MODE: Route by exact payday window parameters
@@ -133,9 +136,29 @@ export default function Dashboard({
   hzPaydays.forEach(pd => { billsByRunwayGroup[pd] = []; });
   
   bills.forEach(bill => {
-    const assignedGroup = getBillRunwayGroup(bill);
-    if (assignedGroup && billsByRunwayGroup[assignedGroup]) {
-      billsByRunwayGroup[assignedGroup].push(bill);
+    // SURGICAL FIX: Time-lock firewall for Entrepreneur Mode to prevent future months bleeding in
+    let includeInGroup = true;
+    if (isEntrepreneurMode) {
+      includeInGroup = false;
+      if (bill.isOverdue || bill.payday === "Due Now") {
+        includeInGroup = true;
+      } else if (bill.rawDate) {
+        const parts = bill.rawDate.split("-");
+        if (parts.length === 3) {
+          const bMonth = parseInt(parts[1], 10) - 1;
+          const bYear = parseInt(parts[0], 10);
+          if (bMonth === currentMonthIdx && bYear === currentYearIdx) {
+            includeInGroup = true;
+          }
+        }
+      }
+    }
+
+    if (includeInGroup) {
+      const assignedGroup = getBillRunwayGroup(bill);
+      if (assignedGroup && billsByRunwayGroup[assignedGroup]) {
+        billsByRunwayGroup[assignedGroup].push(bill);
+      }
     }
   });
 
@@ -170,7 +193,6 @@ export default function Dashboard({
     return include ? sum + (Number(bill.amount) || 0) : sum;
   }, 0);
 
-  // SURGICAL FIX: Restored pure arithmetic to completely eliminate the positive debt illusion
   const safeToSpend = totalIncomeBalance - currentMonthBillsTotal;
 
   // === GAMIFIED "BILLS PAID" RING FORMULA ===
@@ -394,6 +416,14 @@ export default function Dashboard({
          )}
       </div>
 
+      {/* SURGICAL INJECTION: HORIZONTAL CARDS SECTION HEADER & SIGNATURE LINE */}
+      <div className={`mx-6 mb-5 border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
+      <div className="px-6 relative z-10">
+        <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2 mb-4">
+          {isEntrepreneurMode ? `${currentMonthName}'s Projected Weekly Runway` : `${currentMonthName}'s Projected Pay Schedule`}
+        </h3>
+      </div>
+
       <div className="w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-6 relative z-10">
         <div className="flex gap-4 pr-6 pb-2 min-h-[170px]">
           {hzPaydays.map((pd) => {
@@ -413,12 +443,12 @@ export default function Dashboard({
             let expectedDateStr = "";
 
             if (isEntrepreneurMode) {
+              // SURGICAL FIX: Week 4 dynamic boundary caps visually to end of month
               if (pd === "Due Now") expectedDateStr = "ACTION REQ";
               else if (pd === "Week 1") expectedDateStr = "DAYS 1-7";
               else if (pd === "Week 2") expectedDateStr = "DAYS 8-14";
               else if (pd === "Week 3") expectedDateStr = "DAYS 15-21";
-              else if (pd === "Week 4") expectedDateStr = "DAYS 22-28";
-              else if (pd === "Week 5") expectedDateStr = "DAYS 29-31";
+              else if (pd === "Week 4") expectedDateStr = `DAYS 22-${lastDayOfMonth}`;
             } else {
               totalExpectedIncome = Number(pdSettings.income) || 0;
               expectedDateStr = pd === "Due Now" ? "ACTION REQ" : formatPaydayDateStr(pdSettings.date).toUpperCase();
@@ -514,8 +544,7 @@ export default function Dashboard({
               else if (payday === "Week 1") expectedDateStr = "Days 1-7";
               else if (payday === "Week 2") expectedDateStr = "Days 8-14";
               else if (payday === "Week 3") expectedDateStr = "Days 15-21";
-              else if (payday === "Week 4") expectedDateStr = "Days 22-28";
-              else if (payday === "Week 5") expectedDateStr = "Days 29-31";
+              else if (payday === "Week 4") expectedDateStr = `Days 22-${lastDayOfMonth}`;
             } else {
               const pdSettings = paydayConfig?.[payday] || {};
               expectedDateStr = isDueNow ? "Currently Due" : formatPaydayDateStr(pdSettings.date);

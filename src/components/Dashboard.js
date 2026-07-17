@@ -54,7 +54,6 @@ export default function Dashboard({
   const currentMonthIdx = todayForMath.getMonth(); 
   const currentYearIdx = todayForMath.getFullYear(); 
 
-  // SURGICAL FIX: Calculate dynamic end of month date boundary
   const lastDayOfMonth = new Date(currentYearIdx, currentMonthIdx + 1, 0).getDate();
 
   const todayParts = [todayForMath.getFullYear(), todayForMath.getMonth(), todayForMath.getDate()];
@@ -65,7 +64,6 @@ export default function Dashboard({
   let allowedPaydays = [];
   
   if (isEntrepreneurMode) {
-    // SURGICAL FIX: Removed extraneous Week 5 - Week 4 handles end-of-month organically
     allowedPaydays = ["Week 1", "Week 2", "Week 3", "Week 4"];
   } else {
     if (freq === "Monthly") allowedPaydays = ["Payday 1"];
@@ -79,7 +77,6 @@ export default function Dashboard({
   let paydayWindows = {};
   let activePaydaysWithDates = [];
 
-  // STANDARD MODE: Build precision windows
   if (!isEntrepreneurMode) {
     activePaydaysWithDates = allowedPaydays
       .filter(pd => paydayConfig?.[pd]?.date)
@@ -105,22 +102,19 @@ export default function Dashboard({
     });
   }
 
-  // CORE ROUTING ENGINE
   const getBillRunwayGroup = (bill) => {
     if (bill.isOverdue || bill.payday === "Due Now") return "Due Now";
     if (!bill.rawDate) return null;
     
-    // ENTREPRENEUR MODE: Auto-route by numerical calendar day
     if (isEntrepreneurMode) {
       const dateParts = bill.rawDate.split("-");
       const day = dateParts.length === 3 ? parseInt(dateParts[2], 10) : new Date(bill.rawDate).getDate();
       if (day <= 7) return "Week 1";
       if (day <= 14) return "Week 2";
       if (day <= 21) return "Week 3";
-      return "Week 4"; // Handles day 22 through the absolute end of month
+      return "Week 4";
     }
 
-    // STANDARD MODE: Route by exact payday window parameters
     const billMillis = parseLocalDate(bill.rawDate);
     for (let i = 0; i < activePaydaysWithDates.length; i++) {
       const pdKey = activePaydaysWithDates[i].key;
@@ -136,7 +130,6 @@ export default function Dashboard({
   hzPaydays.forEach(pd => { billsByRunwayGroup[pd] = []; });
   
   bills.forEach(bill => {
-    // SURGICAL FIX: Time-lock firewall for Entrepreneur Mode to prevent future months bleeding in
     let includeInGroup = true;
     if (isEntrepreneurMode) {
       includeInGroup = false;
@@ -225,23 +218,17 @@ export default function Dashboard({
     ? 100 
     : Math.max(0, Math.min((currentMonthSettledBillsCount / currentMonthTotalBillsCount) * 100, 100));
 
-  const strokeDasharray = 251.2;
-  const targetDashoffset = strokeDasharray - (strokeDasharray * billsPaidPercentage) / 100;
-
   let runningBalance = totalIncomeBalance;
   const hzBalances = {};
 
-  // WATERFALL MATH ENGINE
   hzPaydays.forEach((pd) => {
     const groupBills = billsByRunwayGroup[pd] || [];
     const unpaidTotal = groupBills.filter(b => !b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
 
     if (isEntrepreneurMode) {
-      // Variable flow tracking: Standard decay against active balance
       runningBalance = runningBalance - unpaidTotal;
       hzBalances[pd] = runningBalance;
     } else {
-      // W-2 Standard Mode: Inject fixed expected income at boundaries
       const pdSettings = paydayConfig?.[pd] || {};
       if (pd !== "Due Now" && !pdSettings?.date) {
         hzBalances[pd] = runningBalance;
@@ -269,7 +256,6 @@ export default function Dashboard({
     }
   }
 
-  // === STRICT SINGLE-OPEN AUTO ENGINE ===
   let displayActiveAccordion = activePayday;
   if (activePayday === "init") {
     const groupUnpaid = (billsByRunwayGroup["Due Now"] || []).filter(b => !b.isPaid);
@@ -280,7 +266,6 @@ export default function Dashboard({
     }
   }
 
-  // === DYNAMIC COLOR ENGINE & GLOW STYLES ===
   const getPillStyle = (amt) => {
     if (amt > 0) return isDarkMode ? "bg-emerald-500/10 border-emerald-900/50 text-[#10B981] shadow-[0_0_15px_rgba(16,185,129,0.15)]" : "bg-emerald-50 border-emerald-200 text-[#10B981] shadow-[0_0_15px_rgba(16,185,129,0.2)]";
     if (amt < 0) return isDarkMode ? "bg-red-500/10 border-red-900/50 text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.15)]" : "bg-red-50 border-red-200 text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]";
@@ -304,39 +289,64 @@ export default function Dashboard({
           </span>
         </div>
 
-        {/* The Ring (Scales/Fades In) */}
+        {/* 1. UPGRADE: The Momentum Tracker (Pulse Wave) */}
         <div className={`relative w-32 h-32 flex-shrink-0 mt-4 mb-2 transform transition-all duration-700 delay-100 ease-out ${isMounted ? "scale-100 opacity-100" : "scale-90 opacity-0"}`}>
-          <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
+          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-xl overflow-visible">
             <defs>
-              <linearGradient id="dashGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+              <linearGradient id="waveGlow" x1="0%" y1="100%" x2="0%" y2="0%">
                 <stop offset="0%" stopColor="#10B981" />
                 <stop offset="100%" stopColor="#059669" />
               </linearGradient>
             </defs>
-            <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "rgba(51, 65, 85, 0.5)" : "rgba(226, 232, 240, 0.9)"} strokeWidth="10" />
-            <circle 
-              cx="50" 
-              cy="50" 
-              r="40" 
-              fill="transparent" 
-              stroke="url(#dashGlow)" 
-              strokeWidth="10" 
-              strokeLinecap="round" 
-              strokeDasharray={strokeDasharray} 
-              strokeDashoffset={isMounted ? targetDashoffset : strokeDasharray} 
-              className="transition-all duration-1000 delay-300 ease-out" 
-            />
+            <style>{`
+              @keyframes momentumPulse {
+                0%, 100% { transform: scaleY(0.3); }
+                50% { transform: scaleY(1); }
+              }
+              .wave-bar {
+                transform-origin: bottom;
+                /* Dynamic Speed: Pulses faster as percentage climbs closer to 100% */
+                animation: momentumPulse ${Math.max(0.6, 2.5 - (billsPaidPercentage / 50))}s ease-in-out infinite;
+              }
+            `}</style>
+            
+            <g transform="translate(0, 90)">
+              {/* Dynamic Wave Generation */}
+              {[...Array(5)].map((_, i) => {
+                const maxBarHeight = 70; 
+                // Core Physics: Scale height dynamically based on completion %
+                const heightScale = Math.max(0.1, billsPaidPercentage / 100);
+                // Aesthetic Bell Curve to make the center bars peak higher
+                const curveFactor = 1 - Math.abs(2 - i) * 0.15;
+                const dynamicHeight = maxBarHeight * heightScale * curveFactor;
+
+                return (
+                  <rect
+                    key={i}
+                    x={18 + i * 14}
+                    y={-dynamicHeight}
+                    width="8"
+                    height={dynamicHeight}
+                    rx="4"
+                    fill="url(#waveGlow)"
+                    className="wave-bar"
+                    style={{
+                      animationDelay: `${i * 0.15}s`,
+                      transition: "height 1s cubic-bezier(0.16, 1, 0.3, 1), y 1s cubic-bezier(0.16, 1, 0.3, 1)"
+                    }}
+                  />
+                );
+              })}
+            </g>
           </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-1 text-center">
-            <span className={`text-[8px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Bills Paid</span>
+          
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-1 text-center pointer-events-none drop-shadow-md">
+            <span className={`text-[8px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>Bills Paid</span>
             <span className={`text-2xl font-black leading-none mt-0.5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{Math.round(billsPaidPercentage)}%</span>
           </div>
         </div>
        
-        {/* The 3-Pill Matrix */}
         <div className="w-full space-y-2 mt-5">
-          
-          {/* Pill 1: My Balance (Glides Left to Right) */}
           <div 
             className={`w-full py-3 px-4 rounded-xl border flex items-center justify-between transform transition-all duration-[600ms] delay-[200ms] ${isMounted ? "translate-x-0 opacity-100" : "-translate-x-12 opacity-0"} ${getPillStyle(totalIncomeBalance)}`}
             style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
@@ -352,7 +362,6 @@ export default function Dashboard({
             </span>
           </div>
 
-          {/* Pill 2: Safe To Spend (Glides Right to Left) */}
           <div 
             className={`w-full py-3 px-4 rounded-xl border flex items-center justify-between transform transition-all duration-[600ms] delay-[300ms] ${isMounted ? "translate-x-0 opacity-100" : "translate-x-12 opacity-0"} ${getPillStyle(safeToSpend)}`}
             style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
@@ -367,7 +376,6 @@ export default function Dashboard({
             </span>
           </div>
 
-          {/* Element 3: Next Payday Text (Glides Bottom to Top) */}
           {!isEntrepreneurMode && nextPaydayDayName && (
             <div 
               className={`w-full pt-3 flex items-center justify-center transform transition-all duration-[600ms] delay-[400ms] ${isMounted ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}
@@ -416,7 +424,6 @@ export default function Dashboard({
          )}
       </div>
 
-      {/* SURGICAL INJECTION: HORIZONTAL CARDS SECTION HEADER & SIGNATURE LINE */}
       <div className={`mx-6 mb-5 border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
       <div className="px-6 relative z-10">
         <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2 mb-4">
@@ -430,7 +437,6 @@ export default function Dashboard({
             const pdSettings = paydayConfig?.[pd] || {};
             const groupBills = billsByRunwayGroup[pd] || [];
             
-            // Standard check to hide empty unset blocks
             if (!isEntrepreneurMode && pd !== "Due Now" && !pdSettings?.date) return null;
 
             const unpaidBills = groupBills.filter(b => !b.isPaid);
@@ -443,7 +449,6 @@ export default function Dashboard({
             let expectedDateStr = "";
 
             if (isEntrepreneurMode) {
-              // SURGICAL FIX: Week 4 dynamic boundary caps visually to end of month
               if (pd === "Due Now") expectedDateStr = "ACTION REQ";
               else if (pd === "Week 1") expectedDateStr = "DAYS 1-7";
               else if (pd === "Week 2") expectedDateStr = "DAYS 8-14";
@@ -530,7 +535,6 @@ export default function Dashboard({
               if (isDueNow && activeGroupBills.length === 0) return null;
               if (!isDueNow && !pdSettings?.date) return null;
             } else {
-              // Hide empty blocks in Entrepreneur Mode
               if (activeGroupBills.length === 0) return null;
             }
 
@@ -575,6 +579,7 @@ export default function Dashboard({
                         sortedBills.map((bill) => (
                           <div key={bill?.id} className={`flex flex-col p-4 rounded-2xl border shadow-sm transition-colors ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
                             
+                            {/* LEVEL 1: Left Emoji & Name, Right Edit Pencil */}
                             <div className="flex items-start justify-between w-full mb-4">
                                <div className="flex items-center gap-3 cursor-pointer flex-1 min-w-0" onClick={() => setSelectedEntry(bill)}>
                                   <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
@@ -597,45 +602,80 @@ export default function Dashboard({
                                </button>
                             </div>
 
-                            <div className="flex items-center justify-between gap-1 min-[360px]:gap-2 w-full">
-                               <div className="flex flex-col shrink-0">
-                                  <span className={`text-[10px] font-black uppercase tracking-wider ${(bill?.isOverdue || bill?.payday === "Due Now") ? "text-red-500" : "text-slate-400"}`}>
-                                     {bill?.isOverdue ? "Overdue" : bill?.payday === "Due Now" ? "Due Now" : "Due"}
-                                  </span>
-                                  <span className={`text-xs font-bold ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
-                                     {bill?.fullDate || "TBD"}
-                                  </span>
-                               </div>
-                               
-                               <div className="flex-1 flex justify-center px-1">
-                                  {!bill?.isPaid ? (
-                                      <button onClick={(e) => { e.stopPropagation(); handleBillClick(bill?.id); }} className="px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0" >
-                                        <CheckCircle2 size={14} />
-                                        <span className="hidden min-[360px]:inline">MARK AS PAID</span>
-                                        <span className="min-[360px]:hidden">PAY</span>
-                                      </button>
-                                  ) : (
-                                      <div className="px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0"><CheckCircle2 size={14} /> Paid</div>
-                                  )}
-                               </div>
-                               
-                               <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 text-[#1877F2] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] whitespace-nowrap`}>
-                                  {(Number(bill?.amount) || 0).toFixed(2)}
+                            {/* DYNAMIC 3-LEVEL LAYOUT: Standard vs. Installment */}
+                            {bill?.isInstallment ? (
+                              <>
+                                {/* INSTALLMENT LEVEL 2: Left Status/Date, Center Button, Right Amount */}
+                                <div className="flex items-center justify-between gap-1 min-[360px]:gap-2 w-full">
+                                   <div className="flex flex-col shrink-0">
+                                      <span className={`text-[10px] min-[360px]:text-xs font-black uppercase tracking-wider ${(bill?.isOverdue || bill?.payday === "Due Now") ? "text-red-500" : "text-slate-400"}`}>
+                                         {bill?.isOverdue ? "Overdue" : bill?.payday === "Due Now" ? "Due Now" : "Due"}
+                                      </span>
+                                      <span className={`text-[10px] min-[360px]:text-xs font-bold ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
+                                         {bill?.fullDate || "TBD"}
+                                      </span>
+                                   </div>
+                                   
+                                   <div className="flex-1 flex justify-center px-1">
+                                      {!bill?.isPaid ? (
+                                          <button onClick={(e) => { e.stopPropagation(); handleBillClick(bill?.id); }} className="px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0" >
+                                            <CheckCircle2 size={14} />
+                                            <span className="hidden min-[360px]:inline">MARK AS PAID</span>
+                                            <span className="min-[360px]:hidden">PAY</span>
+                                          </button>
+                                      ) : (
+                                          <div className="px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0"><CheckCircle2 size={14} /> Paid</div>
+                                      )}
+                                   </div>
+                                   
+                                   <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 text-[#1877F2] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] whitespace-nowrap`}>
+                                      ${(Number(bill?.amount) || 0).toFixed(2)}
+                                   </div>
                                 </div>
-                            </div>
 
-                            {bill?.isInstallment && (
-                                 <div className={`mt-4 pt-3 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
+                                {/* INSTALLMENT LEVEL 3: Progress Bar */}
+                                <div className={`mt-4 pt-3 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
                                      <div className="flex justify-between items-end mb-2">
                                          <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Installment Plan</span>
                                          <span className="text-xs sm:text-sm font-black text-slate-600 dark:text-slate-300">
                                              ${(Number(bill?.paidAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} / ${(Number(bill?.totalAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                          </span>
                                      </div>
-                                     <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-900" : "bg-slate-100"}`}>
+                                     <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-900 shadow-inner" : "bg-slate-100"}`}>
                                          <div className="h-full bg-[#1877F2] transition-all duration-1000" style={{ width: `${Math.min(((Number(bill?.paidAmount) || 0) / (Number(bill?.totalAmount) || 1)) * 100, 100)}%` }}></div>
                                      </div>
                                  </div>
+                              </>
+                            ) : (
+                              <>
+                                {/* STANDARD LEVEL 2: Left Status/Date, Right Amount */}
+                                <div className="flex items-center justify-between w-full mb-4">
+                                   <div className="flex flex-col shrink-0">
+                                      <span className={`text-[10px] min-[360px]:text-xs font-black uppercase tracking-wider ${(bill?.isOverdue || bill?.payday === "Due Now") ? "text-red-500" : "text-slate-400"}`}>
+                                         {bill?.isOverdue ? "Overdue" : bill?.payday === "Due Now" ? "Due Now" : "Due"}
+                                      </span>
+                                      <span className={`text-[10px] min-[360px]:text-xs font-bold ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
+                                         {bill?.fullDate || "TBD"}
+                                      </span>
+                                   </div>
+                                   
+                                   <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 text-[#1877F2] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] whitespace-nowrap`}>
+                                      ${(Number(bill?.amount) || 0).toFixed(2)}
+                                   </div>
+                                </div>
+
+                                {/* STANDARD LEVEL 3: Centered Button */}
+                                <div className="flex items-center justify-center w-full">
+                                    {!bill?.isPaid ? (
+                                        <button onClick={(e) => { e.stopPropagation(); handleBillClick(bill?.id); }} className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap" >
+                                          <CheckCircle2 size={14} />
+                                          MARK AS PAID
+                                        </button>
+                                    ) : (
+                                        <div className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center gap-1.5 whitespace-nowrap"><CheckCircle2 size={14} /> Paid</div>
+                                    )}
+                                </div>
+                              </>
                             )}
                           </div>
                         ))

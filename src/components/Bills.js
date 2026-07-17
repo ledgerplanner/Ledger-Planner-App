@@ -365,6 +365,14 @@ export default function Bills({
         `}</style>
         {renderHeroShell(`${userName}'s Bills`, graphicContent)}
       </div>
+
+      <div className="px-6 relative z-10 mt-6 mb-4">
+        <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">
+          {currentYear} MONTHLY OVERVIEWS
+        </h3>
+      </div>
+      
+      <div className={`mx-6 mb-5 border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
       
       <div ref={horizontalScrollRef} className="w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-6 relative z-10 pt-2">
         <div className="flex gap-4 pr-6 pb-2 min-h-[170px] snap-x snap-mandatory">
@@ -536,64 +544,87 @@ export default function Bills({
               </div>
               <div className="space-y-3">
                 {sortBillsSurgically(urgentBills).map((bill) => (
-                  <div key={`urgent-${bill.id}`} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/80 border-slate-700" : "bg-white border-slate-100"}`}>
-                    <div className="flex items-start justify-between w-full mb-6">
-                      <div className="flex items-center gap-3 flex-1">
+                  <div key={`urgent-${bill.id}`} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/80 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
+                    
+                    {/* LEVEL 1 */}
+                    <div className="flex items-start justify-between w-full mb-4">
+                      <div className="flex items-center gap-3 cursor-pointer flex-1 min-w-0" onClick={() => setSelectedEntry(bill)}>
                         <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-red-900/20 border-red-900/50" : "bg-red-50 border-red-100"}`}>
                           {bill.icon}
                         </div>
-                        <div className="flex flex-col">
-                          <div className="flex items-center gap-1.5">
-                            <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
-                              {bill.name}
-                            </p>
-                            {bill.isRecurring && !bill.isPaid && <RefreshCw size={12} strokeWidth={2} className="text-[#10B981] shrink-0" />}
-                          </div>
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                          <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
+                            {bill.name}
+                          </p>
+                          {bill.isRecurring && !bill.isPaid && <RefreshCw size={12} strokeWidth={2} className="text-[#10B981] shrink-0" />}
                         </div>
                       </div>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setSelectedEntry(bill); }}
-                        className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400"}`}
-                      >
-                        <Edit2 size={16} strokeWidth={2} />
+                      <button onClick={(e) => { e.stopPropagation(); setSelectedEntry(bill); }} className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}>
+                        <Edit2 size={16} strokeWidth={2.5} />
                       </button>
                     </div>
-    
-                    <div className="flex items-center justify-between gap-1 min-[360px]:gap-2 w-full">
-                      <div className="flex flex-col shrink-0">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-red-500">
-                          {bill.isOverdue ? "OVERDUE" : "DUE NOW"}
-                        </span>
-                        <span className={`text-xs font-bold ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
-                          {bill.fullDate || "TBD"}
-                        </span>
-                      </div>
-                      <div className="flex-1 flex justify-center px-1">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleBillClick?.(bill.id); }}
-                          className="px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0"
-                        >
-                          <CheckCircle2 size={14} strokeWidth={2.5} />
-                          <span className="hidden min-[360px]:inline">MARK AS PAID</span>
-                          <span className="min-[360px]:hidden">PAY</span>
-                        </button>
-                      </div>
-                      <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
-                        {(Number(bill.amount) || 0).toFixed(2)}
-                      </div>
-                    </div>
-                    {bill.isInstallment && !bill.isPaid && (
-                      <div className="mt-5 pt-3 border-t border-slate-200 w-full animate-fade-in">
-                        <div className="flex justify-between items-end mb-2 px-1">
-                          <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Installment Plan</span>
-                          <span className="text-xs sm:text-sm font-black text-slate-600 dark:text-slate-300">
-                            ${(Number(bill.paidAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} / ${(Number(bill.totalAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                          </span>
+
+                    {/* DYNAMIC 3-LEVEL LAYOUT: Standard vs. Installment */}
+                    {bill.isInstallment && !bill.isPaid ? (
+                      <>
+                        {/* INSTALLMENT LEVEL 2 */}
+                        <div className="flex items-center justify-between gap-1 min-[360px]:gap-2 w-full">
+                          <div className="flex flex-col shrink-0">
+                            <span className={`text-[10px] min-[360px]:text-xs font-black uppercase tracking-wider text-red-500`}>
+                              {bill.isOverdue ? "OVERDUE" : "DUE NOW"}
+                            </span>
+                            <span className={`text-[10px] min-[360px]:text-xs font-bold ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
+                              {bill.fullDate || "TBD"}
+                            </span>
+                          </div>
+                          <div className="flex-1 flex justify-center px-1">
+                            <button onClick={(e) => { e.stopPropagation(); handleBillClick?.(bill.id); }} className="px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0">
+                              <CheckCircle2 size={14} strokeWidth={2.5} />
+                              <span className="hidden min-[360px]:inline">MARK AS PAID</span>
+                              <span className="min-[360px]:hidden">PAY</span>
+                            </button>
+                          </div>
+                          <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
+                            ${(Number(bill.amount) || 0).toFixed(2)}
+                          </div>
                         </div>
-                        <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-900 shadow-inner" : "bg-slate-100"}`}>
-                          <div className="h-full bg-[#1877F2] transition-all duration-500 ease-out" style={{ width: `${Math.min(((Number(bill.paidAmount) || 0) / (Number(bill.totalAmount) || 1)) * 100, 100)}%` }}></div>
+                        {/* INSTALLMENT LEVEL 3 */}
+                        <div className="mt-4 pt-3 border-t border-slate-200 w-full animate-fade-in">
+                          <div className="flex justify-between items-end mb-2 px-1">
+                            <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Installment Plan</span>
+                            <span className="text-xs sm:text-sm font-black text-slate-600 dark:text-slate-300">
+                              ${(Number(bill.paidAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} / ${(Number(bill.totalAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                          <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-900 shadow-inner" : "bg-slate-100"}`}>
+                            <div className="h-full bg-[#1877F2] transition-all duration-500 ease-out" style={{ width: `${Math.min(((Number(bill.paidAmount) || 0) / (Number(bill.totalAmount) || 1)) * 100, 100)}%` }}></div>
+                          </div>
                         </div>
-                      </div>
+                      </>
+                    ) : (
+                      <>
+                        {/* STANDARD LEVEL 2 */}
+                        <div className="flex items-center justify-between w-full mb-4">
+                          <div className="flex flex-col shrink-0">
+                            <span className={`text-[10px] min-[360px]:text-xs font-black uppercase tracking-wider text-red-500`}>
+                              {bill.isOverdue ? "OVERDUE" : "DUE NOW"}
+                            </span>
+                            <span className={`text-[10px] min-[360px]:text-xs font-bold ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
+                              {bill.fullDate || "TBD"}
+                            </span>
+                          </div>
+                          <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
+                            ${(Number(bill.amount) || 0).toFixed(2)}
+                          </div>
+                        </div>
+                        {/* STANDARD LEVEL 3 */}
+                        <div className="flex items-center justify-center w-full">
+                          <button onClick={(e) => { e.stopPropagation(); handleBillClick?.(bill.id); }} className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap">
+                            <CheckCircle2 size={14} strokeWidth={2.5} />
+                            MARK AS PAID
+                          </button>
+                        </div>
+                      </>
                     )}
                   </div>
                 ))}
@@ -670,76 +701,101 @@ export default function Bills({
                           
                           return (
                             <div key={bill.id} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
-                              <div className="flex items-start justify-between w-full mb-6">
-                                <div className="flex items-center gap-3 flex-1">
+                              
+                              {/* LEVEL 1 */}
+                              <div className="flex items-start justify-between w-full mb-4">
+                                <div className="flex items-center gap-3 cursor-pointer flex-1 min-w-0" onClick={() => setSelectedEntry(bill)}>
                                   <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${blockIconUrgentClass}`}>
                                     {bill.icon}
                                   </div>
-                                  <div className="flex flex-col">
-                                    <div className="flex items-center gap-1.5">
-                                      <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
-                                        {bill.name}
-                                      </p>
-                                      {bill.isRecurring && !bill.isPaid && <RefreshCw size={12} strokeWidth={2} className="text-[#10B981] shrink-0" />}
-                                    </div>
+                                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                    <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
+                                      {bill.name}
+                                    </p>
+                                    {bill.isRecurring && !bill.isPaid && <RefreshCw size={12} strokeWidth={2} className="text-[#10B981] shrink-0" />}
                                   </div>
                                 </div>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setSelectedEntry(bill); }}
-                                  className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
-                                >
-                                  <Edit2 size={16} strokeWidth={2} />
+                                <button onClick={(e) => { e.stopPropagation(); setSelectedEntry(bill); }} className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}>
+                                  <Edit2 size={16} strokeWidth={2.5} />
                                 </button>
                               </div>
 
-                              <div className="flex items-center justify-between gap-1 min-[360px]:gap-2 w-full">
-                                <div className="flex flex-col shrink-0">
-                                  <span className={`text-[10px] font-black uppercase tracking-wider ${statusColorClass}`}>
-                                    {displayStatusText}
-                                  </span>
-                                  <span className={`text-xs font-bold ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
-                                    {bill.fullDate || "TBD"}
-                                  </span>
-                                </div>
-                                <div className="flex-1 flex justify-center px-1">
-                                  
-                                  {/* Fix #5: The Chronological Lock Interceptor Trigger */}
-                                  <button
-                                    onClick={(e) => { 
-                                      e.stopPropagation(); 
-                                      if (useRecurringLabel && isFutureMonth) {
-                                        setChronologicalLock({ isOpen: true, billName: bill.name });
-                                      } else {
-                                        handleBillClick?.(bill.id); 
-                                      }
-                                    }}
-                                    className="px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0"
-                                  >
-                                    <CheckCircle2 size={14} strokeWidth={2.5} />
-                                    <span className="hidden min-[360px]:inline">MARK AS PAID</span>
-                                    <span className="min-[360px]:hidden">PAY</span>
-                                  </button>
-                                  
-                                </div>
-                                <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
-                                  {(Number(bill.amount) || 0).toFixed(2)}
-                                </div>
-                              </div>
-
-                              {bill.isInstallment && !bill.isPaid && (
-                                <div className="mt-5 pt-3 border-t border-slate-200 w-full animate-fade-in">
-                                  <div className="flex justify-between items-end mb-2 px-1">
-                                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                                      Installment Plan
-                                    </span>
-                                    <span className="text-xs sm:text-sm font-black text-slate-600 dark:text-slate-300">
-                                      ${(Number(bill.paidAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} / ${(Number(bill.totalAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                    </span>
+                              {/* DYNAMIC 3-LEVEL LAYOUT: Standard vs. Installment */}
+                              {bill.isInstallment && !bill.isPaid ? (
+                                <>
+                                  {/* INSTALLMENT LEVEL 2 */}
+                                  <div className="flex items-center justify-between gap-1 min-[360px]:gap-2 w-full">
+                                    <div className="flex flex-col shrink-0">
+                                      <span className={`text-[10px] min-[360px]:text-xs font-black uppercase tracking-wider ${statusColorClass}`}>
+                                        {displayStatusText}
+                                      </span>
+                                      <span className={`text-[10px] min-[360px]:text-xs font-bold ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
+                                        {bill.fullDate || "TBD"}
+                                      </span>
+                                    </div>
+                                    <div className="flex-1 flex justify-center px-1">
+                                      <button onClick={(e) => { 
+                                          e.stopPropagation(); 
+                                          if (useRecurringLabel && isFutureMonth) {
+                                            setChronologicalLock({ isOpen: true, billName: bill.name });
+                                          } else {
+                                            handleBillClick?.(bill.id); 
+                                          }
+                                        }} 
+                                        className="px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0">
+                                        <CheckCircle2 size={14} strokeWidth={2.5} />
+                                        <span className="hidden min-[360px]:inline">MARK AS PAID</span>
+                                        <span className="min-[360px]:hidden">PAY</span>
+                                      </button>
+                                    </div>
+                                    <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
+                                      ${(Number(bill.amount) || 0).toFixed(2)}
+                                    </div>
                                   </div>
-                                  <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-900 shadow-inner" : "bg-slate-100"}`}>
-                                    <div className="h-full bg-[#1877F2] transition-all duration-500 ease-out" style={{ width: `${Math.min(((Number(bill.paidAmount) || 0) / (Number(bill.totalAmount) || 1)) * 100, 100)}%` }}></div>
+                                  {/* INSTALLMENT LEVEL 3 */}
+                                  <div className="mt-4 pt-3 border-t border-slate-200 w-full animate-fade-in">
+                                    <div className="flex justify-between items-end mb-2 px-1">
+                                      <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Installment Plan</span>
+                                      <span className="text-xs sm:text-sm font-black text-slate-600 dark:text-slate-300">
+                                        ${(Number(bill.paidAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} / ${(Number(bill.totalAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                      </span>
+                                    </div>
+                                    <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-900 shadow-inner" : "bg-slate-100"}`}>
+                                      <div className="h-full bg-[#1877F2] transition-all duration-500 ease-out" style={{ width: `${Math.min(((Number(bill.paidAmount) || 0) / (Number(bill.totalAmount) || 1)) * 100, 100)}%` }}></div>
+                                    </div>
                                   </div>
-                                </div>
+                                </>
+                              ) : (
+                                <>
+                                  {/* STANDARD LEVEL 2 */}
+                                  <div className="flex items-center justify-between w-full mb-4">
+                                    <div className="flex flex-col shrink-0">
+                                      <span className={`text-[10px] min-[360px]:text-xs font-black uppercase tracking-wider ${statusColorClass}`}>
+                                        {displayStatusText}
+                                      </span>
+                                      <span className={`text-[10px] min-[360px]:text-xs font-bold ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
+                                        {bill.fullDate || "TBD"}
+                                      </span>
+                                    </div>
+                                    <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
+                                      ${(Number(bill.amount) || 0).toFixed(2)}
+                                    </div>
+                                  </div>
+                                  {/* STANDARD LEVEL 3 */}
+                                  <div className="flex items-center justify-center w-full">
+                                    <button onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        if (useRecurringLabel && isFutureMonth) {
+                                          setChronologicalLock({ isOpen: true, billName: bill.name });
+                                        } else {
+                                          handleBillClick?.(bill.id); 
+                                        }
+                                      }} className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap">
+                                      <CheckCircle2 size={14} strokeWidth={2.5} />
+                                      MARK AS PAID
+                                    </button>
+                                  </div>
+                                </>
                               )}
                             </div>
                           );
@@ -793,48 +849,99 @@ export default function Bills({
                       
                       return (
                         <div key={bill.id} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
-                          <div className="flex items-start justify-between w-full mb-6">
-                            <div className="flex items-center gap-3 flex-1">
+                          
+                          {/* LEVEL 1 */}
+                          <div className="flex items-start justify-between w-full mb-4">
+                            <div className="flex items-center gap-3 cursor-pointer flex-1 min-w-0" onClick={() => setSelectedEntry(bill)}>
                               <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
                                 {bill.icon}
                               </div>
-                              <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{bill.name}</p>
+                              <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{bill.name}</p>
+                              </div>
                             </div>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setSelectedEntry(bill); }}
-                              className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
-                            >
-                              <Edit2 size={16} strokeWidth={2} />
+                            <button onClick={(e) => { e.stopPropagation(); setSelectedEntry(bill); }} className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}>
+                              <Edit2 size={16} strokeWidth={2.5} />
                             </button>
                           </div>
-                          <div className="flex items-center justify-between gap-1 min-[360px]:gap-2 w-full">
-                            <div className="flex flex-col shrink-0">
-                              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                                {useRecurringLabel ? "RECURRING" : "DUE"}
-                              </span>
-                              <span className={`text-xs font-bold ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>{bill.fullDate}</span>
-                            </div>
-                            <div className="flex-1 flex justify-center px-1">
-                              <button
-                                onClick={(e) => { 
-                                  e.stopPropagation(); 
-                                  if (useRecurringLabel) {
-                                    setChronologicalLock({ isOpen: true, billName: bill.name });
-                                  } else {
-                                    handleBillClick?.(bill.id); 
-                                  }
-                                }}
-                                className="px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0"
-                              >
-                                <CheckCircle2 size={14} strokeWidth={2.5} />
-                                <span className="hidden min-[360px]:inline">MARK AS PAID</span>
-                                <span className="min-[360px]:hidden">PAY</span>
-                              </button>
-                            </div>
-                            <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
-                              {(Number(bill.amount) || 0).toFixed(2)}
-                            </div>
-                          </div>
+                          
+                          {/* DYNAMIC 3-LEVEL LAYOUT: Standard vs. Installment */}
+                          {bill.isInstallment && !bill.isPaid ? (
+                            <>
+                              {/* INSTALLMENT LEVEL 2 */}
+                              <div className="flex items-center justify-between gap-1 min-[360px]:gap-2 w-full">
+                                <div className="flex flex-col shrink-0">
+                                  <span className="text-[10px] min-[360px]:text-xs font-black uppercase tracking-wider text-slate-400">
+                                    {useRecurringLabel ? "RECURRING" : "DUE"}
+                                  </span>
+                                  <span className={`text-[10px] min-[360px]:text-xs font-bold ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
+                                    {bill.fullDate || "TBD"}
+                                  </span>
+                                </div>
+                                <div className="flex-1 flex justify-center px-1">
+                                  <button onClick={(e) => { 
+                                      e.stopPropagation(); 
+                                      if (useRecurringLabel) {
+                                        setChronologicalLock({ isOpen: true, billName: bill.name });
+                                      } else {
+                                        handleBillClick?.(bill.id); 
+                                      }
+                                    }} 
+                                    className="px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0">
+                                    <CheckCircle2 size={14} strokeWidth={2.5} />
+                                    <span className="hidden min-[360px]:inline">MARK AS PAID</span>
+                                    <span className="min-[360px]:hidden">PAY</span>
+                                  </button>
+                                </div>
+                                <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
+                                  ${(Number(bill.amount) || 0).toFixed(2)}
+                                </div>
+                              </div>
+                              {/* INSTALLMENT LEVEL 3 */}
+                              <div className="mt-4 pt-3 border-t border-slate-200 w-full animate-fade-in">
+                                <div className="flex justify-between items-end mb-2 px-1">
+                                  <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Installment Plan</span>
+                                  <span className="text-xs sm:text-sm font-black text-slate-600 dark:text-slate-300">
+                                    ${(Number(bill.paidAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} / ${(Number(bill.totalAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                  </span>
+                                </div>
+                                <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-900 shadow-inner" : "bg-slate-100"}`}>
+                                  <div className="h-full bg-[#1877F2] transition-all duration-500 ease-out" style={{ width: `${Math.min(((Number(bill.paidAmount) || 0) / (Number(bill.totalAmount) || 1)) * 100, 100)}%` }}></div>
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              {/* STANDARD LEVEL 2 */}
+                              <div className="flex items-center justify-between w-full mb-4">
+                                <div className="flex flex-col shrink-0">
+                                  <span className="text-[10px] min-[360px]:text-xs font-black uppercase tracking-wider text-slate-400">
+                                    {useRecurringLabel ? "RECURRING" : "DUE"}
+                                  </span>
+                                  <span className={`text-[10px] min-[360px]:text-xs font-bold ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
+                                    {bill.fullDate || "TBD"}
+                                  </span>
+                                </div>
+                                <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
+                                  ${(Number(bill.amount) || 0).toFixed(2)}
+                                </div>
+                              </div>
+                              {/* STANDARD LEVEL 3 */}
+                              <div className="flex items-center justify-center w-full">
+                                <button onClick={(e) => { 
+                                    e.stopPropagation(); 
+                                    if (useRecurringLabel) {
+                                      setChronologicalLock({ isOpen: true, billName: bill.name });
+                                    } else {
+                                      handleBillClick?.(bill.id); 
+                                    }
+                                  }} className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap">
+                                  <CheckCircle2 size={14} strokeWidth={2.5} />
+                                  MARK AS PAID
+                                </button>
+                              </div>
+                            </>
+                          )}
                         </div>
                       );
                     })}
@@ -854,49 +961,59 @@ export default function Bills({
               <div className="space-y-3">
                 {bills.filter(b => b.isPaid).map((bill) => (
                   <div key={`settled-${bill.id}`} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all duration-300 opacity-60 grayscale-[0.3] hover:opacity-100 hover:grayscale-0 ${isDarkMode ? "bg-slate-800/30 border-slate-700" : "bg-white border-slate-100"}`}>
-                    <div className="flex items-start justify-between w-full mb-6">
-                      <div className="flex items-center gap-3 flex-1">
+                    
+                    {/* LEVEL 1 */}
+                    <div className="flex items-start justify-between w-full mb-4">
+                      <div className="flex items-center gap-3 cursor-pointer flex-1 min-w-0" onClick={() => setSelectedEntry(bill)}>
                         <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
                           {bill.icon}
                         </div>
-                        <p className={`font-black text-base truncate line-through leading-tight ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-                          {bill.name}
-                        </p>
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                          <p className={`font-black text-base truncate line-through leading-tight ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                            {bill.name}
+                          </p>
+                        </div>
                       </div>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setSelectedEntry(bill); }}
-                        className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400"}`}
-                      >
-                        <Edit2 size={16} strokeWidth={2} />
+                      <button onClick={(e) => { e.stopPropagation(); setSelectedEntry(bill); }} className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}>
+                        <Edit2 size={16} strokeWidth={2.5} />
                       </button>
                     </div>
     
-                    <div className="flex items-center justify-between gap-1 min-[360px]:gap-2 w-full">
+                    {/* STANDARD 3-LEVEL LAYOUT FOR SETTLED */}
+                    {/* LEVEL 2 */}
+                    <div className="flex items-center justify-between w-full mb-4">
                       <div className="flex flex-col shrink-0">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Status</span>
-                        <span className={`text-xs font-bold ${isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>Settled</span>
+                        <span className={`text-[10px] min-[360px]:text-xs font-black uppercase tracking-wider text-slate-400`}>
+                          Status
+                        </span>
+                        <span className={`text-[10px] min-[360px]:text-xs font-bold ${isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>
+                          Settled
+                        </span>
                       </div>
-                      <div className="flex-1 flex justify-center px-1">
-                        <button
-                          onClick={(e) => { 
-                            e.stopPropagation(); 
-                            openGlobalAction?.(
-                              "Revert Payment",
-                              "Are you sure this bill has not been paid? Funds will be returned to the original account if you proceed.",
-                              "Revert",
-                              true,
-                              () => handleBillClick?.(bill.id)
-                            );
-                          }}
-                          className={`px-3 min-[360px]:px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 ${isDarkMode ? "bg-red-900/20 border-red-900/50 text-red-400" : "bg-red-50 border-red-200 text-red-600"}`}
-                        >
-                          <RotateCcw size={14} strokeWidth={2} /> Revert
-                        </button>
-                      </div>
-                      <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 transition-colors ${isDarkMode ? "bg-slate-800/50 text-slate-400 border-slate-700" : "bg-slate-50 text-slate-500 border-slate-200"} whitespace-nowrap`}>
-                        {(Number(bill.amount) || 0).toFixed(2)}
+                      <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 transition-colors ${isDarkMode ? "bg-slate-800/50 text-slate-400 border-slate-700" : "bg-slate-50 text-slate-500 border-slate-200"} whitespace-nowrap`}>
+                        ${(Number(bill.amount) || 0).toFixed(2)}
                       </div>
                     </div>
+
+                    {/* LEVEL 3 */}
+                    <div className="flex items-center justify-center w-full">
+                      <button
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          openGlobalAction?.(
+                            "Revert Payment",
+                            "Are you sure this bill has not been paid? Funds will be returned to the original account if you proceed.",
+                            "Revert",
+                            true,
+                            () => handleBillClick?.(bill.id)
+                          );
+                        }}
+                        className={`w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest border transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap ${isDarkMode ? "bg-red-900/20 border-red-900/50 text-red-400" : "bg-red-50 border-red-200 text-red-600"}`}
+                      >
+                        <RotateCcw size={14} strokeWidth={2} /> REVERT
+                      </button>
+                    </div>
+
                   </div>
                 ))}
               </div>

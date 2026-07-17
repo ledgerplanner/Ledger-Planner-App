@@ -22,6 +22,7 @@ export default function Dashboard({
 }) {
   const [isPushEnabled, setIsPushEnabled] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [gaugePhase, setGaugePhase] = useState("start");
   
   // Strict Single-Open Accordion State
   const [activePayday, setActivePayday] = useState("init");
@@ -31,6 +32,15 @@ export default function Dashboard({
     if (typeof window !== "undefined" && "Notification" in window) {
       setIsPushEnabled(Notification.permission === "granted");
     }
+
+    // Ignition Sweep Animation Timers
+    const sweepTimer = setTimeout(() => setGaugePhase("sweep"), 100);
+    const settleTimer = setTimeout(() => setGaugePhase("settle"), 1200);
+
+    return () => {
+      clearTimeout(sweepTimer);
+      clearTimeout(settleTimer);
+    };
   }, []);
 
   const parseLocalDate = (dateStr) => {
@@ -279,6 +289,8 @@ export default function Dashboard({
     return base + (isDarkMode ? "bg-white" : "bg-slate-900");
   };
 
+  const currentGaugeValue = gaugePhase === "start" ? 0 : gaugePhase === "sweep" ? 100 : billsPaidPercentage;
+
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col items-center w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
@@ -289,14 +301,13 @@ export default function Dashboard({
           </span>
         </div>
 
-        {/* 1. UPGRADE: Tactical Radial Gauge (Command Dial) */}
+        {/* 1. UPGRADE: Tactical Radial Gauge (Command Dial) with Ignition Sweep */}
         <div className={`relative w-40 h-40 flex-shrink-0 mt-6 mb-2 transform transition-all duration-700 delay-100 ease-out ${isMounted ? "scale-100 opacity-100" : "scale-90 opacity-0"}`}>
           <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]">
             <g transform="translate(50, 50)">
               {[...Array(24)].map((_, i) => {
-                // 24 segments spanning 270 degrees total (-135 to +135 from top center)
                 const angle = -135 + (i * (270 / 23));
-                const isActive = (i / 23) * 100 <= billsPaidPercentage;
+                const isActive = (i / 23) * 100 <= currentGaugeValue;
                 return (
                   <line
                     key={i}
@@ -308,8 +319,8 @@ export default function Dashboard({
                     strokeWidth="4"
                     strokeLinecap="round"
                     transform={`rotate(${angle})`}
-                    className="transition-colors duration-700"
-                    style={{ transitionDelay: `${i * 20}ms` }}
+                    className="transition-colors duration-500 ease-out"
+                    style={{ transitionDelay: gaugePhase === "sweep" ? `${i * 15}ms` : `${(23 - i) * 10}ms` }}
                   />
                 );
               })}
@@ -559,19 +570,17 @@ export default function Dashboard({
                             <div className="flex items-start justify-between w-full mb-4">
                                <div className="flex items-center gap-3 cursor-pointer flex-1 min-w-0" onClick={() => setSelectedEntry(bill)}>
                                   <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
-                                     {bill?.icon || "🧾"}
+                                    {bill?.icon || "🧾"}
                                   </div>
                                   <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                    <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                                       {bill?.name || "Unnamed"}
-                                    </p>
+                                    <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>{bill?.name || "Unnamed"}</p>
                                     {bill?.isRecurring && (
                                       <RefreshCw size={12} strokeWidth={2.5} className="text-[#10B981] shrink-0" />
                                     )}
                                   </div>
                                </div>
                                <button 
-                                 onClick={(e) => { e.stopPropagation(); setSelectedEntry(bill); }} 
+                                 onClick={(e) => { e.stopPropagation(); setSelectedEntry(bill); }}
                                  className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
                                >
                                   <Edit2 size={16} strokeWidth={2.5} />
@@ -597,15 +606,14 @@ export default function Dashboard({
                                    </div>
                                 </div>
 
-                                <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}></div>
+                                <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-200"}`}></div>
 
                                 {/* INSTALLMENT LEVEL 3: Centered Button */}
                                 <div className="flex items-center justify-center w-full mb-4">
                                     {!bill?.isPaid ? (
                                         <button onClick={(e) => { e.stopPropagation(); handleBillClick(bill?.id); }} className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap" >
                                           <CheckCircle2 size={14} strokeWidth={2.5} />
-                                          <span className="hidden min-[360px]:inline">MARK AS PAID</span>
-                                          <span className="min-[360px]:hidden">PAY</span>
+                                          MARK AS PAID
                                         </button>
                                     ) : (
                                         <div className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center gap-1.5 whitespace-nowrap"><CheckCircle2 size={14} strokeWidth={2.5} /> Paid</div>
@@ -643,15 +651,14 @@ export default function Dashboard({
                                    </div>
                                 </div>
 
-                                <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}></div>
+                                <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-200"}`}></div>
 
                                 {/* STANDARD LEVEL 3: Centered Button */}
                                 <div className="flex items-center justify-center w-full">
                                     {!bill?.isPaid ? (
                                         <button onClick={(e) => { e.stopPropagation(); handleBillClick(bill?.id); }} className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap" >
                                           <CheckCircle2 size={14} strokeWidth={2.5} />
-                                          <span className="hidden min-[360px]:inline">MARK AS PAID</span>
-                                          <span className="min-[360px]:hidden">PAY</span>
+                                          MARK AS PAID
                                         </button>
                                     ) : (
                                         <div className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center gap-1.5 whitespace-nowrap"><CheckCircle2 size={14} strokeWidth={2.5} /> Paid</div>

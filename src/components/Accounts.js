@@ -6,6 +6,8 @@ export default function Accounts({
   userName,
   accounts = [],
   transactions = [],
+  paydayConfig = {},
+  isEntrepreneurMode = false,
   isDarkMode,
   setIsTransferOpen,
   setIsAddAccountOpen,
@@ -47,16 +49,16 @@ export default function Accounts({
   // Animation Triggers
   const [showContent, setShowContent] = useState(false);
   const [showChart, setShowChart] = useState(false);
- 
+  
   // QAB Icon Selector State (for Goal Drawer)
   const [isIconSelectorOpen, setIsIconSelectorOpen] = useState(false);
   const [selectedGoalIcon, setSelectedGoalIcon] = useState("🎯");
   const categoryEmojis = ["🎯", "🏖️", "🚗", "🏠", "💍", "🎓", "👶", "🐶", "🏥", "🛡️", "💰", "🚀", "📱", "💻", "🎮", "✈️", "🏍️", "🎸", "🚲", "⛵"];
- 
+  
   // === ARCHITECTURAL ACCOUNT BOUNDARY SEPARATION ===
   const liquidAccounts = accounts.filter(a => !a.isGoal);
   const goalAccounts = accounts.filter(a => a.isGoal);
- 
+  
   // === ITEM #1: PURE LIQUID NET WORTH CALCULATION MATRIX ===
   const netWorth = liquidAccounts.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
   
@@ -79,16 +81,16 @@ export default function Accounts({
       inceptionDate = new Date(Math.min(...validDates));
     }
   }
- 
+  
   let monthsToGenerate = 6;
   if (timeframe === "1M") monthsToGenerate = 2;
   if (timeframe === "3M") monthsToGenerate = 3;
   if (timeframe === "6M") monthsToGenerate = 6;
   if (timeframe === "YTD") monthsToGenerate = today.getMonth() + 1;
- 
+  
   const historyData = [];
   let currentCalcNW = netWorth;
- 
+  
   for(let i = 0; i < monthsToGenerate; i++) {
     const targetDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
     const monthName = targetDate.toLocaleString('default', { month: 'short' });
@@ -116,12 +118,12 @@ export default function Accounts({
           }, 0);
           
           currentCalcNW -= netCashFlowMonthAhead;
- 
+
           let displayVal = currentCalcNW;
           if (tYear < inceptionDate.getFullYear() || (tYear === inceptionDate.getFullYear() && tMonth < inceptionDate.getMonth())) {
               displayVal = 0;
           }
- 
+
           historyData.unshift({ label: monthName, val: displayVal, month: tMonth, year: tYear });
         }
     }
@@ -130,18 +132,58 @@ export default function Accounts({
   useEffect(() => {
     setActiveChartNode(historyData.length - 1);
   }, [timeframe, historyData.length]);
- 
+  
   // Entrance Animation Sequence
   useEffect(() => {
     const t1 = setTimeout(() => setShowContent(true), 100);
     const t2 = setTimeout(() => setShowChart(true), 300);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
- 
+  
   const maxChartVal = Math.max(...historyData.map((d) => Math.abs(d.val)), 1);
   const activeDataPoint = historyData[activeChartNode] || historyData[historyData.length - 1];
   const isNetWorthNegative = activeDataPoint?.val < 0;
- 
+
+  // === SURGICAL INJECTION: INCOME PER DAY DECAY ENGINE ===
+  const midnightMillis = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  let daysUntilNextPayday = 0;
+  let hasValidPayday = false;
+
+  if (!isEntrepreneurMode && paydayConfig) {
+    const freq = paydayConfig.frequency || "Weekly";
+    let allowedPaydays = [];
+    if (freq === "Monthly") allowedPaydays = ["Payday 1"];
+    else if (freq === "Semi-Monthly") allowedPaydays = ["Payday 1", "Payday 2"];
+    else if (freq === "Bi-Weekly") allowedPaydays = ["Payday 1", "Payday 2", "Payday 3"];
+    else allowedPaydays = ["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"];
+
+    const activePaydaysWithDates = allowedPaydays
+      .filter(pd => paydayConfig[pd]?.date)
+      .map(pd => {
+        const parts = paydayConfig[pd].date.split("-");
+        if (parts.length === 3) {
+          return new Date(parts[0], parseInt(parts[1], 10) - 1, parts[2]).getTime();
+        }
+        return 0;
+      })
+      .filter(t => t > 0)
+      .sort((a, b) => a - b);
+
+    const upcoming = activePaydaysWithDates.filter(millis => millis >= midnightMillis);
+    
+    if (upcoming.length > 0) {
+      hasValidPayday = true;
+      daysUntilNextPayday = Math.ceil((upcoming[0] - midnightMillis) / (1000 * 60 * 60 * 24));
+    }
+  }
+
+  let calculatedDailyRate = 0;
+  if (hasValidPayday) {
+    const divisor = Math.max(1, daysUntilNextPayday - 1);
+    calculatedDailyRate = isNetWorthNegative ? 0 : (activeDataPoint?.val || 0) / divisor;
+  }
+  // === END SURGICAL INJECTION ===
+
   const createSpline = (data, maxVal) => {
     if (data.length < 2) return "";
     let path = "";
@@ -159,9 +201,9 @@ export default function Accounts({
     });
     return path;
   };
- 
+  
   const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
- 
+  
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[0_12px_24px_rgba(24,119,242,0.15)]"}`}>
@@ -171,16 +213,27 @@ export default function Accounts({
             Total Wealth Blueprint
           </span>
         </div>
- 
-        <div className={`flex justify-between items-end mb-4 transform transition-all duration-700 delay-200 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+  
+        {/* SURGICAL INJECTION: Centered Hero Display & Dynamic Badge */}
+        <div className={`flex flex-col items-center justify-center text-center mb-4 w-full transform transition-all duration-700 delay-200 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           <div>
             <p className="text-[10px] font-black uppercase tracking-widest mb-1 text-slate-400">Liquid Net Worth • <span className={`${isNetWorthNegative ? "text-red-500" : "text-[#1877F2]"}`}>{activeDataPoint?.label} {activeDataPoint?.year}</span></p>
             <p className={`text-4xl font-black tracking-tighter transition-colors duration-300 ${isNetWorthNegative ? "text-red-500" : activeDataPoint?.val > 0 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
               {isNetWorthNegative ? "-" : ""}${Math.abs(activeDataPoint?.val || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
+
+          {!isEntrepreneurMode && hasValidPayday && (
+            <div className={`mt-3 px-4 py-2 rounded-xl border shadow-sm font-black text-[10px] uppercase tracking-widest transition-all ${
+              isNetWorthNegative 
+                ? (isDarkMode ? 'bg-slate-500/10 border-slate-700/80 text-[#64748B]' : 'bg-slate-50 border-slate-200 text-[#64748B]')
+                : (isDarkMode ? 'bg-emerald-500/10 border-emerald-900/50 text-[#10B981]' : 'bg-emerald-50 border-emerald-200 text-[#10B981]')
+            }`}>
+              That's ${Math.max(0, calculatedDailyRate).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / Day Until PayDay
+            </div>
+          )}
         </div>
- 
+  
         <div className={`flex justify-center w-full gap-2 transform transition-all duration-700 delay-400 cubic-bezier(0.16, 1, 0.3, 1) ${showContent ? "opacity-100 translate-x-0" : "opacity-0 translate-x-12"}`}>
           {["1M", "3M", "6M", "YTD"].map((tf) => (
             <button
@@ -193,7 +246,7 @@ export default function Accounts({
           ))}
         </div>
       </div>
- 
+  
       <div className={`relative mt-4 transform transition-all duration-1000 ease-out origin-bottom ${showChart ? "opacity-100 scale-y-100" : "opacity-0 scale-y-95"}`}>
         <div className="w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
           <div 
@@ -265,7 +318,7 @@ export default function Accounts({
       </div>
     </div>
   );
- 
+  
   return (
     <div className={`pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
         
@@ -280,7 +333,7 @@ export default function Accounts({
         `}</style>
         {renderHeroShell(`${userName}'s Accounts`, graphicContent)}
       </div>
- 
+  
       <main className="px-6 space-y-8 mt-4">
 
         {/* === SURGICAL INJECTION: SMARTCREDIT NATIVE BANNER === */}
@@ -352,7 +405,7 @@ export default function Accounts({
                               <Edit2 size={16} strokeWidth={2.5} />
                            </button>
                         </div>
- 
+  
                         <div className="flex items-center justify-between gap-2">
                            <div className="flex flex-col shrink-0">
                               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
@@ -369,7 +422,7 @@ export default function Accounts({
                                {isNegative ? "-" : ""}${Math.abs(acc.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                            </div>
                         </div>
- 
+  
                     </div>
                     );
                 })}
@@ -377,9 +430,9 @@ export default function Accounts({
             )}
           </div>
         </div>
- 
+  
         <div className={`border-t ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
- 
+  
         <div className="space-y-4">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">My Goals</h3>
           <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
@@ -395,14 +448,14 @@ export default function Accounts({
                     
                     const isPositive = balanceAmt > 0;
                     const isNegative = balanceAmt < 0;
- 
+  
                     if (!goal.hasCelebratedOnce && isComplete) {
                       goal.hasCelebratedOnce = true;
                       if (typeof triggerCelebration === "function") {
                         setTimeout(() => triggerCelebration(), 250);
                       }
                     }
- 
+  
                     return (
                     <div key={goal.id} className={`flex flex-col p-5 rounded-[1.5rem] border shadow-sm transition-all ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
                         
@@ -425,7 +478,7 @@ export default function Accounts({
                               <Edit2 size={16} strokeWidth={2.5} />
                            </button>
                         </div>
- 
+  
                         <div className="flex items-end justify-between gap-2 mb-3">
                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Current Balance</span>
                            <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 transition-all whitespace-nowrap ${
@@ -440,17 +493,17 @@ export default function Accounts({
                                ${balanceAmt.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                            </div>
                         </div>
- 
+  
                         <div className={`w-full h-2.5 rounded-full overflow-hidden border mb-2 ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-slate-100 border-slate-200"}`}>
                              <div className="h-full transition-all duration-1000 bg-[#1877F2]" style={{ width: `${progressPct}%` }}></div>
                         </div>
- 
+  
                         {goal.targetDate && (
                            <div className="flex justify-center items-center mt-2 mb-2 w-full">
                               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Target Goal Date: {new Date(goal.targetDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}</span>
                            </div>
                         )}
- 
+  
                         {balanceAmt > 0 && (
                           <button 
                             onClick={(e) => {
@@ -463,7 +516,7 @@ export default function Accounts({
                             <CheckCircle2 size={14} strokeWidth={3} /> Cash Out From This Goal
                           </button>
                         )}
- 
+  
                     </div>
                     );
                 })}
@@ -471,9 +524,9 @@ export default function Accounts({
             )}
           </div>
         </div>
- 
+  
         <div className={`border-t ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
- 
+  
         <div className="flex flex-col gap-3">
           <div className="grid grid-cols-2 gap-3">
             <button onClick={() => setIsAddAccountOpen(true)} className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#10B981] text-white shadow-emerald-900/20" : "bg-[#10B981] text-white shadow-emerald-500/30"}`}>
@@ -487,9 +540,9 @@ export default function Accounts({
             <Target size={18} /> Add Goal
           </button>
         </div>
- 
+  
       </main>
- 
+  
       {/* ICON DRAWER WRAPPER */}
       {isIconSelectorOpen && (
          <div className={`absolute inset-0 z-[150] flex flex-col rounded-t-[2.5rem] lg:rounded-[2.5rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>

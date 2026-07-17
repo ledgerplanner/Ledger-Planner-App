@@ -289,60 +289,36 @@ export default function Dashboard({
           </span>
         </div>
 
-        {/* 1. UPGRADE: The Momentum Tracker (Pulse Wave) */}
-        <div className={`relative w-32 h-32 flex-shrink-0 mt-4 mb-2 transform transition-all duration-700 delay-100 ease-out ${isMounted ? "scale-100 opacity-100" : "scale-90 opacity-0"}`}>
-          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-xl overflow-visible">
-            <defs>
-              <linearGradient id="waveGlow" x1="0%" y1="100%" x2="0%" y2="0%">
-                <stop offset="0%" stopColor="#10B981" />
-                <stop offset="100%" stopColor="#059669" />
-              </linearGradient>
-            </defs>
-            <style>{`
-              @keyframes momentumPulse {
-                0%, 100% { transform: scaleY(0.3); }
-                50% { transform: scaleY(1); }
-              }
-              .wave-bar {
-                transform-origin: bottom;
-                /* Dynamic Speed: Pulses faster as percentage climbs closer to 100% */
-                animation: momentumPulse ${Math.max(0.6, 2.5 - (billsPaidPercentage / 50))}s ease-in-out infinite;
-              }
-            `}</style>
-            
-            <g transform="translate(0, 90)">
-              {/* Dynamic Wave Generation */}
-              {[...Array(5)].map((_, i) => {
-                const maxBarHeight = 70; 
-                // Core Physics: Scale height dynamically based on completion %
-                const heightScale = Math.max(0.1, billsPaidPercentage / 100);
-                // Aesthetic Bell Curve to make the center bars peak higher
-                const curveFactor = 1 - Math.abs(2 - i) * 0.15;
-                const dynamicHeight = maxBarHeight * heightScale * curveFactor;
-
+        {/* 1. UPGRADE: Tactical Radial Gauge (Command Dial) */}
+        <div className={`relative w-40 h-40 flex-shrink-0 mt-6 mb-2 transform transition-all duration-700 delay-100 ease-out ${isMounted ? "scale-100 opacity-100" : "scale-90 opacity-0"}`}>
+          <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+            <g transform="translate(50, 50)">
+              {[...Array(24)].map((_, i) => {
+                // 24 segments spanning 270 degrees total (-135 to +135 from top center)
+                const angle = -135 + (i * (270 / 23));
+                const isActive = (i / 23) * 100 <= billsPaidPercentage;
                 return (
-                  <rect
+                  <line
                     key={i}
-                    x={18 + i * 14}
-                    y={-dynamicHeight}
-                    width="8"
-                    height={dynamicHeight}
-                    rx="4"
-                    fill="url(#waveGlow)"
-                    className="wave-bar"
-                    style={{
-                      animationDelay: `${i * 0.15}s`,
-                      transition: "height 1s cubic-bezier(0.16, 1, 0.3, 1), y 1s cubic-bezier(0.16, 1, 0.3, 1)"
-                    }}
+                    x1="0"
+                    y1="-36"
+                    x2="0"
+                    y2="-46"
+                    stroke={isActive ? "#10B981" : (isDarkMode ? "#334155" : "#E2E8F0")}
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                    transform={`rotate(${angle})`}
+                    className="transition-colors duration-700"
+                    style={{ transitionDelay: `${i * 20}ms` }}
                   />
                 );
               })}
             </g>
           </svg>
           
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-1 text-center pointer-events-none drop-shadow-md">
-            <span className={`text-[8px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>Bills Paid</span>
-            <span className={`text-2xl font-black leading-none mt-0.5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{Math.round(billsPaidPercentage)}%</span>
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-1 text-center pointer-events-none mt-3">
+            <span className={`text-4xl font-black tracking-tighter leading-none ${isDarkMode ? "text-white" : "text-slate-900"}`}>{Math.round(billsPaidPercentage)}%</span>
+            <span className={`text-[9px] font-black uppercase tracking-widest mt-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Bills Paid</span>
           </div>
         </div>
        
@@ -605,8 +581,8 @@ export default function Dashboard({
                             {/* DYNAMIC 3-LEVEL LAYOUT: Standard vs. Installment */}
                             {bill?.isInstallment ? (
                               <>
-                                {/* INSTALLMENT LEVEL 2: Left Status/Date, Center Button, Right Amount */}
-                                <div className="flex items-center justify-between gap-1 min-[360px]:gap-2 w-full">
+                                {/* INSTALLMENT LEVEL 2: Left Status/Date, Right Amount */}
+                                <div className="flex items-center justify-between w-full">
                                    <div className="flex flex-col shrink-0">
                                       <span className={`text-[10px] min-[360px]:text-xs font-black uppercase tracking-wider ${(bill?.isOverdue || bill?.payday === "Due Now") ? "text-red-500" : "text-slate-400"}`}>
                                          {bill?.isOverdue ? "Overdue" : bill?.payday === "Due Now" ? "Due Now" : "Due"}
@@ -616,25 +592,28 @@ export default function Dashboard({
                                       </span>
                                    </div>
                                    
-                                   <div className="flex-1 flex justify-center px-1">
-                                      {!bill?.isPaid ? (
-                                          <button onClick={(e) => { e.stopPropagation(); handleBillClick(bill?.id); }} className="px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0" >
-                                            <CheckCircle2 size={14} />
-                                            <span className="hidden min-[360px]:inline">MARK AS PAID</span>
-                                            <span className="min-[360px]:hidden">PAY</span>
-                                          </button>
-                                      ) : (
-                                          <div className="px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0"><CheckCircle2 size={14} /> Paid</div>
-                                      )}
-                                   </div>
-                                   
                                    <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 text-[#1877F2] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] whitespace-nowrap`}>
                                       ${(Number(bill?.amount) || 0).toFixed(2)}
                                    </div>
                                 </div>
 
-                                {/* INSTALLMENT LEVEL 3: Progress Bar */}
-                                <div className={`mt-4 pt-3 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
+                                <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}></div>
+
+                                {/* INSTALLMENT LEVEL 3: Centered Button */}
+                                <div className="flex items-center justify-center w-full mb-4">
+                                    {!bill?.isPaid ? (
+                                        <button onClick={(e) => { e.stopPropagation(); handleBillClick(bill?.id); }} className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap" >
+                                          <CheckCircle2 size={14} strokeWidth={2.5} />
+                                          <span className="hidden min-[360px]:inline">MARK AS PAID</span>
+                                          <span className="min-[360px]:hidden">PAY</span>
+                                        </button>
+                                    ) : (
+                                        <div className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center gap-1.5 whitespace-nowrap"><CheckCircle2 size={14} strokeWidth={2.5} /> Paid</div>
+                                    )}
+                                </div>
+
+                                {/* INSTALLMENT LEVEL 4: Progress Bar */}
+                                <div className="w-full">
                                      <div className="flex justify-between items-end mb-2">
                                          <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Installment Plan</span>
                                          <span className="text-xs sm:text-sm font-black text-slate-600 dark:text-slate-300">
@@ -649,7 +628,7 @@ export default function Dashboard({
                             ) : (
                               <>
                                 {/* STANDARD LEVEL 2: Left Status/Date, Right Amount */}
-                                <div className="flex items-center justify-between w-full mb-4">
+                                <div className="flex items-center justify-between w-full">
                                    <div className="flex flex-col shrink-0">
                                       <span className={`text-[10px] min-[360px]:text-xs font-black uppercase tracking-wider ${(bill?.isOverdue || bill?.payday === "Due Now") ? "text-red-500" : "text-slate-400"}`}>
                                          {bill?.isOverdue ? "Overdue" : bill?.payday === "Due Now" ? "Due Now" : "Due"}
@@ -664,15 +643,18 @@ export default function Dashboard({
                                    </div>
                                 </div>
 
+                                <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}></div>
+
                                 {/* STANDARD LEVEL 3: Centered Button */}
                                 <div className="flex items-center justify-center w-full">
                                     {!bill?.isPaid ? (
                                         <button onClick={(e) => { e.stopPropagation(); handleBillClick(bill?.id); }} className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap" >
-                                          <CheckCircle2 size={14} />
-                                          MARK AS PAID
+                                          <CheckCircle2 size={14} strokeWidth={2.5} />
+                                          <span className="hidden min-[360px]:inline">MARK AS PAID</span>
+                                          <span className="min-[360px]:hidden">PAY</span>
                                         </button>
                                     ) : (
-                                        <div className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center gap-1.5 whitespace-nowrap"><CheckCircle2 size={14} /> Paid</div>
+                                        <div className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center gap-1.5 whitespace-nowrap"><CheckCircle2 size={14} strokeWidth={2.5} /> Paid</div>
                                     )}
                                 </div>
                               </>

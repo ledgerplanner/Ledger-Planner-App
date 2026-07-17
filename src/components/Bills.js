@@ -21,6 +21,7 @@ export default function Bills({
   openGlobalAction
 }) {
   const [isMounted, setIsMounted] = useState(false);
+  const [gaugePhase, setGaugePhase] = useState("start");
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth());
   const [expandedMonthIdx, setExpandedMonthIdx] = useState(() => new Date().getMonth());
   
@@ -42,6 +43,9 @@ export default function Bills({
     const currentMonthIndex = today.getMonth();
     setSelectedMonth(currentMonthIndex);
     setExpandedMonthIdx(currentMonthIndex);
+
+    const sweepTimer = setTimeout(() => setGaugePhase("sweep"), 100);
+    const settleTimer = setTimeout(() => setGaugePhase("settle"), 1200);
 
     const centerActiveMonthCard = () => {
       if (horizontalScrollRef.current) {
@@ -67,7 +71,12 @@ export default function Bills({
       setTimeout(centerActiveMonthCard, 350);
     });
     window.addEventListener("resize", centerActiveMonthCard);
-    return () => window.removeEventListener("resize", centerActiveMonthCard);
+    
+    return () => {
+      window.removeEventListener("resize", centerActiveMonthCard);
+      clearTimeout(sweepTimer);
+      clearTimeout(settleTimer);
+    };
   }, []);
 
   const currentYear = new Date().getFullYear();
@@ -245,6 +254,8 @@ export default function Bills({
   const dueThisMonthText = `DUE IN ${displayMonthLabel}`;
   const dueThisYearText = `DUE IN ${currentYear}`;
 
+  const currentGaugeValue = gaugePhase === "start" ? 0 : gaugePhase === "sweep" ? 100 : annualProgressPercentage;
+
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col items-center w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
@@ -255,23 +266,34 @@ export default function Bills({
           </span>
         </div>
 
-        {/* 1. Animated Ring */}
-        <div className="relative w-32 h-32 flex-shrink-0 mt-4 mb-2">
-          <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
-            <defs>
-              <linearGradient id="billGlow" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#10B981" />
-                <stop offset="100%" stopColor="#059669" />
-              </linearGradient>
-            </defs>
-            <circle cx="50" cy="50" r="40" fill="transparent" stroke={isDarkMode ? "#1E293B" : "rgba(226, 232, 240, 0.9)"} strokeWidth="10" />
-            <circle cx="50" cy="50" r="40" fill="transparent" stroke="url(#billGlow)" strokeWidth="10" strokeLinecap="round" strokeDasharray={251.2} strokeDashoffset={isMounted ? (251.2 - (251.2 * annualProgressPercentage) / 100) : 251.2} className="transition-all duration-1000 ease-out" />
+        {/* 1. Tactical Radial Gauge (Command Dial) with Ignition Sweep */}
+        <div className={`relative w-32 h-32 flex-shrink-0 mt-4 mb-2 transform transition-all duration-700 delay-100 ease-out ${isMounted ? "scale-100 opacity-100" : "scale-90 opacity-0"}`}>
+          <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+            <g transform="translate(50, 50)">
+              {[...Array(24)].map((_, i) => {
+                const angle = -135 + (i * (270 / 23));
+                const isActive = (i / 23) * 100 <= currentGaugeValue;
+                return (
+                  <line
+                    key={i}
+                    x1="0"
+                    y1="-36"
+                    x2="0"
+                    y2="-46"
+                    stroke={isActive ? "#10B981" : (isDarkMode ? "#334155" : "#E2E8F0")}
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                    transform={`rotate(${angle})`}
+                    className="transition-colors duration-500 ease-out"
+                    style={{ transitionDelay: gaugePhase === "sweep" ? `${i * 15}ms` : `${(23 - i) * 10}ms` }}
+                  />
+                );
+              })}
+            </g>
           </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-1 text-center">
-            <span className={`font-black tracking-tighter leading-none text-2xl ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-              {Math.round(annualProgressPercentage)}%
-            </span>
-            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-0.5">COMPLETE</span>
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-1 text-center pointer-events-none mt-2">
+            <span className={`text-2xl font-black tracking-tighter leading-none ${isDarkMode ? "text-white" : "text-slate-900"}`}>{Math.round(annualProgressPercentage)}%</span>
+            <span className={`text-[8px] font-black uppercase tracking-widest mt-0.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>BILLS PAID</span>
           </div>
         </div>
 
@@ -582,14 +604,13 @@ export default function Bills({
                           </div>
                         </div>
 
-                        <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}></div>
+                        <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-200"}`}></div>
 
                         {/* INSTALLMENT LEVEL 3 */}
                         <div className="flex items-center justify-center w-full mb-4">
                           <button onClick={(e) => { e.stopPropagation(); handleBillClick?.(bill.id); }} className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap">
                             <CheckCircle2 size={14} strokeWidth={2.5} />
-                            <span className="hidden min-[360px]:inline">MARK AS PAID</span>
-                            <span className="min-[360px]:hidden">PAY</span>
+                            MARK AS PAID
                           </button>
                         </div>
 
@@ -623,14 +644,13 @@ export default function Bills({
                           </div>
                         </div>
 
-                        <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}></div>
+                        <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-200"}`}></div>
 
                         {/* STANDARD LEVEL 3 */}
                         <div className="flex items-center justify-center w-full">
                           <button onClick={(e) => { e.stopPropagation(); handleBillClick?.(bill.id); }} className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap">
                             <CheckCircle2 size={14} strokeWidth={2.5} />
-                            <span className="hidden min-[360px]:inline">MARK AS PAID</span>
-                            <span className="min-[360px]:hidden">PAY</span>
+                            MARK AS PAID
                           </button>
                         </div>
                       </>
@@ -747,7 +767,7 @@ export default function Bills({
                                     </div>
                                   </div>
 
-                                  <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}></div>
+                                  <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-200"}`}></div>
 
                                   {/* INSTALLMENT LEVEL 3 */}
                                   <div className="flex items-center justify-center w-full mb-4">
@@ -758,10 +778,10 @@ export default function Bills({
                                         } else {
                                           handleBillClick?.(bill.id); 
                                         }
-                                      }} className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap">
+                                      }} 
+                                      className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap">
                                       <CheckCircle2 size={14} strokeWidth={2.5} />
-                                      <span className="hidden min-[360px]:inline">MARK AS PAID</span>
-                                      <span className="min-[360px]:hidden">PAY</span>
+                                      MARK AS PAID
                                     </button>
                                   </div>
 
@@ -795,7 +815,7 @@ export default function Bills({
                                     </div>
                                   </div>
 
-                                  <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}></div>
+                                  <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-200"}`}></div>
 
                                   {/* STANDARD LEVEL 3 */}
                                   <div className="flex items-center justify-center w-full">
@@ -808,8 +828,7 @@ export default function Bills({
                                         }
                                       }} className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap">
                                       <CheckCircle2 size={14} strokeWidth={2.5} />
-                                      <span className="hidden min-[360px]:inline">MARK AS PAID</span>
-                                      <span className="min-[360px]:hidden">PAY</span>
+                                      MARK AS PAID
                                     </button>
                                   </div>
                                 </>
@@ -900,7 +919,7 @@ export default function Bills({
                                 </div>
                               </div>
 
-                              <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}></div>
+                              <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-200"}`}></div>
 
                               {/* INSTALLMENT LEVEL 3 */}
                               <div className="flex items-center justify-center w-full mb-4">
@@ -912,10 +931,9 @@ export default function Bills({
                                       handleBillClick?.(bill.id); 
                                     }
                                   }} 
-                                  className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap">
+                                  className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap">
                                   <CheckCircle2 size={14} strokeWidth={2.5} />
-                                  <span className="hidden min-[360px]:inline">MARK AS PAID</span>
-                                  <span className="min-[360px]:hidden">PAY</span>
+                                  MARK AS PAID
                                 </button>
                               </div>
 
@@ -949,7 +967,7 @@ export default function Bills({
                                 </div>
                               </div>
 
-                              <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}></div>
+                              <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-200"}`}></div>
 
                               {/* STANDARD LEVEL 3 */}
                               <div className="flex items-center justify-center w-full">
@@ -962,8 +980,7 @@ export default function Bills({
                                     }
                                   }} className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap">
                                   <CheckCircle2 size={14} strokeWidth={2.5} />
-                                  <span className="hidden min-[360px]:inline">MARK AS PAID</span>
-                                  <span className="min-[360px]:hidden">PAY</span>
+                                  MARK AS PAID
                                 </button>
                               </div>
                             </>

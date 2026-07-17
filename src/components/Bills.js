@@ -366,13 +366,13 @@ export default function Bills({
         {renderHeroShell(`${userName}'s Bills`, graphicContent)}
       </div>
 
-      <div className="px-6 relative z-10 mt-6 mb-4">
+      <div className={`mx-6 mt-6 mb-4 border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
+
+      <div className="px-6 relative z-10 mb-5">
         <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">
           {currentYear} MONTHLY OVERVIEWS
         </h3>
       </div>
-      
-      <div className={`mx-6 mb-5 border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
       
       <div ref={horizontalScrollRef} className="w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-6 relative z-10 pt-2">
         <div className="flex gap-4 pr-6 pb-2 min-h-[170px] snap-x snap-mandatory">
@@ -568,7 +568,7 @@ export default function Bills({
                     {bill.isInstallment && !bill.isPaid ? (
                       <>
                         {/* INSTALLMENT LEVEL 2 */}
-                        <div className="flex items-center justify-between gap-1 min-[360px]:gap-2 w-full">
+                        <div className="flex items-center justify-between w-full">
                           <div className="flex flex-col shrink-0">
                             <span className={`text-[10px] min-[360px]:text-xs font-black uppercase tracking-wider text-red-500`}>
                               {bill.isOverdue ? "OVERDUE" : "DUE NOW"}
@@ -577,19 +577,24 @@ export default function Bills({
                               {bill.fullDate || "TBD"}
                             </span>
                           </div>
-                          <div className="flex-1 flex justify-center px-1">
-                            <button onClick={(e) => { e.stopPropagation(); handleBillClick?.(bill.id); }} className="px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0">
-                              <CheckCircle2 size={14} strokeWidth={2.5} />
-                              <span className="hidden min-[360px]:inline">MARK AS PAID</span>
-                              <span className="min-[360px]:hidden">PAY</span>
-                            </button>
-                          </div>
                           <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
                             ${(Number(bill.amount) || 0).toFixed(2)}
                           </div>
                         </div>
+
+                        <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}></div>
+
                         {/* INSTALLMENT LEVEL 3 */}
-                        <div className="mt-4 pt-3 border-t border-slate-200 w-full animate-fade-in">
+                        <div className="flex items-center justify-center w-full mb-4">
+                          <button onClick={(e) => { e.stopPropagation(); handleBillClick?.(bill.id); }} className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap">
+                            <CheckCircle2 size={14} strokeWidth={2.5} />
+                            <span className="hidden min-[360px]:inline">MARK AS PAID</span>
+                            <span className="min-[360px]:hidden">PAY</span>
+                          </button>
+                        </div>
+
+                        {/* INSTALLMENT LEVEL 4 */}
+                        <div className="w-full">
                           <div className="flex justify-between items-end mb-2 px-1">
                             <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Installment Plan</span>
                             <span className="text-xs sm:text-sm font-black text-slate-600 dark:text-slate-300">
@@ -604,7 +609,7 @@ export default function Bills({
                     ) : (
                       <>
                         {/* STANDARD LEVEL 2 */}
-                        <div className="flex items-center justify-between w-full mb-4">
+                        <div className="flex items-center justify-between w-full">
                           <div className="flex flex-col shrink-0">
                             <span className={`text-[10px] min-[360px]:text-xs font-black uppercase tracking-wider text-red-500`}>
                               {bill.isOverdue ? "OVERDUE" : "DUE NOW"}
@@ -617,11 +622,15 @@ export default function Bills({
                             ${(Number(bill.amount) || 0).toFixed(2)}
                           </div>
                         </div>
+
+                        <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}></div>
+
                         {/* STANDARD LEVEL 3 */}
                         <div className="flex items-center justify-center w-full">
                           <button onClick={(e) => { e.stopPropagation(); handleBillClick?.(bill.id); }} className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap">
                             <CheckCircle2 size={14} strokeWidth={2.5} />
-                            MARK AS PAID
+                            <span className="hidden min-[360px]:inline">MARK AS PAID</span>
+                            <span className="min-[360px]:hidden">PAY</span>
                           </button>
                         </div>
                       </>
@@ -724,7 +733,7 @@ export default function Bills({
                               {bill.isInstallment && !bill.isPaid ? (
                                 <>
                                   {/* INSTALLMENT LEVEL 2 */}
-                                  <div className="flex items-center justify-between gap-1 min-[360px]:gap-2 w-full">
+                                  <div className="flex items-center justify-between w-full">
                                     <div className="flex flex-col shrink-0">
                                       <span className={`text-[10px] min-[360px]:text-xs font-black uppercase tracking-wider ${statusColorClass}`}>
                                         {displayStatusText}
@@ -733,27 +742,31 @@ export default function Bills({
                                         {bill.fullDate || "TBD"}
                                       </span>
                                     </div>
-                                    <div className="flex-1 flex justify-center px-1">
-                                      <button onClick={(e) => { 
-                                          e.stopPropagation(); 
-                                          if (useRecurringLabel && isFutureMonth) {
-                                            setChronologicalLock({ isOpen: true, billName: bill.name });
-                                          } else {
-                                            handleBillClick?.(bill.id); 
-                                          }
-                                        }} 
-                                        className="px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0">
-                                        <CheckCircle2 size={14} strokeWidth={2.5} />
-                                        <span className="hidden min-[360px]:inline">MARK AS PAID</span>
-                                        <span className="min-[360px]:hidden">PAY</span>
-                                      </button>
-                                    </div>
                                     <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
                                       ${(Number(bill.amount) || 0).toFixed(2)}
                                     </div>
                                   </div>
+
+                                  <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}></div>
+
                                   {/* INSTALLMENT LEVEL 3 */}
-                                  <div className="mt-4 pt-3 border-t border-slate-200 w-full animate-fade-in">
+                                  <div className="flex items-center justify-center w-full mb-4">
+                                    <button onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        if (useRecurringLabel && isFutureMonth) {
+                                          setChronologicalLock({ isOpen: true, billName: bill.name });
+                                        } else {
+                                          handleBillClick?.(bill.id); 
+                                        }
+                                      }} className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap">
+                                      <CheckCircle2 size={14} strokeWidth={2.5} />
+                                      <span className="hidden min-[360px]:inline">MARK AS PAID</span>
+                                      <span className="min-[360px]:hidden">PAY</span>
+                                    </button>
+                                  </div>
+
+                                  {/* INSTALLMENT LEVEL 4 */}
+                                  <div className="w-full">
                                     <div className="flex justify-between items-end mb-2 px-1">
                                       <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Installment Plan</span>
                                       <span className="text-xs sm:text-sm font-black text-slate-600 dark:text-slate-300">
@@ -768,7 +781,7 @@ export default function Bills({
                               ) : (
                                 <>
                                   {/* STANDARD LEVEL 2 */}
-                                  <div className="flex items-center justify-between w-full mb-4">
+                                  <div className="flex items-center justify-between w-full">
                                     <div className="flex flex-col shrink-0">
                                       <span className={`text-[10px] min-[360px]:text-xs font-black uppercase tracking-wider ${statusColorClass}`}>
                                         {displayStatusText}
@@ -781,6 +794,9 @@ export default function Bills({
                                       ${(Number(bill.amount) || 0).toFixed(2)}
                                     </div>
                                   </div>
+
+                                  <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}></div>
+
                                   {/* STANDARD LEVEL 3 */}
                                   <div className="flex items-center justify-center w-full">
                                     <button onClick={(e) => { 
@@ -792,7 +808,8 @@ export default function Bills({
                                         }
                                       }} className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap">
                                       <CheckCircle2 size={14} strokeWidth={2.5} />
-                                      MARK AS PAID
+                                      <span className="hidden min-[360px]:inline">MARK AS PAID</span>
+                                      <span className="min-[360px]:hidden">PAY</span>
                                     </button>
                                   </div>
                                 </>
@@ -869,7 +886,7 @@ export default function Bills({
                           {bill.isInstallment && !bill.isPaid ? (
                             <>
                               {/* INSTALLMENT LEVEL 2 */}
-                              <div className="flex items-center justify-between gap-1 min-[360px]:gap-2 w-full">
+                              <div className="flex items-center justify-between w-full">
                                 <div className="flex flex-col shrink-0">
                                   <span className="text-[10px] min-[360px]:text-xs font-black uppercase tracking-wider text-slate-400">
                                     {useRecurringLabel ? "RECURRING" : "DUE"}
@@ -878,27 +895,32 @@ export default function Bills({
                                     {bill.fullDate || "TBD"}
                                   </span>
                                 </div>
-                                <div className="flex-1 flex justify-center px-1">
-                                  <button onClick={(e) => { 
-                                      e.stopPropagation(); 
-                                      if (useRecurringLabel) {
-                                        setChronologicalLock({ isOpen: true, billName: bill.name });
-                                      } else {
-                                        handleBillClick?.(bill.id); 
-                                      }
-                                    }} 
-                                    className="px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap shrink-0">
-                                    <CheckCircle2 size={14} strokeWidth={2.5} />
-                                    <span className="hidden min-[360px]:inline">MARK AS PAID</span>
-                                    <span className="min-[360px]:hidden">PAY</span>
-                                  </button>
-                                </div>
                                 <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
                                   ${(Number(bill.amount) || 0).toFixed(2)}
                                 </div>
                               </div>
+
+                              <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}></div>
+
                               {/* INSTALLMENT LEVEL 3 */}
-                              <div className="mt-4 pt-3 border-t border-slate-200 w-full animate-fade-in">
+                              <div className="flex items-center justify-center w-full mb-4">
+                                <button onClick={(e) => { 
+                                    e.stopPropagation(); 
+                                    if (useRecurringLabel) {
+                                      setChronologicalLock({ isOpen: true, billName: bill.name });
+                                    } else {
+                                      handleBillClick?.(bill.id); 
+                                    }
+                                  }} 
+                                  className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1 min-[360px]:gap-1.5 whitespace-nowrap">
+                                  <CheckCircle2 size={14} strokeWidth={2.5} />
+                                  <span className="hidden min-[360px]:inline">MARK AS PAID</span>
+                                  <span className="min-[360px]:hidden">PAY</span>
+                                </button>
+                              </div>
+
+                              {/* INSTALLMENT LEVEL 4 */}
+                              <div className="w-full">
                                 <div className="flex justify-between items-end mb-2 px-1">
                                   <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Installment Plan</span>
                                   <span className="text-xs sm:text-sm font-black text-slate-600 dark:text-slate-300">
@@ -913,7 +935,7 @@ export default function Bills({
                           ) : (
                             <>
                               {/* STANDARD LEVEL 2 */}
-                              <div className="flex items-center justify-between w-full mb-4">
+                              <div className="flex items-center justify-between w-full">
                                 <div className="flex flex-col shrink-0">
                                   <span className="text-[10px] min-[360px]:text-xs font-black uppercase tracking-wider text-slate-400">
                                     {useRecurringLabel ? "RECURRING" : "DUE"}
@@ -926,6 +948,9 @@ export default function Bills({
                                   ${(Number(bill.amount) || 0).toFixed(2)}
                                 </div>
                               </div>
+
+                              <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}></div>
+
                               {/* STANDARD LEVEL 3 */}
                               <div className="flex items-center justify-center w-full">
                                 <button onClick={(e) => { 
@@ -937,7 +962,8 @@ export default function Bills({
                                     }
                                   }} className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap">
                                   <CheckCircle2 size={14} strokeWidth={2.5} />
-                                  MARK AS PAID
+                                  <span className="hidden min-[360px]:inline">MARK AS PAID</span>
+                                  <span className="min-[360px]:hidden">PAY</span>
                                 </button>
                               </div>
                             </>

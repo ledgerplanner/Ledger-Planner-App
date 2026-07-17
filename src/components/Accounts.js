@@ -28,6 +28,12 @@ export default function Accounts({
   // === INJECTED: SMARTCREDIT BANNER DISMISSAL LOGIC ===
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
 
+  // === MIDNIGHT ENGINE STATE ===
+  const [todayMidnight, setTodayMidnight] = useState(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  });
+
   useEffect(() => {
     // Check if the user dismissed the banner this month
     const dismissedMonth = localStorage.getItem('ledger_credit_dismissed_month');
@@ -35,7 +41,18 @@ export default function Accounts({
     if (dismissedMonth === currentMonth) {
       setIsBannerDismissed(true);
     }
-  }, []);
+
+    // Automatically trigger updates at midnight as day counters decrease
+    const midnightInterval = setInterval(() => {
+      const d = new Date();
+      const currentMid = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+      if (currentMid !== todayMidnight) {
+        setTodayMidnight(currentMid);
+      }
+    }, 60000); // Check every minute silently
+
+    return () => clearInterval(midnightInterval);
+  }, [todayMidnight]);
 
   const handleDismissBanner = () => {
     // Set the current month in local storage and hide the banner
@@ -145,7 +162,6 @@ export default function Accounts({
   const isNetWorthNegative = activeDataPoint?.val < 0;
 
   // === SURGICAL INJECTION: INCOME PER DAY DECAY ENGINE ===
-  const midnightMillis = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
   let daysUntilNextPayday = 0;
   let hasValidPayday = false;
 
@@ -169,11 +185,11 @@ export default function Accounts({
       .filter(t => t > 0)
       .sort((a, b) => a - b);
 
-    const upcoming = activePaydaysWithDates.filter(millis => millis >= midnightMillis);
+    const upcoming = activePaydaysWithDates.filter(millis => millis >= todayMidnight);
     
     if (upcoming.length > 0) {
       hasValidPayday = true;
-      daysUntilNextPayday = Math.ceil((upcoming[0] - midnightMillis) / (1000 * 60 * 60 * 24));
+      daysUntilNextPayday = Math.ceil((upcoming[0] - todayMidnight) / (1000 * 60 * 60 * 24));
     }
   }
 
@@ -229,7 +245,7 @@ export default function Accounts({
                 ? (isDarkMode ? 'bg-slate-500/10 border-slate-700/80 text-[#64748B]' : 'bg-slate-50 border-slate-200 text-[#64748B]')
                 : (isDarkMode ? 'bg-emerald-500/10 border-emerald-900/50 text-[#10B981]' : 'bg-emerald-50 border-emerald-200 text-[#10B981]')
             }`}>
-              That's ${Math.max(0, calculatedDailyRate).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / Day Until PayDay
+              That's ${isNetWorthNegative ? "0.00" : Math.max(0, calculatedDailyRate).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / Day Until PayDay
             </div>
           )}
         </div>
@@ -338,40 +354,44 @@ export default function Accounts({
 
         {/* === SURGICAL INJECTION: SMARTCREDIT NATIVE BANNER === */}
         {creditStatus !== "active" && !isBannerDismissed && (
-          <div className={`relative rounded-[2rem] p-5 border flex flex-col items-center text-center overflow-hidden transition-all duration-300 mb-4 ${
-            isDarkMode 
-              ? "bg-gradient-to-br from-slate-900 via-slate-800 to-black border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.5)]" 
-              : "bg-gradient-to-br from-white via-slate-50 to-slate-100 border-slate-200 shadow-[0_12px_24px_rgba(0,0,0,0.08)]"
-          }`}>
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/15 blur-2xl rounded-full pointer-events-none"></div>
-            
-            <button 
-              onClick={handleDismissBanner}
-              className={`absolute top-4 right-4 p-1.5 rounded-full z-20 transition-colors ${isDarkMode ? "text-slate-600 hover:text-slate-400 hover:bg-slate-800" : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"}`}
-            >
-              <X size={16} strokeWidth={3} />
-            </button>
+          <div className="flex flex-col gap-6">
+            <div className={`relative rounded-[2rem] p-5 border flex flex-col items-center text-center overflow-hidden transition-all duration-300 ${
+              isDarkMode 
+                ? "bg-gradient-to-br from-slate-900 via-slate-800 to-black border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.5)]" 
+                : "bg-gradient-to-br from-white via-slate-50 to-slate-100 border-slate-200 shadow-[0_12px_24px_rgba(0,0,0,0.08)]"
+            }`}>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/15 blur-2xl rounded-full pointer-events-none"></div>
+              
+              <button 
+                onClick={handleDismissBanner}
+                className={`absolute top-4 right-4 p-1.5 rounded-full z-20 transition-colors ${isDarkMode ? "text-slate-600 hover:text-slate-400 hover:bg-slate-800" : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"}`}
+              >
+                <X size={16} strokeWidth={3} />
+              </button>
 
-            <h3 className={`text-sm font-black tracking-tight mb-2 relative z-10 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Exclusive Credit Offer!</h3>
+              <h3 className={`text-sm font-black tracking-tight mb-2 relative z-10 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Exclusive Credit Offer!</h3>
+              
+              <p className={`text-[10px] font-bold mb-5 px-4 relative z-10 leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                <span className="block">Access your 3-Bureau Credit Score</span>
+                <span className="block">with 24/7 monitoring and identity protection.</span>
+              </p>
+              
+              <a 
+                href={`https://www.smartcredit.com/join/?pid=65366&sid=${userId}`}
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="relative z-10 w-full py-4 rounded-xl font-black text-[10px] uppercase tracking-widest text-white shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2"
+                style={{ backgroundColor: creditStatus === "trial_active" ? "#64748B" : "#1877F2" }}
+              >
+                {creditStatus === "trial_active" ? (
+                  <>⏳ Credit Trial Linked</>
+                ) : (
+                  <><TrendingUp size={16} strokeWidth={2.5} /> Unlock My 7-Day Credit Trial for $1</>
+                )}
+              </a>
+            </div>
             
-            <p className={`text-[10px] font-bold mb-5 px-4 relative z-10 leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-              <span className="block">Access your 3-Bureau Credit Score</span>
-              <span className="block">with 24/7 monitoring and identity protection.</span>
-            </p>
-            
-            <a 
-              href={`https://www.smartcredit.com/join/?pid=65366&sid=${userId}`}
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="relative z-10 w-full py-4 rounded-xl font-black text-[10px] uppercase tracking-widest text-white shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2"
-              style={{ backgroundColor: creditStatus === "trial_active" ? "#64748B" : "#1877F2" }}
-            >
-              {creditStatus === "trial_active" ? (
-                <>⏳ Credit Trial Linked</>
-              ) : (
-                <><TrendingUp size={16} strokeWidth={2.5} /> Unlock My 7-Day Credit Trial for $1</>
-              )}
-            </a>
+            <div className={`border-t ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
           </div>
         )}
         {/* === END SURGICAL INJECTION === */}
@@ -414,10 +434,10 @@ export default function Accounts({
                            </div>
                            <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 transition-colors whitespace-nowrap ${
                                isNegative 
-                                    ? isDarkMode ? "bg-red-900/30 text-red-400 border-red-900/50 drop-shadow-[0_0_12px_rgba(239,68,68,0.7)]" : "bg-red-50 text-red-600 border-red-200 drop-shadow-[0_0_12px_rgba(239,68,68,0.7)]"
-                                    : isPositive 
-                                    ? isDarkMode ? "bg-emerald-900/30 text-emerald-400 border-emerald-900/50 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]" : "bg-emerald-50 text-emerald-600 border-emerald-200 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]"
-                                    : isDarkMode ? "bg-slate-800 text-slate-400 border-slate-700" : "bg-slate-100 text-slate-500 border-slate-200"
+                                   ? isDarkMode ? "bg-red-900/30 text-red-400 border-red-900/50 drop-shadow-[0_0_12px_rgba(239,68,68,0.7)]" : "bg-red-50 text-red-600 border-red-200 drop-shadow-[0_0_12px_rgba(239,68,68,0.7)]"
+                                   : isPositive 
+                                   ? isDarkMode ? "bg-emerald-900/30 text-emerald-400 border-emerald-900/50 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]" : "bg-emerald-50 text-emerald-600 border-emerald-200 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]"
+                                   : isDarkMode ? "bg-slate-800 text-slate-400 border-slate-700" : "bg-slate-100 text-slate-500 border-slate-200"
                            }`}>
                                {isNegative ? "-" : ""}${Math.abs(acc.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                            </div>

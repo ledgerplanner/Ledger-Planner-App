@@ -221,24 +221,18 @@ export default function Activity({
 
   const sortedCategories = Object.entries(categoriesMap).sort((a, b) => b[1] - a[1]);
   
-  const topCategories = sortedCategories.slice(0, 8);
-  const otherAmount = sortedCategories.slice(8).reduce((sum, [_, amt]) => sum + amt, 0);
-  if (otherAmount > 0) topCategories.push(["Other", otherAmount]);
+  const topCategories = sortedCategories.slice(0, 10);
 
   const colors = isIncomeView 
-    ? ["#10B981", "#059669", "#34D399", "#6EE7B7", "#047857", "#064E3B", "#0D9488", "#14B8A6", "#94A3B8"] 
-    : ["#1877F2", "#F59E0B", "#8B5CF6", "#EC4899", "#06B6D4", "#F43F5E", "#F97316", "#84CC16", "#64748B"]; 
+    ? ["#10B981", "#059669", "#047857", "#34D399", "#064E3B", "#6EE7B7", "#A7F3D0", "#0D9488", "#14B8A6", "#115E59"] 
+    : ["#1877F2", "#3B82F6", "#F97316", "#8B5CF6", "#EC4899", "#06B6D4", "#F43F5E", "#84CC16", "#10B981", "#64748B"]; 
 
-  let currentOffset = 0;
-  const radius = 42; 
-  const circumference = 2 * Math.PI * radius;
+  const maxCategoryValue = topCategories.length > 0 ? topCategories[0][1] : 1;
 
-  const chartSegments = topCategories.map(([name, amount], index) => {
-    const percentage = totalTargetAmount > 0 ? amount / totalTargetAmount : 0;
-    const strokeDasharray = `${percentage * circumference} ${circumference}`;
-    const strokeDashoffset = -currentOffset;
-    currentOffset += percentage * circumference;
-    return { name, amount, percentage, strokeDasharray, strokeDashoffset, color: colors[index] };
+  const leaderboardSegments = topCategories.map(([name, amount], index) => {
+    const overallPercentage = totalTargetAmount > 0 ? amount / totalTargetAmount : 0;
+    const relativeBarWidth = maxCategoryValue > 0 ? (amount / maxCategoryValue) * 100 : 0;
+    return { name, amount, overallPercentage, relativeBarWidth, color: colors[index] };
   });
 
   const getTxAmountClasses = (tx, isDark) => {
@@ -269,10 +263,10 @@ export default function Activity({
   const graphicContent = useMemo(() => (
     <div className="flex flex-col relative z-10 mb-2 w-full">
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
-         
+          
         <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
           <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-black"}`}>
-            Actual Net Cash Flow
+            Net Cash Flow & Receipts
           </span>
         </div>
 
@@ -313,55 +307,49 @@ export default function Activity({
     </div>
   ), [isMounted, isDarkMode, netCashFlow, inPercentage, totalIncome, totalExpense]);
 
-  const memoizedHeroShell = useMemo(() => {
-    return renderHeroShell(`${userName}'s Activities`, graphicContent);
-  }, [userName, graphicContent, renderHeroShell]);
-
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
-         
+          
       <div className={`relative z-10 transform transition-all duration-700 delay-150 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-        {memoizedHeroShell}
+        {renderHeroShell(`${userName}'s Activities`, graphicContent)}
       </div>
 
       <main className="px-6 space-y-6 mt-4">
 
         {activityFilter !== "All" && totalTargetAmount > 0 && (
-          <div className={`p-6 rounded-[2rem] border flex items-center gap-6 ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
-            <div className="relative w-40 h-40 shrink-0">
-              <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90 drop-shadow-2xl">
-                <circle cx="50" cy="50" r={radius} fill="transparent" stroke={isDarkMode ? "#334155" : "#F1F5F9"} strokeWidth="12" />
-                {chartSegments.map((seg, i) => (
-                  <circle
-                    key={i} cx="50" cy="50" r={radius} fill="transparent"
-                    stroke={seg.color} strokeWidth="12"
-                    strokeDasharray={seg.strokeDasharray} strokeDashoffset={seg.strokeDashoffset}
-                    strokeLinecap="round" className="transition-all duration-1000 ease-out"
-                  />
-                ))}
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-                   {isIncomeView ? "Inflow" : "Outflow"}
-                </span>
-              </div>
+          <div className={`p-6 rounded-[2rem] border flex flex-col ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
+            
+            <div className="flex justify-between items-center mb-4 pb-2 border-b border-dashed border-slate-400/30">
+              <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                {isIncomeView ? "Inflow Breakdown" : "Outflow Breakdown"}
+              </span>
+              <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
+                Top 10 Categories
+              </span>
             </div>
-              
-            <div className="flex-1 space-y-3 max-h-40 overflow-y-auto hide-scrollbar pr-1">
-              {chartSegments.map((seg, i) => (
-                <div key={i} className="flex flex-col">
-                  <div className="flex items-center justify-between mb-0.5">
-                    <div className="flex items-center gap-2 truncate pr-2">
-                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: seg.color }}></div>
-                      <span className={`text-[10px] font-bold uppercase truncate ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
-                        {seg.name}
+
+            <div className="space-y-4 max-h-40 overflow-y-auto hide-scrollbar pr-2">
+              {leaderboardSegments.map((seg, i) => (
+                <div key={i} className="flex flex-col gap-1 w-full">
+                  <div className="flex items-center justify-between w-full">
+                    <span className={`text-[10px] font-bold uppercase truncate pr-2 ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
+                      {seg.name}
+                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className={`text-[10px] font-bold ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
+                        {Math.round(seg.overallPercentage * 100)}%
+                      </span>
+                      <span className={`text-xs font-black ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                        ${seg.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </div>
-                    <span className={`text-[10px] font-bold ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
-                      {Math.round(seg.percentage * 100)}%
-                    </span>
                   </div>
-                  <span className={`text-xs font-black ${isDarkMode ? "text-white" : "text-slate-900"}`}>${seg.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                  <div className={`w-full h-2 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-900 shadow-inner" : "bg-slate-100"}`}>
+                    <div 
+                      className="h-full rounded-full transition-all duration-1000 ease-out" 
+                      style={{ width: `${Math.max(2, seg.relativeBarWidth)}%`, backgroundColor: seg.color }}
+                    ></div>
+                  </div>
                 </div>
               ))}
             </div>

@@ -1030,7 +1030,7 @@ export default function Bills({
                           Status
                         </span>
                         <span className={`text-[10px] min-[360px]:text-xs font-bold ${isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>
-                          Settled
+                          Settled • {bill.settledDate || bill.fullDate || "TBD"}
                         </span>
                       </div>
                       <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 transition-colors ${isDarkMode ? "bg-slate-800/50 text-slate-400 border-slate-700" : "bg-slate-50 text-slate-500 border-slate-200"} whitespace-nowrap`}>

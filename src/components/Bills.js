@@ -293,7 +293,7 @@ export default function Bills({
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center p-1 text-center pointer-events-none mt-2">
             <span className={`text-2xl font-black tracking-tighter leading-none ${isDarkMode ? "text-white" : "text-slate-900"}`}>{Math.round(annualProgressPercentage)}%</span>
-            <span className={`text-[8px] font-black uppercase tracking-widest mt-0.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>BILLS PAID</span>
+            <span className={`text-[8px] font-black uppercase tracking-widest mt-0.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>OF BILLS PAID</span>
           </div>
         </div>
 

@@ -327,9 +327,10 @@ export default function Dashboard({
             </g>
           </svg>
           
+          {/* SURGICAL FIX: "X of Y" Text Output & Dynamic Month Label */}
           <div className="absolute inset-0 flex flex-col items-center justify-center p-1 text-center pointer-events-none mt-3">
-            <span className={`text-4xl font-black tracking-tighter leading-none ${isDarkMode ? "text-white" : "text-slate-900"}`}>{Math.round(billsPaidPercentage)}%</span>
-            <span className={`text-[9px] font-black uppercase tracking-widest mt-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Bills Paid</span>
+            <span className={`text-3xl font-black tracking-tighter leading-none ${isDarkMode ? "text-white" : "text-slate-900"}`}>{currentMonthSettledBillsCount} of {currentMonthTotalBillsCount}</span>
+            <span className={`text-[8px] font-black uppercase tracking-widest mt-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>BILLS PAID IN {currentMonthName}</span>
           </div>
         </div>
        
@@ -646,7 +647,7 @@ export default function Dashboard({
                                       </span>
                                    </div>
                                    
-                                   <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 text-[#1877F2] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] whitespace-nowrap`}>
+                                   <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
                                       ${(Number(bill?.amount) || 0).toFixed(2)}
                                    </div>
                                 </div>

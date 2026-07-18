@@ -936,6 +936,8 @@ function LedgerApp() {
                 userName={userNameDisplay} 
                 accounts={accounts} 
                 transactions={transactions} 
+                paydayConfig={paydayConfig}
+                isEntrepreneurMode={isEntrepreneurMode}
                 isDarkMode={isDarkMode} 
                 setIsTransferOpen={handleOpenTransfer}
                 setIsAddAccountOpen={handleOpenAddAccount}

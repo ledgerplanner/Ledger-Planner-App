@@ -257,11 +257,13 @@ function LedgerApp() {
       if (bill.isInstallment) newPaidAmount = Math.max(0, (bill.paidAmount || 0) - exactRefundAmount);
 
       if (isDemoMode) {
-        setBills(bills.map(b => b.id === id ? { ...b, isPaid: false, paidAmount: newPaidAmount, paidFromAccountId: null, linkedTxId: null } : b));
+        // SURGICAL INJECTION: Wiping settledDate cleanly upon revert
+        setBills(bills.map(b => b.id === id ? { ...b, isPaid: false, paidAmount: newPaidAmount, paidFromAccountId: null, linkedTxId: null, settledDate: null } : b));
         if (targetAcc) setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: a.balance + exactRefundAmount } : a));
         if (bill.linkedTxId) setTransactions(transactions.filter(t => t.id !== bill.linkedTxId));
       } else {
-        await updateDoc(doc(db, "users", user.uid, "bills", id), { isPaid: false, paidAmount: newPaidAmount, paidFromAccountId: null, linkedTxId: null });
+        // SURGICAL INJECTION: Wiping settledDate cleanly upon revert
+        await updateDoc(doc(db, "users", user.uid, "bills", id), { isPaid: false, paidAmount: newPaidAmount, paidFromAccountId: null, linkedTxId: null, settledDate: null });
         if (targetAcc) await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance + exactRefundAmount });
         if (bill.linkedTxId) await deleteDoc(doc(db, "users", user.uid, "transactions", bill.linkedTxId));
       }
@@ -279,6 +281,10 @@ function LedgerApp() {
 
     if (!bill || !targetAcc) return;
     const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+    
+    // === SURGICAL INJECTION: Settled Date Stamp Engine ===
+    const settledDateStamp = currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    
     const remainingBalance = (bill.totalAmount || 0) - (bill.paidAmount || 0);
     const amountToPay = paymentModalConfig.isPayInFull ? remainingBalance : (bill.amount || 0);
 
@@ -289,7 +295,7 @@ function LedgerApp() {
       if (bill.isInstallment) {
         const newPaidAmt = (bill.paidAmount || 0) + amountToPay;
         if (newPaidAmt >= (bill.totalAmount || 0) || paymentModalConfig.isPayInFull) {
-          setBills(bills.map(b => b.id === bill.id ? { ...b, isPaid: true, paidAmount: newPaidAmt, paidFromAccountId: targetAcc.id, linkedTxId: txId } : b));
+          setBills(bills.map(b => b.id === bill.id ? { ...b, isPaid: true, paidAmount: newPaidAmt, paidFromAccountId: targetAcc.id, linkedTxId: txId, settledDate: settledDateStamp } : b));
           triggerVictory();
           setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false });
         } else {
@@ -297,7 +303,7 @@ function LedgerApp() {
           triggerHaptic(50); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false }); setInstallmentPromptConfig({ isOpen: true, billId: bill.id, nextDate: "" });
         }
       } else {
-        setBills(bills.map(b => b.id === bill.id ? { ...b, isPaid: true, paidAmount: 0, paidFromAccountId: targetAcc.id, linkedTxId: txId } : b));
+        setBills(bills.map(b => b.id === bill.id ? { ...b, isPaid: true, paidAmount: 0, paidFromAccountId: targetAcc.id, linkedTxId: txId, settledDate: settledDateStamp } : b));
         triggerVictory();
         setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false });
       }
@@ -307,7 +313,7 @@ function LedgerApp() {
       if (bill.isInstallment) {
         const newPaidAmt = (bill.paidAmount || 0) + amountToPay;
         if (newPaidAmt >= (bill.totalAmount || 0) || paymentModalConfig.isPayInFull) {
-          await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: true, paidAmount: newPaidAmt, paidFromAccountId: targetAcc.id, linkedTxId: txRef.id });
+          await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: true, paidAmount: newPaidAmt, paidFromAccountId: targetAcc.id, linkedTxId: txRef.id, settledDate: settledDateStamp });
           triggerVictory();
           setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false });
         } else {
@@ -315,7 +321,7 @@ function LedgerApp() {
           triggerHaptic(50); setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false }); setInstallmentPromptConfig({ isOpen: true, billId: bill.id, nextDate: "" });
         }
       } else {
-        await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: true, paidAmount: 0, paidFromAccountId: targetAcc.id, linkedTxId: txRef.id });
+        await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { isPaid: true, paidAmount: 0, paidFromAccountId: targetAcc.id, linkedTxId: txRef.id, settledDate: settledDateStamp });
         triggerVictory();
         setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false });
       }
@@ -464,8 +470,9 @@ function LedgerApp() {
           const d = new Date(b.rawDate);
           d.setUTCMonth(d.getUTCMonth() + 1);
           const nextDate = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+          // SURGICAL INJECTION: Wipe settledDate on rollover reset
           await updateDoc(doc(db, "users", user.uid, "bills", b.id), { 
-            rawDate: nextDate, date: d.getUTCDate(), fullDate: d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }), isPaid: false, paidAmount: b.isInstallment ? b.paidAmount : 0
+            rawDate: nextDate, date: d.getUTCDate(), fullDate: d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }), isPaid: false, paidAmount: b.isInstallment ? b.paidAmount : 0, settledDate: null
           });
         }
       }

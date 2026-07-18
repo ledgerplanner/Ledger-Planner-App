@@ -230,8 +230,8 @@ export default function Accounts({
           </span>
         </div>
   
-        {/* SURGICAL INJECTION: Centered Hero Display & Dynamic Badge */}
-        <div className={`flex flex-col items-center justify-center text-center mb-4 w-full transform transition-all duration-700 delay-200 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+        {/* SURGICAL INJECTION: Centered Hero Display, Spacing Fix & Dynamic Badge */}
+        <div className={`flex flex-col items-center justify-center text-center mt-6 mb-4 w-full transform transition-all duration-700 delay-200 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           <div>
             <p className="text-[10px] font-black uppercase tracking-widest mb-1 text-slate-400">Liquid Net Worth • <span className={`${isNetWorthNegative ? "text-red-500" : "text-[#1877F2]"}`}>{activeDataPoint?.label} {activeDataPoint?.year}</span></p>
             <p className={`text-4xl font-black tracking-tighter transition-colors duration-300 ${isNetWorthNegative ? "text-red-500" : activeDataPoint?.val > 0 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
@@ -242,8 +242,8 @@ export default function Accounts({
           {!isEntrepreneurMode && hasValidPayday && (
             <div className={`mt-3 px-4 py-2 rounded-xl border shadow-sm font-black text-[10px] uppercase tracking-widest transition-all ${
               isNetWorthNegative 
-                ? (isDarkMode ? 'bg-slate-500/10 border-slate-700/80 text-[#64748B]' : 'bg-slate-50 border-slate-200 text-[#64748B]')
-                : (isDarkMode ? 'bg-emerald-500/10 border-emerald-900/50 text-[#10B981]' : 'bg-emerald-50 border-emerald-200 text-[#10B981]')
+                ? (isDarkMode ? 'bg-slate-800/80 text-slate-400 border-slate-700' : 'bg-slate-50 text-slate-500 border-slate-200')
+                : (isDarkMode ? 'bg-emerald-900/30 text-emerald-400 border-emerald-900/50 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]' : 'bg-emerald-50 text-emerald-600 border-emerald-200 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]')
             }`}>
               That's ${isNetWorthNegative ? "0.00" : Math.max(0, calculatedDailyRate).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / Day Until PayDay
             </div>
@@ -352,7 +352,7 @@ export default function Accounts({
   
       <main className="px-6 space-y-8 mt-4">
 
-        {/* === SURGICAL INJECTION: SMARTCREDIT NATIVE BANNER === */}
+        {/* === SURGICAL INJECTION: SMARTCREDIT NATIVE BANNER & CONDITIONAL LINE === */}
         {creditStatus !== "active" && !isBannerDismissed && (
           <div className="flex flex-col gap-6">
             <div className={`relative rounded-[2rem] p-5 border flex flex-col items-center text-center overflow-hidden transition-all duration-300 ${

@@ -303,7 +303,7 @@ export default function Dashboard({
 
         {/* 1. UPGRADE: Tactical Radial Gauge (Command Dial) with Ignition Sweep */}
         <div className={`relative w-40 h-40 flex-shrink-0 mt-6 mb-2 transform transition-all duration-700 delay-100 ease-out ${isMounted ? "scale-100 opacity-100" : "scale-90 opacity-0"}`}>
-          <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible drop-shadow-[0_0_15px_rgba(24,119,242,0.3)]">
+          <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible drop-shadow-[0_0_20px_rgba(24,119,242,0.5)]">
             <g transform="translate(50, 50)">
               {[...Array(24)].map((_, i) => {
                 const angle = -135 + (i * (270 / 23));
@@ -329,7 +329,7 @@ export default function Dashboard({
           
           {/* SURGICAL FIX: "X of Y" Text Output & Dynamic Month Label */}
           <div className="absolute inset-0 flex flex-col items-center justify-center p-1 text-center pointer-events-none mt-1">
-            <span className="text-2xl font-extrabold tracking-tight leading-none text-[#1877F2] mb-1">
+            <span className={`text-2xl font-extrabold tracking-tight leading-none mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
               {currentMonthSettledBillsCount} of {currentMonthTotalBillsCount}
             </span>
             <span className={`text-[9px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-black"}`}>

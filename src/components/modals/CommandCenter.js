@@ -13,7 +13,6 @@ export default function CommandCenter({
   formatPaydayDateStr,
   isPushEnabled,
   enablePushNotifications,
-  // === INJECTED: AI BRIEFING STRUCTURED PAYLOAD OBJECT DEFAULT ===
   aiBriefingText = null,
   handleDismissAIBriefing
 }) {
@@ -57,7 +56,6 @@ export default function CommandCenter({
   // === SURGICAL PARSING PIECE FOR RECOVERY AND STABILITY ===
   const aiData = useMemo(() => {
     if (!aiBriefingText) return null;
-    // Handle parsing recovery if a stray text string slips through instead of an object
     if (typeof aiBriefingText === 'string') {
       try {
         return JSON.parse(aiBriefingText);
@@ -77,7 +75,14 @@ export default function CommandCenter({
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsNotificationsOpen(false)}></div>
       <div className={`w-full sm:max-w-sm h-full shadow-2xl relative z-[130] flex flex-col transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A] border-l border-slate-800" : "bg-white border-l border-slate-100"}`}>
         <div className="p-6 border-b flex justify-between items-center shrink-0">
-          <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Command Center</h3>
+          
+          {/* SURGICAL INJECTION: Cleaned header layout container with official brand asset injection */}
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center p-0.5 border ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+              <img src="/login-logo.png" alt="Ledger Planner" className="w-full h-full object-cover rounded-full" />
+            </div>
+            <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Command Center</h3>
+          </div>
           <button onClick={() => setIsNotificationsOpen(false)} className={closeButtonClass}><X size={18} /></button>
         </div>
         
@@ -111,17 +116,15 @@ export default function CommandCenter({
             </div>
           )}
 
-          {/* === SURGICAL INJECTION: PREMIUM ELITE LP AI ASSISTANT CARD === */}
+          {/* === PREMIUM ELITE LP AI ASSISTANT CARD === */}
           {aiData && !isAiBannerDismissed && (
             <div className={`relative p-5 rounded-[2rem] border overflow-hidden shadow-2xl transition-all duration-300 ${
               isDarkMode 
                 ? "bg-gradient-to-br from-slate-900 to-[#0A0F1C] border-[#D4AF37]/30 shadow-[0_8px_30px_rgba(212,175,55,0.08)]" 
                 : "bg-gradient-to-br from-[#FFFAF0] to-white border-[#D4AF37]/40 shadow-[0_8px_30px_rgba(212,175,55,0.15)]"
             }`}>
-              {/* Subtle gold ambient glow */}
               <div className="absolute top-[-20%] right-[-10%] w-40 h-40 bg-[#D4AF37]/20 blur-3xl rounded-full pointer-events-none"></div>
               
-              {/* Header section containing segmented type and dismiss controller */}
               <div className="flex justify-between items-center mb-3 relative z-10">
                 <div className="flex items-center gap-2">
                   <span className="text-base drop-shadow-md">✨</span>
@@ -141,7 +144,6 @@ export default function CommandCenter({
                 </button>
               </div>
               
-              {/* Metric Card Body Layout */}
               <div className="relative z-10 space-y-2.5">
                 <h4 className={`text-sm font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                   {aiData.title}

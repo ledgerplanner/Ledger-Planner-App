@@ -91,7 +91,6 @@ export default function Todo({
     setActiveModalTodo(null);
   };
 
-  // INTERCEPTOR: Wrap the parent add function to pass the custom emoji payload, then reset it
   const executeAddTodo = (e) => {
     e.preventDefault();
     handleAddTodo(e, newTodoEmoji);
@@ -150,7 +149,6 @@ export default function Todo({
     </div>
   );
  
-  // SURGICAL REBUILD: Engineered premium 2-tier architectural details
   const renderTaskCard = (task) => {
     return (
       <div 
@@ -161,21 +159,17 @@ export default function Todo({
             : isDarkMode ? "bg-[#1E293B] border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"
         }`}
       >
-        {/* ROW 1: Meta Data Core & Star Badges & Pencil */}
         <div className="flex items-start justify-between w-full">
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            {/* 1.) Custom Emoji */}
             <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
               {task.emoji || "📝"}
             </div>
             
             <div className="flex-1 min-w-0 pt-0.5">
-              {/* 3.) Task Name */}
               <p className={`font-bold text-sm truncate leading-tight mb-1.5 ${isDarkMode ? "text-slate-200" : "text-slate-800"} ${task.isCompleted ? "line-through" : ""}`}>
                 {task.text}
               </p>
               
-              {/* 2 & 4.) Connected Meta Line: Inline Action/Shopping Icon + Stars */}
               <div className="flex items-center gap-2">
                 {task.type === "shopping" ? (
                   <ShoppingBag size={12} strokeWidth={2.5} className="text-[#10B981] shrink-0" />
@@ -187,7 +181,6 @@ export default function Todo({
             </div>
           </div>
           
-          {/* 5.) Edit Pencil */}
           <button 
             onClick={(e) => { 
                 e.stopPropagation(); 
@@ -200,10 +193,8 @@ export default function Todo({
          </button>
         </div>
 
-        {/* BORDER SEPARATOR BREAK */}
         <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-200"}`}></div>
 
-        {/* ROW 2: 6.) Centered Action Pill Runway */}
         <div className="flex justify-center w-full">
           <button 
             onClick={(e) => { e.stopPropagation(); toggleTodoStatus(task.id); }}
@@ -245,7 +236,6 @@ export default function Todo({
           </div>
           <form onSubmit={executeAddTodo} className="flex items-center gap-2 relative">
             
-            {/* THE NEW EMOJI SELECTOR ANCHOR */}
             <button 
               type="button" 
               onClick={() => setIsIconSelectorOpen(!isIconSelectorOpen)}
@@ -254,7 +244,6 @@ export default function Todo({
               {newTodoEmoji}
             </button>
 
-            {/* EMOJI GRID POPUP FOR TASK CREATION */}
             {isIconSelectorOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setIsIconSelectorOpen(false)}></div>
@@ -268,9 +257,10 @@ export default function Todo({
               </>
             )}
 
+            {/* SURGICAL INJECTION: Connected active newTodoType conditional ternary framework to the input placeholder string */}
             <input 
               type="text" 
-              placeholder="New task or future purchase?" 
+              placeholder={newTodoType === "task" ? "New Task?" : "Future Purchase?"}
               value={newTodoText} 
               onChange={(e) => setNewTodoText(e.target.value)}
               className={`flex-1 min-w-0 py-3 px-4 rounded-xl text-sm font-bold bg-transparent border outline-none transition-colors focus:border-[#1877F2] ${isDarkMode ? "text-white border-slate-700" : "text-slate-900 border-slate-200"}`}
@@ -299,7 +289,6 @@ export default function Todo({
           </div>
         </div>
         
-        {/* Signature Line Splitter Below Input Deck */}
         <div className={`mx-6 my-2 border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
 
         {todos.length === 0 && (
@@ -391,7 +380,6 @@ export default function Todo({
                 />
               </div>
 
-              {/* EDIT MODAL EMOJI SELECTOR */}
               <div className="relative cursor-pointer" onClick={() => setIsEditIconSelectorOpen(!isEditIconSelectorOpen)}>
                  <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Task Icon</label>
                  <div className={`w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>

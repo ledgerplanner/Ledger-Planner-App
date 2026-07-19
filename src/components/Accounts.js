@@ -61,7 +61,7 @@ export default function Accounts({
   };
 
   const [activeChartNode, setActiveChartNode] = useState(5);
-  const [timeframe, setTimeframe] = useState("3M");
+  const [timeframe, setTimeframe] = useState("6M");
   
   // Animation Triggers
   const [showContent, setShowContent] = useState(false);
@@ -224,7 +224,7 @@ export default function Accounts({
     <div className="flex flex-col relative z-10 mb-2 w-full">
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col w-full transform transition-all duration-700 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[0_12px_24px_rgba(24,119,242,0.15)]"}`}>
           
-        <div className="absolute top-4 w-full flex justify-center pointer-events-none">
+        <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
           <span className={`text-[10px] font-black uppercase tracking-widest opacity-80 ${isDarkMode ? "text-white" : "text-black"}`}>
             TOTAL LIQUID NET WORTH
           </span>
@@ -385,7 +385,7 @@ export default function Accounts({
                 {creditStatus === "trial_active" ? (
                   <>⏳ Credit Trial Linked</>
                 ) : (
-                  <><TrendingUp size={16} strokeWidth={2.5} /> Unlock My 7-Day Credit Trial for $1</>
+                  <><TrendingUp size={16} strokeWidth={2.5} color="#A855F7" className="text-[#A855F7]" /> Unlock My 7-Day Credit Trial for $1</>
                 )}
               </a>
             </div>

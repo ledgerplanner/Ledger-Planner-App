@@ -28,24 +28,27 @@ export default async function handler(req, res) {
 
     const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    
+    // Exact Local Server Hour evaluation for systemic time-blocking
+    const currentHour = today.getHours();
+    const period = currentHour >= 5 && currentHour < 16 ? "AM" : "PM";
 
+    today.setHours(0, 0, 0, 0);
     const todayStr = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
     // Scan every user in the vault
     for (const userDoc of usersSnapshot.docs) {
       const userData = userDoc.data();
-      const fcmToken = userData.fcmToken;
+      const fcmToken = userData.fcmToken || userData.pushToken; // Support uniform fallback naming across layers
       const userName = userData.firstName || userData.name || 'Founder';
       
-      // SURGICAL INJECTION: Extract entrepreneur mode from the user document
+      // Extract entrepreneur mode from the user document
       const isEntrepreneurMode = userData.isEntrepreneurMode || false;
 
       // If they haven't enabled push notifications, skip them
       if (!fcmToken) continue;
 
       // === 1. HYDRATE USER CONTEXT & BIRTHDAY CALCULATION ===
-      
       let isBirthdayToday = false;
       if (userData.birthday) {
         const bdayStr = userData.birthday.length > 5 ? userData.birthday.substring(5) : userData.birthday;
@@ -74,15 +77,17 @@ export default async function handler(req, res) {
       const safeTransactions = txSnapshot.docs.map(d => d.data());
 
       // === 2. EXECUTE AI ENGINE PIPELINE ===
-      
       const systemInstruction = `You are the ultimate Lead Financial Architect and elite wealth strategist inside Ledger Planner 2.0. 
 Your objective is to analyze real-time user financial ledger states and produce structured, premium financial metrics.
 CRITICAL TITLE DIRECTIVE: You must NEVER use generic titles like "Bill Coverage Gap". You must always generate unique, hyper-specific, premium titles tailored to the active cash state.
 SUBSCRIPTION DIRECTIVE: If upcoming bills include recurring subscriptions (like streaming services, software, or items marked /mo), proactively flag them as a "SUBSCRIPTION ALERT" to prevent unwanted charges.
-BIRTHDAY DIRECTIVE: If the "Is Birthday Today" variable is YES, you MUST naturally weave a premium "Happy Birthday" greeting into the body text addressing ${userName}.
+BIRTHDAY DIRECTIVE: If the "Is Birthday Today" variable is YES, you MUST ignore general bill data and write an elite, high-energy birthday celebration message addressing ${userName} directly.
 ENTREPRENEUR DIRECTIVE: If "Is Entrepreneur Mode" is YES, you must pivot context completely. Do not advise the user that a standard payday or W-2 payroll deposit is upcoming. Focus entirely on variable client collections, business overhead tracking, and protecting cash runway consistency.
+TIMING STRATEGY DIRECTIVE: 
+* If Evaluation Window is AM, focus on offensive financial maneuvers, capital multiplication, and wealth creation strategies.
+* If Evaluation Window is PM, focus on defensive runway checks, budget containment, and guarding net worth parameters before the market close.
 You must strictly output a valid, completely minified JSON object matching this exact schema with ZERO spaces, ZERO newlines, and ZERO markdown formatting:
-{"insightType":"BUDGET INSIGHT | SUBSCRIPTION ALERT","title":"Short unique hyper-specific header","body":"Highly actionable strategic sentence under 20 words addressing ${userName} directly, weaving in any exact dollar amounts naturally."}
+{"insightType":"BUDGET INSIGHT | SUBSCRIPTION ALERT","title":"Short unique hyper-specific header","body":"Actionable strategic sentence under 20 words addressing ${userName} directly, weaving in any metric points naturally."}
 CRITICAL DIRECTIVE: If the provided ledger arrays are completely empty, DO NOT explain that they are empty. Instantly return this exact default fallback JSON without any deviation: 
 {"insightType":"BUDGET INSIGHT","title":"Vault Initialized","body":"Your financial ledger is secure and standing by for your first transaction."}`;
 
@@ -90,7 +95,7 @@ CRITICAL DIRECTIVE: If the provided ledger arrays are completely empty, DO NOT e
 Accounts: ${JSON.stringify(accounts)}
 Upcoming Bills: ${JSON.stringify(safeBills)}
 Recent Activity Ledger: ${JSON.stringify(safeTransactions)}
-Evaluation Window: ${new Date().getHours() < 12 ? 'AM' : 'PM'}
+Evaluation Window: ${period}
 Is Birthday Today: ${isBirthdayToday ? 'YES' : 'NO'}
 Is Entrepreneur Mode: ${isEntrepreneurMode ? 'YES' : 'NO'}`;
 
@@ -98,9 +103,9 @@ Is Entrepreneur Mode: ${isEntrepreneurMode ? 'YES' : 'NO'}`;
         contents: [{ parts: [{ text: promptText }] }],
         systemInstruction: { parts: [{ text: systemInstruction }] },
         generationConfig: {
-          temperature: 0.1, // Ironclad adherence to JSON rules
-          maxOutputTokens: 2048, // Massive runway
-          responseMimeType: "application/json" // Native straitjacket
+          temperature: 0.1, // Ironclad adherence to JSON structural matrices
+          maxOutputTokens: 2048,
+          responseMimeType: "application/json"
         }
       };
 
@@ -127,32 +132,37 @@ Is Entrepreneur Mode: ${isEntrepreneurMode ? 'YES' : 'NO'}`;
       // === 3. THE IRONCLAD CEO FALLBACK ===
       if (!parsedBriefing || !parsedBriefing.title) {
         parsedBriefing = {
-            insightType: "BUDGET INSIGHT",
-            title: "Stay on Track",
-            body: "Review your upcoming bills for the week to ensure your ledger remains perfectly balanced."
+          insightType: "BUDGET INSIGHT",
+          title: isBirthdayToday ? "Happy Birthday!" : "Stay on Track",
+          body: isBirthdayToday 
+            ? `Happy Birthday, ${userName}! Celebrate your special day knowing your wealth engine is secured.`
+            : "Review your upcoming bills for the week to ensure your ledger remains perfectly balanced."
         };
       }
 
       // === 4. PERSIST THE PAYLOAD TO FIRESTORE ===
-      // Storing as a string to perfectly sync with CommandCenter.js memoized parser
       await db.collection('users').doc(userDoc.id).update({
         aiBriefingText: JSON.stringify(parsedBriefing),
         lastBriefingTime: admin.firestore.FieldValue.serverTimestamp()
       });
 
-      // === 5. DISPATCH THE DYNAMIC AI PUSH NOTIFICATION ===
-      await messaging.send({
+      // === 5. DISPATCH THE DYNAMIC DEEP-LINKING PUSH NOTIFICATION ===
+      const notificationPayload = {
         token: fcmToken,
         notification: {
           title: `✨ ${parsedBriefing.title}`,
           body: parsedBriefing.body,
+        },
+        data: {
+          route: "notifications", // Direct deep-linking past home past menu into command center
+          triggerBirthdayConfetti: isBirthdayToday ? "true" : "false" // Frontend listener trigger
         }
-      });
-      
+      };
+
+      await messaging.send(notificationPayload);
       sentCount++;
     }
     
-    // Log success for Vercel Serverless Logs
     res.status(200).json({ success: true, messagesSent: sentCount });
   } catch (error) {
     console.error("Cron Engine Failure:", error);

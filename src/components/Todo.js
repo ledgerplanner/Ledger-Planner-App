@@ -150,54 +150,89 @@ export default function Todo({
     </div>
   );
  
-  // CLOCK DOWN EDIT ACTION: Removed active modal state setter from parent card container block to halt wide gap click triggers entirely
+  // UPGRADED TASK CARD: Now a 2-Tier Modular Component
   const renderTaskCard = (task) => {
     return (
       <div 
         key={task.id} 
-        className={`relative flex items-center justify-between p-4 rounded-2xl shadow-sm border select-none
-          ${task.isCompleted 
-              ? isDarkMode ? "bg-slate-800 border-transparent" : "bg-white border-transparent" 
-              : isDarkMode ? "bg-[#1E293B] border-slate-700/50" : "bg-white border-slate-100"
-          }
-        `}
+        className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all ${
+          task.isCompleted 
+            ? isDarkMode ? "bg-slate-800/40 border-slate-800 opacity-80" : "bg-slate-50 border-slate-100 opacity-80" 
+            : isDarkMode ? "bg-[#1E293B] border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"
+        }`}
       >
-        <div className="flex items-center gap-4 truncate flex-1 pr-2">
-          {/* THE EMOJI RADIO REPLACEMENT */}
-          <button 
-           onClick={(e) => { e.stopPropagation(); toggleTodoStatus(task.id); }}
-           className={`shrink-0 w-10 h-10 flex items-center justify-center rounded-xl border transition-all active:scale-90
-             ${task.isCompleted 
-                ? "bg-emerald-500/10 border-emerald-500/30 opacity-60" 
-                : isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"
-             }
-           `}
-          >
-           {task.isCompleted ? <CheckCircle2 size={20} className="text-[#10B981]" /> : <span className="text-xl leading-none">{task.emoji || "📝"}</span>}
-          </button>
-          
-          <div className="truncate">
-            <p className={`font-bold text-sm truncate transition-all ${isDarkMode ? "text-slate-200" : "text-slate-800"} ${task.isCompleted ? "line-through opacity-50" : ""}`}>
-              {task.text}
-            </p>
-            <div className="flex items-center gap-2 mt-1">
-              {task.type === "shopping" ? <ShoppingBag size={10} className="text-[#10B981]" /> : <Zap size={10} className="text-[#1877F2]" />}
-              {renderStars(task.priority)}
+        {/* ROW 1: Meta Data & Pencil */}
+        <div className="flex items-start justify-between w-full">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+              {task.emoji || "📝"}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className={`font-bold text-sm truncate leading-tight ${isDarkMode ? "text-slate-200" : "text-slate-800"} ${task.isCompleted ? "line-through" : ""}`}>
+                {task.text}
+              </p>
+              <div className="flex items-center gap-2 mt-1.5">
+                {task.type === "shopping" ? <ShoppingBag size={10} className="text-[#10B981]" /> : <Zap size={10} className="text-[#1877F2]" />}
+                {renderStars(task.priority)}
+              </div>
             </div>
           </div>
+          
+          <button 
+            onClick={(e) => { 
+                e.stopPropagation(); 
+                setActiveModalTodo(task);
+                setEditTaskData({ text: task.text, priority: task.priority, type: task.type, emoji: task.emoji || "📝" }); 
+            }} 
+            className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
+          >
+             <Edit2 size={16} strokeWidth={2.5} />
+         </button>
         </div>
-        
-        {/* PENCIL RUNWAY LOCK: This is now the singular isolated portal to open up your edit configurations modal layout */}
-        <button 
-          onClick={(e) => { 
-              e.stopPropagation(); 
-              setActiveModalTodo(task);
-              setEditTaskData({ text: task.text, priority: task.priority, type: task.type, emoji: task.emoji || "📝" }); 
-          }} 
-          className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
-        >
-           <Edit2 size={16} strokeWidth={2.5} />
-       </button>
+
+        {/* BORDER SPLIT */}
+        <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-200"}`}></div>
+
+        {/* ROW 2: The Control Runway */}
+        <div className="flex gap-3 w-full">
+          <button 
+            onClick={(e) => { e.stopPropagation(); toggleTodoStatus(task.id); }}
+            className={`flex-1 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
+              task.isCompleted 
+                ? isDarkMode ? "bg-slate-700/50 text-slate-400 border border-slate-600" : "bg-slate-200 text-slate-500 border border-slate-300"
+                : "bg-[#1877F2] text-white shadow-lg border border-transparent shadow-[0_4px_15px_rgba(24,119,242,0.3)]"
+            }`}
+          >
+            {task.isCompleted ? <Circle size={14} strokeWidth={2.5} /> : <CheckCircle2 size={14} strokeWidth={2.5} />}
+            {task.isCompleted ? "Mark Pending" : "Mark Completed"}
+          </button>
+
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              openGlobalAction(
+                "Delete Task", 
+                "Are you sure you want to permanently delete this task?", 
+                "Delete", 
+                true, 
+                async () => {
+                  try {
+                    await deleteDoc(doc(db, "users", auth.currentUser.uid, "todos", task.id));
+                    triggerHaptic();
+                  } catch (error) {
+                    console.error("Error deleting task:", error);
+                  }
+                }
+              );
+            }}
+            className={`flex-1 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
+              isDarkMode ? "bg-red-900/20 text-red-400 border border-red-900/50" : "bg-red-50 text-red-600 border border-red-200"
+            }`}
+          >
+            <Trash2 size={14} strokeWidth={2.5} />
+            Delete Task
+          </button>
+        </div>
       </div>
     );
   };
@@ -216,7 +251,10 @@ export default function Todo({
         `}</style>
         {renderHeroShell(`${userName}'s Tasks`, graphicContent)}
       </div>
- 
+      
+      {/* 1. SURGICAL INJECTION: Signature line placed below the hero card */}
+      <div className={`mx-6 mt-6 mb-2 border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
+
       <main className="px-6 space-y-6 mt-4">
         
         <div className={`p-4 rounded-[2rem] border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
@@ -296,7 +334,7 @@ export default function Todo({
               <Zap size={16} className="text-[#1877F2]" />
               <h3 className="text-[10px] font-black uppercase tracking-widest text-[#1877F2]">Pending Actions</h3>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-4">
               {pendingActions.map(renderTaskCard)}
             </div>
           </section>
@@ -312,7 +350,7 @@ export default function Todo({
               <ShoppingBag size={16} className="text-[#10B981]" />
               <h3 className="text-[10px] font-black uppercase tracking-widest text-[#10B981]">Pending Shopping</h3>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-4">
               {pendingShopping.map(renderTaskCard)}
             </div>
           </section>
@@ -333,10 +371,10 @@ export default function Todo({
                 onClick={clearCompletedTodos}
                 className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all active:scale-95 ${isDarkMode ? "bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30" : "bg-orange-100 text-orange-600 border-orange-200 hover:bg-orange-200"}`}
                >
-                 Delete All
+                Delete All
                </button>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-4">
               {completedTasks.map(renderTaskCard)}
             </div>
           </section>

@@ -540,20 +540,17 @@ function LedgerApp() {
     }
   };
 
-  // === SURGICAL INJECTION: INTEGRATED RETENTION ROUTING CAPTURE ENGINE ===
+  // === RETENTION ROUTING CAPTURE ENGINE ===
   useEffect(() => {
     setIsMounted(true);
     const isDemo = window.location.hostname.includes("demo");
     if (isDemo) setIsDemoMode(true);
 
     if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-      // Background push banner click detection listener route
       navigator.serviceWorker.addEventListener("message", (event) => {
         const payloadData = event.data?.data;
         if (payloadData?.route) {
-          // Deep-link past dashboard screen right into CommandCenter drawer
           setTimeout(() => changeTab(payloadData.route), 100);
-          
           if (payloadData.triggerBirthdayConfetti === "true") {
             setTimeout(() => triggerVictory(), 600);
           }
@@ -562,10 +559,9 @@ function LedgerApp() {
     }
 
     if (messaging) {
-      // Foreground active push notification app listeners
       onMessage(messaging, (payload) => {
         if (payload.data?.route) {
-          setIsNotificationsOpen(true); // Hydrate local state automatically if open live
+          setIsNotificationsOpen(true);
           if (payload.data.triggerBirthdayConfetti === "true") {
             triggerVictory();
           }
@@ -881,8 +877,9 @@ function LedgerApp() {
   }
 
   return (
-    <div onContextMenu={(e) => e.preventDefault()} className={`h-screen w-full font-sans relative flex transition-colors duration-500 select-none [-webkit-touch-callout:none] ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
-      <div className={`w-full h-full relative flex flex-col lg:flex-row transition-colors duration-500 overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
+    // SURGICAL INJECTION: Cleaned environment boundary layer to map fluid backgrounds tightly to top glass edges across all screen dimensions
+    <div onContextMenu={(e) => e.preventDefault()} className={`min-h-screen w-full font-sans relative flex transition-colors duration-500 select-none pt-0 [-webkit-touch-callout:none] ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
+      <div className={`w-full min-h-screen relative flex flex-col lg:flex-row transition-colors duration-500 overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
         
         {/* DESKTOP SIDEBAR VIEWPORT CONTROLLER */}
         <div className={`hidden lg:flex w-[280px] flex-col border-r z-40 p-6 transition-colors duration-500 shrink-0 ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-100"}`}>

@@ -39,7 +39,7 @@ export default function EditEntryDrawer({
     return "text-[#1877F2]";
   };
 
-  // === SURGICAL INJECTION: BRANDED CUSTOM CALENDAR DRAW ENGINE ===
+  // === BRANDED CUSTOM CALENDAR DRAW ENGINE ===
   const renderCustomCalendarGrid = () => {
     const year = currentCalendarMonth.getFullYear();
     const month = currentCalendarMonth.getMonth();
@@ -119,8 +119,12 @@ export default function EditEntryDrawer({
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeEntryDrawer}></div>
       <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col max-h-[95vh] transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
         <div className="p-6 border-b flex justify-between items-center shrink-0">
+          
+          {/* SURGICAL INJECTION: Official branding logo centered in place of generic avatar items */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg bg-slate-100 dark:bg-slate-800">{isEditingEntry ? (editEntryData.icon || selectedEntry.icon) : selectedEntry.icon}</div>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center p-0.5 border ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+              <img src="/login-logo.png" alt="Ledger Planner" className="w-full h-full object-cover rounded-full" />
+            </div>
             <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{isEditingEntry ? "Edit Entry" : "Entry Details"}</h3>
           </div>
           <div className="flex items-center gap-2">
@@ -218,8 +222,6 @@ export default function EditEntryDrawer({
                          <span className={`font-bold text-base pointer-events-none ${!editEntryData.rawDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{editEntryData.rawDate ? formatDisplayDate(editEntryData.rawDate) : "mm/dd/yyyy"}</span>
                          <CalendarIcon size={18} className="shrink-0 text-slate-400" style={{ color: editEntryData.rawDate ? signatureColor : undefined }} />
                       </div>
-                      
-                      {/* SURGICAL CONVERSION: Glitchy browser input completely removed and replaced with unified custom sub-grid */}
                       {renderCustomCalendarGrid()}
                     </div>
                     <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">

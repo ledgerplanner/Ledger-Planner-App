@@ -68,7 +68,6 @@ export default function AccountBuilder({
     const startBal = parseFloat(newAccBalance);
     if (!newAccName.trim() || isNaN(startBal)) return;
 
-    // === SURGICAL FIX #5: REMOVED .toUpperCase() OVERRIDE ===
     const sanitizedName = newAccName.trim();
     
     let finalBalance = Math.abs(startBal);
@@ -100,7 +99,6 @@ export default function AccountBuilder({
     const targetBal = parseFloat(newGoalAmount);
     if (!newGoalName.trim() || isNaN(targetBal) || targetBal <= 0 || !newGoalDate || !newGoalIcon) return;
 
-    // === SURGICAL FIX #6: REMOVED .toUpperCase() OVERRIDE ===
     const sanitizedGoalName = newGoalName.trim();
     
     const newGoal = {
@@ -139,7 +137,7 @@ export default function AccountBuilder({
     const updatePayload = {
       balance: finalBalance,
       description: editAccountDesc,
-      name: editAccountName.trim(), // Keep edit names intact
+      name: editAccountName.trim(),
       icon: editAccountIcon
     };
     if (selectedAccount.isGoal) {
@@ -187,11 +185,16 @@ export default function AccountBuilder({
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsAddAccountOpen(false)}></div>
           <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
             <div className="p-6 border-b flex justify-between items-center">
-              <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Add Account</h3>
+              {/* SURGICAL INJECTION: Uniform centered brand layout injection */}
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center p-0.5 border ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                  <img src="/login-logo.png" alt="Ledger Planner" className="w-full h-full object-cover rounded-full" />
+                </div>
+                <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Add Account</h3>
+              </div>
               <button onClick={() => setIsAddAccountOpen(false)} className={closeButtonClass}><X size={18} /></button>
             </div>
             <div className={`p-6 space-y-4 ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
-              {/* SURGICAL FIX #5: STRIPPED 'uppercase' CLASS FROM ACCOUNT NAME INPUT */}
               <div className="relative"><label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account Name</label><input type="text" value={newAccName} onChange={(e) => setNewAccName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} /></div>
               <div className="relative">
                 <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Current Balance</label>
@@ -226,11 +229,16 @@ export default function AccountBuilder({
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsAddGoalOpen(false)}></div>
           <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
             <div className="p-6 border-b flex justify-between items-center">
-              <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Create a Savings Goal</h3>
+              {/* SURGICAL INJECTION: Uniform centered brand layout injection */}
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center p-0.5 border ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                  <img src="/login-logo.png" alt="Ledger Planner" className="w-full h-full object-cover rounded-full" />
+                </div>
+                <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Create a Savings Goal</h3>
+              </div>
               <button onClick={() => setIsAddGoalOpen(false)} className={closeButtonClass}><X size={18} /></button>
             </div>
             <div className={`p-6 space-y-4 relative ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
-              {/* SURGICAL FIX #6: STRIPPED 'uppercase' CLASS FROM GOAL NAME INPUT */}
               <div className="relative">
                 <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Goal Name</label>
                 <input type="text" value={newGoalName} onChange={(e) => setNewGoalName(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border transition-colors outline-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
@@ -297,8 +305,11 @@ export default function AccountBuilder({
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setSelectedAccount(null)}></div>
           <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
             <div className="p-6 border-b flex justify-between items-center">
+              {/* SURGICAL INJECTION: Uniform centered brand layout injection */}
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg bg-slate-100 dark:bg-slate-800">{editAccountIcon}</div>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center p-0.5 border ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                  <img src="/login-logo.png" alt="Ledger Planner" className="w-full h-full object-cover rounded-full" />
+                </div>
                 <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{selectedAccount.isGoal ? "Edit Goal" : "Edit Account"}</h3>
               </div>
               <button onClick={() => setSelectedAccount(null)} className={closeButtonClass}><X size={18} /></button>

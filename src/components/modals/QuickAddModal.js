@@ -38,7 +38,7 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
 
   const dateInputRef = useRef(null);
 
-  const categoryEmojis = ["💵", "💲", "🤑", "💰", "🏦", "💹", "₿", "💎", "💳", "🧾", "📋", "💼", "🏠", "🏢", "🔑", "🛋️", "🧹", "💧", "⚡", "📶", "📡", "☁️", "📺", "🎬", "🍿", "🎵", "🎧", "🚗", "🚲", "🚂", "✈️", "⛽", "🛠️", "🅿️", "🎫", "🚕", "🚇", "🛒", "🛍️", "📦", "👕", "👗", "👟", "💅", "💄", "💈", "🕶️", "💍", "🍔", "🍕", "🌮", "🍣", "🥗", "🍳", "☕", "🍦", "🍻", "🍹", "🍷", "🏥", "💊", "🦷", "👓", "🧘", "🏋️", "🐾", "🐶", "🎁", "🎉", "🎟️", "🎮", "🕹️", "📱", "💻", "⌚", "🤖", "🚀", "🌴", "🎓", "🏪", "🎯", "🏖️", "👶", "🛡️", "🏍️", "🎸", "⛵"];
+  const categoryEmojis = ["💵", "💲", "🤑", "💰", "🏦", "💹", "₿", "💎", "💳", "🧾", "📋", "💼", "🏠", "🏢", "🔑", "🛋️", "🧹", "💧", "⚡", "📶", "📡", "☁️", "📺", "🎬", "🍿", "🎵", "🎧", "🚗", "🚲", "🚂", "✈️", "⛽", "🛠️", "🅿️", "🎫", "🚕", "🚇", "🛒", "🛍️", "📦", "👕", "👗", "👟", "💅", "💄", "💈", "🕶️", "💍", "🍔", "🍕", "🌮", "🍣", "🥗", "🍳", "☕", "🍦", "🍻", "🍹", "🍷", "🏥", "💊", "🦷", "👓", "🧘", "🏋️", "🐾", "🐶", "🎁", "🎉", "🎟️", "🎮", "🕹️", "📱", "💻", "⌚", "🤖", "🚀", "🌴", "🎓", "🏪", "🎯", "🏖️", "👶", "🛡️", "🛡️", "🏍️", "🎸", "⛵"];
   const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
 
   useEffect(() => {
@@ -202,7 +202,7 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
 
         if (isDemoMode) {
           setTransactions([newTxNode, ...transactions]);
-          setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: newAccBalance } : a));
+          accounts && setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: newAccBalance } : a));
         } else {
           addDoc(collection(db, "users", user.uid, "transactions"), { ...newTxNode, createdAt: serverTimestamp() }).catch(e => console.log("Offline pipeline sync queued"));
           updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: newAccBalance }).catch(e => console.log("Offline pipeline sync queued"));
@@ -237,7 +237,6 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
 
   const canSubmitQab = isQabFormValid() && isQabAmountValid;
   
-  // === SURGICAL FIX #3: EXCLUDE TRANSFERS FROM INCOME DROPDOWN ===
   const categoriesToRender = drawerTab === 'income' 
     ? modernCategories
         .filter(g => g.group === "Income & Wealth")
@@ -258,7 +257,14 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeQab}></div>
       <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col h-auto max-h-[95vh] ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
         <div className={`p-6 border-b flex justify-between items-center shrink-0 ${isDarkMode ? "border-slate-800" : "border-slate-100"}`}>
-          <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{qabActiveLabel}</h3>
+          
+          {/* SURGICAL INJECTION: Official branding logo centered in place inside the Quick Add header block */}
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center p-0.5 border shrink-0 ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+              <img src="/login-logo.png" alt="Ledger Planner" className="w-full h-full object-cover rounded-full" />
+            </div>
+            <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{qabActiveLabel}</h3>
+          </div>
           <button onClick={closeQab} className={closeButtonClass}><X size={18} /></button>
         </div>
         
@@ -273,7 +279,6 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
               
               <div className="text-center relative flex justify-center items-center py-2">
                 <span className={`text-5xl font-black tracking-tighter ${drawerTab === "bills" ? "" : qabActiveText}`} style={{ color: drawerTab === "bills" ? signatureColor : undefined }}>${inputValue}</span>
-                {/* === SURGICAL FIX #4: DYNAMIC BACKSPACE COLOR === */}
                 <button 
                   onPointerDown={(e) => { e.preventDefault(); triggerHaptic(15); setInputValue(inputValue.slice(0, -1) || "0"); }} 
                   className={`absolute right-4 p-2 text-xl active:scale-90 transition-transform opacity-70 hover:opacity-100 ${drawerTab !== "bills" ? qabActiveText : ""}`} 
@@ -299,8 +304,6 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
             </div>
           ) : (
             <div className="p-5 space-y-3 h-auto">
-              
-              {/* === SURGICAL FIXES #1, #2 & #4: PLACEHOLDERS & CAPITALIZATION REMOVAL === */}
               <div className="relative">
                 <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                   {drawerTab === "income" ? "Payer / Source" : drawerTab === "bills" ? "Bill Name" : "Expense Name"}
@@ -419,7 +422,7 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
                   <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Account mapping</label>
                   <select value={entryAccount} onChange={(e) => setEntryAccount(e.target.value)} className={`w-full pt-6 pb-2 px-5 rounded-2xl border font-bold text-xs uppercase tracking-wider appearance-none transition-colors focus:outline-none ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
                     <option value="" disabled>{drawerTab === "income" ? "Place this deposit into which account?" : "WHICH ACCOUNT PAID FOR THIS ACTIVITY?"}</option>
-                    {accounts.map((a) => (<option key={a.id} value={a.id} className={isDarkMode ? "bg-[#1E293B]" : "bg-white"}>{a.name}</option>))}
+                    {accounts && accounts.map((a) => (<option key={a.id} value={a.id} className={isDarkMode ? "bg-[#1E293B]" : "bg-white"}>{a.name}</option>))}
                   </select>
                 </div>
               )}

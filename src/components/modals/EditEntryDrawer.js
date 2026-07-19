@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { X, Edit2, Calendar as CalendarIcon, ArrowDown, Trash2, CheckCircle2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Edit2, Calendar as CalendarIcon, ArrowDown, Trash2, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLedger } from '../../context/LedgerContext';
 import { db } from '../../firebase';
 import { doc, deleteDoc, updateDoc } from 'firebase/firestore';
@@ -22,14 +22,13 @@ export default function EditEntryDrawer({
 }) {
   const { user, bills, setBills, transactions, setTransactions, modernCategories } = useLedger();
   const [isIconSelectorOpen, setIsIconSelectorOpen] = useState(false);
-  const dateInputRef = useRef(null);
+  
+  // === FLUID MICRO-CALENDAR ENGINE ENGINE STATES ===
+  const [currentCalendarMonth, setCurrentCalendarMonth] = useState(new Date());
 
   const categoryEmojis = ["💵", "💲", "🤑", "💰", "🏦", "💹", "₿", "💎", "💳", "🧾", "📋", "💼", "🏠", "🏢", "🔑", "🛋️", "🧹", "💧", "⚡", "📶", "📡", "☁️", "📺", "🎬", "🍿", "🎵", "🎧", "🚗", "🚲", "🚂", "✈️", "⛽", "🛠️", "🅿️", "🎫", "🚕", "🚇", "🛒", "🛍️", "📦", "👕", "👗", "👟", "💅", "💄", "💈", "🕶️", "💍", "🍔", "🍕", "🌮", "🍣", "🥗", "🍳", "☕", "🍦", "🍻", "🍹", "🍷", "🏥", "💊", "🦷", "👓", "🧘", "🏋️", "🐾", "🐶", "🎁", "🎉", "🎟️", "🎮", "🕹️", "📱", "💻", "⌚", "🤖", "🚀", "🌴", "🎓", "🏪", "🎯", "🏖️", "👶", "🛡️", "🏍️", "🎸", "⛵"];
   
-  // Note: Your legacy code dynamically altered categoriesToRender based on "drawerTab". 
-  // In the edit drawer, we show all modern categories.
   const categoriesToRender = modernCategories;
-
   const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
 
   const getEntryAmountColor = (entry) => {
@@ -38,6 +37,81 @@ export default function EditEntryDrawer({
     if (entry.type === 'Income') return "text-[#10B981]";
     if (entry.type === 'Expense') return "text-[#F97316]";
     return "text-[#1877F2]";
+  };
+
+  // === SURGICAL INJECTION: BRANDED CUSTOM CALENDAR DRAW ENGINE ===
+  const renderCustomCalendarGrid = () => {
+    const year = currentCalendarMonth.getFullYear();
+    const month = currentCalendarMonth.getMonth();
+    
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const totalMonthDays = new Date(year, month + 1, 0).getDate();
+    
+    const daysArray = Array.from({ length: totalMonthDays }, (_, i) => i + 1);
+    const blankPaddingCells = Array.from({ length: firstDayIndex }, (_, i) => i);
+
+    const activeSelectedDay = editEntryData.rawDate ? new Date(editEntryData.rawDate).getUTCDate() : null;
+    const activeSelectedMonth = editEntryData.rawDate ? new Date(editEntryData.rawDate).getUTCMonth() : null;
+    const activeSelectedYear = editEntryData.rawDate ? new Date(editEntryData.rawDate).getUTCFullYear() : null;
+
+    const handleDaySelect = (dayNum) => {
+      const compiledIsoStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+      setEditEntryData({ ...editEntryData, rawDate: compiledIsoStr });
+    };
+
+    const changeCalendarMonth = (direction) => {
+      setCurrentCalendarMonth(new Date(year, month + direction, 1));
+    };
+
+    return (
+      <div className={`mt-3 p-3 rounded-2xl border transition-colors flex flex-col w-full ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+        <div className="flex items-center justify-between mb-3 px-1 w-full">
+          <span className={`text-[11px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+            {currentCalendarMonth.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
+          </span>
+          <div className="flex gap-1.5">
+            <button type="button" onClick={() => changeCalendarMonth(-1)} className={`p-1.5 rounded-lg border transition-colors ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-600"}`}>
+              <ChevronLeft size={14} strokeWidth={2.5} />
+            </button>
+            <button type="button" onClick={() => changeCalendarMonth(1)} className={`p-1.5 rounded-lg border transition-colors ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-600"}`}>
+              <ChevronRight size={14} strokeWidth={2.5} />
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-7 gap-1 text-center w-full mb-1">
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((dayChar, index) => (
+            <span key={index} className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{dayChar}</span>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-7 gap-1 w-full">
+          {blankPaddingCells.map((val) => (
+            <div key={`blank-${val}`} className="aspect-square"></div>
+          ))}
+          {daysArray.map((day) => {
+            const isMatch = day === activeSelectedDay && month === activeSelectedMonth && year === activeSelectedYear;
+            return (
+              <button
+                key={`day-${day}`}
+                type="button"
+                onClick={() => handleDaySelect(day)}
+                className={`aspect-square rounded-xl text-xs font-black transition-all flex items-center justify-center ${
+                  isMatch 
+                    ? "text-white shadow-sm" 
+                    : isDarkMode 
+                      ? "text-slate-300 hover:bg-slate-800" 
+                      : "text-slate-700 hover:bg-slate-200"
+                }`}
+                style={{ backgroundColor: isMatch ? signatureColor : undefined }}
+              >
+                {day}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -138,20 +212,15 @@ export default function EditEntryDrawer({
                 </div>
                 {selectedEntry.fullDate !== undefined && (
                   <>
-                    <div className="relative">
+                    <div className="relative w-full">
                       <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest pointer-events-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Due Date</label>
-                      <div 
-                        className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors cursor-pointer ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}
-                        onClick={() => {
-                          if (dateInputRef.current && dateInputRef.current.showPicker) {
-                            try { dateInputRef.current.showPicker(); } catch (err) {}
-                          }
-                        }}
-                      >
+                      <div className={`w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
                          <span className={`font-bold text-base pointer-events-none ${!editEntryData.rawDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{editEntryData.rawDate ? formatDisplayDate(editEntryData.rawDate) : "mm/dd/yyyy"}</span>
-                         <CalendarIcon size={18} className="shrink-0 pointer-events-none" style={{ color: signatureColor }} />
-                         <input type="date" ref={dateInputRef} value={editEntryData.rawDate || ""} onChange={(e) => setEditEntryData({...editEntryData, rawDate: e.target.value})} className="absolute inset-0 w-full h-full opacity-0 pointer-events-none" />
+                         <CalendarIcon size={18} className="shrink-0 text-slate-400" style={{ color: editEntryData.rawDate ? signatureColor : undefined }} />
                       </div>
+                      
+                      {/* SURGICAL CONVERSION: Glitchy browser input completely removed and replaced with unified custom sub-grid */}
+                      {renderCustomCalendarGrid()}
                     </div>
                     <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
                       <div className="flex items-center justify-between">

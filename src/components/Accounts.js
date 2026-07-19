@@ -368,7 +368,11 @@ export default function Accounts({
                 <X size={16} strokeWidth={3} />
               </button>
 
-              <h3 className={`text-sm font-black tracking-tight mb-2 relative z-10 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Exclusive Credit Offer!</h3>
+              {/* SURGICAL INJECTION: Repositioned Premium Purple Arrow Left Of Title Header */}
+              <div className="flex items-center justify-center gap-2 mb-2 relative z-10">
+                <TrendingUp size={16} strokeWidth={2.5} color="#A855F7" className="text-[#A855F7] shrink-0" />
+                <h3 className={`text-sm font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>Exclusive Credit Offer!</h3>
+              </div>
               
               <p className={`text-[10px] font-bold mb-5 px-4 relative z-10 leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                 <span className="block">Access your 3-Bureau Credit Score</span>
@@ -385,7 +389,7 @@ export default function Accounts({
                 {creditStatus === "trial_active" ? (
                   <>⏳ Credit Trial Linked</>
                 ) : (
-                  <><TrendingUp size={16} strokeWidth={2.5} color="#A855F7" className="text-[#A855F7]" /> Unlock My 7-Day Credit Trial for $1</>
+                  <>Unlock My 7-Day Credit Trial for $1</>
                 )}
               </a>
             </div>
@@ -513,7 +517,7 @@ export default function Accounts({
                            </div>
                         </div>
   
-                        <div className={`w-full h-2.5 rounded-full overflow-hidden border mb-2 ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-slate-100 border-slate-200"}`}>
+                        <div className={`w-full h-2.5 rounded-full overflow-hidden border mb-2 ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-slate-100"}`}>
                              <div className="h-full transition-all duration-1000 bg-[#1877F2]" style={{ width: `${progressPct}%` }}></div>
                         </div>
   

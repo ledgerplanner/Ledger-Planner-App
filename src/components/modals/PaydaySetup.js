@@ -74,6 +74,13 @@ export default function PaydaySetup({
             </div>
           ))}
           </div>
+
+          {/* SURGICAL INJECTION: Clean structured helper pro-tip section appended below config cards */}
+          <div className={`mt-6 p-4 rounded-2xl border text-left transition-colors ${isDarkMode ? "bg-slate-800/40 border-slate-700/60" : "bg-slate-50 border-slate-200/60"}`}>
+            <p className={`text-[11px] font-bold leading-relaxed ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
+              💡 PRO TIP: If your income varies or you don't follow a fixed payroll schedule, try activating Entrepreneur Mode. You can switch tracks anytime by opening the Settings Vault (⚙️) → Personalization & System → Income Structure.
+            </p>
+          </div>
         </div>
         <div className="p-6 border-t flex gap-3">
           <button onClick={clearPaydayConfig} className={`flex-1 py-4 rounded-2xl font-black text-xs uppercase tracking-widest border transition-all active:scale-95 ${isDarkMode ? "bg-slate-800 border-slate-700 text-white hover:bg-slate-700" : "bg-white border-slate-200 text-slate-900 hover:bg-slate-50"}`}>Clear All</button>

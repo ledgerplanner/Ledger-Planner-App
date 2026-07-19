@@ -75,7 +75,6 @@ export default function TransferEngine({
       await addDoc(collection(db, "users", user.uid, "transactions"), { name: receivedName, icon: "🔀", amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: toAcc.id, createdAt: serverTimestamp() });
     }
 
-    // === CONFETTI WIRE-UP: INFLOW TO GOALS ===
     if (isGoalCompleted || toAcc.isGoal) {
       triggerVictory(); 
     } else {
@@ -113,7 +112,6 @@ export default function TransferEngine({
     const currentTime = new Date();
     const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
     
-    // UPDATE 1: Clean Copywriting
     const txName = `Cash Out: ${cashOutGoal.name} → ${destAcc.name}`;
 
     if (isDemoMode) {
@@ -123,18 +121,15 @@ export default function TransferEngine({
         return a;
       }));
       setTransactions([
-        // UPDATE 2: Dynamic Icon Inheritance
         { id: `tx_demo_co_${Date.now()}`, name: txName, icon: cashOutGoal.icon, amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: destAcc.id, isCashOut: true },
         ...transactions
       ]);
     } else {
       await updateDoc(doc(db, "users", user.uid, "accounts", cashOutGoal.id), { balance: cashOutGoal.balance - amt });
       await updateDoc(doc(db, "users", user.uid, "accounts", destAcc.id), { balance: destAcc.balance + amt });
-      // UPDATE 2: Dynamic Icon Inheritance
       await addDoc(collection(db, "users", user.uid, "transactions"), { name: txName, icon: cashOutGoal.icon, amount: amt, date: autoTimeStamp, type: "Income", category: "Transfers (Venmo/Zelle)", accountId: destAcc.id, createdAt: serverTimestamp(), isCashOut: true });
     }
 
-    // === CONFETTI WIRE-UP: CASH OUT FROM GOALS ===
     triggerVictory();
     
     setIsCashOutOpen(false);
@@ -145,13 +140,20 @@ export default function TransferEngine({
 
   return (
     <>
-      {/* AUTHENTIC TRANSFER DRAWER */}
+      {/* INTERNAL TRANSFERS CARD VIEW */}
       {isTransferOpen && (
         <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsTransferOpen(false)}></div>
           <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col overflow-hidden transition-all ${isDarkMode ? "bg-[#1E293B] border border-slate-800" : "bg-white border border-slate-100"}`}>
             <div className="p-6 border-b flex justify-between items-center shrink-0">
-              <h3 className={`font-black uppercase tracking-widest flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}><ArrowRightLeft size={16}/> Internal Transfer</h3>
+              
+              {/* SURGICAL INJECTION: Official brand logo unified asset framework placement */}
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center p-0.5 border shrink-0 ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                  <img src="/login-logo.png" alt="Ledger Planner" className="w-full h-full object-cover rounded-full" />
+                </div>
+                <h3 className={`font-black uppercase tracking-widest flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Internal Transfer</h3>
+              </div>
               <button onClick={() => setIsTransferOpen(false)} className={closeButtonClass}><X size={18} /></button>
             </div>
             
@@ -207,14 +209,18 @@ export default function TransferEngine({
         </div>
       )}
 
-      {/* AUTHENTIC CASH OUT DRAWER */}
+      {/* DISBURSE GOAL FUNDS CASH OUT DRAWER VIEW */}
       {isCashOutOpen && cashOutGoal && (
         <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => { setIsCashOutOpen(false); setCashOutGoal(null); }}></div>
           <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col overflow-hidden transition-all ${isDarkMode ? "bg-[#1E293B] border border-slate-800" : "bg-white border border-slate-100"}`}>
             <div className="p-6 border-b flex justify-between items-center shrink-0">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">{cashOutGoal.icon}</span>
+              
+              {/* SURGICAL INJECTION: Official brand logo unified asset framework placement */}
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center p-0.5 border shrink-0 ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                  <img src="/login-logo.png" alt="Ledger Planner" className="w-full h-full object-cover rounded-full" />
+                </div>
                 <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Cash Out: {cashOutGoal.name}</h3>
               </div>
               <button onClick={() => { setIsCashOutOpen(false); setCashOutGoal(null); }} className={closeButtonClass}><X size={18} /></button>

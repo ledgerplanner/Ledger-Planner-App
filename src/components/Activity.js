@@ -297,13 +297,13 @@ export default function Activity({
           </div>
         </div>
 
-        {/* SURGICAL FIX: Added responsive layout handling to the inflow/outflow scoreboard text row */}
-        <div className={`flex flex-col sm:flex-row justify-center items-center w-full gap-2 sm:gap-3 mt-4 pt-2 border-t border-dashed transform transition-all duration-700 delay-300 ease-out ${isDarkMode ? "border-slate-700/50" : "border-slate-200/60"} ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-6"}`}>
-          <span className="text-sm font-black uppercase tracking-widest text-emerald-500 text-center">
+        {/* SURGICAL FIX: Enforced dynamic single-line scale down metrics for the scoreboard container row */}
+        <div className={`flex justify-center items-center w-full mt-4 pt-2 border-t border-dashed transform transition-all duration-700 delay-300 ease-out ${isDarkMode ? "border-slate-700/50" : "border-slate-200/60"} ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-6"} text-[11px] min-[360px]:text-[13px] sm:text-sm whitespace-nowrap`}>
+          <span className="font-black uppercase tracking-widest text-emerald-500 px-1">
             +${totalIncome.toLocaleString("en-US", { minimumFractionDigits: 2 })} In
           </span>
-          <span className={`hidden sm:inline text-[10px] font-black ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>|</span>
-          <span className="text-sm font-black uppercase tracking-widest text-[#F97316] text-center">
+          <span className={`text-[10px] font-black mx-1.5 ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>|</span>
+          <span className="font-black uppercase tracking-widest text-[#F97316] px-1">
             {totalExpense >= 0 ? "-" : "+"}${Math.abs(totalExpense).toLocaleString("en-US", { minimumFractionDigits: 2 })} Out
           </span>
         </div>
@@ -330,7 +330,7 @@ export default function Activity({
                 {isIncomeView ? "Inflow Breakdown" : "Outflow Breakdown"}
               </span>
               <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
-                MY Top 10 Categories
+                Top 10 Categories
               </span>
             </div>
 

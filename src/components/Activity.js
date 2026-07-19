@@ -223,9 +223,10 @@ export default function Activity({
   
   const topCategories = sortedCategories.slice(0, 10);
 
+  // === SURGICAL INJECTION: BRAND-SAFE CATEGORY COLOR PALETTE ===
   const colors = isIncomeView 
     ? ["#10B981", "#059669", "#047857", "#34D399", "#064E3B", "#6EE7B7", "#A7F3D0", "#0D9488", "#14B8A6", "#115E59"] 
-    : ["#1877F2", "#3B82F6", "#F97316", "#8B5CF6", "#EC4899", "#06B6D4", "#F43F5E", "#84CC16", "#10B981", "#64748B"]; 
+    : ["#A855F7", "#EC4899", "#06B6D4", "#EAB308", "#14B8A6", "#F43F5E", "#6366F1", "#D946EF", "#84CC16", "#475569"]; 
 
   const maxCategoryValue = topCategories.length > 0 ? topCategories[0][1] : 1;
 
@@ -237,9 +238,13 @@ export default function Activity({
 
   const getTxAmountClasses = (tx, isDark) => {
     if (tx.isBillPayment || tx.category === "Bill Payment") {
-      return isDark 
-        ? "bg-[#1877F2]/20 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)]" 
-        : "bg-blue-50 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)]";
+      return tx.isPaid === false
+        ? isDark
+          ? "bg-red-500/20 text-red-400 drop-shadow-[0_0_12px_rgba(239,68,68,0.7)]"
+          : "bg-red-50 text-red-600 drop-shadow-[0_0_12px_rgba(239,68,68,0.7)]"
+        : isDark 
+          ? "bg-[#1877F2]/20 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)]" 
+          : "bg-blue-50 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)]";
     }
     if (tx.type === "Income") {
       return isDark 
@@ -251,7 +256,6 @@ export default function Activity({
       : "bg-orange-50 text-orange-600 drop-shadow-[0_0_12px_rgba(249,115,22,0.7)]";
   };
 
-  // === SURGICAL FIX: Restored tx pointer specifically for the single crash point ===
   const getTxCategoryColor = (tx) => {
     const isInternalTransfer = tx.category === "Transfers (Venmo/Zelle)" && !tx.isDirectGoalEntry;
     if (tx.isCashOut || isInternalTransfer) return isDarkMode ? "text-slate-400" : "text-slate-500";
@@ -308,7 +312,7 @@ export default function Activity({
   ), [isMounted, isDarkMode, netCashFlow, inPercentage, totalIncome, totalExpense]);
 
   return (
-    <div className={`animate-fade-in pb-32 transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
+    <div className={`animate-fade-in pb-32 transition-colors duration-500 min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
           
       <div className={`relative z-10 transform transition-all duration-700 delay-150 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
         {renderHeroShell(`${userName}'s Activities`, graphicContent)}
@@ -316,6 +320,7 @@ export default function Activity({
 
       <main className="px-6 space-y-6 mt-4">
 
+        {/* --- DYNAMIC TARGET CARD BREAKDOWN SYSTEM --- */}
         {activityFilter !== "All" && totalTargetAmount > 0 && (
           <div className={`p-6 rounded-[2rem] border flex flex-col ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
             
@@ -356,6 +361,7 @@ export default function Activity({
           </div>
         )}
 
+        {/* --- TOGGLE FILTER SWITCH NAVIGATION PACK --- */}
         <div className="flex gap-3">
            <button 
              onClick={() => setActivityFilter(activityFilter === "Income" ? "All" : "Income")} 
@@ -368,7 +374,7 @@ export default function Activity({
            >
              <span className="font-black text-xs uppercase tracking-widest">Income</span>
              {activityFilter === "Income" && (
-               <span className="text-[9px] font-bold mt-1 tracking-wider opacity-90">Tap again to view all</span>
+               <span className="text-[9px] font-bold mt-1 tracking-wider opacity-90">Tap to exit breakdown view</span>
              )}
           </button>
            <button 
@@ -382,13 +388,12 @@ export default function Activity({
            >
              <span className="font-black text-xs uppercase tracking-widest">Expenses</span>
              {activityFilter === "Expense" && (
-               <span className="text-[9px] font-bold mt-1 tracking-wider opacity-90">Tap again to view all</span>
+               <span className="text-[9px] font-bold mt-1 tracking-wider opacity-90">Tap to exit breakdown view</span>
              )}
           </button>
         </div>
 
-        <div className={`border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
-
+        {/* === SURGICAL FIX: Repositioned Search Bar above the primary divider line === */}
         <div className="flex gap-2">
           <div className={`flex-1 flex items-center px-4 rounded-2xl border shadow-sm transition-colors ${isDarkMode ? "bg-[#1E293B] border-slate-800 text-white focus-within:border-slate-600" : "bg-white border-slate-100 text-slate-900 focus-within:border-[#1877F2]"}`}>
             <Search size={18} className="text-slate-400 shrink-0" />
@@ -400,6 +405,9 @@ export default function Activity({
           </div>
         </div>
 
+        <div className={`border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
+
+        {/* --- PRIMARY TRANSACTION TIMELINE CONTAINER LEDGER --- */}
         <div className="space-y-4">
          {groupedTransactions.length === 0 && todayTransactions.length === 0 ? (
             <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
@@ -475,7 +483,6 @@ export default function Activity({
               )}
 
               {groupedTransactions.map((group, index) => {
-                // Determine layout sync dynamically
                 const isDefaultCollapsed = isSearching ? false : (index !== 0 || todayTransactions.length > 0);
                 const isCollapsed = userToggledMonths[group.label] !== undefined 
                   ? userToggledMonths[group.label] 
@@ -528,7 +535,6 @@ export default function Activity({
                              <div className={`mt-3 pt-3 border-t flex items-center justify-between gap-2 ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
                                 <div className="flex-1 min-w-0 flex flex-col">
                                   <span className={`text-[10px] font-black uppercase tracking-widest truncate leading-tight ${getTxCategoryColor(tx)}`}>
-                                    {/* THE AUDIT TRAIL: Clear visual tagging for internal movements */}
                                     {tx.isCashOut ? "💸 CASHED OUT" : tx.isDirectGoalEntry ? "🔒 SAVED TO GOAL" : (tx.category || "Uncategorized")}
                                   </span>
                                   <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest truncate leading-tight mt-0.5">

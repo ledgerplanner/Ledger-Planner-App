@@ -877,9 +877,8 @@ function LedgerApp() {
   }
 
   return (
-    // SURGICAL INJECTION: Cleaned environment boundary layer to map fluid backgrounds tightly to top glass edges across all screen dimensions
-    <div onContextMenu={(e) => e.preventDefault()} className={`min-h-screen w-full font-sans relative flex transition-colors duration-500 select-none pt-0 [-webkit-touch-callout:none] ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
-      <div className={`w-full min-h-screen relative flex flex-col lg:flex-row transition-colors duration-500 overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
+    <div onContextMenu={(e) => e.preventDefault()} className={`h-screen overflow-hidden w-full font-sans relative flex transition-colors duration-500 select-none pt-0 [-webkit-touch-callout:none] ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
+      <div className={`w-full h-screen relative flex flex-col lg:flex-row transition-colors duration-500 overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
         
         {/* DESKTOP SIDEBAR VIEWPORT CONTROLLER */}
         <div className={`hidden lg:flex w-[280px] flex-col border-r z-40 p-6 transition-colors duration-500 shrink-0 ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-100"}`}>
@@ -1030,6 +1029,7 @@ function LedgerApp() {
           needsRefresh={needsRefresh} 
           dynamicBills={dynamicBills} 
           changeTab={changeTab} 
+          handleOpenPaydaySetup={handleOpenPaydaySetup}
           userName={userNameDisplay} 
           formatPaydayDateStr={formatPaydayDateStr} 
           isPushEnabled={isPushEnabled} 
@@ -1171,7 +1171,7 @@ function LedgerApp() {
         )}
 
         {showConfetti && (
-         <div className="absolute inset-0 z-[200] pointer-events-none flex items-center justify-center overflow-hidden" style={{ perspective: '1000px' }}>
+         <div className="fixed inset-0 z-[200] pointer-events-none flex items-center justify-center overflow-hidden" style={{ perspective: '1000px' }}>
             {[...Array(132)].map((_, i) => {
               const colors = [signatureColor, '#10B981', '#F97316'];
               const isStrip = Math.random() > 0.6;

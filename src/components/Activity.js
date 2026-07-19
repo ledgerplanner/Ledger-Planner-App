@@ -330,7 +330,7 @@ export default function Activity({
                 {isIncomeView ? "Inflow Breakdown" : "Outflow Breakdown"}
               </span>
               <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
-                Top 10 Categories
+                My Top 10
               </span>
             </div>
 

@@ -20,11 +20,18 @@ export default function PaydaySetup({
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsPaydaySetupOpen(false)}></div>
       <div className={`w-full lg:max-w-md h-[90vh] lg:h-[80vh] rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl relative z-[130] flex flex-col ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
         <div className="p-6 border-b flex justify-between items-center shrink-0">
-          <div className="flex flex-col min-w-0 flex-1 pr-2">
-            <h3 className={`font-black uppercase tracking-widest leading-none mb-1.5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Payday Routing</h3>
-            <p className={`text-[10px] font-bold leading-tight ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-              *Note: Only configure Pay Dates/ Amounts for the month of {new Date().toLocaleString("en-US", { month: "long" })}.
-            </p>
+          
+          {/* SURGICAL INJECTION: Official branding logo centered in place inside the Payday Routing header block */}
+          <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center p-0.5 border shrink-0 ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+              <img src="/login-logo.png" alt="Ledger Planner" className="w-full h-full object-cover rounded-full" />
+            </div>
+            <div className="flex flex-col min-w-0 flex-1">
+              <h3 className={`font-black uppercase tracking-widest leading-none mb-1.5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Payday Routing</h3>
+              <p className={`text-[10px] font-bold leading-tight truncate ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                *Month of {new Date().toLocaleString("en-US", { month: "long" })}
+              </p>
+            </div>
           </div>
           <button onClick={() => setIsPaydaySetupOpen(false)} className={closeButtonClass}><X size={18} /></button>
         </div>
@@ -75,7 +82,6 @@ export default function PaydaySetup({
           ))}
           </div>
 
-          {/* SURGICAL INJECTION: Clean structured helper pro-tip section appended below config cards */}
           <div className={`mt-6 p-4 rounded-2xl border text-left transition-colors ${isDarkMode ? "bg-slate-800/40 border-slate-700/60" : "bg-slate-50 border-slate-200/60"}`}>
             <p className={`text-[11px] font-bold leading-relaxed ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
               💡 PRO TIP: If your income varies or you don't follow a fixed payroll schedule, try activating Entrepreneur Mode. You can switch tracks anytime by opening the Settings Vault (⚙️) → Personalization & System → Income Structure.

@@ -301,9 +301,9 @@ export default function Dashboard({
           </span>
         </div>
 
-        {/* 1. UPGRADE: Tactical Radial Gauge (Command Dial) with Ignition Sweep */}
+        {/* 1. UPGRADE: Tactical Radial Gauge (Command Dial) with Ignition Sweep & Targeted Line Glows */}
         <div className={`relative w-40 h-40 flex-shrink-0 mt-6 mb-2 transform transition-all duration-700 delay-100 ease-out ${isMounted ? "scale-100 opacity-100" : "scale-90 opacity-0"}`}>
-          <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible drop-shadow-[0_0_20px_rgba(24,119,242,0.5)]">
+          <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible">
             <g transform="translate(50, 50)">
               {[...Array(24)].map((_, i) => {
                 const angle = -135 + (i * (270 / 23));
@@ -319,7 +319,7 @@ export default function Dashboard({
                     strokeWidth="4"
                     strokeLinecap="round"
                     transform={`rotate(${angle})`}
-                    className="transition-colors duration-500 ease-out"
+                    className={`transition-colors duration-500 ease-out ${isActive ? "drop-shadow-[0_0_6px_rgba(24,119,242,0.8)]" : ""}`}
                     style={{ transitionDelay: gaugePhase === "sweep" ? `${i * 15}ms` : `${(23 - i) * 10}ms` }}
                   />
                 );
@@ -327,10 +327,10 @@ export default function Dashboard({
             </g>
           </svg>
           
-          {/* SURGICAL FIX: "X of Y" Text Output & Dynamic Month Label */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-1 text-center pointer-events-none mt-1">
-            <span className={`text-2xl font-extrabold tracking-tight leading-none mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-              {currentMonthSettledBillsCount} of {currentMonthTotalBillsCount}
+          {/* SURGICAL FIX: "X/Y" Text Output & Centered Scaled Unit */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none mt-1 scale-[0.85]">
+            <span className={`text-3xl font-black tracking-tight leading-none mb-1.5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+              {currentMonthSettledBillsCount}/{currentMonthTotalBillsCount}
             </span>
             <span className={`text-[9px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-black"}`}>
               BILLS PAID IN {currentMonthName}
@@ -445,7 +445,7 @@ export default function Dashboard({
               else if (pd === "Week 1") expectedDateStr = "DAYS 1-7";
               else if (pd === "Week 2") expectedDateStr = "DAYS 8-14";
               else if (pd === "Week 3") expectedDateStr = "DAYS 15-21";
-              else if (pd === "Week 4") expectedDateStr = `DAYS 22-${lastDayOfMonth}`;
+              else if (pd === "Week 4") expectedDateStr = `Days 22-${lastDayOfMonth}`;
             } else {
               totalExpectedIncome = Number(pdSettings.income) || 0;
               expectedDateStr = pd === "Due Now" ? "ACTION REQ" : formatPaydayDateStr(pdSettings.date).toUpperCase();

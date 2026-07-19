@@ -150,7 +150,7 @@ export default function Todo({
     </div>
   );
  
-  // UPGRADED TASK CARD: Now a 2-Tier Modular Component
+  // SURGICAL REBUILD: Re-engineered 2-Tier component card with centered primary action button
   const renderTaskCard = (task) => {
     return (
       <div 
@@ -193,11 +193,11 @@ export default function Todo({
         {/* BORDER SPLIT */}
         <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-200"}`}></div>
 
-        {/* ROW 2: The Control Runway */}
-        <div className="flex gap-3 w-full">
+        {/* ROW 2: Balanced & Centered Control Runway */}
+        <div className="flex justify-center w-full">
           <button 
             onClick={(e) => { e.stopPropagation(); toggleTodoStatus(task.id); }}
-            className={`flex-1 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
+            className={`w-full max-w-[220px] py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
               task.isCompleted 
                 ? isDarkMode ? "bg-slate-700/50 text-slate-400 border border-slate-600" : "bg-slate-200 text-slate-500 border border-slate-300"
                 : "bg-[#1877F2] text-white shadow-lg border border-transparent shadow-[0_4px_15px_rgba(24,119,242,0.3)]"
@@ -205,32 +205,6 @@ export default function Todo({
           >
             {task.isCompleted ? <Circle size={14} strokeWidth={2.5} /> : <CheckCircle2 size={14} strokeWidth={2.5} />}
             {task.isCompleted ? "Mark Pending" : "Mark Completed"}
-          </button>
-
-          <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              openGlobalAction(
-                "Delete Task", 
-                "Are you sure you want to permanently delete this task?", 
-                "Delete", 
-                true, 
-                async () => {
-                  try {
-                    await deleteDoc(doc(db, "users", auth.currentUser.uid, "todos", task.id));
-                    triggerHaptic();
-                  } catch (error) {
-                    console.error("Error deleting task:", error);
-                  }
-                }
-              );
-            }}
-            className={`flex-1 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
-              isDarkMode ? "bg-red-900/20 text-red-400 border border-red-900/50" : "bg-red-50 text-red-600 border border-red-200"
-            }`}
-          >
-            <Trash2 size={14} strokeWidth={2.5} />
-            Delete Task
           </button>
         </div>
       </div>
@@ -251,9 +225,6 @@ export default function Todo({
         `}</style>
         {renderHeroShell(`${userName}'s Tasks`, graphicContent)}
       </div>
-      
-      {/* 1. SURGICAL INJECTION: Signature line placed below the hero card */}
-      <div className={`mx-6 mt-6 mb-2 border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
 
       <main className="px-6 space-y-6 mt-4">
         
@@ -317,7 +288,10 @@ export default function Todo({
             </div>
           </div>
         </div>
- 
+        
+        {/* SURGICAL INTEGRATION: Repositioned signature boundary line to layout beneath the input pack container box */}
+        <div className={`mx-6 my-2 border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
+
         {todos.length === 0 && (
            <div className="text-center py-12 px-4">
               <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4 ${isDarkMode ? "bg-slate-800" : "bg-slate-100"}`}>

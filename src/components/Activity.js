@@ -223,7 +223,7 @@ export default function Activity({
   
   const topCategories = sortedCategories.slice(0, 10);
 
-  // === SURGICAL INJECTION: BRAND-SAFE CATEGORY COLOR PALETTE ===
+  // === BRAND-SAFE CATEGORY COLOR PALETTE ===
   const colors = isIncomeView 
     ? ["#10B981", "#059669", "#047857", "#34D399", "#064E3B", "#6EE7B7", "#A7F3D0", "#0D9488", "#14B8A6", "#115E59"] 
     : ["#A855F7", "#EC4899", "#06B6D4", "#EAB308", "#14B8A6", "#F43F5E", "#6366F1", "#D946EF", "#84CC16", "#475569"]; 
@@ -297,12 +297,13 @@ export default function Activity({
           </div>
         </div>
 
-        <div className={`flex justify-center items-center w-full gap-3 mt-4 pt-2 border-t border-dashed transform transition-all duration-700 delay-300 ease-out ${isDarkMode ? "border-slate-700/50" : "border-slate-200/60"} ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-6"}`}>
-          <span className="text-sm font-black uppercase tracking-widest text-emerald-500">
+        {/* SURGICAL FIX: Added responsive layout handling to the inflow/outflow scoreboard text row */}
+        <div className={`flex flex-col sm:flex-row justify-center items-center w-full gap-2 sm:gap-3 mt-4 pt-2 border-t border-dashed transform transition-all duration-700 delay-300 ease-out ${isDarkMode ? "border-slate-700/50" : "border-slate-200/60"} ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-6"}`}>
+          <span className="text-sm font-black uppercase tracking-widest text-emerald-500 text-center">
             +${totalIncome.toLocaleString("en-US", { minimumFractionDigits: 2 })} In
           </span>
-          <span className={`text-[10px] font-black ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>|</span>
-          <span className="text-sm font-black uppercase tracking-widest text-[#F97316]">
+          <span className={`hidden sm:inline text-[10px] font-black ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>|</span>
+          <span className="text-sm font-black uppercase tracking-widest text-[#F97316] text-center">
             {totalExpense >= 0 ? "-" : "+"}${Math.abs(totalExpense).toLocaleString("en-US", { minimumFractionDigits: 2 })} Out
           </span>
         </div>
@@ -329,7 +330,7 @@ export default function Activity({
                 {isIncomeView ? "Inflow Breakdown" : "Outflow Breakdown"}
               </span>
               <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
-                Top 10
+                Top 10 Categories
               </span>
             </div>
 

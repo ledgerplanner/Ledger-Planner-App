@@ -150,7 +150,7 @@ export default function Todo({
     </div>
   );
  
-  // SURGICAL REBUILD: Re-engineered 2-Tier component card with centered primary action button
+  // SURGICAL REBUILD: Engineered premium 2-tier architectural details
   const renderTaskCard = (task) => {
     return (
       <div 
@@ -161,23 +161,33 @@ export default function Todo({
             : isDarkMode ? "bg-[#1E293B] border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"
         }`}
       >
-        {/* ROW 1: Meta Data & Pencil */}
+        {/* ROW 1: Meta Data Core & Star Badges & Pencil */}
         <div className="flex items-start justify-between w-full">
           <div className="flex items-center gap-3 flex-1 min-w-0">
+            {/* 1.) Custom Emoji */}
             <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
               {task.emoji || "📝"}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className={`font-bold text-sm truncate leading-tight ${isDarkMode ? "text-slate-200" : "text-slate-800"} ${task.isCompleted ? "line-through" : ""}`}>
+            
+            <div className="flex-1 min-w-0 pt-0.5">
+              {/* 3.) Task Name */}
+              <p className={`font-bold text-sm truncate leading-tight mb-1.5 ${isDarkMode ? "text-slate-200" : "text-slate-800"} ${task.isCompleted ? "line-through" : ""}`}>
                 {task.text}
               </p>
-              <div className="flex items-center gap-2 mt-1.5">
-                {task.type === "shopping" ? <ShoppingBag size={10} className="text-[#10B981]" /> : <Zap size={10} className="text-[#1877F2]" />}
+              
+              {/* 2 & 4.) Connected Meta Line: Inline Action/Shopping Icon + Stars */}
+              <div className="flex items-center gap-2">
+                {task.type === "shopping" ? (
+                  <ShoppingBag size={12} strokeWidth={2.5} className="text-[#10B981] shrink-0" />
+                ) : (
+                  <Zap size={12} strokeWidth={2.5} className="text-[#1877F2] shrink-0" />
+                )}
                 {renderStars(task.priority)}
               </div>
             </div>
           </div>
           
+          {/* 5.) Edit Pencil */}
           <button 
             onClick={(e) => { 
                 e.stopPropagation(); 
@@ -190,10 +200,10 @@ export default function Todo({
          </button>
         </div>
 
-        {/* BORDER SPLIT */}
+        {/* BORDER SEPARATOR BREAK */}
         <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-200"}`}></div>
 
-        {/* ROW 2: Balanced & Centered Control Runway */}
+        {/* ROW 2: 6.) Centered Action Pill Runway */}
         <div className="flex justify-center w-full">
           <button 
             onClick={(e) => { e.stopPropagation(); toggleTodoStatus(task.id); }}
@@ -289,7 +299,7 @@ export default function Todo({
           </div>
         </div>
         
-        {/* SURGICAL INTEGRATION: Repositioned signature boundary line to layout beneath the input pack container box */}
+        {/* Signature Line Splitter Below Input Deck */}
         <div className={`mx-6 my-2 border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
 
         {todos.length === 0 && (

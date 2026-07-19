@@ -6,7 +6,7 @@ import {
 
 // === FIREBASE INITIALIZATION ===
 import { auth, db, messaging, VAPID_KEY } from "./firebase";
-import { getToken } from "firebase/messaging";
+import { getToken, onMessage } from "firebase/messaging";
 import { 
   signInWithEmailAndPassword, createUserWithEmailAndPassword, 
   onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup, updateProfile 
@@ -47,7 +47,7 @@ function LedgerApp() {
     isEntrepreneurMode, setIsEntrepreneurMode 
   } = useLedger();
 
-  // === DYNAMIC COMPUTATIONS (MOVED UP FOR SAFE INITIALIZATION) ===
+  // === DYNAMIC COMPUTATIONS ===
   const userNameDisplay = isDemoMode ? "Aaron" : user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || "Founder";
 
   // === LOCAL UI & ROUTING STATE ===
@@ -257,12 +257,10 @@ function LedgerApp() {
       if (bill.isInstallment) newPaidAmount = Math.max(0, (bill.paidAmount || 0) - exactRefundAmount);
 
       if (isDemoMode) {
-        // SURGICAL INJECTION: Wiping settledDate cleanly upon revert
         setBills(bills.map(b => b.id === id ? { ...b, isPaid: false, paidAmount: newPaidAmount, paidFromAccountId: null, linkedTxId: null, settledDate: null } : b));
         if (targetAcc) setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: a.balance + exactRefundAmount } : a));
         if (bill.linkedTxId) setTransactions(transactions.filter(t => t.id !== bill.linkedTxId));
       } else {
-        // SURGICAL INJECTION: Wiping settledDate cleanly upon revert
         await updateDoc(doc(db, "users", user.uid, "bills", id), { isPaid: false, paidAmount: newPaidAmount, paidFromAccountId: null, linkedTxId: null, settledDate: null });
         if (targetAcc) await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: targetAcc.balance + exactRefundAmount });
         if (bill.linkedTxId) await deleteDoc(doc(db, "users", user.uid, "transactions", bill.linkedTxId));
@@ -281,8 +279,6 @@ function LedgerApp() {
 
     if (!bill || !targetAcc) return;
     const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
-    
-    // === SURGICAL INJECTION: Settled Date Stamp Engine ===
     const settledDateStamp = currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" });
     
     const remainingBalance = (bill.totalAmount || 0) - (bill.paidAmount || 0);
@@ -396,7 +392,7 @@ function LedgerApp() {
     setIsEditingEntry(false); triggerVictory();
   };
 
-  const handleAddTodo = async (e) => {
+  const handleAddTodo = async (e, emojiPayload = "📝") => {
     e.preventDefault();
     if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; }
     if (!user || !newTodoText.trim()) return;
@@ -406,14 +402,14 @@ function LedgerApp() {
           text: newTodoText.trim(),
           priority: newTodoPriority,
           type: newTodoType,
+          emoji: emojiPayload,
           isCompleted: false,
           createdAt: serverTimestamp()
         });
       }
       triggerVictory();
       setNewTodoText("");
-      setNewTodoPriority(3);
-      setNewTodoType("task");
+      newTodoPriority !== 3 && setNewTodoPriority(3);
     } catch (error) { console.error("Error adding todo:", error); }
   };
 
@@ -470,7 +466,6 @@ function LedgerApp() {
           const d = new Date(b.rawDate);
           d.setUTCMonth(d.getUTCMonth() + 1);
           const nextDate = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
-          // SURGICAL INJECTION: Wipe settledDate on rollover reset
           await updateDoc(doc(db, "users", user.uid, "bills", b.id), { 
             rawDate: nextDate, date: d.getUTCDate(), fullDate: d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }), isPaid: false, paidAmount: b.isInstallment ? b.paidAmount : 0, settledDate: null
           });
@@ -502,7 +497,6 @@ function LedgerApp() {
       const yearStr = targetYear.toString();
       let csvContent = "Type,Name,Amount,Category,Date,Status/Account\n";
       
-      // 1. Process Bills
       bills.forEach(b => {
         if (b.rawDate && b.rawDate.startsWith(yearStr)) {
           const amount = b.amount || 0;
@@ -513,7 +507,6 @@ function LedgerApp() {
         }
       });
       
-      // 2. Process Transactions
       transactions.forEach(t => {
         let tYear = new Date().getFullYear();
         if (t.createdAt && t.createdAt.toDate) {
@@ -531,7 +524,6 @@ function LedgerApp() {
         }
       });
 
-      // 3. Generate Blob Payload & Download
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -548,11 +540,38 @@ function LedgerApp() {
     }
   };
 
-  // === LIFECYCLE & AUTH HOOKS ===
+  // === SURGICAL INJECTION: INTEGRATED RETENTION ROUTING CAPTURE ENGINE ===
   useEffect(() => {
     setIsMounted(true);
     const isDemo = window.location.hostname.includes("demo");
     if (isDemo) setIsDemoMode(true);
+
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      // Background push banner click detection listener route
+      navigator.serviceWorker.addEventListener("message", (event) => {
+        const payloadData = event.data?.data;
+        if (payloadData?.route) {
+          // Deep-link past dashboard screen right into CommandCenter drawer
+          setTimeout(() => changeTab(payloadData.route), 100);
+          
+          if (payloadData.triggerBirthdayConfetti === "true") {
+            setTimeout(() => triggerVictory(), 600);
+          }
+        }
+      });
+    }
+
+    if (messaging) {
+      // Foreground active push notification app listeners
+      onMessage(messaging, (payload) => {
+        if (payload.data?.route) {
+          setIsNotificationsOpen(true); // Hydrate local state automatically if open live
+          if (payload.data.triggerBirthdayConfetti === "true") {
+            triggerVictory();
+          }
+        }
+      });
+    }
   }, [setIsDemoMode]);
 
   useEffect(() => {
@@ -564,7 +583,7 @@ function LedgerApp() {
     return () => unsubscribeAuth();
   }, [isMounted, isDemoMode, setUser]);
 
-  // === SURGICAL FIX: BIRTHDAY CONFETTI ENGINE ===
+  // BIRTHDAY CONFETTI ENGINE
   useEffect(() => {
     if (!user || isDemoMode) return;
     const fetchBirthday = async () => {
@@ -575,14 +594,12 @@ function LedgerApp() {
           if (data.birthday) {
             const today = new Date();
             const todayStr = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-            // Extract MM-DD regardless of format (YYYY-MM-DD or MM-DD)
             const bdayStr = data.birthday.length > 5 ? data.birthday.substring(5) : data.birthday; 
             const bdayYear = today.getFullYear();
             const storageKey = `lp_bday_celebrated_${bdayYear}`;
             
             if (bdayStr === todayStr && localStorage.getItem(storageKey) !== "true") {
               triggerVictory();
-              // Injected custom greeting with dynamic name mapping
               const activeName = data.firstName || user?.displayName?.split(' ')[0] || "Founder";
               openGlobalAction("Happy Birthday! 🎂", `Happy Birthday, ${activeName}. We at Ledger Planner wish you many more!`, "Let's Go", false, () => {}, true);
               localStorage.setItem(storageKey, "true");
@@ -594,45 +611,35 @@ function LedgerApp() {
       }
     };
     fetchBirthday();
-  }, [user, isDemoMode]); // Run once when user is authenticated
+  }, [user, isDemoMode]);
 
-  // === SURGICAL INJECTION: LIVE AI STRATEGIST ROUTING ===
+  // LIVE AI STRATEGIST ROUTING
   useEffect(() => {
     if (!user || isDemoMode) return;
     
     const fetchAIBriefing = async () => {
        const now = new Date();
        const hour = now.getHours();
-       // Determines the time block: AM is 5:00 AM to 3:59 PM, PM is 4:00 PM to 4:59 AM
        const period = hour >= 5 && hour < 16 ? "AM" : "PM";
        const dateStr = now.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
-       
-       // SURGICAL FIX: Tied cache key directly to user ID for multi-tenant isolation
        const cacheKey = `lp_ai_briefing_${user.uid}_${dateStr}_${period}`;
        
        const cachedBriefing = localStorage.getItem(cacheKey);
        if (cachedBriefing) {
-           if (cachedBriefing === "DISMISSED") {
-               return;
-           }
+           if (cachedBriefing === "DISMISSED") return;
            try {
-               // SURGICAL FIX: Parse the stored JSON string back into a live React object state
                setAiBriefingText(JSON.parse(cachedBriefing));
                return; 
            } catch (e) {
-               // Failsafe: If the old "[object Object]" string is stuck, wipe it and fetch fresh JSON
                localStorage.removeItem(cacheKey);
            }
        }
 
        try {
-           // DISTILLATION FILTER: Strip out massive UI cruft/SVGs to ensure ultra-low token usage and fast API response
            const distilledAccounts = accounts.map(a => ({ name: a.name, type: a.type, balance: a.balance, isGoal: a.isGoal }));
            const distilledBills = bills.map(b => ({ name: b.name, amount: b.amount, isPaid: b.isPaid, dueDate: b.fullDate || b.rawDate, isOverdue: b.isOverdue }));
-           // Limit to last 15 recent transactions to prevent blowing out the context window
            const distilledTx = transactions.slice(0, 15).map(t => ({ name: t.name, amount: t.amount, type: t.type, date: t.date }));
 
-           // SURGICAL FIX: Cache-busting timestamp appended to bypass Service Worker POST blocks
            const response = await fetch(`/api/briefing?cb=${Date.now()}`, {
                method: 'POST',
                headers: { 'Content-Type': 'application/json' },
@@ -650,18 +657,14 @@ function LedgerApp() {
                const data = await response.json();
                if (data.briefing) {
                    setAiBriefingText(data.briefing);
-                   // SURGICAL FIX: Stringify the payload to prevent coercion to "[object Object]"
                    localStorage.setItem(cacheKey, JSON.stringify(data.briefing));
                }
-           } else {
-               console.error("AI Briefing Engine Fault:", await response.text());
            }
        } catch (error) {
            console.error("Failed to establish secure relay link to AI engine:", error);
        }
     };
 
-    // Slight architectural delay ensures Firebase finishes hydrating state arrays before we ping the model
     const timer = setTimeout(() => {
        fetchAIBriefing();
     }, 3500);
@@ -674,8 +677,6 @@ function LedgerApp() {
        const hour = now.getHours();
        const period = hour >= 5 && hour < 16 ? "AM" : "PM";
        const dateStr = now.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
-       
-       // SURGICAL FIX: Match the user-isolated cache key syntax
        const cacheKey = `lp_ai_briefing_${user?.uid || 'demo'}_${dateStr}_${period}`;
        
        localStorage.setItem(cacheKey, "DISMISSED");
@@ -736,7 +737,6 @@ function LedgerApp() {
     );
   };
 
-  // === DYNAMIC COMPUTATIONS ===
   const getOrdinalNum = (n) => n + (n > 0 ? ['th', 'st', 'nd', 'rd'][(n > 3 && n < 21) || n % 10 > 3 ? 0 : n % 10] : '');
   const heroDateTimeStr = `${currentTime.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase()}, ${currentTime.toLocaleDateString("en-US", { month: "long" }).toUpperCase()} ${getOrdinalNum(currentTime.getDate()).toUpperCase()}, ${currentTime.getFullYear()} — ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toUpperCase()}`;
 
@@ -747,7 +747,6 @@ function LedgerApp() {
     return dateString;
   };
 
-  // === SURGICAL FIX: RESTORED formatDisplayDate UTILITY ===
   const formatDisplayDate = (dateString) => {
     if (!dateString) return "";
     const parts = dateString.split("-");
@@ -755,7 +754,6 @@ function LedgerApp() {
     return dateString;
   };
 
-  // === SURGICAL FIX: RESTORED calculatePaydayGroup UTILITY ===
   const calculatePaydayGroup = (dateString) => {
     if (!dateString) return "Unscheduled";
     const billDate = new Date(dateString);
@@ -813,13 +811,11 @@ function LedgerApp() {
   const currentLiveBalance = accounts.filter(a => !a.isGoal && (a.type === "Checking" || a.type === "Cash")).reduce((sum, acc) => sum + (acc.balance || 0), 0);
 
   const renderHeroShell = (title, graphicContent) => {
-    // === SURGICAL FIX: BADGE LOGIC STREAMLINED ===
-    const hasOverdueOrDueNow = dynamicBills.some(b => !b.isPaid && (b.isOverdue || b.payday === "Due Now"));
+    const constellationBadgeRoute = dynamicBills.some(b => !b.isPaid && (b.isOverdue || b.payday === "Due Now"));
 
     return (
       <header className={`px-6 pt-12 pb-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden mb-8 z-30 rounded-b-[3rem] ${isDarkMode ? "bg-[#1E293B]" : "bg-white"}`}>
         
-        {/* === INJECTED OFFLINE BANNER === */}
         {!isOnline && (
           <div className="absolute top-0 left-0 w-full bg-[#F97316] text-white text-[10px] font-black uppercase tracking-widest py-1.5 flex items-center justify-center gap-1.5 z-50 shadow-md animate-slide-up">
             <AlertCircle size={12} strokeWidth={3} /> Connection Lost: Read-Only Mode
@@ -831,10 +827,10 @@ function LedgerApp() {
             <button onClick={() => { setIsDarkMode(!isDarkMode); setManualThemeOverride(true); triggerHaptic(20); }} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
               {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
             </button>
-            <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-100 text-slate-400"}`} style={{ color: isSettingsOpen ? undefined : signatureColor }}>
+            <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-100 text-slate-400"}`} style={{ color: isNotificationsOpen ? signatureColor : undefined }}>
               <Bell size={18} />
-              {(hasOverdueOrDueNow || (!isPushEnabled && !isDemoMode)) && (
-                <span className={`absolute top-0 right-0 w-2.5 h-2.5 rounded-full border-[1.5px] animate-pulse ${hasOverdueOrDueNow ? "bg-red-500 border-red-500" : "bg-red-500 border-red-500"} ${isDarkMode ? "border-t-transparent border-l-transparent" : "border-white"}`}></span>
+              {(constellationBadgeRoute || (!isPushEnabled && !isDemoMode)) && (
+                <span className="absolute top-0 right-0 w-2.5 h-2.5 rounded-full border-[1.5px] animate-pulse bg-red-500 border-red-500"></span>
               )}
             </button>
           </div>
@@ -908,7 +904,6 @@ function LedgerApp() {
             ))}
           </div>
           <div className="mt-auto pt-4 shrink-0">
-            {/* INJECTED OFFLINE WRAPPER */}
             <button onClick={handleOpenQab} className="w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-white font-black uppercase tracking-widest text-xs transition-transform active:scale-95 hover:-translate-y-1" style={{ backgroundColor: signatureColor }}><Plus size={18} /> Quick Add</button>
           </div>
         </div>
@@ -1016,7 +1011,6 @@ function LedgerApp() {
           </div>
 
           <div className={`fixed lg:hidden ${isDemoMode ? "bottom-[200px]" : "bottom-28"} right-6 z-50`}>
-            {/* INJECTED OFFLINE WRAPPER */}
             <button onClick={() => { triggerHaptic(20); handleOpenQab(); }} className={`w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg border-4 ${isDarkMode ? "border-[#0F172A]" : "border-white"}`} style={{ backgroundColor: signatureColor }}><Plus size={28} /></button>
           </div>
 
@@ -1034,7 +1028,6 @@ function LedgerApp() {
         {/* === THE CORE MODAL INJECTIONS === */}
         {isQabOpen && <QuickAddModal onClose={() => setIsQabOpen(false)} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} />}
         
-        {/* === SURGICAL INJECTION: WIRED LP AI ASSISTANT PROPS TO COMMAND CENTER === */}
         {isNotificationsOpen && <CommandCenter 
           setIsNotificationsOpen={setIsNotificationsOpen} 
           needsRefresh={needsRefresh} 
@@ -1050,7 +1043,6 @@ function LedgerApp() {
         
         <TransferEngine isTransferOpen={isTransferOpen} setIsTransferOpen={setIsTransferOpen} isCashOutOpen={isCashOutOpen} setIsCashOutOpen={setIsCashOutOpen} cashOutGoal={cashOutGoal} setCashOutGoal={setCashOutGoal} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} />
         
-        {/* === PROP INJECTIONS FOR ACCOUNT BUILDER === */}
         <AccountBuilder 
           isAddAccountOpen={isAddAccountOpen} 
           setIsAddAccountOpen={setIsAddAccountOpen} 
@@ -1063,7 +1055,6 @@ function LedgerApp() {
           triggerVictory={triggerVictory} 
         />
 
-        {/* === RESTORED AUTHENTIC MODAL CONTAINERS === */}
         {isPaydaySetupOpen && (
           <PaydaySetup 
             setIsPaydaySetupOpen={setIsPaydaySetupOpen} 
@@ -1109,7 +1100,6 @@ function LedgerApp() {
           />
         )}
 
-        {/* REINJECTED INSTALLMENT PROMPT FROM AUTHENTIC CODE */}
         {installmentPromptConfig.isOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setInstallmentPromptConfig({ isOpen: false, billId: null, nextDate: "" })}></div>
@@ -1128,7 +1118,6 @@ function LedgerApp() {
                    <div className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors overflow-visible ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
                      <span className={`font-bold text-base ${!installmentPromptConfig.nextDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{installmentPromptConfig.nextDate ? formatDisplayDate(installmentPromptConfig.nextDate) : "mm/dd/yyyy"}</span>
                      <CalendarIcon size={18} className="shrink-0" style={{ color: signatureColor }} />
-                     {/* OVERFLOW ESCAPE HATCH: Added z-50 and relative positioning to free the picker */}
                      <input type="date" value={installmentPromptConfig.nextDate} onChange={(e) => setInstallmentPromptConfig({...installmentPromptConfig, nextDate: e.target.value})} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50" />
                    </div>
                 </div>
@@ -1138,7 +1127,6 @@ function LedgerApp() {
           </div>
         )}
 
-        {/* SETTINGS AND GLOBAL ACTIONS */}
         {isSettingsOpen && (
           <Settings 
             userName={userNameDisplay}
@@ -1164,7 +1152,6 @@ function LedgerApp() {
           />
         )}
 
-        {/* THE GLOBAL ACTION MODAL ENGINE */}
         {globalActionConfig.isOpen && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center px-4">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeGlobalAction}></div>
@@ -1186,59 +1173,57 @@ function LedgerApp() {
           </div>
         )}
 
-        {/* 3D FALLING CONFETTI 2.0 ENGINE */}
         {showConfetti && (
          <div className="absolute inset-0 z-[200] pointer-events-none flex items-center justify-center overflow-hidden" style={{ perspective: '1000px' }}>
-           {[...Array(132)].map((_, i) => {
-             const colors = [signatureColor, '#10B981', '#F97316'];
-             const isStrip = Math.random() > 0.6;
-             const peakX = (Math.random() - 0.5) * 1000;
-             const peakY = -(Math.random() * 400 + 200); 
-             const endX = peakX + (Math.random() - 0.5) * 500; 
-             const endY = 800 + Math.random() * 300; 
+            {[...Array(132)].map((_, i) => {
+              const colors = [signatureColor, '#10B981', '#F97316'];
+              const isStrip = Math.random() > 0.6;
+              const peakX = (Math.random() - 0.5) * 1000;
+              const peakY = -(Math.random() * 400 + 200); 
+              const endX = peakX + (Math.random() - 0.5) * 500; 
+              const endY = 800 + Math.random() * 300; 
 
-             return (
-               <div 
-                 key={i} 
-                 className="absolute animate-[confettiFall_ease-out_forwards]" 
-                 style={{ 
-                   backgroundColor: colors[Math.floor(Math.random() * colors.length)], 
-                   left: '50%', top: '60%',
-                   width: isStrip ? '8px' : '12px', height: isStrip ? '24px' : '12px',
-                   borderRadius: Math.random() > 0.5 && !isStrip ? '50%' : '2px',
-                   transformStyle: 'preserve-3d',
-                   animationDuration: `${Math.random() * 1.5 + 3.7}s`,
-                   animationDelay: `${Math.random() * 0.3}s`,
-                   animationTimingFunction: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)', 
-                   '--peak-x': `${peakX}px`, 
-                   '--peak-y': `${peakY}px`, 
-                   '--end-x': `${endX}px`, 
-                   '--end-y': `${endY}px`,
-                   '--tz': `${(Math.random() - 0.5) * 600}px`,
-                   '--rx': `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 1440 + 720)}deg`, 
-                   '--ry': `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 1440 + 720)}deg`, 
-                   '--rz': `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 720 + 360)}deg`,
-                   '--scale': `${Math.random() * 0.6 + 0.6}`
-                 }} 
-               />
-             )
-           })}
-           <style>{`
-             @keyframes confettiFall { 
-               0% { transform: translate3d(-50%, -50%, 0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(0); opacity: 1; } 
-               15% { transform: translate3d(calc(-50% + var(--peak-x)), calc(-50% + var(--peak-y)), var(--tz)) rotateX(calc(var(--rx) * 0.15)) rotateY(calc(var(--ry) * 0.15)) rotateZ(calc(var(--rz) * 0.15)) scale(var(--scale)); opacity: 1; } 
-               80% { opacity: 1; }
-               100% { transform: translate3d(calc(-50% + var(--end-x)), calc(-50% + var(--end-y)), var(--tz)) rotateX(var(--rx)) rotateY(var(--ry)) rotateZ(var(--rz)) scale(var(--scale)); opacity: 0; } 
-             }
-           `}</style>
-         </div>
+              return (
+                <div 
+                  key={i} 
+                  className="absolute animate-[confettiFall_ease-out_forwards]" 
+                  style={{ 
+                    backgroundColor: colors[Math.floor(Math.random() * colors.length)], 
+                    left: '50%', top: '60%',
+                    width: isStrip ? '8px' : '12px', height: isStrip ? '24px' : '12px',
+                    borderRadius: Math.random() > 0.5 && !isStrip ? '50%' : '2px',
+                    transformStyle: 'preserve-3d',
+                    animationDuration: `${Math.random() * 1.5 + 3.7}s`,
+                    animationDelay: `${Math.random() * 0.3}s`,
+                    animationTimingFunction: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)', 
+                    '--peak-x': `${peakX}px`, 
+                    '--peak-y': `${peakY}px`, 
+                    '--end-x': `${endX}px`, 
+                    '--end-y': `${endY}px`,
+                    '--tz': `${(Math.random() - 0.5) * 600}px`,
+                    '--rx': `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 1440 + 720)}deg`, 
+                    '--ry': `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 1440 + 720)}deg`, 
+                    '--rz': `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 720 + 360)}deg`,
+                    '--scale': `${Math.random() * 0.6 + 0.6}`
+                  }} 
+                />
+              )
+            })}
+            <style>{`
+              @keyframes confettiFall { 
+                0% { transform: translate3d(-50%, -50%, 0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(0); opacity: 1; } 
+                15% { transform: translate3d(calc(-50% + var(--peak-x)), calc(-50% + var(--peak-y)), var(--tz)) rotateX(calc(var(--rx) * 0.15)) rotateY(calc(var(--ry) * 0.15)) rotateZ(calc(var(--rz) * 0.15)) scale(var(--scale)); opacity: 1; } 
+                80% { opacity: 1; }
+                100% { transform: translate3d(calc(-50% + var(--end-x)), calc(-50% + var(--end-y)), var(--tz)) rotateX(var(--rx)) rotateY(var(--ry)) rotateZ(var(--rz)) scale(var(--scale)); opacity: 0; } 
+              }
+            `}</style>
+          </div>
         )}
       </div>
     </div>
   );
 }
 
-// 3. THE GLOBAL WRAPPER
 export default function AppWrapper() {
   return (
     <LedgerProvider>

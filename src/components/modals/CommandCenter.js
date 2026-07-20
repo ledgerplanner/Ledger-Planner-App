@@ -14,10 +14,11 @@ export default function CommandCenter({
   isPushEnabled,
   enablePushNotifications,
   aiBriefingText = null,
-  handleDismissAIBriefing
+  handleDismissAIBriefing,
+  isDemoMode
 }) {
   // 1. PULL GLOBAL STATE FROM THE CLOUD
-  const { user, isDarkMode, signatureColor, isDemoMode } = useLedger();
+  const { user, isDarkMode, signatureColor } = useLedger();
 
   // === LOCAL UI DISMISSAL STATE FOR AI BANNER ===
   const [isAiBannerDismissed, setIsAiBannerDismissed] = useState(false);

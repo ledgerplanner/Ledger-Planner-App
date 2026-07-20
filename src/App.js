@@ -878,6 +878,8 @@ function LedgerApp() {
 
   return (
     <div onContextMenu={(e) => e.preventDefault()} className={`h-screen overflow-hidden w-full font-sans relative flex transition-colors duration-500 select-none pt-0 [-webkit-touch-callout:none] ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
+      {/* SURGICAL INJECTION: Signature Top Chrome Edge for Desktop */}
+      <div className="hidden md:block absolute top-0 left-0 w-full h-1.5 z-[200]" style={{ backgroundColor: signatureColor }}></div>
       <div className={`w-full h-screen relative flex flex-col lg:flex-row transition-colors duration-500 overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
         
         {/* DESKTOP SIDEBAR VIEWPORT CONTROLLER */}
@@ -1036,6 +1038,7 @@ function LedgerApp() {
           enablePushNotifications={enablePushNotifications}
           aiBriefingText={aiBriefingText}
           handleDismissAIBriefing={handleDismissAIBriefing}
+          isDemoMode={isDemoMode}
         />}
         
         <TransferEngine isTransferOpen={isTransferOpen} setIsTransferOpen={setIsTransferOpen} isCashOutOpen={isCashOutOpen} setIsCashOutOpen={setIsCashOutOpen} cashOutGoal={cashOutGoal} setCashOutGoal={setCashOutGoal} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} />
@@ -1113,9 +1116,10 @@ function LedgerApp() {
                 <div className="relative">
                    <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Next Due Date</label>
                    <div className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors overflow-visible ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
-                     <span className={`font-bold text-base ${!installmentPromptConfig.nextDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{installmentPromptConfig.nextDate ? formatDisplayDate(installmentPromptConfig.nextDate) : "mm/dd/yyyy"}</span>
-                     <CalendarIcon size={18} className="shrink-0" style={{ color: signatureColor }} />
-                     <input type="date" value={installmentPromptConfig.nextDate} onChange={(e) => setInstallmentPromptConfig({...installmentPromptConfig, nextDate: e.target.value})} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50" />
+                     <span className={`font-bold text-base pointer-events-none ${!installmentPromptConfig.nextDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{installmentPromptConfig.nextDate ? formatDisplayDate(installmentPromptConfig.nextDate) : "mm/dd/yyyy"}</span>
+                     <CalendarIcon size={18} className="shrink-0 pointer-events-none" style={{ color: signatureColor }} />
+                     {/* SURGICAL INJECTION: Input spans entire container for seamless viewport selection */}
+                     <input type="date" value={installmentPromptConfig.nextDate} onChange={(e) => setInstallmentPromptConfig({...installmentPromptConfig, nextDate: e.target.value})} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
                    </div>
                 </div>
                 <button onClick={handleSaveNextInstallmentDate} disabled={!installmentPromptConfig.nextDate} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all active:scale-95 flex items-center justify-center gap-2" style={{ backgroundColor: !installmentPromptConfig.nextDate ? undefined : signatureColor }}><CalendarIcon size={16}/> Route to Payday</button>
@@ -1149,13 +1153,14 @@ function LedgerApp() {
           />
         )}
 
+        {/* SURGICAL INJECTION: Official branding logo centered in global action alert blocks */}
         {globalActionConfig.isOpen && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center px-4">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeGlobalAction}></div>
             <div className={`relative w-full max-w-sm p-6 rounded-[2rem] shadow-2xl animate-slide-up ${isDarkMode ? "bg-[#1E293B] border border-slate-700" : "bg-white border border-slate-100"}`}>
               <div className="flex flex-col items-center text-center">
-                <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${globalActionConfig.isDestructive ? "bg-red-50 text-red-500" : "bg-blue-50 text-[#1877F2]"}`}>
-                  {globalActionConfig.isDestructive ? <AlertCircle size={32} /> : <CheckCircle2 size={32} />}
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center p-0.5 border mb-4 shrink-0 ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                  <img src="/login-logo.png" alt="Ledger Planner" className="w-full h-full object-cover rounded-full" />
                 </div>
                 <h3 className={`text-lg font-black uppercase tracking-widest mb-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{globalActionConfig.title}</h3>
                 <p className={`text-sm font-bold leading-relaxed mb-6 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{globalActionConfig.message}</p>

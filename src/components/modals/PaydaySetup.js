@@ -29,7 +29,7 @@ export default function PaydaySetup({
             <div className="flex flex-col min-w-0 flex-1">
               <h3 className={`font-black uppercase tracking-widest leading-none mb-1.5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Payday Routing</h3>
               <p className={`text-[10px] font-bold leading-tight ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-                *Note: Only configure Pay Dates/ Amounts for the month of {new Date().toLocaleString("en-US", { month: "long" })}.
+                *Only configure Pay Dates/ Amounts for the month of {new Date().toLocaleString("en-US", { month: "long" })}.
               </p>
             </div>
           </div>

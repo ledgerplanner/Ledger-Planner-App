@@ -597,7 +597,8 @@ function LedgerApp() {
             if (bdayStr === todayStr && localStorage.getItem(storageKey) !== "true") {
               triggerVictory();
               const activeName = data.firstName || user?.displayName?.split(' ')[0] || "Founder";
-              openGlobalAction("Happy Birthday! 🎂", `Happy Birthday, ${activeName}. We at Ledger Planner wish you many more!`, "Let's Go", false, () => {}, true);
+              openGlobalAction("Happy Birthday! 🎂", `Happy Birthday, ${activeName}.
+              We at Ledger Planner wish you many more!`, "Let's Go", false, () => {}, true);
               localStorage.setItem(storageKey, "true");
             }
           }

@@ -597,8 +597,7 @@ function LedgerApp() {
             if (bdayStr === todayStr && localStorage.getItem(storageKey) !== "true") {
               triggerVictory();
               const activeName = data.firstName || user?.displayName?.split(' ')[0] || "Founder";
-              openGlobalAction("Happy Birthday! 🎂", `Happy Birthday, ${activeName}.
-              We at Ledger Planner wish you many more!`, "Let's Go", false, () => {}, true);
+              openGlobalAction("Happy Birthday! 🎂", `Happy Birthday, ${activeName}. We at Ledger Planner wish you many more!`, "Let's Go", false, () => {}, true);
               localStorage.setItem(storageKey, "true");
             }
           }
@@ -1115,12 +1114,12 @@ function LedgerApp() {
                   <p className="text-xs font-bold text-slate-500">When is your next payment due?</p>
                 </div>
                 <div className="relative">
-                   <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Next Due Date</label>
+                   <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest pointer-events-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Next Due Date</label>
                    <div className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors overflow-visible ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
                      <span className={`font-bold text-base pointer-events-none ${!installmentPromptConfig.nextDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{installmentPromptConfig.nextDate ? formatDisplayDate(installmentPromptConfig.nextDate) : "mm/dd/yyyy"}</span>
                      <CalendarIcon size={18} className="shrink-0 pointer-events-none" style={{ color: signatureColor }} />
                      {/* SURGICAL INJECTION: Input spans entire container for seamless viewport selection */}
-                     <input type="date" value={installmentPromptConfig.nextDate} onChange={(e) => setInstallmentPromptConfig({...installmentPromptConfig, nextDate: e.target.value})} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                     <input type="date" value={installmentPromptConfig.nextDate} onChange={(e) => setInstallmentPromptConfig({...installmentPromptConfig, nextDate: e.target.value})} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50" />
                    </div>
                 </div>
                 <button onClick={handleSaveNextInstallmentDate} disabled={!installmentPromptConfig.nextDate} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all active:scale-95 flex items-center justify-center gap-2" style={{ backgroundColor: !installmentPromptConfig.nextDate ? undefined : signatureColor }}><CalendarIcon size={16}/> Route to Payday</button>

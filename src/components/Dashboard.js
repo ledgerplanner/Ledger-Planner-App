@@ -105,7 +105,7 @@ export default function Dashboard({
         else if (freq === "Semi-Monthly") lastDateObj.setDate(lastDateObj.getDate() + 15);
         else lastDateObj.setMonth(lastDateObj.getMonth() + 1);
         
-        // SURGICAL FIX: Include the entire 24-hour span of the final target day (23:59:59.999)
+        // Include the entire 24-hour span of the final target day (23:59:59.999)
         lastDateObj.setHours(23, 59, 59, 999);
         endMillis = lastDateObj.getTime();
       }
@@ -329,7 +329,7 @@ export default function Dashboard({
             </g>
           </svg>
           
-          {/* SURGICAL FIX: "X/Y" Centered Fractional Output */}
+          {/* "X/Y" Centered Fractional Output */}
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none scale-[0.9]">
             <span className={`text-4xl font-black tracking-tight leading-none ${isDarkMode ? "text-white" : "text-slate-900"}`}>
               {currentMonthSettledBillsCount}/{currentMonthTotalBillsCount}
@@ -337,14 +337,14 @@ export default function Dashboard({
           </div>
         </div>
 
-        {/* SURGICAL FIX: Relocated, enlarged, signature blue sub-heading below radial dial */}
-        <div className="mt-1 mb-2 text-center pointer-events-none">
+        {/* Snug sub-heading positioning directly underneath the gauge dial */}
+        <div className="-mt-2 mb-2 text-center pointer-events-none">
           <span className="text-xs font-black uppercase tracking-widest text-[#1877F2]">
             BILLS PAID IN {currentMonthName.toUpperCase()}
           </span>
         </div>
        
-        <div className="w-full space-y-2 mt-4">
+        <div className="w-full space-y-2 mt-2">
           <div 
             className={`w-full py-3 px-4 rounded-xl border flex items-center justify-between transform transition-all duration-[600ms] delay-[200ms] ${isMounted ? "translate-x-0 opacity-100" : "-translate-x-12 opacity-0"} ${getPillStyle(totalIncomeBalance)}`}
             style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
@@ -722,7 +722,6 @@ export default function Dashboard({
                     txPrefix = "+";
                   } else if (isBillTx) {
                     txColorStr = "text-[#1877F2]";
-                    // SURGICAL FIX: Light mode border correctly styled as blue
                     txBgBorderStr = isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200";
                     txShadowStr = "drop-shadow-[0_0_12px_rgba(24,119,242,0.7)]";
                     txPrefix = "-";

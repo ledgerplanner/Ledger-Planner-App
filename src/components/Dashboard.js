@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Circle, CheckCircle2, ChevronUp, ChevronDown, Settings2, List, AlertCircle, RefreshCw, Zap, Calendar as CalendarIcon, Edit2 } from "lucide-react";
+import { CheckCircle2, ChevronUp, ChevronDown, Settings2, List, RefreshCw, Calendar as CalendarIcon, Edit2 } from "lucide-react";
 
 export default function Dashboard({
   userName = "Founder",
@@ -7,7 +7,6 @@ export default function Dashboard({
   bills = [],
   transactions = [],
   paydayConfig = {},
-  setEditPaydayConfig,
   setIsPaydaySetupOpen,
   setIsNotificationsOpen,
   collapsedPaydays = {},
@@ -105,7 +104,10 @@ export default function Dashboard({
         else if (freq === "Bi-Weekly") lastDateObj.setDate(lastDateObj.getDate() + 14);
         else if (freq === "Semi-Monthly") lastDateObj.setDate(lastDateObj.getDate() + 15);
         else lastDateObj.setMonth(lastDateObj.getMonth() + 1);
-        endMillis = lastDateObj.getTime() - 1;
+        
+        // SURGICAL FIX: Include the entire 24-hour span of the final target day (23:59:59.999)
+        lastDateObj.setHours(23, 59, 59, 999);
+        endMillis = lastDateObj.getTime();
       }
 
       paydayWindows[pd.key] = { start: startMillis, end: endMillis };
@@ -301,8 +303,8 @@ export default function Dashboard({
           </span>
         </div>
 
-        {/* 1. UPGRADE: Tactical Radial Gauge (Command Dial) with Ignition Sweep & Targeted Line Glows */}
-        <div className={`relative w-40 h-40 flex-shrink-0 mt-6 mb-2 transform transition-all duration-700 delay-100 ease-out ${isMounted ? "scale-100 opacity-100" : "scale-90 opacity-0"}`}>
+        {/* 1. Tactical Radial Gauge */}
+        <div className={`relative w-40 h-40 flex-shrink-0 mt-6 mb-1 transform transition-all duration-700 delay-100 ease-out ${isMounted ? "scale-100 opacity-100" : "scale-90 opacity-0"}`}>
           <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible">
             <g transform="translate(50, 50)">
               {[...Array(24)].map((_, i) => {
@@ -327,18 +329,22 @@ export default function Dashboard({
             </g>
           </svg>
           
-          {/* SURGICAL FIX: "X/Y" Text Output & Centered Scaled Unit */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none mt-1 scale-[0.85]">
-            <span className={`text-3xl font-black tracking-tight leading-none mb-1.5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+          {/* SURGICAL FIX: "X/Y" Centered Fractional Output */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none scale-[0.9]">
+            <span className={`text-4xl font-black tracking-tight leading-none ${isDarkMode ? "text-white" : "text-slate-900"}`}>
               {currentMonthSettledBillsCount}/{currentMonthTotalBillsCount}
-            </span>
-            <span className={`text-[9px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-black"}`}>
-              BILLS PAID IN {currentMonthName}
             </span>
           </div>
         </div>
+
+        {/* SURGICAL FIX: Relocated, enlarged, signature blue sub-heading below radial dial */}
+        <div className="mt-1 mb-2 text-center pointer-events-none">
+          <span className="text-xs font-black uppercase tracking-widest text-[#1877F2]">
+            BILLS PAID IN {currentMonthName.toUpperCase()}
+          </span>
+        </div>
        
-        <div className="w-full space-y-2 mt-5">
+        <div className="w-full space-y-2 mt-4">
           <div 
             className={`w-full py-3 px-4 rounded-xl border flex items-center justify-between transform transition-all duration-[600ms] delay-[200ms] ${isMounted ? "translate-x-0 opacity-100" : "-translate-x-12 opacity-0"} ${getPillStyle(totalIncomeBalance)}`}
             style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
@@ -456,7 +462,15 @@ export default function Dashboard({
             const subLabelStr = pd === "Due Now" ? "AVAILABLE NOW" : "AVAILABLE THIS WEEK";
 
             return (
-              <div key={`hz-${pd}`} onClick={() => { setActivePayday(pd); document.getElementById(`vert-${pd}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} className={`shrink-0 w-52 p-5 rounded-[1.75rem] border cursor-pointer active:scale-95 transition-all flex flex-col justify-between h-44 ${pd === "Due Now" ? (isDarkMode ? "bg-red-900/10 border-red-900/40 shadow-md" : "bg-red-50 border-red-100 shadow-[0_4px_20px_rgba(239,68,68,0.1)]") : (isDarkMode ? "bg-[#1E293B] border-slate-700 shadow-md" : "bg-white/90 backdrop-blur-sm border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]")}`}>
+              <div 
+                key={`hz-${pd}`} 
+                onClick={() => { 
+                  setActivePayday(pd); 
+                  const targetEl = document.getElementById(`vert-${pd}`);
+                  if (targetEl) targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }} 
+                className={`shrink-0 w-52 p-5 rounded-[1.75rem] border cursor-pointer active:scale-95 transition-all flex flex-col justify-between h-44 ${pd === "Due Now" ? (isDarkMode ? "bg-red-900/10 border-red-900/40 shadow-md" : "bg-red-50 border-red-100 shadow-[0_4px_20px_rgba(239,68,68,0.1)]") : (isDarkMode ? "bg-[#1E293B] border-slate-700 shadow-md" : "bg-white/90 backdrop-blur-sm border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]")}`}
+              >
                 
                 <div className="flex justify-between items-center w-full">
                   <h4 className={`text-[10px] font-black uppercase tracking-widest ${pd === "Due Now" ? "text-red-500" : "text-slate-400"}`}>{pd}</h4>
@@ -585,8 +599,8 @@ export default function Dashboard({
                                   </div>
                                </div>
                                <button 
-                                 onClick={(e) => { e.stopPropagation(); setSelectedEntry(bill); }}
-                                 className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
+                                  onClick={(e) => { e.stopPropagation(); setSelectedEntry(bill); }}
+                                  className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
                                >
                                   <Edit2 size={16} strokeWidth={2.5} />
                                </button>
@@ -708,7 +722,8 @@ export default function Dashboard({
                     txPrefix = "+";
                   } else if (isBillTx) {
                     txColorStr = "text-[#1877F2]";
-                    txBgBorderStr = isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-emerald-200";
+                    // SURGICAL FIX: Light mode border correctly styled as blue
+                    txBgBorderStr = isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200";
                     txShadowStr = "drop-shadow-[0_0_12px_rgba(24,119,242,0.7)]";
                     txPrefix = "-";
                   } else {
@@ -729,12 +744,12 @@ export default function Dashboard({
                             <div className="flex flex-col flex-1 min-w-0 pt-1">
                                <p className={`font-black text-base leading-tight break-words whitespace-normal ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                                   {tx?.name || "Transaction"}
-                                </p>
+                               </p>
                             </div>
                          </div>
                          <button 
-                           onClick={(e) => { e.stopPropagation(); setSelectedEntry(tx); }} 
-                           className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
+                            onClick={(e) => { e.stopPropagation(); setSelectedEntry(tx); }} 
+                            className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
                          >
                             <Edit2 size={16} strokeWidth={2.5} />
                          </button>

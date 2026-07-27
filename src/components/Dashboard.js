@@ -337,14 +337,14 @@ export default function Dashboard({
           </div>
         </div>
 
-        {/* Snug sub-heading positioning directly underneath the gauge dial */}
-        <div className="-mt-2 mb-2 text-center pointer-events-none">
-          <span className="text-xs font-black uppercase tracking-widest text-[#1877F2]">
+        {/* SURGICAL INJECTION: Shifted up ~50% (-mt-5) and font size increased to text-sm */}
+        <div className="-mt-5 mb-3 text-center pointer-events-none">
+          <span className="text-sm font-black uppercase tracking-widest text-[#1877F2]">
             BILLS PAID IN {currentMonthName.toUpperCase()}
           </span>
         </div>
        
-        <div className="w-full space-y-2 mt-2">
+        <div className="w-full space-y-2 mt-1">
           <div 
             className={`w-full py-3 px-4 rounded-xl border flex items-center justify-between transform transition-all duration-[600ms] delay-[200ms] ${isMounted ? "translate-x-0 opacity-100" : "-translate-x-12 opacity-0"} ${getPillStyle(totalIncomeBalance)}`}
             style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}

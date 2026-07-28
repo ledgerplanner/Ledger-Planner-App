@@ -102,7 +102,7 @@ export default function Accounts({
     }
   }
   
-  // Center-Anchored Timeline Matrix
+  // Center-Anchored Symmetric Timeline Matrix
   const historyData = [];
   let monthOffsets = [];
 
@@ -111,7 +111,8 @@ export default function Accounts({
   } else if (timeframe === "3M") {
     monthOffsets = [-2, -1, 0];
   } else if (timeframe === "6M") {
-    monthOffsets = [-3, -2, -1, 0, 1, 2];
+    // SURGICAL FIX: Perfectly balanced odd 7-node range (-3 to +3) so 0 is exact center
+    monthOffsets = [-3, -2, -1, 0, 1, 2, 3];
   } else if (timeframe === "YTD") {
     const startOffset = -today.getMonth();
     for (let offset = startOffset; offset <= (11 + startOffset); offset++) {
@@ -260,14 +261,13 @@ export default function Accounts({
   }
   // === END SURGICAL INJECTION ===
 
-  // SURGICAL FIX: Scale Y values between 10% and 90% height to prevent peak flattening at boundary
   const createSpline = (data, maxVal) => {
     if (data.length < 2) return "";
     let path = "";
     data.forEach((d, i) => {
        const x = (i / (data.length - 1)) * 100;
        const normalizedVal = Math.abs(d.val) / (maxVal || 1);
-       // Scaled with 10% headroom and 10% bottom padding
+       // Scaled with headroom padding
        const y = 90 - (normalizedVal * 80);
        
        if (i === 0) {
@@ -330,7 +330,7 @@ export default function Accounts({
       <div className={`relative mt-4 transform transition-all duration-1000 ease-out origin-bottom ${showChart ? "opacity-100 scale-y-100" : "opacity-0 scale-y-95"}`}>
         <div ref={chartScrollRef} className="w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
           <div 
-            className="relative flex items-end justify-between h-28 gap-2 border-b border-dashed border-slate-200 dark:border-slate-700 pb-2"
+            className="relative flex items-end justify-between h-28 gap-2 border-b border-dashed border-slate-200 dark:border-slate-700 pb-2 px-2"
             style={{ minWidth: historyData.length > 6 ? `${historyData.length * 60}px` : '100%' }}
           >
             <svg className="absolute inset-0 w-full h-full pointer-events-none drop-shadow-md z-20" preserveAspectRatio="none" viewBox="0 0 100 100">
@@ -339,11 +339,11 @@ export default function Accounts({
                   from { stroke-dashoffset: 3000; }
                   to { stroke-dashoffset: 0; }
                 }
-                /* SURGICAL FIX: Linear timing function for 100% constant speed & expanded 3000px stroke path length */
+                /* SURGICAL FIX: 5.5s speed, round stroke caps for tapered point finish */
                 .animate-trend-line {
                   stroke-dasharray: 3000;
                   stroke-dashoffset: 3000;
-                  animation: drawTrendLine 7.5s linear forwards;
+                  animation: drawTrendLine 5.5s linear forwards;
                 }
               `}</style>
               {showChart && (
@@ -352,7 +352,7 @@ export default function Accounts({
                   d={createSpline(historyData, maxChartVal)} 
                   fill="none" 
                   stroke="#1877F2" 
-                  strokeWidth="3" 
+                  strokeWidth="4" 
                   vectorEffect="non-scaling-stroke" 
                   strokeLinecap="round" 
                   strokeLinejoin="round" 

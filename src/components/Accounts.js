@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ArrowRightLeft, PlusCircle, Edit2, Target, CheckCircle2, Calendar as CalendarIcon, ArrowDown, X, TrendingUp } from "lucide-react";
 import { useLedger } from "../context/LedgerContext";
 
@@ -27,6 +27,9 @@ export default function Accounts({
 
   // === INJECTED: SMARTCREDIT BANNER DISMISSAL LOGIC ===
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
+
+  // Chart scroll container ref for auto-centering
+  const chartScrollRef = useRef(null);
 
   // === MIDNIGHT ENGINE STATE ===
   const [todayMidnight, setTodayMidnight] = useState(() => {
@@ -185,6 +188,34 @@ export default function Accounts({
     const t2 = setTimeout(() => setShowChart(true), 300);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
+
+  // Dead-center scroll alignment for mobile & desktop
+  useEffect(() => {
+    const centerCurrentMonthBar = () => {
+      if (chartScrollRef.current) {
+        const container = chartScrollRef.current;
+        const anchorEl = document.getElementById("current-month-bar-anchor");
+        if (anchorEl) {
+          const containerWidth = container.clientWidth;
+          const anchorLeft = anchorEl.offsetLeft;
+          const anchorWidth = anchorEl.clientWidth;
+          const targetScroll = anchorLeft - (containerWidth / 2) + (anchorWidth / 2);
+          container.scrollTo({
+            left: Math.max(0, targetScroll),
+            behavior: "smooth"
+          });
+        }
+      }
+    };
+
+    const timer = setTimeout(centerCurrentMonthBar, 350);
+    window.addEventListener("resize", centerCurrentMonthBar);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", centerCurrentMonthBar);
+    };
+  }, [timeframe, historyData.length]);
   
   const maxChartVal = Math.max(...historyData.map((d) => Math.abs(d.val)), 1);
   const activeDataPoint = historyData[activeChartNode] || historyData[historyData.length - 1];
@@ -229,17 +260,22 @@ export default function Accounts({
   }
   // === END SURGICAL INJECTION ===
 
+  // SURGICAL FIX: Scale Y values between 10% and 90% height to prevent peak flattening at boundary
   const createSpline = (data, maxVal) => {
     if (data.length < 2) return "";
     let path = "";
     data.forEach((d, i) => {
        const x = (i / (data.length - 1)) * 100;
-       const y = 100 - ((Math.abs(d.val) / (maxVal || 1)) * 100);
+       const normalizedVal = Math.abs(d.val) / (maxVal || 1);
+       // Scaled with 10% headroom and 10% bottom padding
+       const y = 90 - (normalizedVal * 80);
+       
        if (i === 0) {
          path += `M ${x} ${y} `;
        } else {
          const prevX = ((i - 1) / (data.length - 1)) * 100;
-         const prevY = 100 - ((Math.abs(data[i-1].val) / (maxVal || 1)) * 100);
+         const prevNorm = Math.abs(data[i-1].val) / (maxVal || 1);
+         const prevY = 90 - (prevNorm * 80);
          const cpX = prevX + (x - prevX) / 2;
          path += `C ${cpX} ${prevY}, ${cpX} ${y}, ${x} ${y} `;
        }
@@ -292,7 +328,7 @@ export default function Accounts({
       </div>
   
       <div className={`relative mt-4 transform transition-all duration-1000 ease-out origin-bottom ${showChart ? "opacity-100 scale-y-100" : "opacity-0 scale-y-95"}`}>
-        <div className="w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
+        <div ref={chartScrollRef} className="w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
           <div 
             className="relative flex items-end justify-between h-28 gap-2 border-b border-dashed border-slate-200 dark:border-slate-700 pb-2"
             style={{ minWidth: historyData.length > 6 ? `${historyData.length * 60}px` : '100%' }}
@@ -300,14 +336,14 @@ export default function Accounts({
             <svg className="absolute inset-0 w-full h-full pointer-events-none drop-shadow-md z-20" preserveAspectRatio="none" viewBox="0 0 100 100">
               <style>{`
                 @keyframes drawTrendLine {
-                  from { stroke-dashoffset: 1000; }
+                  from { stroke-dashoffset: 3000; }
                   to { stroke-dashoffset: 0; }
                 }
-                /* SURGICAL FIX: Unified trendline sweep speed set to 7.5s across all screen sizes */
+                /* SURGICAL FIX: Linear timing function for 100% constant speed & expanded 3000px stroke path length */
                 .animate-trend-line {
-                  stroke-dasharray: 1000;
-                  stroke-dashoffset: 1000;
-                  animation: drawTrendLine 7.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+                  stroke-dasharray: 3000;
+                  stroke-dashoffset: 3000;
+                  animation: drawTrendLine 7.5s linear forwards;
                 }
               `}</style>
               {showChart && (
@@ -328,6 +364,7 @@ export default function Accounts({
             {historyData.map((item, i) => {
               const heightPct = (Math.abs(item.val) / maxChartVal) * 100;
               const isActive = activeChartNode === i;
+              const isCurrentMonthAnchor = item.offset === 0;
               
               const isSampleZero = item.val === 0;
               const isSamplePositive = item.val > 0;
@@ -345,7 +382,12 @@ export default function Accounts({
               }
     
               return (
-                <div key={i} onClick={() => setActiveChartNode(i)} className="flex flex-col items-center justify-end h-full flex-1 cursor-pointer group relative z-10">
+                <div 
+                  key={i} 
+                  id={isCurrentMonthAnchor ? "current-month-bar-anchor" : undefined}
+                  onClick={() => setActiveChartNode(i)} 
+                  className="flex flex-col items-center justify-end h-full flex-1 cursor-pointer group relative z-10"
+                >
                   <div className="w-full relative flex justify-center h-full items-end">
                     <div className={`w-full max-w-[32px] rounded-t-xl transition-all duration-500 ease-out ${barBgClass}`} style={{ height: `${heightPct}%`, minHeight: Math.abs(item.val) > 0 ? "12px" : "4px" }}></div>
                   </div>

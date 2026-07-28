@@ -60,7 +60,7 @@ export default function Accounts({
     setIsBannerDismissed(true);
   };
 
-  const [activeChartNode, setActiveChartNode] = useState(5);
+  const [activeChartNode, setActiveChartNode] = useState(0);
   const [timeframe, setTimeframe] = useState("6M");
   
   // Animation Triggers
@@ -99,55 +99,84 @@ export default function Accounts({
     }
   }
   
-  let monthsToGenerate = 6;
-  if (timeframe === "1M") monthsToGenerate = 2;
-  if (timeframe === "3M") monthsToGenerate = 3;
-  if (timeframe === "6M") monthsToGenerate = 6;
-  if (timeframe === "YTD") monthsToGenerate = today.getMonth() + 1;
-  
+  // Center-Anchored Timeline Matrix
   const historyData = [];
+  let monthOffsets = [];
+
+  if (timeframe === "1M") {
+    monthOffsets = [-1, 0];
+  } else if (timeframe === "3M") {
+    monthOffsets = [-2, -1, 0];
+  } else if (timeframe === "6M") {
+    monthOffsets = [-3, -2, -1, 0, 1, 2];
+  } else if (timeframe === "YTD") {
+    const startOffset = -today.getMonth();
+    for (let offset = startOffset; offset <= (11 + startOffset); offset++) {
+      monthOffsets.push(offset);
+    }
+  }
+
+  // Pre-calculate running historical cash flows
   let currentCalcNW = netWorth;
+  const historicalCalculatedMap = {};
   
-  for(let i = 0; i < monthsToGenerate; i++) {
+  // Standard backward pass for historical months
+  for (let i = 0; i <= 12; i++) {
     const targetDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    const key = `${targetDate.getFullYear()}-${targetDate.getMonth()}`;
+    
+    if (i === 0) {
+      historicalCalculatedMap[key] = netWorth;
+    } else {
+      if (isDemoMode) {
+        const variance = 1 - (Math.random() * (0.06 - 0.02) + 0.02);
+        currentCalcNW = currentCalcNW * variance;
+        historicalCalculatedMap[key] = currentCalcNW;
+      } else {
+        const monthAheadDate = new Date(today.getFullYear(), today.getMonth() - (i - 1), 1);
+        const txsInMonthAhead = transactions.filter(tx => {
+          let d = new Date(tx.rawDate || tx.date || today);
+          if (d.getFullYear() === 2001) d.setFullYear(today.getFullYear()); 
+          return d.getMonth() === monthAheadDate.getMonth() && d.getFullYear() === monthAheadDate.getFullYear();
+        });
+        
+        const netCashFlowMonthAhead = txsInMonthAhead.reduce((sum, tx) => {
+          return sum + (tx.type === "Income" ? Number(tx.amount) : -Number(tx.amount));
+        }, 0);
+        
+        currentCalcNW -= netCashFlowMonthAhead;
+        
+        let displayVal = currentCalcNW;
+        if (targetDate.getFullYear() < inceptionDate.getFullYear() || (targetDate.getFullYear() === inceptionDate.getFullYear() && targetDate.getMonth() < inceptionDate.getMonth())) {
+          displayVal = 0;
+        }
+        historicalCalculatedMap[key] = displayVal;
+      }
+    }
+  }
+
+  // Assemble full visual sequence (Past -> Current -> Future)
+  monthOffsets.forEach(offset => {
+    const targetDate = new Date(today.getFullYear(), today.getMonth() + offset, 1);
     const monthName = targetDate.toLocaleString('default', { month: 'short' });
     const tMonth = targetDate.getMonth();
     const tYear = targetDate.getFullYear();
-    
-    if (i === 0) {
-        historyData.unshift({ label: monthName, val: currentCalcNW, month: tMonth, year: tYear });
+    const key = `${tYear}-${tMonth}`;
+
+    let val = 0;
+    if (offset <= 0) {
+      val = historicalCalculatedMap[key] !== undefined ? historicalCalculatedMap[key] : 0;
     } else {
-        if (isDemoMode) {
-          const variance = 1 - (Math.random() * (0.06 - 0.02) + 0.02);
-          currentCalcNW = currentCalcNW * variance;
-          historyData.unshift({ label: monthName, val: currentCalcNW, month: tMonth, year: tYear });
-        } else {
-          const monthAhead = historyData[0]; 
-          const txsInMonthAhead = transactions.filter(tx => {
-              let d = new Date(tx.rawDate || tx.date || today);
-              if (d.getFullYear() === 2001) d.setFullYear(today.getFullYear()); 
-              
-              return d.getMonth() === monthAhead.month && d.getFullYear() === monthAhead.year;
-          });
-          
-          const netCashFlowMonthAhead = txsInMonthAhead.reduce((sum, tx) => {
-              return sum + (tx.type === "Income" ? Number(tx.amount) : -Number(tx.amount));
-          }, 0);
-          
-          currentCalcNW -= netCashFlowMonthAhead;
-
-          let displayVal = currentCalcNW;
-          if (tYear < inceptionDate.getFullYear() || (tYear === inceptionDate.getFullYear() && tMonth < inceptionDate.getMonth())) {
-              displayVal = 0;
-          }
-
-          historyData.unshift({ label: monthName, val: displayVal, month: tMonth, year: tYear });
-        }
+      // Future months rest cleanly at $0.00 baseline
+      val = 0;
     }
-  }
-  
+
+    historyData.push({ label: monthName, val, month: tMonth, year: tYear, offset });
+  });
+
   useEffect(() => {
-    setActiveChartNode(historyData.length - 1);
+    const currentMonthNodeIdx = historyData.findIndex(d => d.offset === 0);
+    setActiveChartNode(currentMonthNodeIdx !== -1 ? currentMonthNodeIdx : historyData.length - 1);
   }, [timeframe, historyData.length]);
   
   // Entrance Animation Sequence
@@ -274,11 +303,11 @@ export default function Accounts({
                   from { stroke-dashoffset: 1000; }
                   to { stroke-dashoffset: 0; }
                 }
-                /* SURGICAL FIX: Unified trendline sweep speed set to 6.5s across all screen sizes */
+                /* SURGICAL FIX: Unified trendline sweep speed set to 7.5s across all screen sizes */
                 .animate-trend-line {
                   stroke-dasharray: 1000;
                   stroke-dashoffset: 1000;
-                  animation: drawTrendLine 6.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+                  animation: drawTrendLine 7.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
                 }
               `}</style>
               {showChart && (

@@ -230,7 +230,7 @@ export default function Accounts({
           </span>
         </div>
 
-        {/* SURGICAL INJECTION: Centered Hero Display, Spacing Fix & Dynamic Badge */}
+        {/* Centered Hero Display */}
         <div className={`flex flex-col items-center justify-center text-center mt-5 mb-5 w-full transform transition-all duration-700 delay-200 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           <div>
             <p className={`text-5xl font-black tracking-tighter transition-colors duration-300 ${isNetWorthNegative ? "text-red-500" : activeDataPoint?.val > 0 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
@@ -274,15 +274,11 @@ export default function Accounts({
                   from { stroke-dashoffset: 1000; }
                   to { stroke-dashoffset: 0; }
                 }
+                /* SURGICAL FIX: Unified trendline sweep speed set to 6.5s across all screen sizes */
                 .animate-trend-line {
                   stroke-dasharray: 1000;
                   stroke-dashoffset: 1000;
-                  animation: drawTrendLine 3.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-                }
-                @media (max-width: 640px) {
-                  .animate-trend-line {
-                    animation: drawTrendLine 6.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-                  }
+                  animation: drawTrendLine 6.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
                 }
               `}</style>
               {showChart && (
@@ -351,7 +347,7 @@ export default function Accounts({
   
       <main className="px-6 space-y-8 mt-4">
 
-        {/* === SURGICAL INJECTION: SMARTCREDIT NATIVE BANNER & CONDITIONAL LINE === */}
+        {/* === SMARTCREDIT NATIVE BANNER & CONDITIONAL LINE === */}
         {creditStatus !== "active" && !isBannerDismissed && (
           <div className="flex flex-col gap-6">
             <div className={`relative rounded-[2rem] p-5 border flex flex-col items-center text-center overflow-hidden transition-all duration-300 ${
@@ -368,7 +364,6 @@ export default function Accounts({
                 <X size={16} strokeWidth={3} />
               </button>
 
-              {/* SURGICAL INJECTION: Repositioned Premium Purple Arrow Left Of Title Header */}
               <div className="flex items-center justify-center gap-2 mb-2 relative z-10">
                 <TrendingUp size={16} strokeWidth={2.5} color="#A855F7" className="text-[#A855F7] shrink-0" />
                 <h3 className={`text-sm font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>Exclusive Credit Offer!</h3>
@@ -397,7 +392,6 @@ export default function Accounts({
             <div className={`border-t ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
           </div>
         )}
-        {/* === END SURGICAL INJECTION === */}
 
         <div className="space-y-4">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">All Accounts</h3>
@@ -562,8 +556,7 @@ export default function Accounts({
           <button onClick={() => { if (typeof setIsAddGoalOpen === "function") setIsAddGoalOpen(true); }} className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-orange-500 text-white shadow-orange-900/20" : "bg-[#F97316] text-white shadow-orange-500/30"}`}>
             <Target size={18} /> Add Goal
           </button>
-        </div>
-  
+        </div>  
       </main>
   
       {/* ICON DRAWER WRAPPER */}

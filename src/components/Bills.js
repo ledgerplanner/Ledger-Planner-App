@@ -23,7 +23,7 @@ export default function Bills({
   const [isMounted, setIsMounted] = useState(false);
   const [gaugePhase, setGaugePhase] = useState("start");
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth());
-  const [expandedMonthIdx, setExpandedMonthIdx] = useState(() => new Date().getMonth());
+  const [expandedMonthIdx, setExpandedMonthIdx] = useState(-1);
   
   // Custom Local Interceptor Modal for Future Recurring Payments
   const [chronoLock, setChronologicalLock] = useState({ isOpen: false, billName: "" });
@@ -42,7 +42,6 @@ export default function Bills({
     const today = new Date();
     const currentMonthIndex = today.getMonth();
     setSelectedMonth(currentMonthIndex);
-    setExpandedMonthIdx(currentMonthIndex);
 
     const sweepTimer = setTimeout(() => setGaugePhase("sweep"), 100);
     const settleTimer = setTimeout(() => setGaugePhase("settle"), 1200);
@@ -181,9 +180,10 @@ export default function Bills({
     const totalDue = monthBills
       .filter((b) => !b.isPaid)
       .reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+      
     const totalPaid = monthBills
       .filter((b) => b.isPaid)
-      .reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+      .reduce((sum, b) => sum + (b.isInstallment ? Math.max(0, (Number(b.totalAmount) || 0) - (Number(b.paidAmount) || 0)) : (Number(b.amount) || 0)), 0);
       
     return { monthBills, totalDue, totalPaid };
   };
@@ -225,7 +225,7 @@ export default function Bills({
     .reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
   const horizonTotalPaid = horizonBills
     .filter((b) => b.isPaid)
-    .reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+    .reduce((sum, b) => sum + (b.isInstallment ? Math.max(0, (Number(b.totalAmount) || 0) - (Number(b.paidAmount) || 0)) : (Number(b.amount) || 0)), 0);
 
   // HERO METRICS
   const annualBills = bills.filter((b) => {
@@ -233,8 +233,11 @@ export default function Bills({
     const parts = b.rawDate.split("-");
     return parseInt(parts[0], 10) === currentYear;
   });
-  const annualTotal = annualBills.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
-  const annualPaid = annualBills.filter((b) => b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+  const annualTotal = annualBills.reduce((sum, b) => {
+    const amt = (b.isInstallment && b.isPaid) ? Math.max(0, (Number(b.totalAmount) || 0) - (Number(b.paidAmount) || 0)) : (Number(b.amount) || 0);
+    return sum + amt;
+  }, 0);
+  const annualPaid = annualBills.filter((b) => b.isPaid).reduce((sum, b) => sum + (b.isInstallment ? Math.max(0, (Number(b.totalAmount) || 0) - (Number(b.paidAmount) || 0)) : (Number(b.amount) || 0)), 0);
   const annualProgressPercentage = annualTotal === 0 ? 0 : Math.max(0, Math.min((annualPaid / annualTotal) * 100, 100));
 
   let trueAnnualDue = 0;
@@ -245,6 +248,10 @@ export default function Bills({
   const { totalDue: remainingThisMonth, monthBills: currentMonthBills } = getMonthMetrics(currentMonthIndex);
   
   const recurringThisMonth = currentMonthBills.filter(b => b.isRecurring).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+  
+  const activeInstallmentDebt = bills
+    .filter(b => b.isInstallment && !b.isPaid)
+    .reduce((sum, b) => sum + Math.max(0, (Number(b.totalAmount) || 0) - (Number(b.paidAmount) || 0)), 0);
 
   const currentMonthData = monthsData[currentMonthIndex];
   const displayMonthLabel = currentMonthData.name.length <= 5 ? currentMonthData.name.toUpperCase() : currentMonthData.short.toUpperCase();
@@ -255,6 +262,12 @@ export default function Bills({
   const dueThisYearText = `DUE IN ${currentYear}`;
 
   const currentGaugeValue = gaugePhase === "start" ? 0 : gaugePhase === "sweep" ? 100 : annualProgressPercentage;
+  
+  const sortedSettledBills = [...bills].filter(b => b.isPaid).sort((a, b) => {
+    const dateA = new Date(a.settledDate || a.fullDate || a.rawDate || 0).getTime();
+    const dateB = new Date(b.settledDate || b.fullDate || b.rawDate || 0).getTime();
+    return dateB - dateA;
+  });
 
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
@@ -297,7 +310,7 @@ export default function Bills({
           </div>
         </div>
 
-        {/* 2. The 5-Pill Matrix (With Alternating Staggered Glide Animation) */}
+        {/* 2. The Multi-Pill Matrix (With Alternating Staggered Glide Animation) */}
         <div className="w-full space-y-2 mt-5">
           
           {/* Pill 1: Total Due Now (Glides Left, Active Red Pulse) */}
@@ -341,9 +354,24 @@ export default function Bills({
             </span>
           </div>
 
-          {/* Pill 4: Due This Month (Glides Right, Signature Blue) */}
+          {/* 6th Pill Addition: Active Installment Debt (Glides Right, Slate Gray) */}
+          {activeInstallmentDebt > 0 && (
+            <div 
+              className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transform transition-all duration-[600ms] delay-[150ms] ${isMounted ? "translate-x-0 opacity-100" : "-translate-x-12 opacity-0"} ${isDarkMode ? 'bg-slate-500/10 border-slate-700/80 text-[#64748B]' : 'bg-slate-50 border-slate-200 text-[#64748B]'}`}
+              style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
+            >
+              <span className="text-[10px] font-black uppercase tracking-widest">
+                INSTALLMENT LOANS / BILLS
+              </span>
+              <span className="text-sm sm:text-base font-black leading-none">
+                ${activeInstallmentDebt.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+          )}
+
+          {/* Pill 4: Due This Month (Glides Left, Signature Blue) */}
           <div 
-            className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transform transition-all duration-[600ms] delay-[100ms] ${isMounted ? "translate-x-0 opacity-100" : "-translate-x-12 opacity-0"} ${isDarkMode ? 'bg-blue-500/10 border-blue-500/20' : 'bg-[#1877F2]/10 border-blue-200'}`}
+            className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transform transition-all duration-[600ms] delay-[100ms] ${isMounted ? "translate-x-0 opacity-100" : "translate-x-12 opacity-0"} ${isDarkMode ? 'bg-blue-500/10 border-blue-500/20' : 'bg-[#1877F2]/10 border-blue-200'}`}
             style={{ color: signatureColor, transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
           >
             <span className="text-[10px] font-black uppercase tracking-widest">
@@ -354,9 +382,9 @@ export default function Bills({
             </span>
           </div>
 
-          {/* Pill 5: Annual Forecast (Glides Left, Signature Blue) */}
+          {/* Pill 5: Annual Forecast (Glides Right, Signature Blue) */}
           <div 
-            className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transform transition-all duration-[600ms] delay-[0ms] ${isMounted ? "translate-x-0 opacity-100" : "translate-x-12 opacity-0"} ${isDarkMode ? 'bg-blue-500/10 border-blue-500/20' : 'bg-[#1877F2]/10 border-blue-200'}`}
+            className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transform transition-all duration-[600ms] delay-[0ms] ${isMounted ? "translate-x-0 opacity-100" : "-translate-x-12 opacity-0"} ${isDarkMode ? 'bg-blue-500/10 border-blue-500/20' : 'bg-[#1877F2]/10 border-blue-200'}`}
             style={{ color: signatureColor, transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
           >
             <span className="text-[10px] font-black uppercase tracking-widest">
@@ -997,12 +1025,12 @@ export default function Bills({
 
         <div className={`mt-6 mb-2 border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
 
-        {bills.filter(b => b.isPaid).length > 0 && (
+        {sortedSettledBills.length > 0 && (
           <div className="space-y-4 mt-6">
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">Paid & Settled (All History)</h3>
             <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
               <div className="space-y-3">
-                {bills.filter(b => b.isPaid).map((bill) => (
+                {sortedSettledBills.map((bill) => (
                   <div key={`settled-${bill.id}`} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all duration-300 opacity-60 grayscale-[0.3] hover:opacity-100 hover:grayscale-0 ${isDarkMode ? "bg-slate-800/30 border-slate-700" : "bg-white border-slate-100"}`}>
                     
                     {/* LEVEL 1 */}
@@ -1034,7 +1062,7 @@ export default function Bills({
                         </span>
                       </div>
                       <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 transition-colors ${isDarkMode ? "bg-slate-800/50 text-slate-400 border-slate-700" : "bg-slate-50 text-slate-500 border-slate-200"} whitespace-nowrap`}>
-                        ${(Number(bill.amount) || 0).toFixed(2)}
+                        ${(bill.isInstallment ? Math.max(0, (Number(bill.totalAmount) || 0) - (Number(bill.paidAmount) || 0)) : (Number(bill.amount) || 0)).toFixed(2)}
                       </div>
                     </div>
 

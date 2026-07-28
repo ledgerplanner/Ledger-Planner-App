@@ -143,8 +143,14 @@ export default function EditEntryDrawer({
                       <div className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
                          <span className={`font-bold text-base pointer-events-none ${!editEntryData.rawDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{editEntryData.rawDate ? formatDisplayDate(editEntryData.rawDate) : "mm/dd/yyyy"}</span>
                          <CalendarIcon size={18} className="shrink-0 pointer-events-none text-slate-400" style={{ color: editEntryData.rawDate ? signatureColor : undefined }} />
-                         {/* SURGICAL INJECTION: Native date picker spanning entire container */}
-                         <input type="date" value={editEntryData.rawDate || ""} onChange={(e) => setEditEntryData({...editEntryData, rawDate: e.target.value})} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                         {/* SURGICAL INJECTION: Native date picker with showPicker() click handler */}
+                         <input 
+                           type="date" 
+                           value={editEntryData.rawDate || ""} 
+                           onChange={(e) => setEditEntryData({...editEntryData, rawDate: e.target.value})} 
+                           onClick={(e) => { try { e.target.showPicker(); } catch(err) {} }} 
+                           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                         />
                       </div>
                     </div>
                     <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">

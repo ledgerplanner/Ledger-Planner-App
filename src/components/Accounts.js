@@ -259,25 +259,47 @@ export default function Accounts({
   }
   // === END SURGICAL INJECTION ===
 
-  const createSpline = (data, maxVal) => {
+  // Custom tapered ribbon shape generator (Pointed at start and end)
+  const createTaperedSpline = (data, maxVal) => {
     if (data.length < 2) return "";
-    let path = "";
-    data.forEach((d, i) => {
-       const x = (i / (data.length - 1)) * 100;
-       const normalizedVal = Math.abs(d.val) / (maxVal || 1);
-       const y = 90 - (normalizedVal * 80);
-       
-       if (i === 0) {
-         path += `M ${x} ${y} `;
-       } else {
-         const prevX = ((i - 1) / (data.length - 1)) * 100;
-         const prevNorm = Math.abs(data[i-1].val) / (maxVal || 1);
-         const prevY = 90 - (prevNorm * 80);
-         const cpX = prevX + (x - prevX) / 2;
-         path += `C ${cpX} ${prevY}, ${cpX} ${y}, ${x} ${y} `;
-       }
+
+    const points = data.map((d, i) => {
+      const x = (i / (data.length - 1)) * 100;
+      const normalizedVal = Math.abs(d.val) / (maxVal || 1);
+      const y = 90 - (normalizedVal * 80);
+      return { x, y };
     });
-    return path;
+
+    const numPoints = points.length;
+    const topPoints = [];
+    const bottomPoints = [];
+
+    points.forEach((p, i) => {
+      const progress = i / (numPoints - 1);
+      const thickness = Math.sin(progress * Math.PI) * 2.2;
+
+      topPoints.push({ x: p.x, y: p.y - thickness });
+      bottomPoints.push({ x: p.x, y: p.y + thickness });
+    });
+
+    let topPath = `M ${topPoints[0].x} ${topPoints[0].y} `;
+    for (let i = 1; i < topPoints.length; i++) {
+      const prev = topPoints[i - 1];
+      const curr = topPoints[i];
+      const cpX = prev.x + (curr.x - prev.x) / 2;
+      topPath += `C ${cpX} ${prev.y}, ${cpX} ${curr.y}, ${curr.x} ${curr.y} `;
+    }
+
+    const revBottom = [...bottomPoints].reverse();
+    let bottomPath = `L ${revBottom[0].x} ${revBottom[0].y} `;
+    for (let i = 1; i < revBottom.length; i++) {
+      const prev = revBottom[i - 1];
+      const curr = revBottom[i];
+      const cpX = prev.x + (curr.x - prev.x) / 2;
+      bottomPath += `C ${cpX} ${prev.y}, ${cpX} ${curr.y}, ${curr.x} ${curr.y} `;
+    }
+
+    return `${topPath} ${bottomPath} Z`;
   };
   
   const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
@@ -331,28 +353,26 @@ export default function Accounts({
             style={{ minWidth: historyData.length > 6 ? `${historyData.length * 60}px` : '100%' }}
           >
             <svg className="absolute inset-0 w-full h-full pointer-events-none drop-shadow-md z-20" preserveAspectRatio="none" viewBox="0 0 100 100">
+              <defs>
+                <clipPath id="taperedRevealClip">
+                  <rect x="0" y="0" height="100" className="animate-sweep-curtain" />
+                </clipPath>
+              </defs>
               <style>{`
-                @keyframes drawTrendLine {
-                  from { stroke-dashoffset: 3000; }
-                  to { stroke-dashoffset: 0; }
+                @keyframes sweepCurtainAnimation {
+                  from { width: 0%; }
+                  to { width: 100%; }
                 }
-                .animate-trend-line {
-                  stroke-dasharray: 3000;
-                  stroke-dashoffset: 3000;
-                  animation: drawTrendLine 5.5s linear forwards;
+                .animate-sweep-curtain {
+                  animation: sweepCurtainAnimation 5.5s linear forwards;
                 }
               `}</style>
               {showChart && (
                 <path 
                   key={timeframe}
-                  d={createSpline(historyData, maxChartVal)} 
-                  fill="none"
-                  stroke="#1877F2"
-                  strokeWidth="4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  vectorEffect="non-scaling-stroke"
-                  className="animate-trend-line"
+                  d={createTaperedSpline(historyData, maxChartVal)} 
+                  fill="#1877F2"
+                  clipPath="url(#taperedRevealClip)"
                 />
               )}
             </svg>
@@ -497,7 +517,6 @@ export default function Accounts({
                                   {acc.description || acc.type}
                               </span>
                            </div>
-                           {/* SURGICAL FIX: Neutral slate-grey badge for exact $0.00 balance */}
                            <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 transition-colors whitespace-nowrap ${
                                isZero
                                    ? isDarkMode ? "bg-slate-800 text-slate-400 border-slate-700" : "bg-slate-100 text-slate-500 border-slate-200"

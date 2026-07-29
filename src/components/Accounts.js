@@ -93,10 +93,8 @@ export default function Accounts({
   const historyData = [];
   let monthOffsets = [];
 
-  if (timeframe === "1M") {
-    monthOffsets = [-1, 0];
-  } else if (timeframe === "3M") {
-    monthOffsets = [-2, -1, 0];
+  if (timeframe === "3M") {
+    monthOffsets = [-2, -1, 0, 1, 2];
   } else if (timeframe === "6M") {
     monthOffsets = [-3, -2, -1, 0, 1, 2, 3];
   } else if (timeframe === "YTD") {
@@ -334,7 +332,7 @@ export default function Accounts({
         </div>
   
         <div className={`flex justify-center w-full gap-2 transform transition-all duration-700 delay-400 cubic-bezier(0.16, 1, 0.3, 1) ${showContent ? "opacity-100 translate-x-0" : "opacity-0 translate-x-12"}`}>
-          {["1M", "3M", "6M", "YTD"].map((tf) => (
+          {["3M", "6M", "YTD"].map((tf) => (
             <button
               key={tf}
               onClick={() => setTimeframe(tf)}

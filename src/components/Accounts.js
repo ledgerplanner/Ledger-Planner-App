@@ -275,7 +275,6 @@ export default function Accounts({
     const bottomPoints = [];
 
     points.forEach((p, i) => {
-      // Dynamic thickness taper: 0 at start, swells up to 2.2 in middle, drops to 0 at end
       const progress = i / (numPoints - 1);
       const thickness = Math.sin(progress * Math.PI) * 2.2;
 
@@ -356,15 +355,19 @@ export default function Accounts({
             style={{ minWidth: historyData.length > 6 ? `${historyData.length * 60}px` : '100%' }}
           >
             <svg className="absolute inset-0 w-full h-full pointer-events-none drop-shadow-md z-20" preserveAspectRatio="none" viewBox="0 0 100 100">
+              <defs>
+                <clipPath id="sweepRevealClip">
+                  <rect x="0" y="0" width="100" height="100" className="animate-reveal-curtain" />
+                </clipPath>
+              </defs>
               <style>{`
-                @keyframes drawTrendLine {
-                  from { stroke-dashoffset: 3000; }
-                  to { stroke-dashoffset: 0; }
+                @keyframes revealSweep {
+                  from { width: 0%; }
+                  to { width: 100%; }
                 }
-                .animate-trend-line {
-                  stroke-dasharray: 3000;
-                  stroke-dashoffset: 3000;
-                  animation: drawTrendLine 5.5s linear forwards;
+                /* SURGICAL FIX: Linear clip-path reveal curtain over 5.5s so tapered polygon animates smoothly */
+                .animate-reveal-curtain {
+                  animation: revealSweep 5.5s linear forwards;
                 }
               `}</style>
               {showChart && (
@@ -372,7 +375,7 @@ export default function Accounts({
                   key={timeframe}
                   d={createTaperedSpline(historyData, maxChartVal)} 
                   fill="#1877F2"
-                  className="animate-trend-line"
+                  clipPath="url(#sweepRevealClip)"
                 />
               )}
             </svg>

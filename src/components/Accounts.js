@@ -257,46 +257,69 @@ export default function Accounts({
     const divisor = Math.max(1, daysUntilNextPayday - 1);
     calculatedDailyRate = isNetWorthNegative ? 0 : (activeDataPoint?.val || 0) / divisor;
   }
-  // === END SURGICAL INJECTION ===
 
-  // Custom tapered ribbon shape generator (Pointed at start and end)
+  // === SURGICAL FIX: Advanced Tapered Spline Generator with Interpolation ===
+  // Prevents the 1M view zero-width bug and creates a perfect swelling curve across all timeframes.
   const createTaperedSpline = (data, maxVal) => {
     if (data.length < 2) return "";
 
-    const points = data.map((d, i) => {
+    const basePoints = data.map((d, i) => {
       const x = (i / (data.length - 1)) * 100;
       const normalizedVal = Math.abs(d.val) / (maxVal || 1);
       const y = 90 - (normalizedVal * 80);
       return { x, y };
     });
 
-    const numPoints = points.length;
+    const segments = 50; 
+    const interpolated = [];
+
+    // Interpolate cubic bezier over 50 smooth micro-segments for perfect banana taper
+    for (let i = 0; i <= segments; i++) {
+      const t = i / segments;
+      const globalX = t * 100;
+      
+      let p0Idx = Math.floor(t * (basePoints.length - 1));
+      if (p0Idx >= basePoints.length - 1) p0Idx = basePoints.length - 2;
+      
+      const p0 = basePoints[p0Idx];
+      const p1 = basePoints[p0Idx + 1];
+      const segmentWidth = 100 / (basePoints.length - 1);
+      const localT = (globalX - p0.x) / segmentWidth;
+
+      const cpX = p0.x + (p1.x - p0.x) / 2;
+      
+      const x = Math.pow(1 - localT, 3) * p0.x + 
+                3 * Math.pow(1 - localT, 2) * localT * cpX + 
+                3 * (1 - localT) * Math.pow(localT, 2) * cpX + 
+                Math.pow(localT, 3) * p1.x;
+
+      const y = Math.pow(1 - localT, 3) * p0.y + 
+                3 * Math.pow(1 - localT, 2) * localT * p0.y + 
+                3 * (1 - localT) * Math.pow(localT, 2) * p1.y + 
+                Math.pow(localT, 3) * p1.y;
+
+      interpolated.push({ x, y });
+    }
+
     const topPoints = [];
     const bottomPoints = [];
 
-    points.forEach((p, i) => {
-      const progress = i / (numPoints - 1);
+    interpolated.forEach((p, i) => {
+      const progress = i / segments;
       const thickness = Math.sin(progress * Math.PI) * 2.2;
-
       topPoints.push({ x: p.x, y: p.y - thickness });
       bottomPoints.push({ x: p.x, y: p.y + thickness });
     });
 
     let topPath = `M ${topPoints[0].x} ${topPoints[0].y} `;
     for (let i = 1; i < topPoints.length; i++) {
-      const prev = topPoints[i - 1];
-      const curr = topPoints[i];
-      const cpX = prev.x + (curr.x - prev.x) / 2;
-      topPath += `C ${cpX} ${prev.y}, ${cpX} ${curr.y}, ${curr.x} ${curr.y} `;
+      topPath += `L ${topPoints[i].x} ${topPoints[i].y} `;
     }
 
     const revBottom = [...bottomPoints].reverse();
     let bottomPath = `L ${revBottom[0].x} ${revBottom[0].y} `;
     for (let i = 1; i < revBottom.length; i++) {
-      const prev = revBottom[i - 1];
-      const curr = revBottom[i];
-      const cpX = prev.x + (curr.x - prev.x) / 2;
-      bottomPath += `C ${cpX} ${prev.y}, ${cpX} ${curr.y}, ${curr.x} ${curr.y} `;
+      bottomPath += `L ${revBottom[i].x} ${revBottom[i].y} `;
     }
 
     return `${topPath} ${bottomPath} Z`;
@@ -354,7 +377,7 @@ export default function Accounts({
           >
             <svg className="absolute inset-0 w-full h-full pointer-events-none drop-shadow-md z-20" preserveAspectRatio="none" viewBox="0 0 100 100">
               <defs>
-                <clipPath id="taperedRevealClip">
+                <clipPath id={`sweepRevealClip-${timeframe}`}>
                   <rect x="0" y="0" height="100" className="animate-sweep-curtain" />
                 </clipPath>
               </defs>
@@ -369,10 +392,10 @@ export default function Accounts({
               `}</style>
               {showChart && (
                 <path 
-                  key={timeframe}
+                  key={`path-${timeframe}`}
                   d={createTaperedSpline(historyData, maxChartVal)} 
                   fill="#1877F2"
-                  clipPath="url(#taperedRevealClip)"
+                  clipPath={`url(#sweepRevealClip-${timeframe})`}
                 />
               )}
             </svg>

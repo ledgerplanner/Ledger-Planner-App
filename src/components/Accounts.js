@@ -20,45 +20,37 @@ export default function Accounts({
   setIsCashOutOpen,
   setCashOutGoal
 }) {
-  // === INJECTED: FIREBASE DATA PIPELINE ===
   const { user } = useLedger();
   const creditStatus = user?.creditStatus || null;
   const userId = user?.uid || "UNKNOWN_USER";
 
-  // === INJECTED: SMARTCREDIT BANNER DISMISSAL LOGIC ===
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
-
-  // Chart scroll container ref for auto-centering
   const chartScrollRef = useRef(null);
 
-  // === MIDNIGHT ENGINE STATE ===
   const [todayMidnight, setTodayMidnight] = useState(() => {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
   });
 
   useEffect(() => {
-    // Check if the user dismissed the banner this month
     const dismissedMonth = localStorage.getItem('ledger_credit_dismissed_month');
     const currentMonth = new Date().getMonth().toString();
     if (dismissedMonth === currentMonth) {
       setIsBannerDismissed(true);
     }
 
-    // Automatically trigger updates at midnight as day counters decrease
     const midnightInterval = setInterval(() => {
       const d = new Date();
       const currentMid = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
       if (currentMid !== todayMidnight) {
         setTodayMidnight(currentMid);
       }
-    }, 60000); // Check every minute silently
+    }, 60000); 
 
     return () => clearInterval(midnightInterval);
   }, [todayMidnight]);
 
   const handleDismissBanner = () => {
-    // Set the current month in local storage and hide the banner
     localStorage.setItem('ledger_credit_dismissed_month', new Date().getMonth().toString());
     setIsBannerDismissed(true);
   };
@@ -66,20 +58,16 @@ export default function Accounts({
   const [activeChartNode, setActiveChartNode] = useState(0);
   const [timeframe, setTimeframe] = useState("6M");
   
-  // Animation Triggers
   const [showContent, setShowContent] = useState(false);
   const [showChart, setShowChart] = useState(false);
   
-  // QAB Icon Selector State (for Goal Drawer)
   const [isIconSelectorOpen, setIsIconSelectorOpen] = useState(false);
   const [selectedGoalIcon, setSelectedGoalIcon] = useState("🎯");
   const categoryEmojis = ["🎯", "🏖️", "🚗", "🏠", "💍", "🎓", "👶", "🐶", "🏥", "🛡️", "💰", "🚀", "📱", "💻", "🎮", "✈️", "🏍️", "🎸", "🚲", "⛵"];
   
-  // === ARCHITECTURAL ACCOUNT BOUNDARY SEPARATION ===
   const liquidAccounts = accounts.filter(a => !a.isGoal);
   const goalAccounts = accounts.filter(a => a.isGoal);
   
-  // === ITEM #1: PURE LIQUID NET WORTH CALCULATION MATRIX ===
   const netWorth = liquidAccounts.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
   
   const today = new Date();
@@ -102,7 +90,6 @@ export default function Accounts({
     }
   }
   
-  // Center-Anchored Symmetric Timeline Matrix
   const historyData = [];
   let monthOffsets = [];
 
@@ -119,11 +106,9 @@ export default function Accounts({
     }
   }
 
-  // Pre-calculate running historical cash flows
   let currentCalcNW = netWorth;
   const historicalCalculatedMap = {};
   
-  // Standard backward pass for historical months
   for (let i = 0; i <= 12; i++) {
     const targetDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
     const key = `${targetDate.getFullYear()}-${targetDate.getMonth()}`;
@@ -158,7 +143,6 @@ export default function Accounts({
     }
   }
 
-  // Assemble full visual sequence (Past -> Current -> Future)
   monthOffsets.forEach(offset => {
     const targetDate = new Date(today.getFullYear(), today.getMonth() + offset, 1);
     const monthName = targetDate.toLocaleString('default', { month: 'short' });
@@ -181,14 +165,12 @@ export default function Accounts({
     setActiveChartNode(currentMonthNodeIdx !== -1 ? currentMonthNodeIdx : historyData.length - 1);
   }, [timeframe, historyData.length]);
   
-  // Entrance Animation Sequence
   useEffect(() => {
     const t1 = setTimeout(() => setShowContent(true), 100);
     const t2 = setTimeout(() => setShowChart(true), 300);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
-  // Dead-center scroll alignment for mobile & desktop
   useEffect(() => {
     const centerCurrentMonthBar = () => {
       if (chartScrollRef.current) {
@@ -220,7 +202,6 @@ export default function Accounts({
   const activeDataPoint = historyData[activeChartNode] || historyData[historyData.length - 1];
   const isNetWorthNegative = activeDataPoint?.val < 0;
 
-  // === SURGICAL INJECTION: INCOME PER DAY DECAY ENGINE ===
   let daysUntilNextPayday = 0;
   let hasValidPayday = false;
 
@@ -258,8 +239,6 @@ export default function Accounts({
     calculatedDailyRate = isNetWorthNegative ? 0 : (activeDataPoint?.val || 0) / divisor;
   }
 
-  // === SURGICAL FIX: Advanced Tapered Spline Generator with Interpolation ===
-  // Prevents the 1M view zero-width bug and creates a perfect swelling curve across all timeframes.
   const createTaperedSpline = (data, maxVal) => {
     if (data.length < 2) return "";
 
@@ -273,7 +252,6 @@ export default function Accounts({
     const segments = 50; 
     const interpolated = [];
 
-    // Interpolate cubic bezier over 50 smooth micro-segments for perfect banana taper
     for (let i = 0; i <= segments; i++) {
       const t = i / segments;
       const globalX = t * 100;
@@ -337,7 +315,6 @@ export default function Accounts({
           </span>
         </div>
 
-        {/* Centered Hero Display */}
         <div className={`flex flex-col items-center justify-center text-center mt-5 mb-5 w-full transform transition-all duration-700 delay-200 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           <div>
             <p className={`text-5xl font-black tracking-tighter transition-colors duration-300 ${isNetWorthNegative ? "text-red-500" : activeDataPoint?.val > 0 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
@@ -375,7 +352,7 @@ export default function Accounts({
             className="relative flex items-end justify-between h-28 gap-2 border-b border-dashed border-slate-200 dark:border-slate-700 pb-2 px-2"
             style={{ minWidth: historyData.length > 6 ? `${historyData.length * 60}px` : '100%' }}
           >
-            <svg className="absolute inset-0 w-full h-full pointer-events-none drop-shadow-md z-20" preserveAspectRatio="none" viewBox="0 0 100 100">
+            <svg key={`svg-mask-${timeframe}`} className="absolute inset-0 w-full h-full pointer-events-none drop-shadow-md z-20" preserveAspectRatio="none" viewBox="0 0 100 100">
               <defs>
                 <clipPath id={`sweepRevealClip-${timeframe}`}>
                   <rect x="0" y="0" height="100" className="animate-sweep-curtain" />
@@ -387,12 +364,11 @@ export default function Accounts({
                   to { width: 100%; }
                 }
                 .animate-sweep-curtain {
-                  animation: sweepCurtainAnimation 5.5s linear forwards;
+                  animation: sweepCurtainAnimation 2.2s linear forwards;
                 }
               `}</style>
               {showChart && (
                 <path 
-                  key={`path-${timeframe}`}
                   d={createTaperedSpline(historyData, maxChartVal)} 
                   fill="#1877F2"
                   clipPath={`url(#sweepRevealClip-${timeframe})`}
@@ -457,7 +433,6 @@ export default function Accounts({
   
       <main className="px-6 space-y-8 mt-4">
 
-        {/* === SMARTCREDIT NATIVE BANNER & CONDITIONAL LINE === */}
         {creditStatus !== "active" && !isBannerDismissed && (
           <div className="flex flex-col gap-6">
             <div className={`relative rounded-[2rem] p-5 border flex flex-col items-center text-center overflow-hidden transition-all duration-300 ${

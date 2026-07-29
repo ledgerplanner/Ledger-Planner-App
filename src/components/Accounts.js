@@ -259,49 +259,25 @@ export default function Accounts({
   }
   // === END SURGICAL INJECTION ===
 
-  // SURGICAL FIX: Generates a sleek tapered ribbon polygon (Paper-thin points at start and end)
-  const createTaperedSpline = (data, maxVal) => {
+  const createSpline = (data, maxVal) => {
     if (data.length < 2) return "";
-
-    const points = data.map((d, i) => {
-      const x = (i / (data.length - 1)) * 100;
-      const normalizedVal = Math.abs(d.val) / (maxVal || 1);
-      const y = 90 - (normalizedVal * 80);
-      return { x, y };
+    let path = "";
+    data.forEach((d, i) => {
+       const x = (i / (data.length - 1)) * 100;
+       const normalizedVal = Math.abs(d.val) / (maxVal || 1);
+       const y = 90 - (normalizedVal * 80);
+       
+       if (i === 0) {
+         path += `M ${x} ${y} `;
+       } else {
+         const prevX = ((i - 1) / (data.length - 1)) * 100;
+         const prevNorm = Math.abs(data[i-1].val) / (maxVal || 1);
+         const prevY = 90 - (prevNorm * 80);
+         const cpX = prevX + (x - prevX) / 2;
+         path += `C ${cpX} ${prevY}, ${cpX} ${y}, ${x} ${y} `;
+       }
     });
-
-    const numPoints = points.length;
-    const topPoints = [];
-    const bottomPoints = [];
-
-    points.forEach((p, i) => {
-      const progress = i / (numPoints - 1);
-      const thickness = Math.sin(progress * Math.PI) * 2.2;
-
-      topPoints.push({ x: p.x, y: p.y - thickness });
-      bottomPoints.push({ x: p.x, y: p.y + thickness });
-    });
-
-    // Build smooth forward top path
-    let topPath = `M ${topPoints[0].x} ${topPoints[0].y} `;
-    for (let i = 1; i < topPoints.length; i++) {
-      const prev = topPoints[i - 1];
-      const curr = topPoints[i];
-      const cpX = prev.x + (curr.x - prev.x) / 2;
-      topPath += `C ${cpX} ${prev.y}, ${cpX} ${curr.y}, ${curr.x} ${curr.y} `;
-    }
-
-    // Build smooth reverse bottom path
-    const revBottom = [...bottomPoints].reverse();
-    let bottomPath = `L ${revBottom[0].x} ${revBottom[0].y} `;
-    for (let i = 1; i < revBottom.length; i++) {
-      const prev = revBottom[i - 1];
-      const curr = revBottom[i];
-      const cpX = prev.x + (curr.x - prev.x) / 2;
-      bottomPath += `C ${cpX} ${prev.y}, ${cpX} ${curr.y}, ${curr.x} ${curr.y} `;
-    }
-
-    return `${topPath} ${bottomPath} Z`;
+    return path;
   };
   
   const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
@@ -355,27 +331,28 @@ export default function Accounts({
             style={{ minWidth: historyData.length > 6 ? `${historyData.length * 60}px` : '100%' }}
           >
             <svg className="absolute inset-0 w-full h-full pointer-events-none drop-shadow-md z-20" preserveAspectRatio="none" viewBox="0 0 100 100">
-              <defs>
-                <clipPath id="sweepRevealClip">
-                  <rect x="0" y="0" width="100" height="100" className="animate-reveal-curtain" />
-                </clipPath>
-              </defs>
               <style>{`
-                @keyframes revealSweep {
-                  from { width: 0%; }
-                  to { width: 100%; }
+                @keyframes drawTrendLine {
+                  from { stroke-dashoffset: 3000; }
+                  to { stroke-dashoffset: 0; }
                 }
-                /* SURGICAL FIX: Linear clip-path reveal curtain over 5.5s so tapered polygon animates smoothly */
-                .animate-reveal-curtain {
-                  animation: revealSweep 5.5s linear forwards;
+                .animate-trend-line {
+                  stroke-dasharray: 3000;
+                  stroke-dashoffset: 3000;
+                  animation: drawTrendLine 5.5s linear forwards;
                 }
               `}</style>
               {showChart && (
                 <path 
                   key={timeframe}
-                  d={createTaperedSpline(historyData, maxChartVal)} 
-                  fill="#1877F2"
-                  clipPath="url(#sweepRevealClip)"
+                  d={createSpline(historyData, maxChartVal)} 
+                  fill="none"
+                  stroke="#1877F2"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  vectorEffect="non-scaling-stroke"
+                  className="animate-trend-line"
                 />
               )}
             </svg>
@@ -491,6 +468,7 @@ export default function Accounts({
             ) : (
                 <div className="space-y-3">
                 {liquidAccounts.map((acc) => {
+                    const isZero = Number(acc.balance) === 0;
                     const isNegative = acc.balance < 0;
                     const isPositive = acc.balance > 0;
                     return (
@@ -519,12 +497,13 @@ export default function Accounts({
                                   {acc.description || acc.type}
                               </span>
                            </div>
+                           {/* SURGICAL FIX: Neutral slate-grey badge for exact $0.00 balance */}
                            <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 transition-colors whitespace-nowrap ${
-                               isNegative 
+                               isZero
+                                   ? isDarkMode ? "bg-slate-800 text-slate-400 border-slate-700" : "bg-slate-100 text-slate-500 border-slate-200"
+                                   : isNegative 
                                    ? isDarkMode ? "bg-red-900/30 text-red-400 border-red-900/50 drop-shadow-[0_0_12px_rgba(239,68,68,0.7)]" : "bg-red-50 text-red-600 border-red-200 drop-shadow-[0_0_12px_rgba(239,68,68,0.7)]"
-                                   : isPositive 
-                                   ? isDarkMode ? "bg-emerald-900/30 text-emerald-400 border-emerald-900/50 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]" : "bg-emerald-50 text-emerald-600 border-emerald-200 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]"
-                                   : isDarkMode ? "bg-slate-800 text-slate-400 border-slate-700" : "bg-slate-100 text-slate-500 border-slate-200"
+                                   : isDarkMode ? "bg-emerald-900/30 text-emerald-400 border-emerald-900/50 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]" : "bg-emerald-50 text-emerald-600 border-emerald-200 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]"
                            }`}>
                                {isNegative ? "-" : ""}${Math.abs(acc.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                            </div>
@@ -553,6 +532,7 @@ export default function Accounts({
                     const isComplete = balanceAmt >= targetAmt;
                     const progressPct = Math.min((balanceAmt / targetAmt) * 100, 100);
                     
+                    const isZero = balanceAmt === 0;
                     const isPositive = balanceAmt > 0;
                     const isNegative = balanceAmt < 0;
   
@@ -591,11 +571,11 @@ export default function Accounts({
                            <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 transition-all whitespace-nowrap ${
                                isComplete
                                    ? "bg-orange-500/10 text-[#F97316] border-orange-500/30 dark:border-orange-500/40 drop-shadow-[0_0_12px_rgba(249,115,22,0.7)]"
+                                   : isZero
+                                   ? isDarkMode ? "bg-slate-800 text-slate-400 border-slate-700" : "bg-slate-100 text-slate-500 border-slate-200"
                                    : isNegative 
                                    ? isDarkMode ? "bg-red-900/30 text-red-400 border-red-900/50 drop-shadow-[0_0_12px_rgba(239,68,68,0.7)]" : "bg-red-50 text-red-600 border-red-200 drop-shadow-[0_0_12px_rgba(239,68,68,0.7)]"
-                                   : isPositive 
-                                   ? "bg-orange-500/10 text-[#F97316] border-orange-500/20 dark:border-orange-500/30 drop-shadow-[0_0_12px_rgba(249,115,22,0.4)]"
-                                   : isDarkMode ? "bg-slate-800 text-slate-400 border-slate-700" : "bg-slate-100 text-slate-500 border-slate-200"
+                                   : "bg-orange-500/10 text-[#F97316] border-orange-500/20 dark:border-orange-500/30 drop-shadow-[0_0_12px_rgba(249,115,22,0.4)]"
                            }`}>
                                ${balanceAmt.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                            </div>

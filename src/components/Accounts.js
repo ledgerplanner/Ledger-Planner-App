@@ -94,7 +94,7 @@ export default function Accounts({
   let monthOffsets = [];
 
   if (timeframe === "3M") {
-    monthOffsets = [-2, -1, 0, 1, 2];
+    monthOffsets = [-1, 0, 1];
   } else if (timeframe === "6M") {
     monthOffsets = [-3, -2, -1, 0, 1, 2, 3];
   } else if (timeframe === "YTD") {

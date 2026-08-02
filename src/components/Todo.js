@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { CheckCircle2, Circle, Trash2, X, Plus, Zap, ShoppingBag, Flame, Star, CheckSquare, Edit2, Save, ArrowDown } from "lucide-react";
+import { CheckCircle2, Circle, Trash2, X, Plus, Zap, ShoppingBag, Flame, Star, CheckSquare, Edit2, Save, ArrowDown, Trophy } from "lucide-react";
 import { doc, deleteDoc, updateDoc } from "firebase/firestore";
 import { db, auth } from "../firebase"; 
- 
+import confetti from "canvas-confetti";
+
 export default function Todo({
   userName, 
-  todos,
+  todos = [],
   newTodoText, 
   setNewTodoText,
   newTodoPriority,
@@ -23,34 +24,64 @@ export default function Todo({
   const [editTaskData, setEditTaskData] = useState({ text: "", priority: 3, type: "task", emoji: "📝" });
   const [isMounted, setIsMounted] = useState(false);
 
-  // === SURGICAL EMOJI PIPELINE STATE ===
+  // === EMOJI PIPELINE STATE (EXPANDED TO 80+ CURATED EMOJIS) ===
   const [newTodoEmoji, setNewTodoEmoji] = useState("📝");
   const [isIconSelectorOpen, setIsIconSelectorOpen] = useState(false);
   const [isEditIconSelectorOpen, setIsEditIconSelectorOpen] = useState(false);
-  const categoryEmojis = ["📝", "⚡", "💡", "🛒", "🏃‍♂️", "📞", "📧", "📅", "💵", "🔧", "🚗", "🏠", "💊", "📚", "🎁", "🍔", "🐶", "✈️", "🧹", "💻", "💼", "🧘", "🎯", "🔥"];
- 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
- 
+  
+  const categoryEmojis = [
+    // Work & Productive
+    "📝", "📋", "📁", "📌", "📌", "⚙️", "🔧", "💻", "💼", "✉️", "📧", "📞", "📅", "🚀", "🎯", "💡", "⚡", "🔥",
+    // Finance & Money
+    "💵", "💰", "💳", "🏦", "📈", "💎", "🧾", "🛍️", "🛒",
+    // Health & Life
+    "🏃‍♂️", "🧘", "🏋️‍♂️", "🚴‍♂️", "🥗", "💊", "🏥", "🩺", "💧", "☕", "🍔", "🍕", "🍎",
+    // Home & Personal
+    "🏠", "🧹", "🧺", "🧼", "🔑", "📦", "🛋️", "🐶", "🐱", "🌱", "🪴", "🎁", "🎓", "📚", "🎨", "🎮", "🎸", "🎧",
+    // Travel & Auto
+    "🚗", "🏍️", "🚲", "✈️", "⛵", "🧳", "🗺️", "🏖️", "🏨", "⛽",
+    // Alerts & Flags
+    "⭐", "🌟", "🛑", "⚠️", "🔔", "⏰", "⏳", "🔒", "🛡️", "🏆", "🎉", "✨"
+  ];
+
   const sortTasks = (tasks) => tasks.sort((a, b) => parseInt(b.priority || 1) - parseInt(a.priority || 1));
- 
+
   const pendingActions = sortTasks(todos.filter(t => !t.isCompleted && t.type === "task"));
   const pendingShopping = sortTasks(todos.filter(t => !t.isCompleted && t.type === "shopping"));
   const completedTasks = sortTasks(todos.filter(t => t.isCompleted));
- 
+
   const totalTasks = todos.length;
   const completedCount = completedTasks.length;
   const momentumPct = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
- 
+  const isVictoryState = totalTasks > 0 && momentumPct === 100;
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Trigger Victory Confetti Burst when board is cleared
+  useEffect(() => {
+    if (isVictoryState) {
+      try {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      } catch (err) {
+        console.log("Confetti trigger standard fallback:", err);
+      }
+    }
+  }, [isVictoryState]);
+
   const radius = 42;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (momentumPct / 100) * circumference;
- 
+
   const triggerHaptic = () => { 
     if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) window.navigator.vibrate(50); 
   };
- 
+
   const handleDeleteTask = () => {
     if (!auth.currentUser || !activeModalTodo) return;
     
@@ -75,7 +106,7 @@ export default function Todo({
       }
     );
   };
- 
+
   const handleSaveEdit = async () => {
     if (!auth.currentUser || !activeModalTodo || !editTaskData.text.trim()) return;
     
@@ -96,7 +127,7 @@ export default function Todo({
     handleAddTodo(e, newTodoEmoji);
     setNewTodoEmoji("📝");
   };
- 
+
   const renderStars = (priorityNum) => {
     const p = parseInt(priorityNum) || 1;
     return (
@@ -107,48 +138,58 @@ export default function Todo({
       </div>
     );
   };
- 
+
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
-         
+          
         <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
           <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-black"}`}>
             Daily Operations
           </span>
         </div>
- 
+
+        {/* Victory Radial Ring Gauge */}
         <div className="relative w-28 h-28 flex-shrink-0">
           <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90 drop-shadow-xl">
             <circle cx="50" cy="50" r={radius} fill="transparent" stroke={isDarkMode ? "#334155" : "rgba(226, 232, 240, 0.9)"} strokeWidth="12" />
             <circle
               cx="50" cy="50" r={radius} fill="transparent"
-              stroke={momentumPct === 100 ? "#10B981" : "#1877F2"} strokeWidth="12"
+              stroke={isVictoryState ? "#10B981" : "#1877F2"} strokeWidth="12"
               strokeDasharray={circumference} strokeDashoffset={isMounted ? strokeDashoffset : circumference}
-              strokeLinecap="round" className="transition-all duration-1000 ease-out"
+              strokeLinecap="round" className={`transition-all duration-1000 ease-out ${isVictoryState ? "drop-shadow-[0_0_12px_rgba(16,185,129,0.8)]" : ""}`}
             />
           </svg>
           <div className={`absolute inset-0 flex flex-col items-center justify-center transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
-            <span className={`text-xl font-black tracking-tighter transition-colors duration-500 ${momentumPct === 100 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
-              {momentumPct}%
-            </span>
+            {isVictoryState ? (
+              <div className="flex flex-col items-center animate-bounce">
+                <Trophy size={20} className="text-[#10B981]" />
+                <span className="text-[9px] font-black tracking-widest text-[#10B981] uppercase mt-0.5">CLEARED</span>
+              </div>
+            ) : (
+              <span className={`text-xl font-black tracking-tighter transition-colors duration-500 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                {momentumPct}%
+              </span>
+            )}
           </div>
         </div>
         
         <div className="flex-1 flex flex-col items-end text-right space-y-1 overflow-hidden">
           <div className={`flex items-baseline gap-1.5 pt-1 transform transition-all duration-700 delay-200 cubic-bezier(0.16, 1, 0.3, 1) ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
-            <p className="text-6xl font-black tracking-tighter leading-none transition-all duration-300 text-[#1877F2]">{completedCount}</p>
+            <p className={`text-6xl font-black tracking-tighter leading-none transition-all duration-300 ${isVictoryState ? "text-[#10B981]" : "text-[#1877F2]"}`}>{completedCount}</p>
             <p className={`text-3xl font-black tracking-tighter leading-none opacity-50 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>/ {totalTasks}</p>
           </div>
           
           <div className={`transform transition-all duration-700 delay-500 cubic-bezier(0.16, 1, 0.3, 1) ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-12"}`}>
-            <p className={`text-xs font-bold truncate pt-1 ${isDarkMode ? "text-slate-300" : "text-slate-500"}`}>Total completed tasks</p>
+            <p className={`text-xs font-bold truncate pt-1 ${isDarkMode ? "text-slate-300" : "text-slate-500"}`}>
+              {isVictoryState ? "All Board Tasks Cleared!" : "Total completed tasks"}
+            </p>
           </div>
         </div>
       </div>
     </div>
   );
- 
+
   const renderTaskCard = (task) => {
     return (
       <div 
@@ -189,7 +230,7 @@ export default function Todo({
             }} 
             className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
           >
-             <Edit2 size={16} strokeWidth={2.5} />
+              <Edit2 size={16} strokeWidth={2.5} />
          </button>
         </div>
 
@@ -211,10 +252,10 @@ export default function Todo({
       </div>
     );
   };
- 
+
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
-       
+        
       <div className="relative z-10 Todo-Master-Header">
         <style>{`
           .Todo-Master-Header h1, 
@@ -247,9 +288,9 @@ export default function Todo({
             {isIconSelectorOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setIsIconSelectorOpen(false)}></div>
-                <div className={`absolute top-14 left-0 z-50 p-4 rounded-[1.5rem] border shadow-2xl grid grid-cols-6 gap-3 animate-fade-in ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
-                  {categoryEmojis.map(emoji => (
-                    <button key={emoji} type="button" onClick={() => { setNewTodoEmoji(emoji); setIsIconSelectorOpen(false); }} className={`w-8 h-8 flex items-center justify-center text-xl rounded-lg transition-transform active:scale-90 hover:scale-110`}>
+                <div className={`absolute top-14 left-0 z-50 w-full max-h-48 overflow-y-auto p-4 rounded-[1.5rem] border shadow-2xl grid grid-cols-6 gap-3 animate-fade-in [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+                  {categoryEmojis.map((emoji, idx) => (
+                    <button key={`${emoji}-${idx}`} type="button" onClick={() => { setNewTodoEmoji(emoji); setIsIconSelectorOpen(false); }} className={`w-8 h-8 flex items-center justify-center text-xl rounded-lg transition-transform active:scale-90 hover:scale-110`}>
                       {emoji}
                     </button>
                   ))}
@@ -257,7 +298,6 @@ export default function Todo({
               </>
             )}
 
-            {/* SURGICAL INJECTION: Connected active newTodoType conditional ternary framework to the input placeholder string */}
             <input 
               type="text" 
               placeholder={newTodoType === "task" ? "New Task?" : "Future Purchase?"}
@@ -300,7 +340,7 @@ export default function Todo({
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-relaxed">No tasks pending.<br/>Build your empire.</p>
           </div>
         )}
- 
+
         {pendingActions.length > 0 && (
           <section className={`p-4 rounded-[2rem] border shadow-sm animate-fade-in transition-colors ${isDarkMode ? "bg-blue-900/10 border-blue-900/30" : "bg-blue-50/60 border-blue-100"}`}>
             <div className="flex items-center gap-2 mb-4 px-2">
@@ -312,11 +352,11 @@ export default function Todo({
             </div>
           </section>
         )}
- 
+
         {pendingActions.length > 0 && (pendingShopping.length > 0 || completedTasks.length > 0) && (
           <div className={`border-t relative z-10 my-4 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
         )}
- 
+
         {pendingShopping.length > 0 && (
           <section className={`p-4 rounded-[2rem] border shadow-sm animate-fade-in transition-colors ${isDarkMode ? "bg-emerald-900/10 border-emerald-900/30" : "bg-emerald-50/60 border-emerald-100"}`}>
             <div className="flex items-center gap-2 mb-4 px-2">
@@ -328,11 +368,11 @@ export default function Todo({
             </div>
           </section>
         )}
- 
+
         {pendingShopping.length > 0 && completedTasks.length > 0 && (
           <div className={`border-t relative z-10 my-4 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
         )}
- 
+
         {completedTasks.length > 0 && (
           <section className={`p-4 rounded-[2rem] border shadow-sm animate-fade-in transition-colors ${isDarkMode ? "bg-orange-900/10 border-orange-900/30" : "bg-orange-50/60 border-orange-100"}`}>
             <div className="flex items-center justify-between mb-4 px-2">
@@ -353,7 +393,7 @@ export default function Todo({
           </section>
         )}
       </main>
- 
+
       {activeModalTodo && (
         <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setActiveModalTodo(null)}></div>
@@ -389,20 +429,20 @@ export default function Todo({
               </div>
 
               {isEditIconSelectorOpen && (
-                <div className={`absolute left-6 right-6 top-[150px] z-50 p-4 rounded-[1.5rem] border shadow-2xl grid grid-cols-6 gap-3 animate-fade-in ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
-                  {categoryEmojis.map(emoji => (
-                    <button key={emoji} type="button" onClick={() => { setEditTaskData({...editTaskData, emoji}); setIsEditIconSelectorOpen(false); }} className={`w-8 h-8 flex items-center justify-center text-xl rounded-lg transition-transform active:scale-90 hover:scale-110`}>
+                <div className={`absolute left-6 right-6 top-[150px] z-50 max-h-48 overflow-y-auto p-4 rounded-[1.5rem] border shadow-2xl grid grid-cols-6 gap-3 animate-fade-in [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
+                  {categoryEmojis.map((emoji, idx) => (
+                    <button key={`edit-${emoji}-${idx}`} type="button" onClick={() => { setEditTaskData({...editTaskData, emoji}); setIsEditIconSelectorOpen(false); }} className={`w-8 h-8 flex items-center justify-center text-xl rounded-lg transition-transform active:scale-90 hover:scale-110`}>
                       {emoji}
                     </button>
                   ))}
                 </div>
               )}
- 
+
               <div className="flex gap-2">
                <button onClick={() => setEditTaskData({...editTaskData, type: "task"})} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors ${editTaskData.type === "task" ? "bg-[#1877F2] text-white shadow-md shadow-blue-500/20" : isDarkMode ? "bg-[#0F172A] text-slate-400 border border-slate-700" : "bg-white text-slate-400 border border-slate-200"}`}>Action</button>
                <button onClick={() => setEditTaskData({...editTaskData, type: "shopping"})} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors ${editTaskData.type === "shopping" ? "bg-[#10B981] text-white shadow-md shadow-emerald-500/20" : isDarkMode ? "bg-[#0F172A] text-slate-400 border border-slate-700" : "bg-white text-slate-400 border border-slate-200"}`}>Shopping</button>
              </div>
- 
+
               <div className={`rounded-2xl p-4 border ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
                 <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? "border-slate-800" : "border-slate-100"}`}>
                   <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Status</span>
@@ -424,7 +464,7 @@ export default function Todo({
                   </div>
                 </div>
               </div>
- 
+
               <div className="pt-2 space-y-3">
                <button 
                  onClick={handleSaveEdit} 

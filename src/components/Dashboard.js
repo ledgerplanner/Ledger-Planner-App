@@ -68,7 +68,7 @@ export default function Dashboard({
   const todayParts = [todayForMath.getFullYear(), todayForMath.getMonth(), todayForMath.getDate()];
   const todayMidnightMillis = new Date(todayParts[0], todayParts[1], todayParts[2]).getTime();
 
-  // === PAYDAY INTERVAL RANGE ENGINE SYSTEM (PARALLEL TRACK ENHANCED) ===
+  // === PAYDAY INTERVAL RANGE ENGINE SYSTEM (GAPLESS CONTINUOUS COVERAGE) ===
   const freq = paydayConfig?.frequency || "Weekly";
   let allowedPaydays = [];
   
@@ -93,7 +93,8 @@ export default function Dashboard({
       .sort((a, b) => a.millis - b.millis);
 
     activePaydaysWithDates.forEach((pd, idx) => {
-      const startMillis = pd.millis;
+      // SURGICAL FIX: Payday 1 start anchors to today (todayMidnightMillis) so pre-payday bills (e.g. Aug 2-6) aren't orphaned
+      const startMillis = idx === 0 ? todayMidnightMillis : paydayWindows[activePaydaysWithDates[idx - 1].key].end + 1;
       let endMillis = 0;
 
       if (idx < activePaydaysWithDates.length - 1) {
@@ -105,7 +106,6 @@ export default function Dashboard({
         else if (freq === "Semi-Monthly") lastDateObj.setDate(lastDateObj.getDate() + 15);
         else lastDateObj.setMonth(lastDateObj.getMonth() + 1);
         
-        // Include the entire 24-hour span of the final target day (23:59:59.999)
         lastDateObj.setHours(23, 59, 59, 999);
         endMillis = lastDateObj.getTime();
       }
@@ -135,6 +135,15 @@ export default function Dashboard({
         return pdKey;
       }
     }
+
+    // Fail-safe: if a bill falls beyond the last window date in the current month, assign it to the last active payday
+    if (activePaydaysWithDates.length > 0) {
+      const lastKey = activePaydaysWithDates[activePaydaysWithDates.length - 1].key;
+      if (billMillis > paydayWindows[lastKey]?.end) {
+        return lastKey;
+      }
+    }
+
     return null;
   };
 
@@ -296,7 +305,7 @@ export default function Dashboard({
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
       <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex flex-col items-center w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
-         
+          
         <div className="absolute top-4 w-full flex justify-center pointer-events-none">
           <span className={`text-[10px] font-black uppercase tracking-widest opacity-80 ${isDarkMode ? "text-white" : "text-black"}`}>
             {currentMonthName}'s Monthly Snapshot
@@ -337,13 +346,12 @@ export default function Dashboard({
           </div>
         </div>
 
-        {/* SURGICAL INJECTION: Shifted up ~50% (-mt-5) and font size increased to text-sm */}
         <div className="-mt-5 mb-3 text-center pointer-events-none">
           <span className="text-sm font-black uppercase tracking-widest text-[#1877F2]">
             BILLS PAID IN {currentMonthName.toUpperCase()}
           </span>
         </div>
-       
+        
         <div className="w-full space-y-2 mt-1">
           <div 
             className={`w-full py-3 px-4 rounded-xl border flex items-center justify-between transform transition-all duration-[600ms] delay-[200ms] ${isMounted ? "translate-x-0 opacity-100" : "-translate-x-12 opacity-0"} ${getPillStyle(totalIncomeBalance)}`}

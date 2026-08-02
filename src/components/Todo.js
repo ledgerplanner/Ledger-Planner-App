@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { CheckCircle2, Circle, Trash2, X, Plus, Zap, ShoppingBag, Flame, Star, CheckSquare, Edit2, Save, ArrowDown, Trophy } from "lucide-react";
+import { CheckCircle2, Circle, Trash2, X, Plus, Zap, ShoppingBag, Star, CheckSquare, Edit2, Save, ArrowDown, Trophy } from "lucide-react";
 import { doc, deleteDoc, updateDoc } from "firebase/firestore";
 import { db, auth } from "../firebase"; 
-import confetti from "canvas-confetti";
 
 export default function Todo({
   userName, 
@@ -24,24 +23,17 @@ export default function Todo({
   const [editTaskData, setEditTaskData] = useState({ text: "", priority: 3, type: "task", emoji: "📝" });
   const [isMounted, setIsMounted] = useState(false);
 
-  // === EMOJI PIPELINE STATE (EXPANDED TO 80+ CURATED EMOJIS) ===
   const [newTodoEmoji, setNewTodoEmoji] = useState("📝");
   const [isIconSelectorOpen, setIsIconSelectorOpen] = useState(false);
   const [isEditIconSelectorOpen, setIsEditIconSelectorOpen] = useState(false);
   
   const categoryEmojis = [
-    // Work & Productive
-    "📝", "📋", "📁", "📌", "📌", "⚙️", "🔧", "💻", "💼", "✉️", "📧", "📞", "📅", "🚀", "🎯", "💡", "⚡", "🔥",
-    // Finance & Money
-    "💵", "💰", "💳", "🏦", "📈", "💎", "🧾", "🛍️", "🛒",
-    // Health & Life
-    "🏃‍♂️", "🧘", "🏋️‍♂️", "🚴‍♂️", "🥗", "💊", "🏥", "🩺", "💧", "☕", "🍔", "🍕", "🍎",
-    // Home & Personal
-    "🏠", "🧹", "🧺", "🧼", "🔑", "📦", "🛋️", "🐶", "🐱", "🌱", "🪴", "🎁", "🎓", "📚", "🎨", "🎮", "🎸", "🎧",
-    // Travel & Auto
+    "📝", "📋", "📁", "📌", "✏️", "⚙️", "🔧", "💻", "📱", "💼", "✉️", "📧", "📞", "📅", "🚀", "🎯", "💡", "⚡", "🔥",
+    "💵", "💰", "💳", "🏦", "📈", "💎", "🧾", "🛍️", "🛒", "📦",
+    "🏃‍♂️", "🧘", "🏋️‍♂️", "🚴‍♂️", "🥗", "💊", "🏥", "🩺", "💧", "☕", "🍔", "🍕", "🍎", "🥑",
+    "🏠", "🧹", "🧺", "🧼", "🔑", "🛋️", "🐶", "🐱", "🌱", "🪴", "🎁", "🎓", "📚", "🎨", "🎮", "🎸", "🎧",
     "🚗", "🏍️", "🚲", "✈️", "⛵", "🧳", "🗺️", "🏖️", "🏨", "⛽",
-    // Alerts & Flags
-    "⭐", "🌟", "🛑", "⚠️", "🔔", "⏰", "⏳", "🔒", "🛡️", "🏆", "🎉", "✨"
+    "⭐", "🌟", "🛑", "⚠️", "🔔", "⏰", "⏳", "🔒", "🛡️", "🏆", "🎉", "✨", "✅"
   ];
 
   const sortTasks = (tasks) => tasks.sort((a, b) => parseInt(b.priority || 1) - parseInt(a.priority || 1));
@@ -59,24 +51,14 @@ export default function Todo({
     setIsMounted(true);
   }, []);
 
-  // Trigger Victory Confetti Burst when board is cleared
-  useEffect(() => {
-    if (isVictoryState) {
-      try {
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 }
-        });
-      } catch (err) {
-        console.log("Confetti trigger standard fallback:", err);
-      }
-    }
-  }, [isVictoryState]);
-
   const radius = 42;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (momentumPct / 100) * circumference;
+
+  let momentumBadge = { text: "GET STARTED 🚀", classes: isDarkMode ? "text-slate-400 border-slate-700" : "text-slate-500 border-slate-200" };
+  if (momentumPct > 0 && momentumPct < 50) momentumBadge = { text: "BUILDING STEAM ⚡", classes: "text-blue-500 border-blue-500/50 shadow-[0_0_12px_rgba(59,130,246,0.3)] bg-blue-500/10" };
+  if (momentumPct >= 50 && momentumPct < 100) momentumBadge = { text: "IN THE ZONE 🔥", classes: "text-fuchsia-500 border-fuchsia-500/50 shadow-[0_0_12px_rgba(217,70,239,0.3)] bg-fuchsia-500/10" };
+  if (isVictoryState) momentumBadge = { text: "DOMINATING 🏆", classes: "text-emerald-500 border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.4)] bg-emerald-500/10" };
 
   const triggerHaptic = () => { 
     if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) window.navigator.vibrate(50); 
@@ -141,7 +123,7 @@ export default function Todo({
 
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
-      <div className={`relative pt-10 pb-6 px-6 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
+      <div className={`relative pt-10 pb-6 px-4 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
           
         <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
           <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-black"}`}>
@@ -149,42 +131,70 @@ export default function Todo({
           </span>
         </div>
 
-        {/* Victory Radial Ring Gauge */}
-        <div className="relative w-28 h-28 flex-shrink-0">
-          <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90 drop-shadow-xl">
-            <circle cx="50" cy="50" r={radius} fill="transparent" stroke={isDarkMode ? "#334155" : "rgba(226, 232, 240, 0.9)"} strokeWidth="12" />
-            <circle
-              cx="50" cy="50" r={radius} fill="transparent"
-              stroke={isVictoryState ? "#10B981" : "#1877F2"} strokeWidth="12"
-              strokeDasharray={circumference} strokeDashoffset={isMounted ? strokeDashoffset : circumference}
-              strokeLinecap="round" className={`transition-all duration-1000 ease-out ${isVictoryState ? "drop-shadow-[0_0_12px_rgba(16,185,129,0.8)]" : ""}`}
-            />
-          </svg>
-          <div className={`absolute inset-0 flex flex-col items-center justify-center transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
-            {isVictoryState ? (
-              <div className="flex flex-col items-center animate-bounce">
-                <Trophy size={20} className="text-[#10B981]" />
-                <span className="text-[9px] font-black tracking-widest text-[#10B981] uppercase mt-0.5">CLEARED</span>
+        <div className="flex items-center w-full justify-between mt-2">
+          
+          <div className="flex flex-col items-center flex-1">
+            <div className="relative w-28 h-28 flex-shrink-0">
+              <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+                <defs>
+                  <filter id="ringGlow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                  </filter>
+                </defs>
+                
+                {isDarkMode && (
+                  <circle cx="50" cy="50" r={radius} fill="transparent" stroke={isVictoryState ? "rgba(16, 185, 129, 0.15)" : "rgba(24, 119, 242, 0.15)"} strokeWidth="16" filter="url(#ringGlow)" />
+                )}
+                <circle cx="50" cy="50" r={radius - 7} fill="transparent" stroke={isDarkMode ? "#334155" : "#CBD5E1"} strokeWidth="1" strokeDasharray="2, 4" opacity="0.6" />
+                <circle cx="50" cy="50" r={radius} fill="transparent" stroke={isDarkMode ? "#1E293B" : "rgba(226, 232, 240, 0.9)"} strokeWidth="12" />
+                
+                <circle
+                  cx="50" cy="50" r={radius} fill="transparent"
+                  stroke={isVictoryState ? "#10B981" : "#1877F2"} strokeWidth="12"
+                  strokeDasharray={circumference} strokeDashoffset={isMounted ? strokeDashoffset : circumference}
+                  strokeLinecap="round" className="transition-all duration-1000 ease-out"
+                  filter={isDarkMode ? "url(#ringGlow)" : ""}
+                />
+              </svg>
+              <div className={`absolute inset-0 flex flex-col items-center justify-center transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
+                <span className={`text-xl font-black tracking-tighter transition-colors duration-500 ${isVictoryState ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
+                  {momentumPct}%
+                </span>
               </div>
-            ) : (
-              <span className={`text-xl font-black tracking-tighter transition-colors duration-500 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                {momentumPct}%
-              </span>
-            )}
+            </div>
+            
+            <div className={`mt-3 px-2.5 py-1 rounded-md border text-[8px] font-black tracking-widest transition-all duration-500 uppercase whitespace-nowrap ${momentumBadge.classes}`}>
+              {momentumBadge.text}
+            </div>
           </div>
-        </div>
-        
-        <div className="flex-1 flex flex-col items-end text-right space-y-1 overflow-hidden">
-          <div className={`flex items-baseline gap-1.5 pt-1 transform transition-all duration-700 delay-200 cubic-bezier(0.16, 1, 0.3, 1) ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
-            <p className={`text-6xl font-black tracking-tighter leading-none transition-all duration-300 ${isVictoryState ? "text-[#10B981]" : "text-[#1877F2]"}`}>{completedCount}</p>
-            <p className={`text-3xl font-black tracking-tighter leading-none opacity-50 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>/ {totalTasks}</p>
+
+          <div className={`h-24 border-r border-dashed mx-2 ${isDarkMode ? "border-slate-700/50" : "border-slate-300"}`}></div>
+
+          <div className="flex-1 flex flex-col items-center justify-center space-y-2">
+            <div className="flex flex-col items-center gap-1.5">
+              <span className={`text-[9px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                {isVictoryState ? "Board Status" : "Completed"}
+              </span>
+              
+              {isVictoryState ? (
+                <div className="px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.3)] animate-pulse">
+                  <CheckCircle2 size={24} className="text-[#10B981]" />
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <div className={`px-4 py-2 rounded-xl text-2xl font-black leading-none ${isDarkMode ? "bg-slate-800 text-[#1877F2] shadow-inner" : "bg-slate-100 text-[#1877F2]"}`}>
+                    {completedCount}
+                  </div>
+                  <span className={`text-lg font-black opacity-50 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>/</span>
+                  <div className={`px-3 py-2 rounded-xl text-xl font-black leading-none ${isDarkMode ? "bg-[#0F172A] text-slate-400 border border-slate-800" : "bg-white text-slate-400 border border-slate-200"}`}>
+                    {totalTasks}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           
-          <div className={`transform transition-all duration-700 delay-500 cubic-bezier(0.16, 1, 0.3, 1) ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-12"}`}>
-            <p className={`text-xs font-bold truncate pt-1 ${isDarkMode ? "text-slate-300" : "text-slate-500"}`}>
-              {isVictoryState ? "All Board Tasks Cleared!" : "Total completed tasks"}
-            </p>
-          </div>
         </div>
       </div>
     </div>

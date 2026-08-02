@@ -21,7 +21,7 @@ export default function Activity({
   const [prevSearch, setPrevSearch] = useState(activitySearch);
   const [prevFilter, setPrevFilter] = useState(activityFilter);
 
-  // This block catches tab-switches and filter changes instantly before the screen draws
+  // Catch tab-switches and filter changes instantly before the screen draws
   if (activitySearch !== prevSearch || activityFilter !== prevFilter) {
     setPrevSearch(activitySearch);
     setPrevFilter(activityFilter);
@@ -220,20 +220,30 @@ export default function Activity({
   }, {});
 
   const sortedCategories = Object.entries(categoriesMap).sort((a, b) => b[1] - a[1]);
-  
-  const topCategories = sortedCategories.slice(0, 10);
 
-  // === BRAND-SAFE CATEGORY COLOR PALETTE ===
-  const colors = isIncomeView 
-    ? ["#10B981", "#059669", "#047857", "#34D399", "#064E3B", "#6EE7B7", "#A7F3D0", "#0D9488", "#14B8A6", "#115E59"] 
-    : ["#A855F7", "#EC4899", "#06B6D4", "#EAB308", "#14B8A6", "#F43F5E", "#6366F1", "#D946EF", "#84CC16", "#475569"]; 
+  // === SURGICAL FIX: Brand-safe palette avoiding signature Blue (#1877F2), Orange (#F97316), and Green (#10B981) ===
+  const colors = [
+    "#A855F7", // Purple
+    "#EC4899", // Pink
+    "#06B6D4", // Cyan
+    "#EAB308", // Yellow
+    "#D946EF", // Magenta
+    "#F43F5E", // Rose
+    "#6366F1", // Indigo
+    "#8B5CF6", // Violet
+    "#C084FC", // Fuchsia Light
+    "#38BDF8", // Sky
+    "#14B8A6", // Teal
+    "#64748B"  // Slate
+  ];
 
-  const maxCategoryValue = topCategories.length > 0 ? topCategories[0][1] : 1;
+  const maxCategoryValue = sortedCategories.length > 0 ? sortedCategories[0][1] : 1;
 
-  const leaderboardSegments = topCategories.map(([name, amount], index) => {
+  // SURGICAL FIX: Removed .slice(0, 10) to support unlimited dynamic categories with cyclic non-primary palette
+  const leaderboardSegments = sortedCategories.map(([name, amount], index) => {
     const overallPercentage = totalTargetAmount > 0 ? amount / totalTargetAmount : 0;
     const relativeBarWidth = maxCategoryValue > 0 ? (amount / maxCategoryValue) * 100 : 0;
-    return { name, amount, overallPercentage, relativeBarWidth, color: colors[index] };
+    return { name, amount, overallPercentage, relativeBarWidth, color: colors[index % colors.length] };
   });
 
   const getTxAmountClasses = (tx, isDark) => {
@@ -280,6 +290,7 @@ export default function Activity({
           </p>
         </div>
 
+        {/* SURGICAL FIX: Centered IN/OUT progress bar on 50/50 balance */}
         <div className={`w-full transform transition-all duration-700 delay-200 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           <div className={`w-full h-10 rounded-full flex overflow-hidden shadow-inner ${isDarkMode ? "bg-[#1E293B]" : "bg-slate-100"}`}>
             <div 
@@ -297,15 +308,19 @@ export default function Activity({
           </div>
         </div>
 
-        {/* SURGICAL FIX: Enforced dynamic single-line scale down metrics for the scoreboard container row */}
-        <div className={`flex justify-center items-center w-full mt-4 pt-2 border-t border-dashed transform transition-all duration-700 delay-300 ease-out ${isDarkMode ? "border-slate-700/50" : "border-slate-200/60"} ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-6"} text-[11px] min-[360px]:text-[13px] sm:text-sm whitespace-nowrap`}>
-          <span className="font-black uppercase tracking-widest text-emerald-500 px-1">
-            +${totalIncome.toLocaleString("en-US", { minimumFractionDigits: 2 })} In
-          </span>
-          <span className={`text-[10px] font-black mx-1.5 ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>|</span>
-          <span className="font-black uppercase tracking-widest text-[#F97316] px-1">
-            {totalExpense >= 0 ? "-" : "+"}${Math.abs(totalExpense).toLocaleString("en-US", { minimumFractionDigits: 2 })} Out
-          </span>
+        {/* SURGICAL FIX: 3-Column Grid locks vertical divider '|' to mathematical center directly under logo */}
+        <div className={`grid grid-cols-[1fr_auto_1fr] items-center w-full mt-4 pt-2 border-t border-dashed transform transition-all duration-700 delay-300 ease-out ${isDarkMode ? "border-slate-700/50" : "border-slate-200/60"} ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-6"} text-[11px] min-[360px]:text-[13px] sm:text-sm whitespace-nowrap`}>
+          <div className="text-right">
+            <span className="font-black uppercase tracking-widest text-emerald-500 pr-2">
+              +${totalIncome.toLocaleString("en-US", { minimumFractionDigits: 2 })} In
+            </span>
+          </div>
+          <span className={`text-[10px] font-black px-1 ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>|</span>
+          <div className="text-left">
+            <span className="font-black uppercase tracking-widest text-[#F97316] pl-2">
+              {totalExpense >= 0 ? "-" : "+"}${Math.abs(totalExpense).toLocaleString("en-US", { minimumFractionDigits: 2 })} Out
+            </span>
+          </div>
         </div>
 
       </div>
@@ -325,12 +340,10 @@ export default function Activity({
         {activityFilter !== "All" && totalTargetAmount > 0 && (
           <div className={`p-6 rounded-[2rem] border flex flex-col ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
             
+            {/* SURGICAL FIX: Header simplified, removed "My Top 10" label entirely */}
             <div className="flex justify-between items-center mb-4 pb-2 border-b border-dashed border-slate-400/30">
               <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                 {isIncomeView ? "Inflow Breakdown" : "Outflow Breakdown"}
-              </span>
-              <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
-                My Top 10
               </span>
             </div>
 
@@ -394,7 +407,6 @@ export default function Activity({
           </button>
         </div>
 
-        {/* === SURGICAL FIX: Repositioned Search Bar above the primary divider line === */}
         <div className="flex gap-2">
           <div className={`flex-1 flex items-center px-4 rounded-2xl border shadow-sm transition-colors ${isDarkMode ? "bg-[#1E293B] border-slate-800 text-white focus-within:border-slate-600" : "bg-white border-slate-100 text-slate-900 focus-within:border-[#1877F2]"}`}>
             <Search size={18} className="text-slate-400 shrink-0" />
@@ -462,7 +474,6 @@ export default function Activity({
                             <div className={`mt-3 pt-3 border-t flex items-center justify-between gap-2 ${isDarkMode ? "border-slate-700/50" : "border-slate-100"}`}>
                               <div className="flex-1 min-w-0 flex flex-col">
                                 <span className={`text-[10px] font-black uppercase tracking-widest truncate leading-tight ${getTxCategoryColor(tx)}`}>
-                                  {/* THE AUDIT TRAIL: Clear visual tagging for internal movements */}
                                   {tx.isCashOut ? "💸 CASHED OUT" : tx.isDirectGoalEntry ? "🔒 SAVED TO GOAL" : (tx.category || "Uncategorized")}
                                 </span>
                                 <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest truncate leading-tight mt-0.5">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { CheckCircle2, Circle, Trash2, X, Plus, Zap, ShoppingBag, Star, CheckSquare, Edit2, Save, ArrowDown, Trophy } from "lucide-react";
+import { CheckCircle2, RotateCcw, Trash2, X, Plus, Zap, ShoppingBag, Star, CheckSquare, Edit2, Save, ArrowDown, Trophy } from "lucide-react";
 import { doc, deleteDoc, updateDoc } from "firebase/firestore";
 import { db, auth } from "../firebase"; 
 
@@ -195,7 +195,7 @@ export default function Todo({
     return (
       <div 
         key={task.id} 
-        className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all ${
+        className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all shrink-0 ${
           task.isCompleted 
             ? isDarkMode ? "bg-slate-800/40 border-slate-800 opacity-80" : "bg-slate-50 border-slate-100 opacity-80" 
             : isDarkMode ? "bg-[#1E293B] border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"
@@ -246,8 +246,8 @@ export default function Todo({
                 : "bg-[#1877F2] text-white shadow-lg border border-transparent shadow-[0_4px_15px_rgba(24,119,242,0.3)]"
             }`}
           >
-            {task.isCompleted ? <Circle size={14} strokeWidth={2.5} /> : <CheckCircle2 size={14} strokeWidth={2.5} />}
-            {task.isCompleted ? "Mark Pending" : "Mark Completed"}
+            {task.isCompleted ? <RotateCcw size={14} strokeWidth={2.5} /> : <CheckCircle2 size={14} strokeWidth={2.5} />}
+            {task.isCompleted ? "Restore Task" : "Mark Completed"}
           </button>
         </div>
       </div>
@@ -348,7 +348,7 @@ export default function Todo({
               <Zap size={16} className="text-[#1877F2]" />
               <h3 className="text-[10px] font-black uppercase tracking-widest text-[#1877F2]">Pending Actions</h3>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-80 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
               {pendingActions.map(renderTaskCard)}
             </div>
           </section>
@@ -364,7 +364,7 @@ export default function Todo({
               <ShoppingBag size={16} className="text-[#10B981]" />
               <h3 className="text-[10px] font-black uppercase tracking-widest text-[#10B981]">Pending Shopping</h3>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-80 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
               {pendingShopping.map(renderTaskCard)}
             </div>
           </section>
@@ -388,7 +388,7 @@ export default function Todo({
                 Delete All
                </button>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-80 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
               {completedTasks.map(renderTaskCard)}
             </div>
           </section>

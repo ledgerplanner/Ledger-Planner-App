@@ -141,9 +141,7 @@ export default function Todo({
               </filter>
             </defs>
             
-            {isDarkMode && (
-              <circle cx="50" cy="50" r={radius} fill="transparent" stroke={isVictoryState ? "rgba(16, 185, 129, 0.15)" : "rgba(24, 119, 242, 0.15)"} strokeWidth="16" filter="url(#ringGlow)" />
-            )}
+            <circle cx="50" cy="50" r={radius} fill="transparent" stroke={isVictoryState ? "rgba(16, 185, 129, 0.15)" : "rgba(24, 119, 242, 0.15)"} strokeWidth="16" filter="url(#ringGlow)" />
             <circle cx="50" cy="50" r={radius - 7} fill="transparent" stroke={isDarkMode ? "#334155" : "#CBD5E1"} strokeWidth="1" strokeDasharray="2, 4" opacity="0.6" />
             <circle cx="50" cy="50" r={radius} fill="transparent" stroke={isDarkMode ? "#1E293B" : "rgba(226, 232, 240, 0.9)"} strokeWidth="12" />
             
@@ -152,7 +150,7 @@ export default function Todo({
               stroke={isVictoryState ? "#10B981" : "#1877F2"} strokeWidth="12"
               strokeDasharray={circumference} strokeDashoffset={isMounted ? strokeDashoffset : circumference}
               strokeLinecap="round" className="transition-all duration-1000 ease-out"
-              filter={isDarkMode ? "url(#ringGlow)" : ""}
+              filter="url(#ringGlow)"
             />
           </svg>
           <div className={`absolute inset-0 flex flex-col items-center justify-center transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>

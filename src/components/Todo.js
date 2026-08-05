@@ -123,7 +123,7 @@ export default function Todo({
 
   const graphicContent = (
     <div className="flex flex-col relative z-10 mb-2 w-full">
-      <div className={`relative pt-10 pb-6 px-4 rounded-[2rem] border flex items-center justify-between w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
+      <div className={`relative pt-10 pb-6 px-4 rounded-[2rem] border flex flex-col items-center justify-center w-full transform transition-all duration-700 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
           
         <div className="absolute top-4 left-0 w-full flex justify-center pointer-events-none">
           <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-black"}`}>
@@ -131,71 +131,64 @@ export default function Todo({
           </span>
         </div>
 
-        <div className="flex items-center w-full justify-between mt-2">
-          
-          <div className="flex flex-col items-center flex-1">
-            <div className="relative w-28 h-28 flex-shrink-0">
-              <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-                <defs>
-                  <filter id="ringGlow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feGaussianBlur stdDeviation="3" result="blur" />
-                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                  </filter>
-                </defs>
-                
-                {isDarkMode && (
-                  <circle cx="50" cy="50" r={radius} fill="transparent" stroke={isVictoryState ? "rgba(16, 185, 129, 0.15)" : "rgba(24, 119, 242, 0.15)"} strokeWidth="16" filter="url(#ringGlow)" />
-                )}
-                <circle cx="50" cy="50" r={radius - 7} fill="transparent" stroke={isDarkMode ? "#334155" : "#CBD5E1"} strokeWidth="1" strokeDasharray="2, 4" opacity="0.6" />
-                <circle cx="50" cy="50" r={radius} fill="transparent" stroke={isDarkMode ? "#1E293B" : "rgba(226, 232, 240, 0.9)"} strokeWidth="12" />
-                
-                <circle
-                  cx="50" cy="50" r={radius} fill="transparent"
-                  stroke={isVictoryState ? "#10B981" : "#1877F2"} strokeWidth="12"
-                  strokeDasharray={circumference} strokeDashoffset={isMounted ? strokeDashoffset : circumference}
-                  strokeLinecap="round" className="transition-all duration-1000 ease-out"
-                  filter={isDarkMode ? "url(#ringGlow)" : ""}
-                />
-              </svg>
-              <div className={`absolute inset-0 flex flex-col items-center justify-center transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
-                <span className={`text-xl font-black tracking-tighter transition-colors duration-500 ${isVictoryState ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
-                  {momentumPct}%
-                </span>
+        {/* Centered Top: Radial Ring */}
+        <div className="relative w-32 h-32 flex-shrink-0 mt-2 mb-5">
+          <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+            <defs>
+              <filter id="ringGlow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
+            
+            {isDarkMode && (
+              <circle cx="50" cy="50" r={radius} fill="transparent" stroke={isVictoryState ? "rgba(16, 185, 129, 0.15)" : "rgba(24, 119, 242, 0.15)"} strokeWidth="16" filter="url(#ringGlow)" />
+            )}
+            <circle cx="50" cy="50" r={radius - 7} fill="transparent" stroke={isDarkMode ? "#334155" : "#CBD5E1"} strokeWidth="1" strokeDasharray="2, 4" opacity="0.6" />
+            <circle cx="50" cy="50" r={radius} fill="transparent" stroke={isDarkMode ? "#1E293B" : "rgba(226, 232, 240, 0.9)"} strokeWidth="12" />
+            
+            <circle
+              cx="50" cy="50" r={radius} fill="transparent"
+              stroke={isVictoryState ? "#10B981" : "#1877F2"} strokeWidth="12"
+              strokeDasharray={circumference} strokeDashoffset={isMounted ? strokeDashoffset : circumference}
+              strokeLinecap="round" className="transition-all duration-1000 ease-out"
+              filter={isDarkMode ? "url(#ringGlow)" : ""}
+            />
+          </svg>
+          <div className={`absolute inset-0 flex flex-col items-center justify-center transform transition-all duration-700 delay-300 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
+            <span className={`text-2xl font-black tracking-tighter transition-colors duration-500 leading-none ${isVictoryState ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
+              {momentumPct}%
+            </span>
+            <span className={`text-[8px] font-black uppercase tracking-widest mt-1 transition-colors duration-500 ${isVictoryState ? "text-[#10B981]" : isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+              COMPLETED
+            </span>
+          </div>
+        </div>
+        
+        {/* Centered Middle: Task Counter Pill */}
+        <div className="flex flex-col items-center justify-center mb-5 w-full">
+          {isVictoryState ? (
+            <div className="px-5 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.3)] animate-pulse">
+              <CheckCircle2 size={24} className="text-[#10B981]" />
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5">
+              <div className={`px-4 py-2 rounded-xl text-2xl font-black leading-none ${isDarkMode ? "bg-slate-800 text-[#1877F2] shadow-inner" : "bg-slate-100 text-[#1877F2]"}`}>
+                {completedCount}
+              </div>
+              <span className={`text-lg font-black opacity-50 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>/</span>
+              <div className={`px-3 py-2 rounded-xl text-xl font-black leading-none ${isDarkMode ? "bg-[#0F172A] text-slate-400 border border-slate-800" : "bg-white text-slate-400 border border-slate-200"}`}>
+                {totalTasks}
               </div>
             </div>
-            
-            <div className={`mt-3 px-2.5 py-1 rounded-md border text-[8px] font-black tracking-widest transition-all duration-500 uppercase whitespace-nowrap ${momentumBadge.classes}`}>
-              {momentumBadge.text}
-            </div>
-          </div>
-
-          <div className={`h-24 border-r border-dashed mx-2 ${isDarkMode ? "border-slate-700/50" : "border-slate-300"}`}></div>
-
-          <div className="flex-1 flex flex-col items-center justify-center space-y-2">
-            <div className="flex flex-col items-center gap-1.5">
-              <span className={`text-[9px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-                {isVictoryState ? "Board Status" : "Completed"}
-              </span>
-              
-              {isVictoryState ? (
-                <div className="px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.3)] animate-pulse">
-                  <CheckCircle2 size={24} className="text-[#10B981]" />
-                </div>
-              ) : (
-                <div className="flex items-center gap-1.5">
-                  <div className={`px-4 py-2 rounded-xl text-2xl font-black leading-none ${isDarkMode ? "bg-slate-800 text-[#1877F2] shadow-inner" : "bg-slate-100 text-[#1877F2]"}`}>
-                    {completedCount}
-                  </div>
-                  <span className={`text-lg font-black opacity-50 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>/</span>
-                  <div className={`px-3 py-2 rounded-xl text-xl font-black leading-none ${isDarkMode ? "bg-[#0F172A] text-slate-400 border border-slate-800" : "bg-white text-slate-400 border border-slate-200"}`}>
-                    {totalTasks}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-          
+          )}
         </div>
+
+        {/* Centered Bottom: Dynamic Momentum Badge */}
+        <div className={`px-4 py-1.5 rounded-md border text-[10px] min-[360px]:text-xs font-black tracking-widest transition-all duration-500 uppercase whitespace-nowrap ${momentumBadge.classes}`}>
+          {momentumBadge.text}
+        </div>
+        
       </div>
     </div>
   );

@@ -341,20 +341,22 @@ export default function Bills({
             </span>
           </div>
 
-          {/* Pill 3: Dynamic Monthly Recurring (Glides Left, Slate Gray) */}
-          <div 
-            className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transform transition-all duration-[600ms] delay-[200ms] ${isMounted ? "translate-x-0 opacity-100" : "translate-x-12 opacity-0"} ${isDarkMode ? 'bg-slate-500/10 border-slate-700/80 text-[#64748B]' : 'bg-slate-50 border-slate-200 text-[#64748B]'}`}
-            style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
-          >
-            <span className="text-[10px] font-black uppercase tracking-widest">
-              {recurringPillText}
-            </span>
-            <span className="text-sm sm:text-base font-black leading-none">
-              ${recurringThisMonth.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </span>
-          </div>
+          {/* Pill 3: Dynamic Monthly Recurring (Glides Left, Slate Gray) - Hidden if $0 */}
+          {recurringThisMonth > 0 && (
+            <div 
+              className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transform transition-all duration-[600ms] delay-[200ms] ${isMounted ? "translate-x-0 opacity-100" : "translate-x-12 opacity-0"} ${isDarkMode ? 'bg-slate-500/10 border-slate-700/80 text-[#64748B]' : 'bg-slate-50 border-slate-200 text-[#64748B]'}`}
+              style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
+            >
+              <span className="text-[10px] font-black uppercase tracking-widest">
+                {recurringPillText}
+              </span>
+              <span className="text-sm sm:text-base font-black leading-none">
+                ${recurringThisMonth.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+          )}
 
-          {/* 6th Pill Addition: Active Installment Debt (Glides Right, Slate Gray) */}
+          {/* 6th Pill Addition: Active Installment Debt (Glides Right, Slate Gray) - Hidden if $0 */}
           {activeInstallmentDebt > 0 && (
             <div 
               className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transform transition-all duration-[600ms] delay-[150ms] ${isMounted ? "translate-x-0 opacity-100" : "-translate-x-12 opacity-0"} ${isDarkMode ? 'bg-slate-500/10 border-slate-700/80 text-[#64748B]' : 'bg-slate-50 border-slate-200 text-[#64748B]'}`}

@@ -93,19 +93,26 @@ export default function Dashboard({
       .sort((a, b) => a.millis - b.millis);
 
     activePaydaysWithDates.forEach((pd, idx) => {
-      // SURGICAL FIX: Payday 1 start anchors to today (todayMidnightMillis) so pre-payday bills (e.g. Aug 2-6) aren't orphaned
+      // SURGICAL FIX: Payday 1 start anchors to today (todayMidnightMillis) so pre-payday bills aren't orphaned
       const startMillis = idx === 0 ? todayMidnightMillis : paydayWindows[activePaydaysWithDates[idx - 1].key].end + 1;
       let endMillis = 0;
 
       if (idx < activePaydaysWithDates.length - 1) {
         endMillis = activePaydaysWithDates[idx + 1].millis - 1;
       } else {
-        const lastDateObj = new Date(pd.date.split("-")[0], parseInt(pd.date.split("-")[1], 10) - 1, pd.date.split("-")[2]);
+        // SURGICAL FIX: Smart Early-Warning Runway dynamically locked to frequency length
+        let lastDateObj = new Date(pd.date.split("-")[0], parseInt(pd.date.split("-")[1], 10) - 1, pd.date.split("-")[2]);
         if (freq === "Weekly") lastDateObj.setDate(lastDateObj.getDate() + 7);
         else if (freq === "Bi-Weekly") lastDateObj.setDate(lastDateObj.getDate() + 14);
         else if (freq === "Semi-Monthly") lastDateObj.setDate(lastDateObj.getDate() + 15);
         else lastDateObj.setMonth(lastDateObj.getMonth() + 1);
         
+        // Ensure final window always covers at least the end of the active month
+        const endOfMonthObj = new Date(currentYearIdx, currentMonthIdx + 1, 0);
+        if (lastDateObj.getTime() < endOfMonthObj.getTime()) {
+          lastDateObj = endOfMonthObj;
+        }
+
         lastDateObj.setHours(23, 59, 59, 999);
         endMillis = lastDateObj.getTime();
       }
@@ -136,14 +143,7 @@ export default function Dashboard({
       }
     }
 
-    // Fail-safe: if a bill falls beyond the last window date in the current month, assign it to the last active payday
-    if (activePaydaysWithDates.length > 0) {
-      const lastKey = activePaydaysWithDates[activePaydaysWithDates.length - 1].key;
-      if (billMillis > paydayWindows[lastKey]?.end) {
-        return lastKey;
-      }
-    }
-
+    // SURGICAL FIX: Deleted the loose fail-safe block. Far-future bills (Oct 27) now correctly return null.
     return null;
   };
 
@@ -590,111 +590,130 @@ export default function Dashboard({
                       {sortedBills.length === 0 ? (
                         <p className="text-center py-4 text-xs font-bold text-slate-400">All caught up!</p>
                       ) : (
-                        sortedBills.map((bill) => (
-                          <div key={bill?.id} className={`flex flex-col p-4 rounded-2xl border shadow-sm transition-colors ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
-                            
-                            {/* LEVEL 1: Left Emoji & Name, Right Edit Pencil */}
-                            <div className="flex items-start justify-between w-full mb-4">
-                               <div className="flex items-center gap-3 cursor-pointer flex-1 min-w-0" onClick={() => setSelectedEntry(bill)}>
-                                  <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
-                                    {bill?.icon || "🧾"}
-                                  </div>
-                                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                    <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>{bill?.name || "Unnamed"}</p>
-                                    {bill?.isRecurring && (
-                                      <RefreshCw size={12} strokeWidth={2.5} className="text-[#10B981] shrink-0" />
-                                    )}
-                                  </div>
-                               </div>
-                               <button 
-                                  onClick={(e) => { e.stopPropagation(); setSelectedEntry(bill); }}
-                                  className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
-                               >
-                                  <Edit2 size={16} strokeWidth={2.5} />
-                               </button>
-                            </div>
+                        sortedBills.map((bill) => {
+                          const billDateObj = bill.rawDate ? new Date(parseLocalDate(bill.rawDate)) : null;
+                          const isNextMonthBill = billDateObj && (billDateObj.getMonth() !== currentMonthIdx || billDateObj.getFullYear() !== currentYearIdx);
 
-                            {/* DYNAMIC 3-LEVEL LAYOUT: Standard vs. Installment */}
-                            {bill?.isInstallment ? (
-                              <>
-                                {/* INSTALLMENT LEVEL 2: Left Status/Date, Right Amount */}
-                                <div className="flex items-center justify-between w-full">
-                                   <div className="flex flex-col shrink-0">
-                                      <span className={`text-[10px] min-[360px]:text-xs font-black uppercase tracking-wider ${(bill?.isOverdue || bill?.payday === "Due Now") ? "text-red-500" : "text-slate-400"}`}>
-                                         {bill?.isOverdue ? "Overdue" : bill?.payday === "Due Now" ? "Due Now" : "Due"}
-                                      </span>
-                                      <span className={`text-[10px] min-[360px]:text-xs font-bold ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
-                                         {bill?.fullDate || "TBD"}
-                                      </span>
-                                   </div>
-                                   
-                                   <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 text-[#1877F2] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] whitespace-nowrap`}>
-                                      ${(Number(bill?.amount) || 0).toFixed(2)}
-                                   </div>
-                                </div>
-
-                                <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-200"}`}></div>
-
-                                {/* INSTALLMENT LEVEL 3: Centered Button */}
-                                <div className="flex items-center justify-center w-full mb-4">
-                                    {!bill?.isPaid ? (
-                                        <button onClick={(e) => { e.stopPropagation(); handleBillClick(bill?.id); }} className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap" >
-                                          <CheckCircle2 size={14} strokeWidth={2.5} />
-                                          MARK AS PAID
-                                        </button>
-                                    ) : (
-                                        <div className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center gap-1.5 whitespace-nowrap"><CheckCircle2 size={14} strokeWidth={2.5} /> Paid</div>
-                                    )}
-                                </div>
-
-                                {/* INSTALLMENT LEVEL 4: Progress Bar */}
-                                <div className="w-full">
-                                     <div className="flex justify-between items-end mb-2">
-                                         <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Installment Plan</span>
-                                         <span className="text-xs sm:text-sm font-black text-slate-600 dark:text-slate-300">
-                                             ${(Number(bill?.paidAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} / ${(Number(bill?.totalAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                         </span>
-                                     </div>
-                                     <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-900 shadow-inner" : "bg-slate-100"}`}>
-                                         <div className="h-full bg-[#1877F2] transition-all duration-1000" style={{ width: `${Math.min(((Number(bill?.paidAmount) || 0) / (Number(bill?.totalAmount) || 1)) * 100, 100)}%` }}></div>
-                                     </div>
+                          return (
+                            <div key={bill?.id} className={`flex flex-col p-4 rounded-2xl border shadow-sm transition-colors ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
+                              
+                              {/* LEVEL 1: Left Emoji & Name, Right Edit Pencil */}
+                              <div className="flex items-start justify-between w-full mb-4">
+                                 <div className="flex items-center gap-3 cursor-pointer flex-1 min-w-0" onClick={() => setSelectedEntry(bill)}>
+                                    <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xl shrink-0 ${isDarkMode ? "bg-slate-900/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                                      {bill?.icon || "🧾"}
+                                    </div>
+                                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                      <p className={`font-black text-base truncate leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>{bill?.name || "Unnamed"}</p>
+                                      {bill?.isRecurring && (
+                                        <RefreshCw size={12} strokeWidth={2.5} className="text-[#10B981] shrink-0" />
+                                      )}
+                                    </div>
                                  </div>
-                              </>
-                            ) : (
-                              <>
-                                {/* STANDARD LEVEL 2: Left Status/Date, Right Amount */}
-                                <div className="flex items-center justify-between w-full">
-                                   <div className="flex flex-col shrink-0">
-                                      <span className={`text-[10px] min-[360px]:text-xs font-black uppercase tracking-wider ${(bill?.isOverdue || bill?.payday === "Due Now") ? "text-red-500" : "text-slate-400"}`}>
-                                         {bill?.isOverdue ? "Overdue" : bill?.payday === "Due Now" ? "Due Now" : "Due"}
-                                      </span>
-                                      <span className={`text-[10px] min-[360px]:text-xs font-bold ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
-                                         {bill?.fullDate || "TBD"}
-                                      </span>
-                                   </div>
-                                   
-                                   <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
-                                      ${(Number(bill?.amount) || 0).toFixed(2)}
-                                   </div>
-                                </div>
+                                 <button 
+                                    onClick={(e) => { e.stopPropagation(); setSelectedEntry(bill); }}
+                                    className={`p-2 shrink-0 rounded-full transition-all active:scale-95 ${isDarkMode ? "hover:bg-slate-700 text-slate-500 hover:text-slate-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
+                                 >
+                                    <Edit2 size={16} strokeWidth={2.5} />
+                                 </button>
+                              </div>
 
-                                <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-200"}`}></div>
+                              {/* DYNAMIC 3-LEVEL LAYOUT: Standard vs. Installment */}
+                              {bill?.isInstallment ? (
+                                <>
+                                  {/* INSTALLMENT LEVEL 2: Left Status/Date, Right Amount */}
+                                  <div className="flex items-center justify-between w-full">
+                                     <div className="flex flex-col shrink-0">
+                                        <div className="flex items-center gap-1.5">
+                                          <span className={`text-[10px] min-[360px]:text-xs font-black uppercase tracking-wider ${(bill?.isOverdue || bill?.payday === "Due Now") ? "text-red-500" : "text-slate-400"}`}>
+                                             {bill?.isOverdue ? "Overdue" : bill?.payday === "Due Now" ? "Due Now" : "Due"}
+                                          </span>
+                                          {isNextMonthBill && !bill?.isOverdue && bill?.payday !== "Due Now" && (
+                                            <span className="text-[10px] min-[360px]:text-xs font-black uppercase tracking-wider text-[#1877F2]">
+                                              NEXT MONTH
+                                            </span>
+                                          )}
+                                        </div>
+                                        <span className={`text-[10px] min-[360px]:text-xs font-bold ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
+                                           {bill?.fullDate || "TBD"}
+                                        </span>
+                                     </div>
+                                     
+                                     <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 text-[#1877F2] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] whitespace-nowrap`}>
+                                        ${(Number(bill?.amount) || 0).toFixed(2)}
+                                     </div>
+                                  </div>
 
-                                {/* STANDARD LEVEL 3: Centered Button */}
-                                <div className="flex items-center justify-center w-full">
-                                    {!bill?.isPaid ? (
-                                        <button onClick={(e) => { e.stopPropagation(); handleBillClick(bill?.id); }} className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap" >
-                                          <CheckCircle2 size={14} strokeWidth={2.5} />
-                                          MARK AS PAID
-                                        </button>
-                                    ) : (
-                                        <div className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center gap-1.5 whitespace-nowrap"><CheckCircle2 size={14} strokeWidth={2.5} /> Paid</div>
-                                    )}
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        ))
+                                  <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-200"}`}></div>
+
+                                  {/* INSTALLMENT LEVEL 3: Centered Button */}
+                                  <div className="flex items-center justify-center w-full mb-4">
+                                      {!bill?.isPaid ? (
+                                          <button onClick={(e) => { e.stopPropagation(); handleBillClick(bill?.id); }} className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap" >
+                                            <CheckCircle2 size={14} strokeWidth={2.5} />
+                                            MARK AS PAID
+                                          </button>
+                                      ) : (
+                                          <div className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center gap-1.5 whitespace-nowrap"><CheckCircle2 size={14} strokeWidth={2.5} /> Paid</div>
+                                      )}
+                                  </div>
+
+                                  {/* INSTALLMENT LEVEL 4: Progress Bar */}
+                                  <div className="w-full">
+                                       <div className="flex justify-between items-end mb-2">
+                                           <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Installment Plan</span>
+                                           <span className="text-xs sm:text-sm font-black text-slate-600 dark:text-slate-300">
+                                               ${(Number(bill?.paidAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} / ${(Number(bill?.totalAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                           </span>
+                                       </div>
+                                       <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-900 shadow-inner" : "bg-slate-100"}`}>
+                                           <div className="h-full bg-[#1877F2] transition-all duration-1000" style={{ width: `${Math.min(((Number(bill?.paidAmount) || 0) / (Number(bill?.totalAmount) || 1)) * 100, 100)}%` }}></div>
+                                       </div>
+                                   </div>
+                                </>
+                              ) : (
+                                <>
+                                  {/* STANDARD LEVEL 2: Left Status/Date, Right Amount */}
+                                  <div className="flex items-center justify-between w-full">
+                                     <div className="flex flex-col shrink-0">
+                                        <div className="flex items-center gap-1.5">
+                                          <span className={`text-[10px] min-[360px]:text-xs font-black uppercase tracking-wider ${(bill?.isOverdue || bill?.payday === "Due Now") ? "text-red-500" : "text-slate-400"}`}>
+                                             {bill?.isOverdue ? "Overdue" : bill?.payday === "Due Now" ? "Due Now" : "Due"}
+                                          </span>
+                                          {isNextMonthBill && !bill?.isOverdue && bill?.payday !== "Due Now" && (
+                                            <span className="text-[10px] min-[360px]:text-xs font-black uppercase tracking-wider text-[#1877F2]">
+                                              NEXT MONTH
+                                            </span>
+                                          )}
+                                        </div>
+                                        <span className={`text-[10px] min-[360px]:text-xs font-bold ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
+                                           {bill?.fullDate || "TBD"}
+                                        </span>
+                                     </div>
+                                     
+                                     <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
+                                        ${(Number(bill?.amount) || 0).toFixed(2)}
+                                     </div>
+                                  </div>
+
+                                  <div className={`my-4 border-t ${isDarkMode ? "border-slate-700/50" : "border-slate-200"}`}></div>
+
+                                  {/* STANDARD LEVEL 3: Centered Button */}
+                                  <div className="flex items-center justify-center w-full">
+                                      {!bill?.isPaid ? (
+                                          <button onClick={(e) => { e.stopPropagation(); handleBillClick(bill?.id); }} className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[#1877F2] text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap" >
+                                            <CheckCircle2 size={14} strokeWidth={2.5} />
+                                            MARK AS PAID
+                                          </button>
+                                      ) : (
+                                          <div className="w-full max-w-[200px] px-3 min-[360px]:px-5 py-2 min-[360px]:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center gap-1.5 whitespace-nowrap"><CheckCircle2 size={14} strokeWidth={2.5} /> Paid</div>
+                                      )}
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          );
+                        })
                       )}
                     </div>
                   </div>

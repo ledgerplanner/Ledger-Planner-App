@@ -175,7 +175,7 @@ export default function Todo({
                 {completedCount}
               </div>
               <span className={`text-lg font-black opacity-50 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>/</span>
-              <div className={`px-3 py-2 rounded-xl text-xl font-black leading-none ${isDarkMode ? "bg-[#0F172A] text-slate-400 border border-slate-800" : "bg-white text-slate-400 border border-slate-200"}`}>
+              <div className={`px-3 py-2 rounded-xl text-xl font-black leading-none ${isDarkMode ? "bg-[#1877F2]/10 text-[#1877F2] border border-[#1877F2]/40 shadow-[0_0_12px_rgba(24,119,242,0.2)]" : "bg-white text-slate-400 border border-slate-200"}`}>
                 {totalTasks}
               </div>
             </div>
@@ -280,7 +280,12 @@ export default function Todo({
             
             <button 
               type="button" 
-              onClick={() => setIsIconSelectorOpen(!isIconSelectorOpen)}
+              onClick={(e) => {
+                setIsIconSelectorOpen(!isIconSelectorOpen);
+                if (!isIconSelectorOpen) {
+                  setTimeout(() => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+                }
+              }}
               className={`w-12 h-12 shrink-0 rounded-xl flex items-center justify-center text-xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 hover:bg-slate-800" : "bg-white border-slate-200 hover:bg-slate-50"}`}
             >
               {newTodoEmoji}
@@ -421,7 +426,12 @@ export default function Todo({
                 />
               </div>
 
-              <div className="relative cursor-pointer" onClick={() => setIsEditIconSelectorOpen(!isEditIconSelectorOpen)}>
+              <div className="relative cursor-pointer" onClick={(e) => {
+                 setIsEditIconSelectorOpen(!isEditIconSelectorOpen);
+                 if (!isEditIconSelectorOpen) {
+                   setTimeout(() => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+                 }
+              }}>
                  <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Task Icon</label>
                  <div className={`w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
                     <span className="text-xl leading-none">{editTaskData.emoji}</span>

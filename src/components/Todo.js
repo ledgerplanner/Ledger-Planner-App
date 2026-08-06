@@ -163,8 +163,8 @@ export default function Todo({
           </div>
         </div>
         
-        {/* Centered Middle: Task Counter Pill */}
-        <div className="flex flex-col items-center justify-center mb-5 w-full">
+        {/* Centered Middle: Task Counter Pill (Glides in from Right) */}
+        <div className={`flex flex-col items-center justify-center mb-5 w-full transform transition-all duration-[800ms] delay-[300ms] ease-out ${isMounted ? "translate-x-0 opacity-100" : "translate-x-12 opacity-0"}`}>
           {isVictoryState ? (
             <div className="px-5 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.3)] animate-pulse">
               <CheckCircle2 size={24} className="text-[#10B981]" />
@@ -182,8 +182,8 @@ export default function Todo({
           )}
         </div>
 
-        {/* Centered Bottom: Dynamic Momentum Badge */}
-        <div className={`px-4 py-1.5 rounded-md border text-[10px] min-[360px]:text-xs font-black tracking-widest transition-all duration-500 uppercase whitespace-nowrap ${momentumBadge.classes}`}>
+        {/* Centered Bottom: Dynamic Momentum Badge (Glides up from Bottom) */}
+        <div className={`px-4 py-1.5 rounded-md border text-[10px] min-[360px]:text-xs font-black tracking-widest uppercase whitespace-nowrap transform transition-all duration-[800ms] delay-[500ms] ease-out ${isMounted ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"} ${momentumBadge.classes}`}>
           {momentumBadge.text}
         </div>
         

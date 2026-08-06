@@ -175,7 +175,7 @@ export default function Todo({
                 {completedCount}
               </div>
               <span className={`text-lg font-black opacity-50 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>/</span>
-              <div className={`px-3 py-2 rounded-xl text-xl font-black leading-none ${isDarkMode ? "bg-[#1877F2]/10 text-[#1877F2] border border-[#1877F2]/40 shadow-[0_0_12px_rgba(24,119,242,0.2)]" : "bg-white text-slate-400 border border-slate-200"}`}>
+              <div className="px-3 py-2 rounded-xl text-xl font-black leading-none bg-[#1877F2]/10 text-[#1877F2] border border-[#1877F2]/40 shadow-[0_0_12px_rgba(24,119,242,0.2)]">
                 {totalTasks}
               </div>
             </div>

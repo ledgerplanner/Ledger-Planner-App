@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { CheckCircle2, RefreshCw, ChevronUp, ChevronDown, RotateCcw, Edit2, AlertCircle } from "lucide-react";
+import { useLedger } from "../context/LedgerContext";
 
 export default function Bills({
   userName,
@@ -20,6 +21,7 @@ export default function Bills({
   isEntrepreneurMode = false,
   openGlobalAction
 }) {
+  const { currencySymbol = "$" } = useLedger();
   const [isMounted, setIsMounted] = useState(false);
   const [gaugePhase, setGaugePhase] = useState("start");
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth());
@@ -323,7 +325,7 @@ export default function Bills({
                 <AlertCircle size={12} strokeWidth={2.5}/> TOTAL DUE NOW
               </span>
               <span className="text-sm sm:text-base font-black leading-none text-red-500">
-                ${urgentTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {currencySymbol}{urgentTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
           )}
@@ -337,7 +339,7 @@ export default function Bills({
               {paidPillText}
             </span>
             <span className="text-sm sm:text-base font-black leading-none">
-              ${annualPaid.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {currencySymbol}{annualPaid.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
 
@@ -351,7 +353,7 @@ export default function Bills({
                 {recurringPillText}
               </span>
               <span className="text-sm sm:text-base font-black leading-none">
-                ${recurringThisMonth.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {currencySymbol}{recurringThisMonth.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
           )}
@@ -366,7 +368,7 @@ export default function Bills({
                 INSTALLMENT LOANS / BILLS
               </span>
               <span className="text-sm sm:text-base font-black leading-none">
-                ${activeInstallmentDebt.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {currencySymbol}{activeInstallmentDebt.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
           )}
@@ -380,7 +382,7 @@ export default function Bills({
               {dueThisMonthText}
             </span>
             <span className="text-sm sm:text-base font-black leading-none">
-              ${remainingThisMonth.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {currencySymbol}{remainingThisMonth.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
 
@@ -393,7 +395,7 @@ export default function Bills({
               {dueThisYearText}
             </span>
             <span className="text-sm sm:text-base font-black leading-none">
-              ${trueAnnualDue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {currencySymbol}{trueAnnualDue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
 
@@ -447,13 +449,13 @@ export default function Bills({
               const historicalBalance = getClosingBalanceForMonth(m.idx);
               if (historicalBalance === 0) {
                 incomeTextClass = "text-slate-400 dark:text-slate-500 font-bold";
-                displayIncomeValue = "$0.00";
+                displayIncomeValue = `${currencySymbol}0.00`;
               } else if (historicalBalance < 0) {
                 incomeTextClass = "text-red-500 font-black";
-                displayIncomeValue = `-$${Math.abs(historicalBalance).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                displayIncomeValue = `-${currencySymbol}${Math.abs(historicalBalance).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
               } else {
                 incomeTextClass = isDarkMode ? "text-emerald-400 font-black" : "text-emerald-600 font-black";
-                displayIncomeValue = `+$${historicalBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                displayIncomeValue = `+${currencySymbol}${historicalBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
               }
 
               if (isSelected) {
@@ -471,10 +473,10 @@ export default function Bills({
               
               if (currentLiveBalance < 0) {
                 incomeTextClass = "text-red-500 font-black";
-                displayIncomeValue = `-$${Math.abs(currentLiveBalance).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                displayIncomeValue = `-${currencySymbol}${Math.abs(currentLiveBalance).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
               } else {
                 incomeTextClass = isDarkMode ? "text-emerald-400 font-black" : "text-emerald-600 font-black";
-                displayIncomeValue = `+$${currentLiveBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                displayIncomeValue = `+${currencySymbol}${currentLiveBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
               }
 
               if (isSelected) {
@@ -488,7 +490,7 @@ export default function Bills({
               }
             } else {
               incomeTextClass = "text-slate-400 dark:text-slate-500 font-bold";
-              displayIncomeValue = "$0.00";
+              displayIncomeValue = `${currencySymbol}0.00`;
               
               if (isSelected) {
                 cardBackgroundClass = isDarkMode ? "bg-blue-900/20 border-blue-500 shadow-md scale-[1.01]" : "bg-blue-50/80 border-blue-300 shadow-[0_4px_20px_rgba(24,119,242,0.15)] scale-[1.01]";
@@ -515,7 +517,7 @@ export default function Bills({
 
                 <div className="text-center pt-1.5 pb-1">
                   <p className={`text-2xl font-black tracking-tighter leading-none mb-1 ${amountColorClass}`}>
-                    ${totalDue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {currencySymbol}{totalDue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                   <span className={`text-[8px] font-black uppercase tracking-[0.15em] ${isDarkMode ? "text-white" : "text-slate-900"} leading-none block`}>
                     TOTAL DUE
@@ -533,7 +535,7 @@ export default function Bills({
                   </div>
                   <div className="flex flex-col items-end shrink-0">
                     <span className={`text-[7px] font-black uppercase tracking-widest mb-0.5 ${isDarkMode ? "text-white opacity-40" : "text-black opacity-40"}`}>Paid</span>
-                    <span className="text-[10px] font-black text-[#10B981]">${totalPaid.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
+                    <span className="text-[10px] font-black text-[#10B981]">{currencySymbol}{totalPaid.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
                   </div>
                 </div>
               </div>
@@ -557,7 +559,7 @@ export default function Bills({
             </div>
             <div className="text-center pt-1.5 pb-1">
               <p className="text-2xl font-black tracking-tighter leading-none mb-1 text-[#1877F2]">
-                ${horizonTotalDue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {currencySymbol}{horizonTotalDue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
               <span className={`text-[8px] font-black uppercase tracking-[0.15em] ${isDarkMode ? "text-white" : "text-slate-900"} leading-none block`}>
                 TOTAL DUE
@@ -569,11 +571,11 @@ export default function Bills({
             <div className="flex justify-between items-end w-full pt-2">
               <div className="flex flex-col flex-1">
                 <span className={`text-[7px] font-black uppercase tracking-widest mb-0.5 ${isDarkMode ? "text-white opacity-40" : "text-black opacity-40"}`}>Income</span>
-                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold">$0.00</span>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold">{currencySymbol}0.00</span>
               </div>
               <div className="flex flex-col items-end shrink-0">
                 <span className={`text-[7px] font-black uppercase tracking-widest mb-0.5 ${isDarkMode ? "text-white opacity-40" : "text-black opacity-40"}`}>Paid</span>
-                <span className="text-[10px] font-black text-[#10B981]">${horizonTotalPaid.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
+                <span className="text-[10px] font-black text-[#10B981]">{currencySymbol}{horizonTotalPaid.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
               </div>
             </div>
           </div>
@@ -630,7 +632,7 @@ export default function Bills({
                             </span>
                           </div>
                           <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
-                            ${(Number(bill.amount) || 0).toFixed(2)}
+                            {currencySymbol}{(Number(bill.amount) || 0).toFixed(2)}
                           </div>
                         </div>
 
@@ -649,7 +651,7 @@ export default function Bills({
                           <div className="flex justify-between items-end mb-2 px-1">
                             <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Installment Plan</span>
                             <span className="text-xs sm:text-sm font-black text-slate-600 dark:text-slate-300">
-                              ${(Number(bill.paidAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} / ${(Number(bill.totalAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                              {currencySymbol}{(Number(bill.paidAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} / {currencySymbol}{(Number(bill.totalAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             </span>
                           </div>
                           <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-900 shadow-inner" : "bg-slate-100"}`}>
@@ -670,7 +672,7 @@ export default function Bills({
                             </span>
                           </div>
                           <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
-                            ${(Number(bill.amount) || 0).toFixed(2)}
+                            {currencySymbol}{(Number(bill.amount) || 0).toFixed(2)}
                           </div>
                         </div>
 
@@ -731,7 +733,7 @@ export default function Bills({
                     </div>
                     <div className="flex flex-col items-end">
                       <span className={`text-sm font-black mb-1 ${headerTextColor}`}>
-                        ${totalDue.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                        {currencySymbol}{totalDue.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                       </span>
                       <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
                         Total Due
@@ -793,7 +795,7 @@ export default function Bills({
                                       </span>
                                     </div>
                                     <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
-                                      ${(Number(bill.amount) || 0).toFixed(2)}
+                                      {currencySymbol}{(Number(bill.amount) || 0).toFixed(2)}
                                     </div>
                                   </div>
 
@@ -820,7 +822,7 @@ export default function Bills({
                                     <div className="flex justify-between items-end mb-2 px-1">
                                       <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Installment Plan</span>
                                       <span className="text-xs sm:text-sm font-black text-slate-600 dark:text-slate-300">
-                                        ${(Number(bill.paidAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} / ${(Number(bill.totalAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        {currencySymbol}{(Number(bill.paidAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} / {currencySymbol}{(Number(bill.totalAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                       </span>
                                     </div>
                                     <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-900 shadow-inner" : "bg-slate-100"}`}>
@@ -841,7 +843,7 @@ export default function Bills({
                                       </span>
                                     </div>
                                     <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
-                                      ${(Number(bill.amount) || 0).toFixed(2)}
+                                      {currencySymbol}{(Number(bill.amount) || 0).toFixed(2)}
                                     </div>
                                   </div>
 
@@ -893,7 +895,7 @@ export default function Bills({
                 </div>
                 <div className="flex flex-col items-end">
                   <span className={`text-sm font-black mb-1 ${selectedMonth === 12 ? "text-[#1877F2]" : isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
-                    ${horizonTotalDue.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    {currencySymbol}{horizonTotalDue.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                   </span>
                   <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
                     Total Due
@@ -945,7 +947,7 @@ export default function Bills({
                                   </span>
                                 </div>
                                 <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
-                                  ${(Number(bill.amount) || 0).toFixed(2)}
+                                  {currencySymbol}{(Number(bill.amount) || 0).toFixed(2)}
                                 </div>
                               </div>
 
@@ -972,7 +974,7 @@ export default function Bills({
                                 <div className="flex justify-between items-end mb-2 px-1">
                                   <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Installment Plan</span>
                                   <span className="text-xs sm:text-sm font-black text-slate-600 dark:text-slate-300">
-                                    ${(Number(bill.paidAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} / ${(Number(bill.totalAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                    {currencySymbol}{(Number(bill.paidAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} / {currencySymbol}{(Number(bill.totalAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                   </span>
                                 </div>
                                 <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-900 shadow-inner" : "bg-slate-100"}`}>
@@ -993,7 +995,7 @@ export default function Bills({
                                   </span>
                                 </div>
                                 <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
-                                  ${(Number(bill.amount) || 0).toFixed(2)}
+                                  {currencySymbol}{(Number(bill.amount) || 0).toFixed(2)}
                                 </div>
                               </div>
 
@@ -1064,7 +1066,7 @@ export default function Bills({
                         </span>
                       </div>
                       <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 transition-colors ${isDarkMode ? "bg-slate-800/50 text-slate-400 border-slate-700" : "bg-slate-50 text-slate-500 border-slate-200"} whitespace-nowrap`}>
-                        ${(bill.isInstallment ? Math.max(0, (Number(bill.totalAmount) || 0) - (Number(bill.paidAmount) || 0)) : (Number(bill.amount) || 0)).toFixed(2)}
+                        {currencySymbol}{(bill.isInstallment ? Math.max(0, (Number(bill.totalAmount) || 0) - (Number(bill.paidAmount) || 0)) : (Number(bill.amount) || 0)).toFixed(2)}
                       </div>
                     </div>
 

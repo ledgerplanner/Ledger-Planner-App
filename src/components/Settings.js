@@ -156,7 +156,7 @@ export default function Settings({
           {/* ========================================= */}
           {activeView === "main" && (
             <div className="animate-fade-in space-y-2">
-              <div className={`p-5 rounded-[2rem] border relative overflow-hidden bg-gradient-to-br transition-all duration-300 mb-8 ${
+              <div className={`p-5 rounded-[2rem] border relative overflow-hidden bg-gradient-to-br transition-all duration-300 mb-2 ${
                 isDarkMode 
                   ? "from-slate-900 via-slate-800 to-black border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.5)]" 
                   : "from-white via-slate-50 to-slate-100 border-slate-200 shadow-[0_12px_24px_rgba(0,0,0,0.08)]"
@@ -184,8 +184,10 @@ export default function Settings({
                 </div>
               </div>
 
-              {/* SURGICAL INJECTION: Signature Divider Line */}
-              <div className={`border-t mb-6 mt-6 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
+              {/* SURGICAL INJECTION: Centered Signature Divider Line */}
+              <div className="py-2 my-2">
+                <div className={`border-t ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
+              </div>
 
               <h4 className={`text-[10px] font-black uppercase tracking-widest px-2 pb-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                 Ledger Planner Settings
@@ -283,7 +285,6 @@ export default function Settings({
                       }
                     }}
                   >
-                    {/* SURGICAL INJECTION: Dark Mode Calendar Icon Fix */}
                     <input 
                       type="date" 
                       ref={birthdayInputRef}
@@ -326,7 +327,6 @@ export default function Settings({
                     <button
                       key={color.name}
                       onClick={() => {
-                        // SURGICAL INJECTION: Theme Persistence 
                         if (setSignatureColor) setSignatureColor(color.hex);
                         localStorage.setItem("lp_signature_color", color.hex);
                         if (!isDemoMode && user) {
@@ -472,7 +472,7 @@ export default function Settings({
                   )}
                 </a>
 
-                {/* SURGICAL INJECTION: Bureau Trust Logos */}
+                {/* Bureau Trust Logos */}
                 <div className="mt-4 pt-4 border-t border-slate-500/20 flex flex-col items-center">
                   <span className={`text-[8px] font-black uppercase tracking-[0.2em] mb-3 opacity-60 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Verified Data Partners</span>
                   <div className="flex items-center justify-center gap-4 sm:gap-6 opacity-80 grayscale">
@@ -623,7 +623,6 @@ export default function Settings({
                 <button
                   key={currency.code}
                   onClick={() => {
-                    // SURGICAL INJECTION: Currency Persistence
                     if (setCurrentCurrency) setCurrentCurrency(currency.code);
                     setIsCurrencyOpen(false);
                     localStorage.setItem("lp_currency", currency.code);

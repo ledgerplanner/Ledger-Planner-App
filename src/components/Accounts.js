@@ -20,7 +20,7 @@ export default function Accounts({
   setIsCashOutOpen,
   setCashOutGoal
 }) {
-  const { user } = useLedger();
+  const { user, currencySymbol = "$" } = useLedger();
   const creditStatus = user?.creditStatus || null;
   const userId = user?.uid || "UNKNOWN_USER";
 
@@ -316,7 +316,7 @@ export default function Accounts({
         <div className={`flex flex-col items-center justify-center text-center mt-5 mb-5 w-full transform transition-all duration-700 delay-200 ease-out ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           <div>
             <p className={`text-5xl font-black tracking-tighter transition-colors duration-300 ${isNetWorthNegative ? "text-red-500" : activeDataPoint?.val > 0 ? "text-[#10B981]" : isDarkMode ? "text-white" : "text-slate-900"}`}>
-              {isNetWorthNegative ? "-" : ""}${Math.abs(activeDataPoint?.val || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {isNetWorthNegative ? "-" : ""}{currencySymbol}{Math.abs(activeDataPoint?.val || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
 
@@ -326,7 +326,7 @@ export default function Accounts({
                 ? (isDarkMode ? 'bg-slate-800/80 text-slate-400 border-slate-700' : 'bg-slate-50 text-slate-500 border-slate-200')
                 : (isDarkMode ? 'bg-emerald-900/30 text-emerald-400 border-emerald-900/50 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]' : 'bg-emerald-50 text-emerald-600 border-emerald-200 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]')
             }`}>
-              That's ${isNetWorthNegative ? "0.00" : Math.max(0, calculatedDailyRate).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / Day Until PayDay
+              That's {currencySymbol}{isNetWorthNegative ? "0.00" : Math.max(0, calculatedDailyRate).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / Day Until PayDay
             </div>
           )}
         </div>
@@ -470,6 +470,17 @@ export default function Accounts({
                   <>Unlock My 7-Day Credit Trial for $1</>
                 )}
               </a>
+
+              {/* SURGICAL INJECTION: Bureau Trust Logos */}
+              <div className="mt-4 pt-4 border-t border-slate-500/20 flex flex-col items-center w-full">
+                <span className={`text-[8px] font-black uppercase tracking-[0.2em] mb-3 opacity-60 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Verified Data Partners</span>
+                <div className="flex items-center justify-center gap-4 sm:gap-6 opacity-80 grayscale">
+                   <div className={`font-black text-[10px] sm:text-xs tracking-tighter ${isDarkMode ? "text-white" : "text-slate-800"}`}>EQUIFAX</div>
+                   <div className={`font-black text-[10px] sm:text-xs tracking-tight flex items-center ${isDarkMode ? "text-white" : "text-slate-800"}`}><span className="text-blue-500 mr-0.5">e</span>xperian</div>
+                   <div className={`font-bold text-[10px] sm:text-xs tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>TransUnion<sup className="text-[6px] ml-0.5 font-black text-blue-400">tu</sup></div>
+                </div>
+              </div>
+
             </div>
             
             <div className={`border-t ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
@@ -520,7 +531,7 @@ export default function Accounts({
                                    ? isDarkMode ? "bg-red-900/30 text-red-400 border-red-900/50 drop-shadow-[0_0_12px_rgba(239,68,68,0.7)]" : "bg-red-50 text-red-600 border-red-200 drop-shadow-[0_0_12px_rgba(239,68,68,0.7)]"
                                    : isDarkMode ? "bg-emerald-900/30 text-emerald-400 border-emerald-900/50 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]" : "bg-emerald-50 text-emerald-600 border-emerald-200 drop-shadow-[0_0_12px_rgba(16,185,129,0.7)]"
                            }`}>
-                               {isNegative ? "-" : ""}${Math.abs(acc.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                               {isNegative ? "-" : ""}{currencySymbol}{Math.abs(acc.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                            </div>
                         </div>
   
@@ -570,7 +581,7 @@ export default function Accounts({
                                 <p className={`font-black text-base truncate leading-tight mb-1 ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
                                     {goal.name}
                                 </p>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Target: ${targetAmt.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Target: {currencySymbol}{targetAmt.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
                               </div>
                            </div>
                            <button 
@@ -592,7 +603,7 @@ export default function Accounts({
                                    ? isDarkMode ? "bg-red-900/30 text-red-400 border-red-900/50 drop-shadow-[0_0_12px_rgba(239,68,68,0.7)]" : "bg-red-50 text-red-600 border-red-200 drop-shadow-[0_0_12px_rgba(239,68,68,0.7)]"
                                    : "bg-orange-500/10 text-[#F97316] border-orange-500/20 dark:border-orange-500/30 drop-shadow-[0_0_12px_rgba(249,115,22,0.4)]"
                            }`}>
-                               ${balanceAmt.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                               {currencySymbol}{balanceAmt.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                            </div>
                         </div>
   

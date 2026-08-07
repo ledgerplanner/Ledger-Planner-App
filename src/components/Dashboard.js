@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { CheckCircle2, ChevronUp, ChevronDown, Settings2, List, RefreshCw, Calendar as CalendarIcon, Edit2 } from "lucide-react";
+import { useLedger } from "../context/LedgerContext";
 
 export default function Dashboard({
   userName = "Founder",
@@ -19,6 +20,7 @@ export default function Dashboard({
   changeTab,
   isEntrepreneurMode = false
 }) {
+  const { currencySymbol = "$" } = useLedger();
   const [isPushEnabled, setIsPushEnabled] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [gaugePhase, setGaugePhase] = useState("start");
@@ -364,7 +366,7 @@ export default function Dashboard({
               </span>
             </div>
             <span className="text-xl font-black leading-none">
-              {totalIncomeBalance < 0 ? "-$" : "$"}{Math.abs(totalIncomeBalance).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {totalIncomeBalance < 0 ? `-${currencySymbol}` : currencySymbol}{Math.abs(totalIncomeBalance).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
 
@@ -378,7 +380,7 @@ export default function Dashboard({
               </span>
             </div>
             <span className="text-xl font-black leading-none">
-              {safeToSpend < 0 ? "-$" : "$"}{Math.abs(safeToSpend).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {safeToSpend < 0 ? `-${currencySymbol}` : currencySymbol}{Math.abs(safeToSpend).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
 
@@ -487,7 +489,7 @@ export default function Dashboard({
 
                 <div className="text-center pt-1.5 pb-1">
                    <p className={`text-2xl font-black tracking-tighter leading-none mb-1 ${isDeficit ? "text-red-500" : "text-[#10B981]"}`}>
-                    {isDeficit ? "-$" : "$"}{Math.abs(waterfallBalance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    {isDeficit ? `-${currencySymbol}` : currencySymbol}{Math.abs(waterfallBalance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                   </p>
                   <span className={`text-[8px] font-black uppercase tracking-[0.15em] ${isDarkMode ? "text-white" : "text-black"} leading-none block`}>
                     {subLabelStr}
@@ -511,7 +513,7 @@ export default function Dashboard({
                       ) : (
                         <>
                           <span className={`text-[7px] font-black uppercase tracking-widest mb-0.5 ${isDarkMode ? "text-white" : "text-black"}`}>Expected Pay</span>
-                          <span className={`text-[10px] font-black ${isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>+${totalExpectedIncome.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
+                          <span className={`text-[10px] font-black ${isDarkMode ? "text-emerald-400" : "text-emerald-600"}`}>+{currencySymbol}{totalExpectedIncome.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
                         </>
                       )}
                     </div>
@@ -520,7 +522,7 @@ export default function Dashboard({
                      <span className={`text-[7px] font-black uppercase tracking-widest mb-0.5 ${isDarkMode ? "text-white" : "text-black"}`}>
                       {unpaidCount === 1 ? `${unpaidCount} Bill Out` : `${unpaidCount} Bills Out`}
                     </span>
-                    <span className="text-[10px] font-black text-[#1877F2]">-${unpaidTotal.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
+                    <span className="text-[10px] font-black text-[#1877F2]">-{currencySymbol}{unpaidTotal.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
                   </div>
                 </div>
 
@@ -576,7 +578,7 @@ export default function Dashboard({
                        <h3 className={`text-sm font-black uppercase tracking-widest ${isDueNow ? "text-red-500" : isDarkMode ? "text-slate-200" : "text-slate-800"}`}>{payday}</h3>
                        <div className="text-slate-400">{isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}</div>
                      </div>
-                     <span className={`text-sm font-black ${isDueNow ? "text-red-500" : "text-[#1877F2]"}`}>{`$${checkTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}`}</span>
+                     <span className={`text-sm font-black ${isDueNow ? "text-red-500" : "text-[#1877F2]"}`}>{currencySymbol}{checkTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex items-center justify-between w-full">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{expectedDateStr}</span>
@@ -640,7 +642,7 @@ export default function Dashboard({
                                      </div>
                                      
                                      <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 text-[#1877F2] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] whitespace-nowrap`}>
-                                        ${(Number(bill?.amount) || 0).toFixed(2)}
+                                        {currencySymbol}{(Number(bill?.amount) || 0).toFixed(2)}
                                      </div>
                                   </div>
 
@@ -663,7 +665,7 @@ export default function Dashboard({
                                        <div className="flex justify-between items-end mb-2">
                                            <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Installment Plan</span>
                                            <span className="text-xs sm:text-sm font-black text-slate-600 dark:text-slate-300">
-                                               ${(Number(bill?.paidAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} / ${(Number(bill?.totalAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                               {currencySymbol}{(Number(bill?.paidAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} / {currencySymbol}{(Number(bill?.totalAmount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                            </span>
                                        </div>
                                        <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDarkMode ? "bg-slate-900 shadow-inner" : "bg-slate-100"}`}>
@@ -692,7 +694,7 @@ export default function Dashboard({
                                      </div>
                                      
                                      <div className={`px-2 min-[360px]:px-2.5 py-1 rounded-[8px] border font-black text-sm min-[360px]:text-base tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"} whitespace-nowrap`}>
-                                        ${(Number(bill?.amount) || 0).toFixed(2)}
+                                        {currencySymbol}{(Number(bill?.amount) || 0).toFixed(2)}
                                      </div>
                                   </div>
 
@@ -726,7 +728,7 @@ export default function Dashboard({
         <div className={`mt-6 py-4 px-5 rounded-[1.5rem] border flex flex-col items-center justify-center gap-2 transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-800 shadow-sm" : "bg-white/80 backdrop-blur-md border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]"}`}>
            <span className={`text-[11px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Total Bills for {currentMonthName}</span>
            <div className={`px-3 py-1.5 rounded-[8px] border font-black text-lg tracking-tighter shrink-0 text-[#1877F2] drop-shadow-[0_0_12px_rgba(24,119,242,0.7)] ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50 border-blue-200"}`}>
-             ${currentMonthBillsTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+             {currencySymbol}{currentMonthBillsTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
            </div>
         </div>
 
@@ -793,7 +795,7 @@ export default function Dashboard({
                           </span>
                          </div>
                          <div className={`px-2.5 py-1 rounded-[8px] border font-black text-base tracking-tighter shrink-0 ${txColorStr} ${txBgBorderStr} ${txShadowStr} whitespace-nowrap`}>
-                            {txPrefix}{(Number(tx?.amount) || 0).toFixed(2)}
+                            {txPrefix}{currencySymbol}{(Number(tx?.amount) || 0).toFixed(2)}
                          </div>
                       </div>
 

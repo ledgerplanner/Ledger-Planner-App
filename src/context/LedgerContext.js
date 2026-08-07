@@ -33,10 +33,45 @@ export const LedgerProvider = ({ children }) => {
     "Payday 5": { date: "", income: "" }
   });
 
-  // === GLOBAL PREFERENCES ===
+  // === GLOBAL PREFERENCES (With Permanent Memory) ===
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [signatureColor, setSignatureColor] = useState("#1877F2");
-  const [currentCurrency, setCurrentCurrency] = useState("USD ($)");
+  
+  const [signatureColor, setSignatureColor] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("lp_signature_color");
+      if (saved) return saved;
+    }
+    return "#1877F2";
+  });
+
+  const [currentCurrency, setCurrentCurrency] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("lp_currency");
+      if (saved) return saved;
+    }
+    return "USD ($)";
+  });
+
+  // SYNC THEME & CURRENCY PREFERENCES TO LOCAL STORAGE
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("lp_signature_color", signatureColor);
+    }
+  }, [signatureColor]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("lp_currency", currentCurrency);
+    }
+  }, [currentCurrency]);
+
+  // DERIVE DYNAMIC SYMBOL FOR GLOBAL APP-WIDE CONSUMPTION
+  const currencySymbol = (() => {
+    if (currentCurrency.includes("€")) return "€";
+    if (currentCurrency.includes("£")) return "£";
+    if (currentCurrency.includes("¥")) return "¥";
+    return "$";
+  })();
 
   // === INJECTED ENTREPRENEUR MODE STATE (With Permanent Memory) ===
   const [isEntrepreneurMode, setIsEntrepreneurMode] = useState(() => {
@@ -67,7 +102,7 @@ export const LedgerProvider = ({ children }) => {
     { group: "Other", items: ["Miscellaneous Expense", "Charity / Gifts", "Other"] }
   ]);
 
-  // SURGICAL UPDATE: Memory Notebook Loaders
+  // Memory Notebook Loaders
   const [recentBillCategories, setRecentBillCategories] = useState(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("lp_recent_bill_cat");
@@ -104,7 +139,8 @@ export const LedgerProvider = ({ children }) => {
     isDarkMode, setIsDarkMode,
     signatureColor, setSignatureColor,
     currentCurrency, setCurrentCurrency,
-    isEntrepreneurMode, setIsEntrepreneurMode, // <-- EXPORTED TO ENTIRE APP
+    currencySymbol, // <-- EXPORTED DYNAMIC CURRENCY SYMBOL
+    isEntrepreneurMode, setIsEntrepreneurMode,
     modernCategories, setModernCategories,
     recentBillCategories, setRecentBillCategories,
     recentIncomeCategories, setRecentIncomeCategories,

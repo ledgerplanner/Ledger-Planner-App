@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Search, Edit2, ChevronUp, ChevronDown } from "lucide-react";
+import { useLedger } from "../context/LedgerContext";
 
 export default function Activity({ 
   userName,
@@ -13,6 +14,7 @@ export default function Activity({
   renderHeroShell,
   signatureColor 
 }) {
+  const { currencySymbol = "$" } = useLedger();
   const [isMounted, setIsMounted] = useState(false);
 
   // === UPGRADED SYNCHRONOUS STATE ENGINE (ZERO-FLASH GUARANTEE) ===
@@ -285,7 +287,7 @@ export default function Activity({
 
         <div className={`text-center w-full transform transition-all duration-700 delay-100 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           <p className={`text-5xl font-black tracking-tighter transition-all duration-300 mb-6 ${netCashFlow >= 0 ? "text-[#10B981]" : "text-red-500"}`}>
-            {netCashFlow >= 0 ? "+" : "-"}${Math.abs(netCashFlow).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+            {netCashFlow >= 0 ? "+" : "-"}{currencySymbol}{Math.abs(netCashFlow).toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </p>
         </div>
 
@@ -311,20 +313,20 @@ export default function Activity({
         <div className={`grid grid-cols-[1fr_auto_1fr] items-center w-full mt-4 pt-2 border-t border-dashed transform transition-all duration-700 delay-300 ease-out ${isDarkMode ? "border-slate-700/50" : "border-slate-200/60"} ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-6"} text-[11px] min-[360px]:text-[13px] sm:text-sm whitespace-nowrap`}>
           <div className="text-right">
             <span className="font-black uppercase tracking-widest text-emerald-500 pr-2">
-              +${totalIncome.toLocaleString("en-US", { minimumFractionDigits: 2 })} In
+              +{currencySymbol}{totalIncome.toLocaleString("en-US", { minimumFractionDigits: 2 })} In
             </span>
           </div>
           <span className={`text-[10px] font-black px-1 ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>|</span>
           <div className="text-left">
             <span className="font-black uppercase tracking-widest text-[#F97316] pl-2">
-              {totalExpense >= 0 ? "-" : "+"}${Math.abs(totalExpense).toLocaleString("en-US", { minimumFractionDigits: 2 })} Out
+              {totalExpense >= 0 ? "-" : "+"}{currencySymbol}{Math.abs(totalExpense).toLocaleString("en-US", { minimumFractionDigits: 2 })} Out
             </span>
           </div>
         </div>
 
       </div>
     </div>
-  ), [isMounted, isDarkMode, netCashFlow, inPercentage, totalIncome, totalExpense]);
+  ), [isMounted, isDarkMode, netCashFlow, inPercentage, totalIncome, totalExpense, currencySymbol]);
 
   return (
     <div className={`animate-fade-in pb-32 transition-colors duration-500 min-h-screen ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
@@ -357,7 +359,7 @@ export default function Activity({
                         {Math.round(seg.overallPercentage * 100)}%
                       </span>
                       <span className={`text-xs font-black ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                        ${seg.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {currencySymbol}{seg.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </div>
                   </div>
@@ -437,11 +439,11 @@ export default function Activity({
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-500">
-                          +${todayTotals.inflow.toLocaleString("en-US", { minimumFractionDigits: 2 })} In
+                          +{currencySymbol}{todayTotals.inflow.toLocaleString("en-US", { minimumFractionDigits: 2 })} In
                         </span>
                         <span className={`text-[10px] ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>|</span>
                         <span className="text-[10px] font-bold uppercase tracking-widest text-[#F97316]">
-                          {todayTotals.outflow >= 0 ? "-" : "+"}${Math.abs(todayTotals.outflow).toLocaleString("en-US", { minimumFractionDigits: 2 })} Out
+                          {todayTotals.outflow >= 0 ? "-" : "+"}{currencySymbol}{Math.abs(todayTotals.outflow).toLocaleString("en-US", { minimumFractionDigits: 2 })} Out
                         </span>
                       </div>
                     </div>
@@ -480,7 +482,7 @@ export default function Activity({
                               </div>
                               <div className="shrink-0 flex justify-end">
                                 <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight whitespace-nowrap transition-colors ${getTxAmountClasses(tx, isDarkMode)}`}>
-                                  {tx.type === "Income" ? "+" : "-"}${tx.amount.toFixed(2)}
+                                  {tx.type === "Income" ? "+" : "-"}{currencySymbol}{tx.amount.toFixed(2)}
                                 </div>
                               </div>
                             </div>
@@ -500,7 +502,7 @@ export default function Activity({
 
                 return (
                  <div key={group.label} className="space-y-2">
-                   
+                    
                    <div className="flex flex-col px-2 py-2 cursor-pointer transition-colors" onClick={() => toggleMonth(group.label, isCollapsed)}>
                      <div className="flex justify-between items-center w-full gap-2">
                         <div className="flex items-center gap-2 shrink-0">
@@ -509,11 +511,11 @@ export default function Activity({
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                            <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-500">
-                             +${group.inflow.toLocaleString("en-US", { minimumFractionDigits: 2 })} In
+                             +{currencySymbol}{group.inflow.toLocaleString("en-US", { minimumFractionDigits: 2 })} In
                            </span>
                            <span className={`text-[10px] ${isDarkMode ? "text-slate-600" : "text-slate-300"}`}>|</span>
                            <span className="text-[10px] font-bold uppercase tracking-widest text-[#F97316]">
-                             {group.outflow >= 0 ? "-" : "+"}${Math.abs(group.outflow).toLocaleString("en-US", { minimumFractionDigits: 2 })} Out
+                             {group.outflow >= 0 ? "-" : "+"}{currencySymbol}{Math.abs(group.outflow).toLocaleString("en-US", { minimumFractionDigits: 2 })} Out
                            </span>
                         </div>
                      </div>
@@ -554,7 +556,7 @@ export default function Activity({
                                 
                                 <div className="shrink-0 flex justify-end">
                                   <div className={`px-3 py-1.5 rounded-xl font-black text-sm tracking-tight whitespace-nowrap transition-colors ${getTxAmountClasses(tx, isDarkMode)}`}>
-                                    {tx.type === "Income" ? "+" : "-"}${tx.amount.toFixed(2)}
+                                    {tx.type === "Income" ? "+" : "-"}{currencySymbol}{tx.amount.toFixed(2)}
                                   </div>
                                 </div>
                              </div>

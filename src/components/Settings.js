@@ -5,7 +5,7 @@ import {
   Download, FileText, ChevronLeft, TrendingUp
 } from "lucide-react";
 
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
 export default function Settings({
@@ -184,6 +184,9 @@ export default function Settings({
                 </div>
               </div>
 
+              {/* SURGICAL INJECTION: Signature Divider Line */}
+              <div className={`border-t mb-6 mt-6 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
+
               <h4 className={`text-[10px] font-black uppercase tracking-widest px-2 pb-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                 Ledger Planner Settings
               </h4>
@@ -203,7 +206,6 @@ export default function Settings({
                 targetView="personalization" 
               />
               
-              {/* SURGICAL INJECTION: CREDIT MONITORING & OFFERS */}
               <DirectoryRow 
                 icon={TrendingUp} 
                 title="Credit Monitoring & Offers" 
@@ -281,13 +283,14 @@ export default function Settings({
                       }
                     }}
                   >
+                    {/* SURGICAL INJECTION: Dark Mode Calendar Icon Fix */}
                     <input 
                       type="date" 
                       ref={birthdayInputRef}
                       value={editBirthday} 
                       onChange={(e) => setEditBirthday(e.target.value)} 
                       className={`w-full py-3 px-4 rounded-xl font-bold text-xs border focus:outline-none transition-colors cursor-pointer ${
-                        isDarkMode ? "bg-[#0F172A] border-slate-700 text-white focus:border-slate-500" : "bg-slate-50 border-slate-200 text-slate-900 focus:border-slate-400"
+                        isDarkMode ? "bg-[#0F172A] border-slate-700 text-white focus:border-slate-500 [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-200" : "bg-slate-50 border-slate-200 text-slate-900 focus:border-slate-400"
                       }`} 
                     />
                   </div>
@@ -322,7 +325,15 @@ export default function Settings({
                   {premiumPalette.map((color) => (
                     <button
                       key={color.name}
-                      onClick={() => setSignatureColor && setSignatureColor(color.hex)}
+                      onClick={() => {
+                        // SURGICAL INJECTION: Theme Persistence 
+                        if (setSignatureColor) setSignatureColor(color.hex);
+                        localStorage.setItem("lp_signature_color", color.hex);
+                        if (!isDemoMode && user) {
+                          setDoc(doc(db, "users", user.uid, "settings", "theme"), { hex: color.hex }, { merge: true })
+                            .catch(err => console.error("Error saving theme color:", err));
+                        }
+                      }}
                       className="h-10 rounded-xl relative transition-transform active:scale-90 flex items-center justify-center border shadow-sm"
                       style={{ backgroundColor: color.hex, borderColor: signatureColor === color.hex ? "#FFFFFF" : "transparent" }}
                     >
@@ -443,7 +454,7 @@ export default function Settings({
               }`}>
                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/15 blur-2xl rounded-full pointer-events-none"></div>
                 <h3 className={`text-sm font-black tracking-tight mb-2 relative z-10 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Exclusive Credit Offer!</h3>
-                <p className={`text-[10px] font-bold mb-5 px-4 relative z-10 leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                <p className={`text-xs sm:text-sm font-bold mb-5 px-4 relative z-10 leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                   <span className="block">Access your 3-Bureau Credit Score</span>
                   <span className="block">with 24/7 monitoring and identity protection.</span>
                 </p>
@@ -460,6 +471,17 @@ export default function Settings({
                     <><TrendingUp size={16} strokeWidth={2.5} /> Unlock My 7-Day Credit Trial for $1</>
                   )}
                 </a>
+
+                {/* SURGICAL INJECTION: Bureau Trust Logos */}
+                <div className="mt-4 pt-4 border-t border-slate-500/20 flex flex-col items-center">
+                  <span className={`text-[8px] font-black uppercase tracking-[0.2em] mb-3 opacity-60 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Verified Data Partners</span>
+                  <div className="flex items-center justify-center gap-4 sm:gap-6 opacity-80 grayscale">
+                     <div className={`font-black text-[10px] sm:text-xs tracking-tighter ${isDarkMode ? "text-white" : "text-slate-800"}`}>EQUIFAX</div>
+                     <div className={`font-black text-[10px] sm:text-xs tracking-tight flex items-center ${isDarkMode ? "text-white" : "text-slate-800"}`}><span className="text-blue-500 mr-0.5">e</span>xperian</div>
+                     <div className={`font-bold text-[10px] sm:text-xs tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>TransUnion<sup className="text-[6px] ml-0.5 font-black text-blue-400">tu</sup></div>
+                  </div>
+                </div>
+
               </div>
 
               {/* Master Signature Line */}
@@ -601,8 +623,14 @@ export default function Settings({
                 <button
                   key={currency.code}
                   onClick={() => {
+                    // SURGICAL INJECTION: Currency Persistence
                     if (setCurrentCurrency) setCurrentCurrency(currency.code);
                     setIsCurrencyOpen(false);
+                    localStorage.setItem("lp_currency", currency.code);
+                    if (!isDemoMode && user) {
+                      setDoc(doc(db, "users", user.uid, "settings", "currency"), { value: currency.code }, { merge: true })
+                        .catch(err => console.error("Error saving currency:", err));
+                    }
                     openGlobalAction("Currency Updated", `Ledger Planner has been set to ${currency.symbol}. Your currency has been updated.`, "Close", false, () => {}, true);
                   }}
                   className={`w-full p-4 rounded-xl border font-black text-xs uppercase tracking-wider flex items-center justify-between transition-colors ${

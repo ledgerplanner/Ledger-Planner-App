@@ -239,7 +239,6 @@ export default function Activity({
 
   const maxCategoryValue = sortedCategories.length > 0 ? sortedCategories[0][1] : 1;
 
-  // SURGICAL FIX: Removed .slice(0, 10) to support unlimited dynamic categories with cyclic non-primary palette
   const leaderboardSegments = sortedCategories.map(([name, amount], index) => {
     const overallPercentage = totalTargetAmount > 0 ? amount / totalTargetAmount : 0;
     const relativeBarWidth = maxCategoryValue > 0 ? (amount / maxCategoryValue) * 100 : 0;
@@ -290,7 +289,7 @@ export default function Activity({
           </p>
         </div>
 
-        {/* SURGICAL FIX: Centered IN/OUT progress bar on 50/50 balance */}
+        {/* IN/OUT progress bar */}
         <div className={`w-full transform transition-all duration-700 delay-200 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           <div className={`w-full h-10 rounded-full flex overflow-hidden shadow-inner ${isDarkMode ? "bg-[#1E293B]" : "bg-slate-100"}`}>
             <div 
@@ -308,7 +307,7 @@ export default function Activity({
           </div>
         </div>
 
-        {/* SURGICAL FIX: 3-Column Grid locks vertical divider '|' to mathematical center directly under logo */}
+        {/* 3-Column Grid */}
         <div className={`grid grid-cols-[1fr_auto_1fr] items-center w-full mt-4 pt-2 border-t border-dashed transform transition-all duration-700 delay-300 ease-out ${isDarkMode ? "border-slate-700/50" : "border-slate-200/60"} ${isMounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-6"} text-[11px] min-[360px]:text-[13px] sm:text-sm whitespace-nowrap`}>
           <div className="text-right">
             <span className="font-black uppercase tracking-widest text-emerald-500 pr-2">
@@ -340,7 +339,6 @@ export default function Activity({
         {activityFilter !== "All" && totalTargetAmount > 0 && (
           <div className={`p-6 rounded-[2rem] border flex flex-col ${isDarkMode ? "bg-gradient-to-br from-blue-900/60 via-slate-800 via-25% to-slate-800 border-slate-700/50 border-t-slate-600/40 shadow-[0_12px_30px_rgba(0,0,0,0.5)]" : "bg-gradient-to-br from-blue-600/20 via-white via-25% to-slate-50 border-slate-200/60 border-t-white shadow-[inset_0_2px_3px_rgba(255,255,255,1),0_12px_24px_rgba(24,119,242,0.15),0_4px_12px_rgba(0,0,0,0.01)]"}`}>
             
-            {/* SURGICAL FIX: Header simplified, removed "My Top 10" label entirely */}
             <div className="flex justify-between items-center mb-4 pb-2 border-b border-dashed border-slate-400/30">
               <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                 {isIncomeView ? "Inflow Breakdown" : "Outflow Breakdown"}
@@ -376,33 +374,33 @@ export default function Activity({
         )}
 
         {/* --- TOGGLE FILTER SWITCH NAVIGATION PACK --- */}
-        <div className="flex gap-3">
+        <div className="flex gap-2 min-[380px]:gap-3">
            <button 
              onClick={() => setActivityFilter(activityFilter === "Income" ? "All" : "Income")} 
-             className={`flex-1 flex flex-col items-center justify-center py-3 rounded-2xl transition-all ${
+             className={`flex-1 flex flex-col items-center justify-center py-3 px-2 rounded-2xl transition-all ${
                activityFilter === "Income" 
                  ? "text-white shadow-[0_8px_20px_rgba(16,185,129,0.3)] transform -translate-y-0.5" 
                  : isDarkMode ? "bg-[#1E293B] text-slate-400 border border-slate-800" : "bg-white text-slate-400 border border-slate-100"
              }`}
              style={{ backgroundColor: activityFilter === "Income" ? "#10B981" : undefined }}
            >
-             <span className="font-black text-xs uppercase tracking-widest">Income</span>
+             <span className="font-black text-[10px] min-[380px]:text-xs uppercase tracking-widest text-center leading-tight">My Income Breakdown</span>
              {activityFilter === "Income" && (
-               <span className="text-[9px] font-bold mt-1 tracking-wider opacity-90">Tap to exit breakdown view</span>
+               <span className="text-[8px] min-[380px]:text-[9px] font-bold mt-1 tracking-wider opacity-90 text-center">Tap to exit breakdown view</span>
              )}
           </button>
            <button 
              onClick={() => setActivityFilter(activityFilter === "Expense" ? "All" : "Expense")} 
-             className={`flex-1 flex flex-col items-center justify-center py-3 rounded-2xl transition-all ${
+             className={`flex-1 flex flex-col items-center justify-center py-3 px-2 rounded-2xl transition-all ${
                activityFilter === "Expense" 
                  ? "text-white shadow-[0_8px_20px_rgba(249,115,22,0.3)] transform -translate-y-0.5" 
                  : isDarkMode ? "bg-[#1E293B] text-slate-400 border border-slate-800" : "bg-white text-slate-400 border border-slate-100"
              }`}
              style={{ backgroundColor: activityFilter === "Expense" ? "#F97316" : undefined }}
            >
-             <span className="font-black text-xs uppercase tracking-widest">Expenses</span>
+             <span className="font-black text-[10px] min-[380px]:text-xs uppercase tracking-widest text-center leading-tight">My Expense Breakdown</span>
              {activityFilter === "Expense" && (
-               <span className="text-[9px] font-bold mt-1 tracking-wider opacity-90">Tap to exit breakdown view</span>
+               <span className="text-[8px] min-[380px]:text-[9px] font-bold mt-1 tracking-wider opacity-90 text-center">Tap to exit breakdown view</span>
              )}
           </button>
         </div>

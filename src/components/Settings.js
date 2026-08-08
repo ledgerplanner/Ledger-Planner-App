@@ -7,6 +7,7 @@ import {
 
 import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
+import { useLedger } from "../context/LedgerContext";
 
 export default function Settings({
   userName,
@@ -22,14 +23,19 @@ export default function Settings({
   openGlobalAction,
   signatureColor = "#1877F2",
   setSignatureColor,
-  currentCurrency = "USD ($)",
-  setCurrentCurrency,
   handleUpdateDisplayName, 
   isEntrepreneurMode = false,
   setIsEntrepreneurMode,
   handleExportData,
   triggerVictory
 }) {
+  // Direct LedgerContext Bindings for Instant App-Wide Re-Rendering
+  const { 
+    currentCurrency: contextCurrency = "USD ($)", 
+    setCurrentCurrency: setContextCurrency,
+    currencySymbol = "$" 
+  } = useLedger();
+
   const [editName, setEditName] = useState(userName || "");
   const [editBirthday, setEditBirthday] = useState(""); 
   
@@ -364,7 +370,7 @@ export default function Settings({
                       <Globe size={14} className="text-blue-400" />
                       <span>Active Currency</span>
                     </div>
-                    <span className={`px-2 py-0.5 rounded border ${isDarkMode ? "bg-slate-800 border-slate-600 text-white" : "bg-white border-slate-200 text-slate-900"}`}>{currentCurrency}</span>
+                    <span className={`px-2 py-0.5 rounded border ${isDarkMode ? "bg-slate-800 border-slate-600 text-white" : "bg-white border-slate-200 text-slate-900"}`}>{contextCurrency}</span>
                   </div>
                   <button
                     onClick={() => setIsCurrencyOpen(true)}
@@ -472,7 +478,7 @@ export default function Settings({
                   )}
                 </a>
 
-                {/* SURGICAL INJECTION: 70% Width Borderless Bureau Logos */}
+                {/* 70% Width Borderless Bureau Logos */}
                 <div className="mt-6 pt-5 border-t border-slate-500/20 flex flex-col items-center w-full relative z-10">
                   <span className={`text-[10px] sm:text-[11px] font-black uppercase tracking-[0.25em] mb-4 opacity-60 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                     Verified Data Partners
@@ -631,7 +637,8 @@ export default function Settings({
                 <button
                   key={currency.code}
                   onClick={() => {
-                    if (setCurrentCurrency) setCurrentCurrency(currency.code);
+                    // Instantly Dispatch to LedgerContext for Immediate Live Re-Render Across All Views
+                    if (setContextCurrency) setContextCurrency(currency.code);
                     setIsCurrencyOpen(false);
                     localStorage.setItem("lp_currency", currency.code);
                     if (!isDemoMode && user) {
@@ -641,11 +648,11 @@ export default function Settings({
                     openGlobalAction("Currency Updated", `Ledger Planner has been set to ${currency.symbol}. Your currency has been updated.`, "Close", false, () => {}, true);
                   }}
                   className={`w-full p-4 rounded-xl border font-black text-xs uppercase tracking-wider flex items-center justify-between transition-colors ${
-                    currentCurrency === currency.code
+                    contextCurrency === currency.code
                       ? "text-white shadow-sm border-transparent"
                       : isDarkMode ? "bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700" : "bg-slate-50 border-slate-200 text-slate-800 hover:bg-slate-100"
                   }`}
-                  style={{ backgroundColor: currentCurrency === currency.code ? signatureColor : undefined }}
+                  style={{ backgroundColor: contextCurrency === currency.code ? signatureColor : undefined }}
                 >
                   <span>{currency.code}</span>
                   <span className="text-sm font-black">{currency.symbol}</span>

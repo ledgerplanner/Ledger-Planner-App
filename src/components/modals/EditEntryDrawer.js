@@ -20,10 +20,18 @@ export default function EditEntryDrawer({
   isDarkMode,
   isDemoMode
 }) {
-  const { user, bills, setBills, transactions, setTransactions, modernCategories } = useLedger();
+  const { user, bills, setBills, transactions, setTransactions, modernCategories, currencySymbol = "$" } = useLedger();
   const [isIconSelectorOpen, setIsIconSelectorOpen] = useState(false);
   
-  const categoryEmojis = ["💵", "💲", "🤑", "💰", "🏦", "💹", "₿", "💎", "💳", "🧾", "📋", "💼", "🏠", "🏢", "🔑", "🛋️", "🧹", "💧", "⚡", "📶", "📡", "☁️", "📺", "🎬", "🍿", "🎵", "🎧", "🚗", "🚲", "🚂", "✈️", "⛽", "🛠️", "🅿️", "🎫", "🚕", "🚇", "🛒", "🛍️", "📦", "👕", "👗", "👟", "💅", "💄", "💈", "🕶️", "💍", "🍔", "🍕", "🌮", "🍣", "🥗", "🍳", "☕", "🍦", "🍻", "🍹", "🍷", "🏥", "💊", "🦷", "👓", "🧘", "🏋️", "🐾", "🐶", "🎁", "🎉", "🎟️", "🎮", "🕹️", "📱", "💻", "⌚", "🤖", "🚀", "🌴", "🎓", "🏪", "🎯", "🏖️", "👶", "🛡️", "🏍️", "🎸", "⛵"];
+  // EXPANDED UTILITY EMOJI MASTER ARRAY
+  const categoryEmojis = [
+    "🎯", "💰", "🏦", "📈", "🐖", "💎", "💳", "🚀",
+    "🏠", "🔑", "⚡", "💧", "📶", "🔌", "🗑️", "🛡️",
+    "🛒", "🍕", "☕", "🍔", "🍷",
+    "🚗", "⛽", "🛠️", "🚕", "🅿️", "✈️", "⛵",
+    "💊", "🏋️", "💇", "🛍️", "📦", "🍿", "🎮", "🎸",
+    "👶", "🐶", "🐾", "🎓", "💍", "🎁", "🧳", "🏖️"
+  ];
   
   const categoriesToRender = modernCategories;
   const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
@@ -42,7 +50,6 @@ export default function EditEntryDrawer({
       <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col max-h-[95vh] transition-colors duration-500 ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
         <div className="p-6 border-b flex justify-between items-center shrink-0">
           
-          {/* SURGICAL INJECTION: Official branding logo centered in place of generic avatar items */}
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center p-0.5 border ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
               <img src="/login-logo.png" alt="Ledger Planner" className="w-full h-full object-cover rounded-full" />
@@ -60,7 +67,7 @@ export default function EditEntryDrawer({
               <div className="text-center">
                 <h2 className={`text-xl font-black mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{selectedEntry.name}</h2>
                 <p className={`text-5xl font-black tracking-tighter ${getEntryAmountColor(selectedEntry)}`}>
-                  {selectedEntry.type === 'Income' ? '+' : selectedEntry.type === 'Expense' ? '-' : ''}${(selectedEntry.amount || 0).toFixed(2)}
+                  {selectedEntry.type === 'Income' ? '+' : selectedEntry.type === 'Expense' ? '-' : ''}{currencySymbol}{(selectedEntry.amount || 0).toFixed(2)}
                 </p>
                 <div className={`mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full border ${isDarkMode ? "bg-slate-800/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
                   <CalendarIcon size={14} className="text-slate-500" />
@@ -118,7 +125,7 @@ export default function EditEntryDrawer({
                 <div className="relative">
                   <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Amount</label>
                   <div className="relative w-full flex items-center">
-                    <span className={`absolute left-4 top-[22px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
+                    <span className={`absolute left-4 top-[22px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>{currencySymbol}</span>
                     <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={editEntryData.amount || ""} onChange={(e) => setEditEntryData({...editEntryData, amount: e.target.value})} onBlur={() => { if(!isNaN(parseFloat(editEntryData.amount)) && editEntryData.amount !== "") setEditEntryData({...editEntryData, amount: parseFloat(editEntryData.amount).toFixed(2)}) }} className={`w-full pt-6 pb-2 pl-7 pr-5 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                   </div>
                 </div>
@@ -143,7 +150,6 @@ export default function EditEntryDrawer({
                       <div className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
                          <span className={`font-bold text-base pointer-events-none ${!editEntryData.rawDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{editEntryData.rawDate ? formatDisplayDate(editEntryData.rawDate) : "mm/dd/yyyy"}</span>
                          <CalendarIcon size={18} className="shrink-0 pointer-events-none text-slate-400" style={{ color: editEntryData.rawDate ? signatureColor : undefined }} />
-                         {/* SURGICAL INJECTION: Native date picker with showPicker() click handler */}
                          <input 
                            type="date" 
                            value={editEntryData.rawDate || ""} 
@@ -171,14 +177,14 @@ export default function EditEntryDrawer({
                            <div className="relative">
                               <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Total Amount</label>
                               <div className="relative w-full flex items-center">
-                                 <span className={`absolute left-4 top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
+                                 <span className={`absolute left-4 top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>{currencySymbol}</span>
                                  <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={editEntryData.totalAmount || ""} onChange={(e) => setEditEntryData({...editEntryData, totalAmount: e.target.value})} onBlur={() => { if(!isNaN(parseFloat(editEntryData.totalAmount)) && editEntryData.totalAmount !== "") setEditEntryData({...editEntryData, totalAmount: parseFloat(editEntryData.totalAmount).toFixed(2)}) }} className={`w-full pt-6 pb-2 pl-7 pr-4 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                               </div>
                            </div>
                            <div className="relative">
                               <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Already Paid</label>
                               <div className="relative w-full flex items-center">
-                                 <span className={`absolute left-4 top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
+                                 <span className={`absolute left-4 top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>{currencySymbol}</span>
                                  <input type="text" inputMode="decimal" pattern="[0-9.-]*" value={editEntryData.paidAmount || ""} onChange={(e) => setEditEntryData({...editEntryData, paidAmount: e.target.value})} onBlur={() => { if(!isNaN(parseFloat(editEntryData.paidAmount)) && editEntryData.paidAmount !== "") setEditEntryData({...editEntryData, paidAmount: parseFloat(editEntryData.paidAmount).toFixed(2)}) }} className={`w-full pt-6 pb-2 pl-7 pr-4 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                               </div>
                            </div>

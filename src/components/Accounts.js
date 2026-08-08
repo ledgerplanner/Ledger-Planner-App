@@ -433,7 +433,7 @@ export default function Accounts({
 
         {creditStatus !== "active" && !isBannerDismissed && (
           <div className="flex flex-col gap-6">
-            <div className={`relative rounded-[2rem] p-5 border flex flex-col items-center text-center overflow-hidden transition-all duration-300 ${
+            <div className={`relative rounded-[2rem] p-5 sm:p-6 border flex flex-col items-center text-center overflow-hidden transition-all duration-300 ${
               isDarkMode 
                 ? "bg-gradient-to-br from-slate-900 via-slate-800 to-black border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.5)]" 
                 : "bg-gradient-to-br from-white via-slate-50 to-slate-100 border-slate-200 shadow-[0_12px_24px_rgba(0,0,0,0.08)]"
@@ -449,10 +449,10 @@ export default function Accounts({
 
               <div className="flex items-center justify-center gap-2 mb-2 relative z-10">
                 <TrendingUp size={16} strokeWidth={2.5} color="#A855F7" className="text-[#A855F7] shrink-0" />
-                <h3 className={`text-sm font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>Exclusive Credit Offer!</h3>
+                <h3 className={`text-sm sm:text-base font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>Exclusive Credit Offer!</h3>
               </div>
               
-              <p className={`text-[10px] font-bold mb-5 px-4 relative z-10 leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+              <p className={`text-[10px] sm:text-xs font-bold mb-5 px-4 relative z-10 leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                 <span className="block">Access your 3-Bureau Credit Score</span>
                 <span className="block">with 24/7 monitoring and identity protection.</span>
               </p>
@@ -461,7 +461,7 @@ export default function Accounts({
                 href={`https://www.smartcredit.com/join/?pid=65366&sid=${userId}`}
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="relative z-10 w-full py-4 rounded-xl font-black text-[10px] uppercase tracking-widest text-white shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2"
+                className="relative z-10 w-full py-4 rounded-xl font-black text-[10px] sm:text-xs uppercase tracking-widest text-white shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2"
                 style={{ backgroundColor: creditStatus === "trial_active" ? "#64748B" : "#1877F2" }}
               >
                 {creditStatus === "trial_active" ? (
@@ -471,13 +471,21 @@ export default function Accounts({
                 )}
               </a>
 
-              {/* SURGICAL INJECTION: Bureau Trust Logos */}
-              <div className="mt-4 pt-4 border-t border-slate-500/20 flex flex-col items-center w-full">
-                <span className={`text-[8px] font-black uppercase tracking-[0.2em] mb-3 opacity-60 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Verified Data Partners</span>
-                <div className="flex items-center justify-center gap-4 sm:gap-6 opacity-80 grayscale">
-                   <div className={`font-black text-[10px] sm:text-xs tracking-tighter ${isDarkMode ? "text-white" : "text-slate-800"}`}>EQUIFAX</div>
-                   <div className={`font-black text-[10px] sm:text-xs tracking-tight flex items-center ${isDarkMode ? "text-white" : "text-slate-800"}`}><span className="text-blue-500 mr-0.5">e</span>xperian</div>
-                   <div className={`font-bold text-[10px] sm:text-xs tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>TransUnion<sup className="text-[6px] ml-0.5 font-black text-blue-400">tu</sup></div>
+              {/* SURGICAL INJECTION: 70% Width Borderless Bureau Logos */}
+              <div className="mt-6 pt-5 border-t border-slate-500/20 flex flex-col items-center w-full relative z-10">
+                <span className={`text-[10px] sm:text-[11px] font-black uppercase tracking-[0.25em] mb-4 opacity-60 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                  Verified Data Partners
+                </span>
+                <div className="flex items-center justify-between opacity-90 grayscale w-[75%] py-1">
+                   <div className={`font-black text-base sm:text-lg lg:text-xl tracking-tighter shrink-0 ${isDarkMode ? "text-slate-100" : "text-slate-800"}`}>
+                     EQUIFAX
+                   </div>
+                   <div className={`font-black text-base sm:text-lg lg:text-xl tracking-tight flex items-center shrink-0 ${isDarkMode ? "text-slate-100" : "text-slate-800"}`}>
+                     <span className="text-blue-500 text-lg sm:text-xl lg:text-2xl font-black mr-0.5 leading-none">e</span>xperian
+                   </div>
+                   <div className={`font-bold text-base sm:text-lg lg:text-xl tracking-tight shrink-0 ${isDarkMode ? "text-slate-100" : "text-slate-800"}`}>
+                     TransUnion<sup className="text-[10px] sm:text-xs ml-0.5 font-black text-blue-500 leading-none">tu</sup>
+                   </div>
                 </div>
               </div>
 

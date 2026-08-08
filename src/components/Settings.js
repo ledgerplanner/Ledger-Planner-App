@@ -447,13 +447,13 @@ export default function Settings({
               </h4>
 
               {/* Exclusive Credit Offer Card */}
-              <div className={`relative rounded-[2rem] p-5 border flex flex-col text-center overflow-hidden transition-all duration-300 ${
+              <div className={`relative rounded-[2rem] p-5 sm:p-6 border flex flex-col text-center overflow-hidden transition-all duration-300 ${
                 isDarkMode 
                   ? "bg-gradient-to-br from-slate-900 via-slate-800 to-black border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.5)]" 
                   : "bg-gradient-to-br from-white via-slate-50 to-slate-100 border-slate-200 shadow-[0_12px_24px_rgba(0,0,0,0.08)]"
               }`}>
                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/15 blur-2xl rounded-full pointer-events-none"></div>
-                <h3 className={`text-sm font-black tracking-tight mb-2 relative z-10 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Exclusive Credit Offer!</h3>
+                <h3 className={`text-sm sm:text-base font-black tracking-tight mb-2 relative z-10 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Exclusive Credit Offer!</h3>
                 <p className={`text-xs sm:text-sm font-bold mb-5 px-4 relative z-10 leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                   <span className="block">Access your 3-Bureau Credit Score</span>
                   <span className="block">with 24/7 monitoring and identity protection.</span>
@@ -462,7 +462,7 @@ export default function Settings({
                   href={`https://www.smartcredit.com/join/?pid=65366&sid=${user?.uid || "UNKNOWN_USER"}`}
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="relative z-10 w-full py-4 rounded-xl font-black text-[10px] uppercase tracking-widest text-white shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2"
+                  className="relative z-10 w-full py-4 rounded-xl font-black text-[10px] sm:text-xs uppercase tracking-widest text-white shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2"
                   style={{ backgroundColor: user?.creditStatus === "trial_active" ? "#64748B" : "#1877F2" }}
                 >
                   {user?.creditStatus === "trial_active" ? (
@@ -472,40 +472,21 @@ export default function Settings({
                   )}
                 </a>
 
-                {/* SURGICAL INJECTION: Official Partner Logo Chips */}
-                <div className="mt-5 pt-4 border-t border-slate-500/20 flex flex-col items-center w-full relative z-10">
-                  <span className={`text-[9px] sm:text-[10px] font-black uppercase tracking-[0.25em] mb-3 opacity-60 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                {/* SURGICAL RESTORATION: Enlarged Borderless Partner Typography */}
+                <div className="mt-6 pt-5 border-t border-slate-500/20 flex flex-col items-center w-full relative z-10">
+                  <span className={`text-[10px] sm:text-[11px] font-black uppercase tracking-[0.25em] mb-4 opacity-60 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                     Verified Data Partners
                   </span>
-                  <div className="flex items-center justify-center gap-2.5 sm:gap-3.5 w-full max-w-sm sm:max-w-md">
-                    
-                    {/* Equifax Logo Chip */}
-                    <div className={`flex-1 py-2.5 sm:py-3 px-2 rounded-xl border flex items-center justify-center transition-all ${
-                      isDarkMode ? "bg-slate-900/80 border-slate-700/80 shadow-md" : "bg-white border-slate-200/90 shadow-sm"
-                    }`}>
-                      <span className={`font-black text-xs sm:text-sm lg:text-base tracking-tighter uppercase font-sans ${isDarkMode ? "text-slate-100" : "text-slate-800"}`}>
-                        EQUIFAX
-                      </span>
-                    </div>
-
-                    {/* Experian Logo Chip */}
-                    <div className={`flex-1 py-2.5 sm:py-3 px-2 rounded-xl border flex items-center justify-center transition-all ${
-                      isDarkMode ? "bg-slate-900/80 border-slate-700/80 shadow-md" : "bg-white border-slate-200/90 shadow-sm"
-                    }`}>
-                      <span className={`font-black text-xs sm:text-sm lg:text-base tracking-tight font-sans flex items-center ${isDarkMode ? "text-slate-100" : "text-slate-800"}`}>
-                        <span className="text-blue-500 text-sm sm:text-base lg:text-lg font-black mr-0.5 leading-none">e</span>xperian
-                      </span>
-                    </div>
-
-                    {/* TransUnion Logo Chip */}
-                    <div className={`flex-1 py-2.5 sm:py-3 px-2 rounded-xl border flex items-center justify-center transition-all ${
-                      isDarkMode ? "bg-slate-900/80 border-slate-700/80 shadow-md" : "bg-white border-slate-200/90 shadow-sm"
-                    }`}>
-                      <span className={`font-bold text-xs sm:text-sm lg:text-base tracking-tight font-sans flex items-center ${isDarkMode ? "text-slate-100" : "text-slate-800"}`}>
-                        TransUnion<sup className="text-[8px] sm:text-[10px] ml-0.5 font-black text-blue-500 leading-none">tu</sup>
-                      </span>
-                    </div>
-
+                  <div className="flex items-center justify-center gap-6 sm:gap-10 lg:gap-14 opacity-90 grayscale w-full max-w-xs sm:max-w-md py-1">
+                     <div className={`font-black text-sm sm:text-base lg:text-lg tracking-tighter shrink-0 ${isDarkMode ? "text-slate-100" : "text-slate-800"}`}>
+                       EQUIFAX
+                     </div>
+                     <div className={`font-black text-sm sm:text-base lg:text-lg tracking-tight flex items-center shrink-0 ${isDarkMode ? "text-slate-100" : "text-slate-800"}`}>
+                       <span className="text-blue-500 text-base sm:text-lg lg:text-xl font-black mr-0.5 leading-none">e</span>xperian
+                     </div>
+                     <div className={`font-bold text-sm sm:text-base lg:text-lg tracking-tight shrink-0 ${isDarkMode ? "text-slate-100" : "text-slate-800"}`}>
+                       TransUnion<sup className="text-[9px] sm:text-[11px] ml-0.5 font-black text-blue-500 leading-none">tu</sup>
+                     </div>
                   </div>
                 </div>
 

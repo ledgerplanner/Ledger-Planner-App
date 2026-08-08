@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { X, Calendar as CalendarIcon } from 'lucide-react';
+import { useLedger } from '../../context/LedgerContext';
 
 export default function PaydaySetup({
   setIsPaydaySetupOpen,
@@ -12,6 +13,7 @@ export default function PaydaySetup({
   isDarkMode,
   isDemoMode
 }) {
+  const { currencySymbol = "$" } = useLedger();
   const dateRefs = useRef({});
   const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
 
@@ -21,7 +23,6 @@ export default function PaydaySetup({
       <div className={`w-full lg:max-w-md h-[90vh] lg:h-[80vh] rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl relative z-[130] flex flex-col ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
         <div className="p-6 border-b flex justify-between items-center shrink-0">
           
-          {/* SURGICAL INJECTION: Official branding logo centered in place inside the Payday Routing header block */}
           <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center p-0.5 border shrink-0 ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
               <img src="/login-logo.png" alt="Ledger Planner" className="w-full h-full object-cover rounded-full" />
@@ -73,7 +74,7 @@ export default function PaydaySetup({
                 <div className={`relative w-full h-[54px] rounded-xl border flex flex-col justify-end pb-1.5 px-3 transition-colors focus-within:border-slate-400 dark:focus-within:border-slate-500 ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"}`}>
                   <label className={`absolute top-2 left-0 w-full text-center z-10 text-[8px] font-black uppercase tracking-widest pointer-events-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Expected Income</label>
                   <div className="flex items-center justify-center w-full relative z-10">
-                    <span className={`font-bold text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
+                    <span className={`font-bold text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>{currencySymbol}</span>
                     <input type="text" inputMode="decimal" pattern="[0-9.-]*" placeholder="0.00" value={editPaydayConfig?.[pd]?.income || ""} onChange={(e) => setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), income: e.target.value}})} onBlur={(e) => { if(e.target.value && !isNaN(parseFloat(e.target.value))) { setEditPaydayConfig({...editPaydayConfig, [pd]: {...(editPaydayConfig?.[pd] || {}), income: parseFloat(e.target.value).toFixed(2)}}); } }} className={`bg-transparent outline-none font-bold text-sm w-[76px] ml-1 ${isDarkMode ? "text-white placeholder-slate-500" : "text-slate-900 placeholder-slate-400"}`} />
                   </div>
                 </div>

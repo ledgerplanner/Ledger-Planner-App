@@ -6,7 +6,7 @@ import { useLedger } from '../../context/LedgerContext';
 
 export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }) {
   const {
-    user, isDemoMode, isDarkMode, signatureColor,
+    user, isDemoMode, isDarkMode, signatureColor, currencySymbol = "$",
     accounts, setAccounts, bills, setBills, transactions, setTransactions,
     modernCategories, setModernCategories, paydayConfig,
     recentBillCategories, setRecentBillCategories,
@@ -38,7 +38,16 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
 
   const dateInputRef = useRef(null);
 
-  const categoryEmojis = ["💵", "💲", "🤑", "💰", "🏦", "💹", "₿", "💎", "💳", "🧾", "📋", "💼", "🏠", "🏢", "🔑", "🛋️", "🧹", "💧", "⚡", "📶", "📡", "☁️", "📺", "🎬", "🍿", "🎵", "🎧", "🚗", "🚲", "🚂", "✈️", "⛽", "🛠️", "🅿️", "🎫", "🚕", "🚇", "🛒", "🛍️", "📦", "👕", "👗", "👟", "💅", "💄", "💈", "🕶️", "💍", "🍔", "🍕", "🌮", "🍣", "🥗", "🍳", "☕", "🍦", "🍻", "🍹", "🍷", "🏥", "💊", "🦷", "👓", "🧘", "🏋️", "🐾", "🐶", "🎁", "🎉", "🎟️", "🎮", "🕹️", "📱", "💻", "⌚", "🤖", "🚀", "🌴", "🎓", "🏪", "🎯", "🏖️", "👶", "🛡️", "🛡️", "🏍️", "🎸", "⛵"];
+  // EXPANDED UTILITY EMOJI MASTER ARRAY
+  const categoryEmojis = [
+    "🎯", "💰", "🏦", "📈", "🐖", "💎", "💳", "🚀",
+    "🏠", "🔑", "⚡", "💧", "📶", "🔌", "🗑️", "🛡️",
+    "🛒", "🍕", "☕", "🍔", "🍷",
+    "🚗", "⛽", "🛠️", "🚕", "🅿️", "✈️", "⛵",
+    "💊", "🏋️", "💇", "🛍️", "📦", "🍿", "🎮", "🎸",
+    "👶", "🐶", "🐾", "🎓", "💍", "🎁", "🧳", "🏖️"
+  ];
+
   const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
 
   useEffect(() => {
@@ -258,7 +267,6 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
       <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col h-auto max-h-[95vh] ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
         <div className={`p-6 border-b flex justify-between items-center shrink-0 ${isDarkMode ? "border-slate-800" : "border-slate-100"}`}>
           
-          {/* SURGICAL INJECTION: Official branding logo centered in place inside the Quick Add header block */}
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center p-0.5 border shrink-0 ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
               <img src="/login-logo.png" alt="Ledger Planner" className="w-full h-full object-cover rounded-full" />
@@ -278,7 +286,7 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
               </div>
               
               <div className="text-center relative flex justify-center items-center py-2">
-                <span className={`text-5xl font-black tracking-tighter ${drawerTab === "bills" ? "" : qabActiveText}`} style={{ color: drawerTab === "bills" ? signatureColor : undefined }}>${inputValue}</span>
+                <span className={`text-5xl font-black tracking-tighter ${drawerTab === "bills" ? "" : qabActiveText}`} style={{ color: drawerTab === "bills" ? signatureColor : undefined }}>{currencySymbol}{inputValue}</span>
                 <button 
                   onPointerDown={(e) => { e.preventDefault(); triggerHaptic(15); setInputValue(inputValue.slice(0, -1) || "0"); }} 
                   className={`absolute right-4 p-2 text-xl active:scale-90 transition-transform opacity-70 hover:opacity-100 ${drawerTab !== "bills" ? qabActiveText : ""}`} 
@@ -324,7 +332,7 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
               <div className="relative">
                 <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Amount</label>
                 <div className="relative w-full flex items-center">
-                  <span className={`absolute left-5 top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
+                  <span className={`absolute left-5 top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>{currencySymbol}</span>
                   <input type="text" inputMode="decimal" pattern="[0-9.-]*" autoCorrect="off" autoCapitalize="none" value={inputValue} onChange={(e) => setInputValue(e.target.value.replace(/\s+/g, ""))} onBlur={() => { if(!isNaN(parseFloat(String(inputValue).replace(/\s+/g, ""))) && inputValue !== "") setInputValue(parseFloat(String(inputValue).replace(/\s+/g, "")).toFixed(2)) }} className={`w-full pt-6 pb-2 pl-9 pr-5 rounded-2xl border font-bold text-base focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                 </div>
               </div>
@@ -400,14 +408,14 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
                         <div className="relative">
                           <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Total Amount</label>
                           <div className="relative w-full flex items-center">
-                            <span className={`absolute left-4 top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
+                            <span className={`absolute left-4 top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>{currencySymbol}</span>
                             <input type="text" inputMode="decimal" pattern="[0-9.-]*" autoCorrect="off" autoCapitalize="none" value={entryTotalAmount} onChange={(e) => setEntryTotalAmount(e.target.value.replace(/\s+/g, ""))} onBlur={() => { if(!isNaN(parseFloat(entryTotalAmount)) && entryTotalAmount !== "") setEntryTotalAmount(parseFloat(entryTotalAmount).toFixed(2)) }} className={`w-full pt-6 pb-2 pl-7 pr-4 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                           </div>
                         </div>
                         <div className="relative">
                           <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Already Paid</label>
                           <div className="relative w-full flex items-center">
-                            <span className={`absolute left-4 top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>$</span>
+                            <span className={`absolute left-4 top-[18px] font-bold text-base ${isDarkMode ? "text-white" : "text-slate-900"}`}>{currencySymbol}</span>
                             <input type="text" inputMode="decimal" pattern="[0-9.-]*" autoCorrect="off" autoCapitalize="none" value={entryPaidAmount} onChange={(e) => setEntryPaidAmount(e.target.value.replace(/\s+/g, ""))} onBlur={() => { if(!isNaN(parseFloat(entryPaidAmount)) && entryPaidAmount !== "") setEntryPaidAmount(parseFloat(entryPaidAmount).toFixed(2)) }} className={`w-full pt-6 pb-2 pl-7 pr-4 rounded-2xl border transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`} />
                           </div>
                         </div>

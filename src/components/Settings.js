@@ -184,7 +184,7 @@ export default function Settings({
                 </div>
               </div>
 
-              {/* SURGICAL INJECTION: Centered Signature Divider Line */}
+              {/* Centered Signature Divider Line */}
               <div className="py-2 my-2">
                 <div className={`border-t ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
               </div>
@@ -472,13 +472,21 @@ export default function Settings({
                   )}
                 </a>
 
-                {/* Bureau Trust Logos */}
-                <div className="mt-4 pt-4 border-t border-slate-500/20 flex flex-col items-center">
-                  <span className={`text-[8px] font-black uppercase tracking-[0.2em] mb-3 opacity-60 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Verified Data Partners</span>
-                  <div className="flex items-center justify-center gap-4 sm:gap-6 opacity-80 grayscale">
-                     <div className={`font-black text-[10px] sm:text-xs tracking-tighter ${isDarkMode ? "text-white" : "text-slate-800"}`}>EQUIFAX</div>
-                     <div className={`font-black text-[10px] sm:text-xs tracking-tight flex items-center ${isDarkMode ? "text-white" : "text-slate-800"}`}><span className="text-blue-500 mr-0.5">e</span>xperian</div>
-                     <div className={`font-bold text-[10px] sm:text-xs tracking-tight ${isDarkMode ? "text-white" : "text-slate-800"}`}>TransUnion<sup className="text-[6px] ml-0.5 font-black text-blue-400">tu</sup></div>
+                {/* SURGICAL INJECTION: Scaled Bureau Authority Logos */}
+                <div className="mt-4 pt-4 border-t border-slate-500/20 flex flex-col items-center w-full">
+                  <span className={`text-[9px] sm:text-[10px] font-black uppercase tracking-[0.25em] mb-3 opacity-60 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                    Verified Data Partners
+                  </span>
+                  <div className="flex items-center justify-center gap-5 sm:gap-8 lg:gap-12 opacity-90 grayscale w-full max-w-xs sm:max-w-md">
+                     <div className={`font-black text-xs sm:text-sm lg:text-base tracking-tighter shrink-0 ${isDarkMode ? "text-white" : "text-slate-800"}`}>
+                       EQUIFAX
+                     </div>
+                     <div className={`font-black text-xs sm:text-sm lg:text-base tracking-tight flex items-center shrink-0 ${isDarkMode ? "text-white" : "text-slate-800"}`}>
+                       <span className="text-blue-500 mr-0.5">e</span>xperian
+                     </div>
+                     <div className={`font-bold text-xs sm:text-sm lg:text-base tracking-tight shrink-0 ${isDarkMode ? "text-white" : "text-slate-800"}`}>
+                       TransUnion<sup className="text-[7px] sm:text-[9px] ml-0.5 font-black text-blue-400">tu</sup>
+                     </div>
                   </div>
                 </div>
 

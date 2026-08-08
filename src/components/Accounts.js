@@ -471,7 +471,7 @@ export default function Accounts({
                 )}
               </a>
 
-              {/* SURGICAL INJECTION: 70% Width Borderless Bureau Logos */}
+              {/* 70% Width Borderless Bureau Logos */}
               <div className="mt-6 pt-5 border-t border-slate-500/20 flex flex-col items-center w-full relative z-10">
                 <span className={`text-[10px] sm:text-[11px] font-black uppercase tracking-[0.25em] mb-4 opacity-60 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                   Verified Data Partners

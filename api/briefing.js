@@ -47,10 +47,12 @@ CRITICAL TITLE DIRECTIVE: You must NEVER use generic titles like "Bill Coverage 
 SUBSCRIPTION DIRECTIVE: If upcoming bills include recurring subscriptions (like streaming services, software, or items marked /mo), proactively flag them as a "SUBSCRIPTION ALERT" to prevent unwanted charges.
 BIRTHDAY DIRECTIVE: If the "Is Birthday Today" variable is YES, you MUST naturally weave a premium "Happy Birthday" greeting into the body text addressing ${userName || 'Founder'}.
 ENTREPRENEUR DIRECTIVE: If "Is Entrepreneur Mode" is YES, you must pivot context completely. Do not advise the user that a standard payday or W-2 payroll deposit is upcoming. Focus entirely on variable client collections, business overhead tracking, and protecting cash runway consistency.
+EVALUATION WINDOW DIRECTIVE: If Evaluation Window is AM, focus on the Morning Outlook (upcoming bills, daily budget limit, paydays). If PM, focus on the Evening Recap (spending highlights, budget impact, staying on track).
+LENGTH DIRECTIVE: The 'body' field MUST contain at least 3 distinct, high-value sentences. Example structure -> Sentence 1: Live cash status. Sentence 2: Immediate action item. Sentence 3: Proactive advice or encouragement.
 You must strictly output a valid, completely minified JSON object matching this exact schema with ZERO spaces, ZERO newlines, and ZERO markdown formatting:
-{"insightType":"BUDGET INSIGHT | SUBSCRIPTION ALERT","title":"Short unique hyper-specific header","body":"Highly actionable strategic sentence under 20 words addressing ${userName || 'Founder'} directly, weaving in any exact dollar amounts naturally."}
+{"insightType":"BUDGET INSIGHT | SUBSCRIPTION ALERT","title":"Short unique hyper-specific header","body":"Three or more complete, highly actionable strategic sentences addressing ${userName || 'Founder'} directly, weaving in any exact dollar amounts naturally."}
 CRITICAL DIRECTIVE: If the provided ledger arrays are completely empty, DO NOT explain that they are empty. Instantly return this exact default fallback JSON without any deviation: 
-{"insightType":"BUDGET INSIGHT","title":"Vault Initialized","body":"Your financial ledger is secure and standing by for your first transaction."}`;
+{"insightType":"BUDGET INSIGHT","title":"Vault Initialized","body":"Your financial ledger is secure and standing by for your first transaction. Connect your accounts to begin telemetry. We are ready when you are."}`;
 
     const promptText = `Analyze this live financial vault state data to populate your required structured schema keys:
 Accounts: ${JSON.stringify(accounts || [])}
@@ -60,8 +62,8 @@ Evaluation Window: ${currentPeriod || 'AM'}
 Is Birthday Today: ${isBirthdayToday ? 'YES' : 'NO'}
 Is Entrepreneur Mode: ${isEntrepreneurMode ? 'YES' : 'NO'}`;
 
-    // 7. Target the live, stable Gemini 3.5 Flash Content Endpoint
-    const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
+    // 7. Target the live, ultra-fast Gemini 3.6 Flash Content Endpoint
+    const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
 
     const geminiPayload = {
       contents: [{
@@ -113,7 +115,7 @@ Is Entrepreneur Mode: ${isEntrepreneurMode ? 'YES' : 'NO'}`;
     const emergencyBriefing = {
         insightType: "BUDGET INSIGHT",
         title: "Stay on Track",
-        body: "Review your upcoming bills for the week to ensure your ledger remains perfectly balanced."
+        body: "Your financial ledger is currently secure and balanced. Review your upcoming bills for the week to ensure zero coverage gaps. Maintain your defensive posture until the next cycle drops."
     };
     
     return new Response(JSON.stringify({ briefing: emergencyBriefing }), {

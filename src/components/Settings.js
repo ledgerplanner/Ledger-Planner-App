@@ -44,12 +44,12 @@ export default function Settings({
   const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
 
   const availableCurrencies = [
-    { code: "USD ($)", symbol: "$" },
-    { code: "EUR (€)", symbol: "€" },
-    { code: "GBP (£)", symbol: "£" },
-    { code: "CAD ($)", symbol: "$" },
-    { code: "AUD ($)", symbol: "$" },
-    { code: "JPY (¥)", symbol: "¥" }
+    { code: "USD ($)", symbol: "$", flag: "🇺🇸" },
+    { code: "EUR (€)", symbol: "€", flag: "🇪🇺" },
+    { code: "GBP (£)", symbol: "£", flag: "🇬🇧" },
+    { code: "CAD ($)", symbol: "$", flag: "🇨🇦" },
+    { code: "AUD ($)", symbol: "$", flag: "🇦🇺" },
+    { code: "JPY (¥)", symbol: "¥", flag: "🇯🇵" }
   ];
 
   const premiumPalette = [
@@ -119,7 +119,7 @@ export default function Settings({
         <h4 className={`text-xs font-black uppercase tracking-wider truncate ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
           {title}
         </h4>
-        <p className={`text-[10px] font-bold mt-1 leading-snug truncate ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
+        <p className={`text-[10px] font-bold mt-1 leading-snug truncate ${isDarkMode ? "text-slate-505" : "text-slate-400"}`}>
           {description}
         </p>
       </div>
@@ -655,7 +655,7 @@ export default function Settings({
                   style={{ backgroundColor: contextCurrency === currency.code ? signatureColor : undefined }}
                 >
                   <span>{currency.code}</span>
-                  <span className="text-sm font-black">{currency.symbol}</span>
+                  <span className="text-xl leading-none">{currency.flag}</span>
                 </button>
               ))}
             </div>

@@ -29,7 +29,6 @@ export default function Settings({
   handleExportData,
   triggerVictory
 }) {
-  // Direct LedgerContext Bindings for Instant App-Wide Re-Rendering
   const { 
     currentCurrency: contextCurrency = "USD ($)", 
     setCurrentCurrency: setContextCurrency,
@@ -40,7 +39,7 @@ export default function Settings({
   const [editBirthday, setEditBirthday] = useState(""); 
   
   const birthdayInputRef = useRef(null);
-  const [activeView, setActiveView] = useState("main"); // "main", "profile", "personalization", "offers", "security"
+  const [activeView, setActiveView] = useState("main"); 
   const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
 
   const availableCurrencies = [
@@ -119,7 +118,7 @@ export default function Settings({
         <h4 className={`text-xs font-black uppercase tracking-wider truncate ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
           {title}
         </h4>
-        <p className={`text-[10px] font-bold mt-1 leading-snug truncate ${isDarkMode ? "text-slate-505" : "text-slate-400"}`}>
+        <p className={`text-[10px] font-bold mt-1 leading-snug truncate ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
           {description}
         </p>
       </div>
@@ -135,7 +134,6 @@ export default function Settings({
         isDarkMode ? "bg-[#0F172A] border-slate-800" : "bg-[#F8FAFC] border-slate-100"
       }`}>
         
-        {/* DYNAMIC HEADER */}
         <div className={`p-5 border-b flex justify-between items-center shrink-0 relative z-30 transition-colors ${
           isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-200/60 shadow-sm"
         }`}>
@@ -157,9 +155,6 @@ export default function Settings({
           isDemoMode ? "pb-[140px] lg:pb-6" : "pb-12 lg:pb-6"
         }`}>
 
-          {/* ========================================= */}
-          {/* VIEW: MAIN DIRECTORY HUB                  */}
-          {/* ========================================= */}
           {activeView === "main" && (
             <div className="animate-fade-in space-y-2">
               <div className={`p-5 rounded-[2rem] border relative overflow-hidden bg-gradient-to-br transition-all duration-300 mb-2 ${
@@ -190,7 +185,6 @@ export default function Settings({
                 </div>
               </div>
 
-              {/* Centered Signature Divider Line */}
               <div className="py-2 my-2">
                 <div className={`border-t ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
               </div>
@@ -232,16 +226,12 @@ export default function Settings({
             </div>
           )}
 
-          {/* ========================================= */}
-          {/* VIEW: PROFILE                             */}
-          {/* ========================================= */}
           {activeView === "profile" && (
             <div className="animate-slide-up space-y-4">
               <h4 className={`text-[14px] font-black uppercase tracking-widest px-2 mb-2 flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                 <User size={16} strokeWidth={2.5} className="text-blue-500" /> Profile
               </h4>
 
-              {/* Preferred Display Name */}
               <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-sm"}`}>
                 <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                   👤 PREFERRED DISPLAY NAME
@@ -270,10 +260,8 @@ export default function Settings({
                 </div>
               </div>
 
-              {/* Master Signature Line */}
               <div className={`border-t ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
 
-              {/* Set Birthday Picker */}
               <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-sm"}`}>
                 <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                   🎂 SET BIRTHDAY
@@ -314,16 +302,12 @@ export default function Settings({
             </div>
           )}
 
-          {/* ========================================= */}
-          {/* VIEW: PERSONALIZATION & SYSTEM            */}
-          {/* ========================================= */}
           {activeView === "personalization" && (
             <div className="animate-slide-up space-y-4">
               <h4 className={`text-[14px] font-black uppercase tracking-widest px-2 mb-2 flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                 <Palette size={16} strokeWidth={2.5} className="text-orange-500" /> Personalization
               </h4>
 
-              {/* Select Theme Color */}
               <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-sm"}`}>
                 <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                   🎨 SELECT THEME COLOR
@@ -356,10 +340,8 @@ export default function Settings({
                 </div>
               </div>
 
-              {/* Master Signature Line */}
               <div className={`border-t ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
 
-              {/* Select Currency */}
               <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-sm"}`}>
                 <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                   🌐 SELECT CURRENCY
@@ -382,10 +364,8 @@ export default function Settings({
                 </div>
               </div>
 
-              {/* Master Signature Line */}
               <div className={`border-t ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
 
-              {/* Income Structure */}
               <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-sm"}`}>
                 <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                   💼 INCOME STRUCTURE
@@ -443,16 +423,12 @@ export default function Settings({
             </div>
           )}
 
-          {/* ========================================= */}
-          {/* VIEW: LEDGER EXCLUSIVES & OFFERS          */}
-          {/* ========================================= */}
           {activeView === "offers" && (
             <div className="animate-slide-up space-y-4">
               <h4 className={`text-[14px] font-black uppercase tracking-widest px-2 mb-2 flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                 <TrendingUp size={16} strokeWidth={2.5} className="text-purple-500" /> Credit Monitoring & Offers
               </h4>
 
-              {/* Exclusive Credit Offer Card */}
               <div className={`relative rounded-[2rem] p-5 sm:p-6 border flex flex-col text-center overflow-hidden transition-all duration-300 ${
                 isDarkMode 
                   ? "bg-gradient-to-br from-slate-900 via-slate-800 to-black border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.5)]" 
@@ -478,7 +454,6 @@ export default function Settings({
                   )}
                 </a>
 
-                {/* 70% Width Borderless Bureau Logos */}
                 <div className="mt-6 pt-5 border-t border-slate-500/20 flex flex-col items-center w-full relative z-10">
                   <span className={`text-[10px] sm:text-[11px] font-black uppercase tracking-[0.25em] mb-4 opacity-60 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                     Verified Data Partners
@@ -498,10 +473,8 @@ export default function Settings({
 
               </div>
 
-              {/* Master Signature Line */}
               <div className={`border-t ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
 
-              {/* Placeholder Card */}
               <div className={`p-6 rounded-[2rem] border border-dashed flex items-center justify-center text-center transition-all ${isDarkMode ? "bg-slate-800/20 border-slate-700" : "bg-slate-50/50 border-slate-200"}`}>
                 <p className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
                   More partner offers coming soon...
@@ -510,16 +483,12 @@ export default function Settings({
             </div>
           )}
 
-          {/* ========================================= */}
-          {/* VIEW: SECURITY & EXPORT                   */}
-          {/* ========================================= */}
           {activeView === "security" && (
             <div className="animate-slide-up space-y-4">
               <h4 className={`text-[14px] font-black uppercase tracking-widest px-2 mb-2 flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                 <Shield size={16} strokeWidth={2.5} className="text-emerald-500" /> Security
               </h4>
 
-              {/* Export Ledger */}
               <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-sm"}`}>
                 <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                   📄 EXPORT MASTER LEDGER
@@ -544,10 +513,8 @@ export default function Settings({
                 </div>
               </div>
 
-              {/* Master Signature Line */}
               <div className={`border-t ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
 
-              {/* Support */}
               <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-sm"}`}>
                 <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                   🛠️ CONTACT SUPPORT
@@ -568,10 +535,8 @@ export default function Settings({
                 </div>
               </div>
 
-              {/* Master Signature Line */}
               <div className={`border-t ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
 
-              {/* Nuke Zone */}
               <div className={`p-5 rounded-[2rem] border ${isDarkMode ? "bg-red-950/10 border-red-900/30" : "bg-red-50/40 border-red-200 shadow-sm"}`}>
                 <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-red-400" : "text-red-500"}`}>
                   ⚠️ LEDGER PLANNER FACTORY RESET
@@ -619,9 +584,6 @@ export default function Settings({
         </div>
       </div>
 
-      {/* ========================================================================= */}
-      {/* SUBSYSTEM INTERACTIVE SLIDE-UP DRAWER LAYER 1: SELECT CURRENCY DRAWER */}
-      {/* ========================================================================= */}
       {isCurrencyOpen && (
         <div className="absolute inset-0 z-[140] flex items-end">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setIsCurrencyOpen(false)}></div>
@@ -637,7 +599,6 @@ export default function Settings({
                 <button
                   key={currency.code}
                   onClick={() => {
-                    // Instantly Dispatch to LedgerContext for Immediate Live Re-Render Across All Views
                     if (setContextCurrency) setContextCurrency(currency.code);
                     setIsCurrencyOpen(false);
                     localStorage.setItem("lp_currency", currency.code);

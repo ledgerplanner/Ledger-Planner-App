@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { X, Bell, AlertCircle, CheckCircle2, TrendingUp } from 'lucide-react';
+import { X, Bell, AlertCircle, CheckCircle2, TrendingUp, Sparkles } from 'lucide-react';
 import { useLedger } from '../../context/LedgerContext';
 import { useBriefingEngine } from '../../hooks/useBriefingEngine';
 
@@ -13,30 +13,29 @@ export default function CommandCenter({
   formatPaydayDateStr,
   isPushEnabled,
   enablePushNotifications,
-  aiBriefingText = null,
   handleDismissAIBriefing,
+  hasConsumedAMBriefing,
+  hasConsumedPMBriefing,
   isDemoMode
 }) {
-  // 1. PULL GLOBAL STATE FROM THE CLOUD
   const { user, isDarkMode, signatureColor } = useLedger();
 
-  // === LOCAL UI DISMISSAL STATE FOR AI BANNER ===
   const [isAiBannerDismissed, setIsAiBannerDismissed] = useState(false);
 
-  // 2. INITIALIZE THE NOTIFICATION ENGINE 
-  const { activeAlerts } = useBriefingEngine({
+  const { activeAlerts, briefingData, hasUnreadBriefing } = useBriefingEngine({
     needsRefresh,
     dynamicBills,
     changeTab,
     setIsNotificationsOpen,
     handleOpenPaydaySetup,
     userName,
-    formatPaydayDateStr
+    formatPaydayDateStr,
+    hasConsumedAMBriefing,
+    hasConsumedPMBriefing
   });
 
   const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
 
-  // === SURGICAL FIX: INJECTED BIRTHDAY PINNED OVERRIDE ===
   const isBirthdayToday = useMemo(() => {
     let bdayStr = "07-02"; 
     if (user?.birthday) {
@@ -54,22 +53,8 @@ export default function CommandCenter({
     }
   };
 
-  // === SURGICAL PARSING PIECE FOR RECOVERY AND STABILITY ===
-  const aiData = useMemo(() => {
-    if (!aiBriefingText) return null;
-    if (typeof aiBriefingText === 'string') {
-      try {
-        return JSON.parse(aiBriefingText);
-      } catch (e) {
-        return {
-          insightType: "BUDGET INSIGHT",
-          title: "Quick Insight",
-          body: aiBriefingText
-        };
-      }
-    }
-    return aiBriefingText;
-  }, [aiBriefingText]);
+  const aiData = briefingData?.data;
+  const isLoadingAI = briefingData?.isLoading;
 
   return (
     <div className="fixed inset-0 z-[120] flex justify-end">
@@ -77,7 +62,6 @@ export default function CommandCenter({
       <div className={`w-full sm:max-w-sm h-full shadow-2xl relative z-[130] flex flex-col transition-colors duration-500 ${isDarkMode ? "bg-[#0F172A] border-l border-slate-800" : "bg-white border-l border-slate-100"}`}>
         <div className="p-6 border-b flex justify-between items-center shrink-0">
           
-          {/* SURGICAL INJECTION: Cleaned header layout container with official brand asset injection */}
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center p-0.5 border ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
               <img src="/login-logo.png" alt="Ledger Planner" className="w-full h-full object-cover rounded-full" />
@@ -89,7 +73,6 @@ export default function CommandCenter({
         
         <div className="p-6 overflow-y-auto space-y-4 flex-1 hide-scrollbar">
           
-          {/* === PINNED BIRTHDAY BANNER INJECTION === */}
           {isBirthdayToday && (
             <div className="p-4 rounded-2xl shadow-lg relative overflow-hidden bg-gradient-to-r from-blue-500 via-orange-500 to-emerald-500">
               <div className={`absolute inset-0.5 rounded-xl ${isDarkMode ? "bg-slate-900/90" : "bg-white/95"}`}></div>
@@ -117,8 +100,25 @@ export default function CommandCenter({
             </div>
           )}
 
-          {/* === PREMIUM ELITE LP AI ASSISTANT CARD === */}
-          {aiData && !isAiBannerDismissed && (
+          {isLoadingAI && !isAiBannerDismissed && (
+            <div className={`relative p-5 rounded-[2rem] border overflow-hidden shadow-2xl transition-all duration-300 animate-pulse ${
+              isDarkMode 
+                ? "bg-gradient-to-br from-slate-900 to-[#0A0F1C] border-[#D4AF37]/30 shadow-[0_8px_30px_rgba(212,175,55,0.08)]" 
+                : "bg-gradient-to-br from-[#FFFAF0] to-white border-[#D4AF37]/40 shadow-[0_8px_30px_rgba(212,175,55,0.15)]"
+            }`}>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-4 h-4 rounded-full bg-[#D4AF37]/40"></div>
+                <div className="h-3 w-40 bg-[#D4AF37]/20 rounded"></div>
+              </div>
+              <div className="space-y-3">
+                <div className="h-3 w-3/4 bg-slate-500/20 rounded"></div>
+                <div className="h-2 w-full bg-slate-500/10 rounded"></div>
+                <div className="h-2 w-5/6 bg-slate-500/10 rounded"></div>
+              </div>
+            </div>
+          )}
+
+          {!isLoadingAI && aiData && !isAiBannerDismissed && (
             <div className={`relative p-5 rounded-[2rem] border overflow-hidden shadow-2xl transition-all duration-300 ${
               isDarkMode 
                 ? "bg-gradient-to-br from-slate-900 to-[#0A0F1C] border-[#D4AF37]/30 shadow-[0_8px_30px_rgba(212,175,55,0.08)]" 

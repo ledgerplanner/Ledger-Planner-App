@@ -43,12 +43,12 @@ export default function Settings({
   const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
 
   const availableCurrencies = [
-    { code: "USD ($)", symbol: "$", flag: "🇺🇸" },
-    { code: "EUR (€)", symbol: "€", flag: "🇪🇺" },
-    { code: "GBP (£)", symbol: "£", flag: "🇬🇧" },
-    { code: "CAD ($)", symbol: "$", flag: "🇨🇦" },
-    { code: "AUD ($)", symbol: "$", flag: "🇦🇺" },
-    { code: "JPY (¥)", symbol: "¥", flag: "🇯🇵" }
+    { code: "USD ($)", symbol: "$", flagUrl: "https://flagcdn.com/w40/us.png" },
+    { code: "EUR (€)", symbol: "€", flagUrl: "https://flagcdn.com/w40/eu.png" },
+    { code: "GBP (£)", symbol: "£", flagUrl: "https://flagcdn.com/w40/gb.png" },
+    { code: "CAD ($)", symbol: "$", flagUrl: "https://flagcdn.com/w40/ca.png" },
+    { code: "AUD ($)", symbol: "$", flagUrl: "https://flagcdn.com/w40/au.png" },
+    { code: "JPY (¥)", symbol: "¥", flagUrl: "https://flagcdn.com/w40/jp.png" }
   ];
 
   const premiumPalette = [
@@ -616,7 +616,7 @@ export default function Settings({
                   style={{ backgroundColor: contextCurrency === currency.code ? signatureColor : undefined }}
                 >
                   <span>{currency.code}</span>
-                  <span className="text-xl leading-none">{currency.flag}</span>
+                  <img src={currency.flagUrl} alt={currency.code} className="w-6 h-4 rounded-sm object-cover shadow-sm" />
                 </button>
               ))}
             </div>

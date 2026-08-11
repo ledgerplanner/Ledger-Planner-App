@@ -55,6 +55,7 @@ export default function CommandCenter({
 
   const aiData = briefingData?.data;
   const isLoadingAI = briefingData?.isLoading;
+  const isAM = briefingData?.isAM;
 
   return (
     <div className="fixed inset-0 z-[120] flex justify-end">
@@ -128,9 +129,9 @@ export default function CommandCenter({
               
               <div className="flex justify-between items-center mb-3 relative z-10">
                 <div className="flex items-center gap-2">
-                  <span className="text-base drop-shadow-md">✨</span>
+                  <span className="text-base drop-shadow-md">{isAM ? "☀️" : "🌙"}</span>
                   <h4 className="font-black uppercase tracking-widest text-[11px] text-[#D4AF37]">
-                    LEDGER PLANNER AI ASSISTANT
+                    {isAM ? "MORNING BRIEFING" : "EVENING RECAP"}
                   </h4>
                 </div>
                 <button 

@@ -108,8 +108,9 @@ export default function CommandCenter({
                 : "bg-gradient-to-br from-[#FFFAF0] to-white border-[#D4AF37]/40 shadow-[0_8px_30px_rgba(212,175,55,0.15)]"
             }`}>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-4 h-4 rounded-full bg-[#D4AF37]/40"></div>
-                <div className="h-3 w-40 bg-[#D4AF37]/20 rounded"></div>
+                <h4 className="font-black uppercase tracking-widest text-[11px] text-[#D4AF37]">
+                  {isAM ? "🤖 GENERATING AI MORNING BRIEFING..." : "🤖 COMPILING AI EVENING RECAP..."}
+                </h4>
               </div>
               <div className="space-y-3">
                 <div className="h-3 w-3/4 bg-slate-500/20 rounded"></div>
@@ -129,9 +130,8 @@ export default function CommandCenter({
               
               <div className="flex justify-between items-center mb-3 relative z-10">
                 <div className="flex items-center gap-2">
-                  <span className="text-base drop-shadow-md">{isAM ? "☀️" : "🌙"}</span>
                   <h4 className="font-black uppercase tracking-widest text-[11px] text-[#D4AF37]">
-                    {isAM ? "MORNING BRIEFING" : "EVENING RECAP"}
+                    {isAM ? "🤖 AI MORNING BRIEFING" : "🤖 AI EVENING RECAP"}
                   </h4>
                 </div>
                 <button 

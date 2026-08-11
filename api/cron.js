@@ -31,7 +31,8 @@ export default async function handler(req, res) {
     
     // Exact Local Server Hour evaluation for systemic time-blocking
     const currentHour = today.getHours();
-    const isAM = currentHour >= 5 && currentHour < 16;
+    // Shift window runs 5:00 AM (5) through 4:59 PM (16). 5:00 PM (17) triggers PM shift.
+    const isAM = currentHour >= 5 && currentHour < 17;
     const period = isAM ? "AM" : "PM";
 
     today.setHours(0, 0, 0, 0);
@@ -211,7 +212,7 @@ Is Entrepreneur Mode: ${isEntrepreneurMode ? 'YES' : 'NO'}`;
       });
 
       // === 7. TRIGGER SWEEP C: DYNAMIC AI BRIEFING NOTIFICATION ===
-      const briefingPrefix = isAM ? "☀️ MORNING BRIEFING" : "🌙 EVENING RECAP";
+      const briefingPrefix = isAM ? "🤖 AI MORNING BRIEFING" : "🤖 AI EVENING RECAP";
       pushPayloads.push({
         token: fcmToken,
         notification: {

@@ -31,10 +31,14 @@ export default async function handler(req, res) {
     
     // Exact Local Server Hour evaluation for systemic time-blocking
     const currentHour = today.getHours();
-    const period = currentHour >= 5 && currentHour < 16 ? "AM" : "PM";
+    const isAM = currentHour >= 5 && currentHour < 16;
+    const period = isAM ? "AM" : "PM";
 
     today.setHours(0, 0, 0, 0);
     const todayStr = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
     // Scan every user in the vault
     for (const userDoc of usersSnapshot.docs) {
@@ -42,11 +46,12 @@ export default async function handler(req, res) {
       const fcmToken = userData.fcmToken || userData.pushToken; // Support uniform fallback naming across layers
       const userName = userData.firstName || userData.name || 'Founder';
       
-      // Extract entrepreneur mode from the user document
       const isEntrepreneurMode = userData.isEntrepreneurMode || false;
 
       // If they haven't enabled push notifications, skip them
       if (!fcmToken) continue;
+
+      const pushPayloads = []; // Queue for multiple notifications
 
       // === 1. HYDRATE USER CONTEXT & BIRTHDAY CALCULATION ===
       let isBirthdayToday = false;
@@ -55,7 +60,11 @@ export default async function handler(req, res) {
         isBirthdayToday = (bdayStr === todayStr);
       }
 
-      // Fetch Upcoming Bills (Limit to 5 to prevent token bloat)
+      // Fetch Payday Config (Settings Subcollection)
+      const paydayDoc = await db.collection(`users/${userDoc.id}/settings`).doc('paydayConfig').get();
+      const paydayConfig = paydayDoc.exists ? paydayDoc.data() : null;
+
+      // Fetch Upcoming Bills
       const billsSnapshot = await db.collection(`users/${userDoc.id}/bills`)
         .where('isPaid', '==', false)
         .get();
@@ -76,7 +85,62 @@ export default async function handler(req, res) {
         .get();
       const safeTransactions = txSnapshot.docs.map(d => d.data());
 
-      // === 2. EXECUTE AI ENGINE PIPELINE ===
+
+      // === 2. TRIGGER SWEEP A: OVERDUE & DUE NOW BILLS ===
+      let hasUrgentBill = false;
+      let urgentBillName = "A bill";
+      
+      for (const bill of rawBills) { // Scan all unpaid bills, not just the top 5 slice
+        if (bill.rawDate) {
+          const bDate = new Date(bill.rawDate);
+          const localBDate = new Date(bDate.getUTCFullYear(), bDate.getUTCMonth(), bDate.getUTCDate());
+          
+          if (localBDate <= today) {
+            hasUrgentBill = true;
+            urgentBillName = bill.name || "A pending obligation";
+            break; 
+          }
+        }
+      }
+
+      if (hasUrgentBill && !isBirthdayToday) {
+        pushPayloads.push({
+          token: fcmToken,
+          notification: {
+            title: `🚨 Action Required`,
+            body: `${urgentBillName} requires immediate attention. Open your vault to review your ledger.`,
+          },
+          data: { route: "bills" }
+        });
+      }
+
+      // === 3. TRIGGER SWEEP B: 1-DAY PAYDAY REMINDER ===
+      let isPaydayTomorrow = false;
+      if (paydayConfig && !isEntrepreneurMode) {
+        ["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].forEach(pdId => {
+          if (paydayConfig[pdId] && paydayConfig[pdId].date) {
+            const pDate = new Date(paydayConfig[pdId].date);
+            const localPDate = new Date(pDate.getUTCFullYear(), pDate.getUTCMonth(), pDate.getUTCDate());
+            if (localPDate.getTime() === tomorrow.getTime()) {
+              isPaydayTomorrow = true;
+            }
+          }
+        });
+      }
+
+      if (isPaydayTomorrow && !isBirthdayToday) {
+        pushPayloads.push({
+          token: fcmToken,
+          notification: {
+            title: `💰 Payday Eve`,
+            body: `Your liquidity injection arrives tomorrow. Prepare your capital deployment strategy.`,
+          },
+          data: { route: "home" }
+        });
+      }
+
+
+      // === 4. EXECUTE AI ENGINE PIPELINE ===
       const systemInstruction = `You are the ultimate Lead Financial Architect and elite wealth strategist inside Ledger Planner 2.0. 
 Your objective is to analyze real-time user financial ledger states and produce structured, premium financial metrics.
 CRITICAL TITLE DIRECTIVE: You must NEVER use generic titles like "Bill Coverage Gap". You must always generate unique, hyper-specific, premium titles tailored to the active cash state.
@@ -129,7 +193,7 @@ Is Entrepreneur Mode: ${isEntrepreneurMode ? 'YES' : 'NO'}`;
         console.error(`AI Generation Failed for user ${userDoc.id}:`, aiError);
       }
 
-      // === 3. THE IRONCLAD CEO FALLBACK ===
+      // === 5. THE IRONCLAD CEO FALLBACK ===
       if (!parsedBriefing || !parsedBriefing.title) {
         parsedBriefing = {
           insightType: "BUDGET INSIGHT",
@@ -140,27 +204,35 @@ Is Entrepreneur Mode: ${isEntrepreneurMode ? 'YES' : 'NO'}`;
         };
       }
 
-      // === 4. PERSIST THE PAYLOAD TO FIRESTORE ===
+      // === 6. PERSIST THE PAYLOAD TO FIRESTORE ===
       await db.collection('users').doc(userDoc.id).update({
         aiBriefingText: JSON.stringify(parsedBriefing),
         lastBriefingTime: admin.firestore.FieldValue.serverTimestamp()
       });
 
-      // === 5. DISPATCH THE DYNAMIC DEEP-LINKING PUSH NOTIFICATION ===
-      const notificationPayload = {
+      // === 7. TRIGGER SWEEP C: DYNAMIC AI BRIEFING NOTIFICATION ===
+      const briefingPrefix = isAM ? "☀️ MORNING BRIEFING" : "🌙 EVENING RECAP";
+      pushPayloads.push({
         token: fcmToken,
         notification: {
-          title: `✨ ${parsedBriefing.title}`,
+          title: `${briefingPrefix} • ${parsedBriefing.title}`,
           body: parsedBriefing.body,
         },
         data: {
           route: "notifications", // Direct deep-linking past home past menu into command center
           triggerBirthdayConfetti: isBirthdayToday ? "true" : "false" // Frontend listener trigger
         }
-      };
+      });
 
-      await messaging.send(notificationPayload);
-      sentCount++;
+      // === 8. DISPATCH ALL QUEUED NOTIFICATIONS ===
+      for (const payload of pushPayloads) {
+        try {
+          await messaging.send(payload);
+          sentCount++;
+        } catch (msgErr) {
+          console.error(`Failed to send push payload to ${userDoc.id}:`, msgErr);
+        }
+      }
     }
     
     res.status(200).json({ success: true, messagesSent: sentCount });

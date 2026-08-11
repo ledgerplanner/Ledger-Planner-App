@@ -19,8 +19,7 @@ const db = getFirestore(app);
 const messaging = getMessaging(app);
 
 // === INJECTED: PUBLIC VAPID KEY EXPORT ===
-// 🚨 CRITICAL: You MUST replace the string below with your Web Push Certificate (VAPID) key from Firebase Console 🚨
-const VAPID_KEY = "PASTE_YOUR_GENERATED_VAPID_KEY_HERE";
+const VAPID_KEY = "BDubfUXfP5DhFRpZ5ZwQp0o88f2avvtfu0rfFr9ySjHgTZmQ4gsr0GWzE-cJQxgbwq93GlgcCc5ip6KksvngmXY";
 
 // === OFFLINE PERSISTENCE ENGINE ===
 // This creates the local cache that allows the app to survive network drops

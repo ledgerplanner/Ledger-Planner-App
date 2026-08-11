@@ -143,9 +143,10 @@ export const useBriefingEngine = ({
     return currentAlerts;
   };
 
-  // === DYNAMIC AI BRIEFING ENGINE (GEMINI 3.6 FLASH) ===
+  // === DYNAMIC AI BRIEFING ENGINE (GEMINI 3.5 FLASH) ===
   const hours = new Date().getHours();
-  const isAM = hours >= 5 && hours < 12;
+  // SURGICAL FIX: Shift window runs 5:00 AM (5) through 4:59 PM (16). 5:00 PM (17) triggers PM shift.
+  const isAM = hours >= 5 && hours < 17;
   const currentPeriod = isAM ? 'AM' : 'PM';
   const isUnconsumedBriefing = isAM ? !hasConsumedAMBriefing : !hasConsumedPMBriefing;
 

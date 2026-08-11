@@ -197,7 +197,6 @@ export const useBriefingEngine = ({
     };
 
     fetchAIBriefing();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPeriod]); // Only trigger network calls when shifting between morning and evening
 
   return {

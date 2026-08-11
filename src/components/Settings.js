@@ -458,20 +458,22 @@ export default function Settings({
                   <span className={`text-[10px] sm:text-[11px] font-black uppercase tracking-[0.25em] mb-4 opacity-60 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                     Verified Data Partners
                   </span>
-                  {/* SURGICAL FIX: Improved flex spacing and subtle dividers for bureau logos */}
-                  <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 opacity-90 grayscale w-full py-1">
-                     <div className={`font-black text-base sm:text-lg lg:text-xl tracking-tighter shrink-0 ${isDarkMode ? "text-slate-100" : "text-slate-800"}`}>
+                  
+                  {/* SURGICAL FIX: Strict single line flex-nowrap layout for bureau logos with responsive scaling */}
+                  <div className="flex flex-row flex-nowrap items-center justify-center gap-2 sm:gap-3 opacity-90 grayscale w-full py-1 whitespace-nowrap">
+                     <div className={`font-black text-xs sm:text-[13px] tracking-tighter shrink-0 ${isDarkMode ? "text-slate-100" : "text-slate-800"}`}>
                        EQUIFAX
                      </div>
-                     <div className="w-px h-4 bg-slate-500/30 hidden sm:block"></div>
-                     <div className={`font-black text-base sm:text-lg lg:text-xl tracking-tight flex items-center shrink-0 ${isDarkMode ? "text-slate-100" : "text-slate-800"}`}>
-                       <span className="text-blue-500 text-lg sm:text-xl lg:text-2xl font-black mr-0.5 leading-none">e</span>xperian
+                     <div className="w-px h-3 sm:h-4 bg-slate-500/30 shrink-0"></div>
+                     <div className={`font-black text-xs sm:text-[13px] tracking-tight flex items-center shrink-0 ${isDarkMode ? "text-slate-100" : "text-slate-800"}`}>
+                       <span className="text-blue-500 text-sm sm:text-[15px] font-black mr-0.5 leading-none">e</span>xperian
                      </div>
-                     <div className="w-px h-4 bg-slate-500/30 hidden sm:block"></div>
-                     <div className={`font-bold text-base sm:text-lg lg:text-xl tracking-tight shrink-0 ${isDarkMode ? "text-slate-100" : "text-slate-800"}`}>
-                       TransUnion<sup className="text-[10px] sm:text-xs ml-0.5 font-black text-blue-500 leading-none">tu</sup>
+                     <div className="w-px h-3 sm:h-4 bg-slate-500/30 shrink-0"></div>
+                     <div className={`font-bold text-xs sm:text-[13px] tracking-tight shrink-0 ${isDarkMode ? "text-slate-100" : "text-slate-800"}`}>
+                       TransUnion<sup className="text-[8px] sm:text-[9px] ml-0.5 font-black text-blue-500 leading-none">tu</sup>
                      </div>
                   </div>
+                  
                 </div>
 
               </div>

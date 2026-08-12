@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { 
   X, User, CreditCard, RefreshCw, AlertCircle, Trash2, LogOut, 
   ChevronRight, Sparkles, Globe, Palette, Shield, Check, HelpCircle, Briefcase,
-  Download, FileText, ChevronLeft, TrendingUp
+  Download, FileText, ChevronLeft, TrendingUp, Compass
 } from "lucide-react";
 
 import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
@@ -32,7 +32,8 @@ export default function Settings({
   const { 
     currentCurrency: contextCurrency = "USD ($)", 
     setCurrentCurrency: setContextCurrency,
-    currencySymbol = "$" 
+    currencySymbol = "$",
+    startTour
   } = useLedger();
 
   const [editName, setEditName] = useState(userName || "");
@@ -157,6 +158,34 @@ export default function Settings({
 
           {activeView === "main" && (
             <div className="animate-fade-in space-y-2">
+              
+              {/* === WELCOME TO LEDGER PLANNER CARD (WALKTHROUGH TRIGGER) === */}
+              <div className={`p-5 rounded-[2rem] border relative overflow-hidden bg-gradient-to-br transition-all duration-300 mb-3 ${
+                isDarkMode 
+                  ? "from-slate-900 via-slate-800 to-black border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.5)]" 
+                  : "from-white via-slate-50 to-slate-100 border-slate-200 shadow-[0_12px_24px_rgba(0,0,0,0.08)]"
+              }`}>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 blur-2xl rounded-full pointer-events-none"></div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className={`text-[9px] font-black uppercase tracking-widest block mb-0.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Welcome Tour, Tutorials</span>
+                    <p className={`text-base font-black ${isDarkMode ? "text-white" : "text-slate-900"}`}>Welcome to Ledger Planner!</p>
+                    <p className={`text-[10px] font-bold mt-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Interactive setup walkthrough</p>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      setIsSettingsOpen(false);
+                      if (startTour) startTour();
+                    }}
+                    className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all active:scale-95 shadow-sm flex items-center gap-1.5 text-white`}
+                    style={{ backgroundColor: signatureColor }}
+                  >
+                    <Compass size={14} strokeWidth={2.5} /> Start
+                  </button>
+                </div>
+              </div>
+
+              {/* ACCOUNT STATUS CARD */}
               <div className={`p-5 rounded-[2rem] border relative overflow-hidden bg-gradient-to-br transition-all duration-300 mb-2 ${
                 isDarkMode 
                   ? "from-slate-900 via-slate-800 to-black border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.5)]" 
@@ -459,7 +488,6 @@ export default function Settings({
                     Verified Data Partners
                   </span>
                   
-                  {/* SURGICAL FIX: Strict single line flex-nowrap layout for bureau logos with responsive scaling */}
                   <div className="flex flex-row flex-nowrap items-center justify-center gap-2 sm:gap-3 opacity-90 grayscale w-full py-1 whitespace-nowrap">
                      <div className={`font-black text-xs sm:text-[13px] tracking-tighter shrink-0 ${isDarkMode ? "text-slate-100" : "text-slate-800"}`}>
                        EQUIFAX

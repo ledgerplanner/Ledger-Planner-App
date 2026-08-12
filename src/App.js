@@ -4,7 +4,7 @@ import {
   Bell, Moon, Sun, Plus, Settings as SettingsIcon, LogOut, AlertCircle, X, CheckCircle2
 } from "lucide-react";
 
-// === FIREBASE INITIALIZATION. ===
+// === FIREBASE INITIALIZATION ===
 import { auth, db, messaging, VAPID_KEY } from "./firebase";
 import { getToken, onMessage } from "firebase/messaging";
 import { 

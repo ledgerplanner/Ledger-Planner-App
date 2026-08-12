@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { ArrowRightLeft, PlusCircle, Edit2, Target, CheckCircle2, Calendar as CalendarIcon, ArrowDown, X, TrendingUp } from "lucide-react";
 import { useLedger } from "../context/LedgerContext";
 
-export default function Accounts({
+export default function Accounts({ 
   userName,
   accounts = [],
   transactions = [],

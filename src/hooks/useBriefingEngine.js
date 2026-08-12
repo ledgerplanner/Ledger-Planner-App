@@ -25,25 +25,27 @@ export const useBriefingEngine = ({
     const today = new Date(); 
     today.setHours(0, 0, 0, 0);
 
+    // #7. System Update
     if (needsRefresh) {
       currentAlerts.unshift({
         id: 'refresh-required',
         type: 'danger',
         icon: <RefreshCw size={20} className="text-red-500 animate-[spin_3s_linear_infinite]" />,
-        title: 'System Update',
+        title: '🔄 System Update',
         message: 'New month detected. Refresh to initialize the new vault.',
         time: 'REQUIRED',
         action: () => window.location.reload()
       });
     }
 
+    // #8. Action Required
     const actionBills = dynamicBills.filter(b => b.isOverdue || (!b.isPaid && b.payday === "Due Now"));
     actionBills.forEach(b => {
       currentAlerts.push({
         id: `action-${b.id}`, 
         type: 'danger', 
         icon: <AlertCircle size={20} className="text-red-500" />,
-        title: 'Action Required', 
+        title: '🚨 Action Required', 
         message: `Your ${b.name || "Bill"} is ${b.isOverdue ? 'past due' : 'due now'}.`,
         amount: b.amount || 0, 
         time: b.isOverdue ? 'URGENT' : 'TODAY',
@@ -51,6 +53,7 @@ export const useBriefingEngine = ({
       });
     });
 
+    // #9. Subscription Nudge
     const upcomingRecurring = dynamicBills.filter(b => !b.isPaid && b.isRecurring && !b.isOverdue && b.payday !== "Due Now" && b.payday !== "Unscheduled");
     upcomingRecurring.forEach(b => {
       if (b.rawDate) {
@@ -62,7 +65,7 @@ export const useBriefingEngine = ({
               id: `sub-${b.id}`, 
               type: 'info', 
               icon: <RefreshCw size={20} className="text-[#10B981]" />,
-              title: 'Subscription Nudge', 
+              title: '🔔 Subscription Nudge', 
               message: `${b.name || "Subscription"} is recurring in ${diffDays} day(s).`,
               amount: b.amount || 0, 
               time: `${diffDays}D`,
@@ -80,17 +83,21 @@ export const useBriefingEngine = ({
         if (!isNaN(pdDate.getTime())) {
           pdDate.setUTCHours(0, 0, 0, 0);
           const diffDays = Math.ceil((pdDate - today) / (1000 * 60 * 60 * 24));
+          
+          // #10. Upcoming Payday
           if (diffDays >= 0 && diffDays <= 3) {
             currentAlerts.push({
               id: `payday-${pdId}`, 
               type: 'info', 
               icon: <CalendarIcon size={20} className="text-[#1877F2]" />,
-              title: 'Upcoming Payday', 
+              title: '💵 Upcoming Payday', 
               message: `${pdId} is approaching.`, 
               time: `${diffDays}D`,
               action: () => { setIsNotificationsOpen(false); handleOpenPaydaySetup(); }
             });
           }
+
+          // #11. Payday Gap
           const pdBills = bills.filter(b => b.payday === pdId && !b.isPaid);
           const pdTotal = pdBills.reduce((sum, b) => sum + (b.amount || 0), 0);
           const pdIncome = parseFloat(config.income) || 0;
@@ -99,8 +106,8 @@ export const useBriefingEngine = ({
               id: `gap-${pdId}`, 
               type: 'warning', 
               icon: <ArrowDown size={20} className="text-orange-500" />,
-              title: 'Liquidity Gap', 
-              message: `${pdId} is $${(pdTotal - pdIncome).toFixed(2)} short.`,
+              title: '💸 Payday Gap', 
+              message: `${pdId} is $${(pdTotal - pdIncome).toFixed(2)} short of covering your bills.`,
               time: 'WARNING', 
               action: () => { setIsNotificationsOpen(false); changeTab("bills"); }
             });
@@ -109,23 +116,30 @@ export const useBriefingEngine = ({
       }
     });
 
+    // #12. Safe Spending Alert
     const liquidCash = accounts.filter(a => !a.isGoal && (a.type === "Checking" || a.type === "Cash")).reduce((sum, acc) => sum + (acc.balance || 0), 0);
     const upcomingBills = bills.filter(b => !b.isPaid && !b.isOverdue);
     const upcomingBurn = upcomingBills.reduce((sum, b) => sum + (b.amount || 0), 0);
     const safeToSpend = liquidCash - upcomingBurn;
 
-    if (safeToSpend < 100 && safeToSpend >= 0) {
+    if (safeToSpend < 100) {
+      const isNegative = safeToSpend < 0;
+      const formattedAmount = isNegative 
+        ? `-$${Math.abs(safeToSpend).toFixed(2)}` 
+        : `$${safeToSpend.toFixed(2)}`;
+
       currentAlerts.push({
         id: `redline`, 
         type: 'danger', 
         icon: <AlertCircle size={20} className="text-red-500" />,
-        title: 'Redline', 
-        message: `Buffer critically low ($${safeToSpend.toFixed(2)}).`,
+        title: '🚨 Safe Spending Alert', 
+        message: `Available cash is critically low (${formattedAmount}).`,
         time: 'ALERT', 
         action: () => { setIsNotificationsOpen(false); changeTab("home"); }
       });
     }
 
+    // #13. Transfer Complete
     const recentTransfers = transactions.filter(tx => tx.category === "Transfers (Venmo/Zelle)" && tx.type === "Income");
     if (recentTransfers.length > 0) {
       const latestTransfer = recentTransfers[0];
@@ -133,7 +147,7 @@ export const useBriefingEngine = ({
         id: `transfer-${latestTransfer.id}`, 
         type: 'success', 
         icon: <CheckCircle2 size={20} className="text-[#10B981]" />,
-        title: 'Transfer Complete', 
+        title: '✅ Transfer Complete', 
         message: `$${(latestTransfer.amount || 0).toFixed(2)} was successfully moved.`,
         time: latestTransfer.date?.split(',')[0] || "Recent",
         action: () => { setIsNotificationsOpen(false); changeTab("activity"); }
@@ -189,8 +203,8 @@ export const useBriefingEngine = ({
         // Ironclad local fallback if network is completely severed
         setAiBriefing({
           insightType: "BUDGET INSIGHT",
-          title: "Vault Secure",
-          body: "Your financial ledger is currently secure and balanced. Review your upcoming bills for the week to ensure zero coverage gaps. Maintain your defensive posture until the next cycle drops."
+          title: "📋 Stay on Track",
+          body: "Review your upcoming bills for the week to ensure your ledger remains perfectly balanced."
         });
       } finally {
         setIsFetchingBriefing(false);

@@ -37,6 +37,7 @@ export default async function handler(req, res) {
 
     today.setHours(0, 0, 0, 0);
     const todayStr = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const currentDateNumber = today.getDate(); // 1 through 31
     
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -48,6 +49,7 @@ export default async function handler(req, res) {
       const userName = userData.firstName || userData.name || 'Founder';
       
       const isEntrepreneurMode = userData.isEntrepreneurMode || false;
+      const hasSmartCredit = userData.hasSmartCredit || false;
 
       // If they haven't enabled push notifications, skip them
       if (!fcmToken) continue;
@@ -87,7 +89,7 @@ export default async function handler(req, res) {
       const safeTransactions = txSnapshot.docs.map(d => d.data());
 
 
-      // === 2. TRIGGER SWEEP A: OVERDUE & DUE NOW BILLS ===
+      // === 2. TRIGGER SWEEP A: OVERDUE & DUE NOW BILLS (#1) ===
       let hasUrgentBill = false;
       let urgentBillName = "A bill";
       
@@ -109,13 +111,13 @@ export default async function handler(req, res) {
           token: fcmToken,
           notification: {
             title: `🚨 Action Required`,
-            body: `${urgentBillName} requires immediate attention. Open your vault to review your ledger.`,
+            body: `${urgentBillName} requires immediate attention. Tap to review the details.`,
           },
           data: { route: "bills" }
         });
       }
 
-      // === 3. TRIGGER SWEEP B: 1-DAY PAYDAY REMINDER ===
+      // === 3. TRIGGER SWEEP B: 1-DAY PAYDAY REMINDER (#2) ===
       let isPaydayTomorrow = false;
       if (paydayConfig && !isEntrepreneurMode) {
         ["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].forEach(pdId => {
@@ -134,9 +136,31 @@ export default async function handler(req, res) {
           token: fcmToken,
           notification: {
             title: `💰 Payday Eve`,
-            body: `Your liquidity injection arrives tomorrow. Prepare your capital deployment strategy.`,
+            body: `Your projected income arrives tomorrow. Tap to plan your next moves.`,
           },
           data: { route: "home" }
+        });
+      }
+
+      // === 3.5 TRIGGER SWEEP B.5: SMART CREDIT PROMO WITH GUARDRAILS (#6) ===
+      // Guardrail 1: Must be 1st or 15th of the month
+      const isPromoDay = currentDateNumber === 1 || currentDateNumber === 15;
+      
+      // Guardrail 3: Safe spending / cash reserve check (liquid cash minus unpaid bills >= $100)
+      const liquidCash = accounts.filter(a => !a.isGoal && (a.type === "Checking" || a.type === "Cash")).reduce((sum, acc) => sum + (acc.balance || 0), 0);
+      const upcomingBillsBurn = rawBills.reduce((sum, b) => sum + (b.amount || 0), 0);
+      const safeCash = liquidCash - upcomingBillsBurn;
+      const isCashHealthy = safeCash >= 100;
+
+      // Apply all 3 Guardrails: Promo Day + No Active Smart Credit + No Urgent Bills + Healthy Cash + Not Birthday
+      if (isPromoDay && !hasSmartCredit && !hasUrgentBill && isCashHealthy && !isBirthdayToday) {
+        pushPayloads.push({
+          token: fcmToken,
+          notification: {
+            title: `🛡️ 7 Day Pass Unlocked!`,
+            body: `Control your future credit score. Add an average of up to +34pts to your score in as little as 30 days.`,
+          },
+          data: { route: "smart-credit" }
         });
       }
 
@@ -154,7 +178,7 @@ TIMING STRATEGY DIRECTIVE:
 You must strictly output a valid, completely minified JSON object matching this exact schema with ZERO spaces, ZERO newlines, and ZERO markdown formatting:
 {"insightType":"BUDGET INSIGHT | SUBSCRIPTION ALERT","title":"Short unique hyper-specific header","body":"Actionable strategic sentence under 20 words addressing ${userName} directly, weaving in any metric points naturally."}
 CRITICAL DIRECTIVE: If the provided ledger arrays are completely empty, DO NOT explain that they are empty. Instantly return this exact default fallback JSON without any deviation: 
-{"insightType":"BUDGET INSIGHT","title":"Vault Initialized","body":"Your financial ledger is secure and standing by for your first transaction."}`;
+{"insightType":"BUDGET INSIGHT","title":"👋 Welcome to Ledger Planner!","body":"Your financial ledger is secure and standing by for you to add your first account. Tap to get started."}`;
 
       const promptText = `Analyze this live financial vault state data to populate your required structured schema keys:
 Accounts: ${JSON.stringify(accounts)}
@@ -194,15 +218,29 @@ Is Entrepreneur Mode: ${isEntrepreneurMode ? 'YES' : 'NO'}`;
         console.error(`AI Generation Failed for user ${userDoc.id}:`, aiError);
       }
 
-      // === 5. THE IRONCLAD CEO FALLBACK ===
+      // === 5. THE IRONCLAD CEO FALLBACK (#3, #4, #5) ===
       if (!parsedBriefing || !parsedBriefing.title) {
-        parsedBriefing = {
-          insightType: "BUDGET INSIGHT",
-          title: isBirthdayToday ? "Happy Birthday!" : "Stay on Track",
-          body: isBirthdayToday 
-            ? `Happy Birthday, ${userName}! Celebrate your special day knowing your wealth engine is secured.`
-            : "Review your upcoming bills for the week to ensure your ledger remains perfectly balanced."
-        };
+        const isEmptyAccount = accounts.length === 0 && rawBills.length === 0;
+
+        if (isBirthdayToday) {
+          parsedBriefing = {
+            insightType: "BUDGET INSIGHT",
+            title: "🎉 Happy Birthday!",
+            body: `Happy Birthday, ${userName}! Have fun celebrating your special day.`
+          };
+        } else if (isEmptyAccount) {
+          parsedBriefing = {
+            insightType: "BUDGET INSIGHT",
+            title: "👋 Welcome to Ledger Planner!",
+            body: "Your financial ledger is secure and standing by for you to add your first account. Tap to get started."
+          };
+        } else {
+          parsedBriefing = {
+            insightType: "BUDGET INSIGHT",
+            title: "📋 Stay on Track",
+            body: "Review your upcoming bills for the week to ensure your ledger remains perfectly balanced."
+          };
+        }
       }
 
       // === 6. PERSIST THE PAYLOAD TO FIRESTORE ===
@@ -211,19 +249,21 @@ Is Entrepreneur Mode: ${isEntrepreneurMode ? 'YES' : 'NO'}`;
         lastBriefingTime: admin.firestore.FieldValue.serverTimestamp()
       });
 
-      // === 7. TRIGGER SWEEP C: DYNAMIC AI BRIEFING NOTIFICATION ===
-      const briefingPrefix = isAM ? "🤖 AI MORNING BRIEFING" : "🤖 AI EVENING RECAP";
-      pushPayloads.push({
-        token: fcmToken,
-        notification: {
-          title: `${briefingPrefix} • ${parsedBriefing.title}`,
-          body: parsedBriefing.body,
-        },
-        data: {
-          route: "notifications", // Direct deep-linking past home past menu into command center
-          triggerBirthdayConfetti: isBirthdayToday ? "true" : "false" // Frontend listener trigger
-        }
-      });
+      // === 7. TRIGGER SWEEP C: DYNAMIC AI BRIEFING NOTIFICATION (AM ONLY) ===
+      // EVENING RECAP PUSH SUPPRESSED BY DIRECTIVE
+      if (isAM) {
+        pushPayloads.push({
+          token: fcmToken,
+          notification: {
+            title: `🤖 AI MORNING BRIEFING • ${parsedBriefing.title}`,
+            body: parsedBriefing.body,
+          },
+          data: {
+            route: "notifications", // Direct deep-linking past home past menu into command center
+            triggerBirthdayConfetti: isBirthdayToday ? "true" : "false" // Frontend listener trigger
+          }
+        });
+      }
 
       // === 8. DISPATCH ALL QUEUED NOTIFICATIONS ===
       for (const payload of pushPayloads) {

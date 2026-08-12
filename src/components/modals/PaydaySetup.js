@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { X, Calendar as CalendarIcon } from 'lucide-react';
+import { X, Calendar as CalendarIcon } from 'lucide-react'; 
 import { useLedger } from '../../context/LedgerContext';
 
 export default function PaydaySetup({

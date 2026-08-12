@@ -34,6 +34,7 @@ import AccountBuilder from "./components/modals/AccountBuilder";
 import PaydaySetup from "./components/modals/PaydaySetup";
 import EditEntryDrawer from "./components/modals/EditEntryDrawer";
 import PaymentModal from "./components/modals/PaymentModal";
+import OnboardingTour from "./components/OnboardingTour";
 
 function LedgerApp() {
   // 1. INITIATE THE BACKGROUND DATA PUMP
@@ -1042,6 +1043,7 @@ function LedgerApp() {
         </div>
 
         {/* === THE CORE MODAL INJECTIONS === */}
+        <OnboardingTour />
         {isQabOpen && <QuickAddModal onClose={() => setIsQabOpen(false)} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} />}
         
         {isNotificationsOpen && <CommandCenter 

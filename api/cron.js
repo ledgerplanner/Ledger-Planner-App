@@ -1,6 +1,6 @@
 import admin from 'firebase-admin';
 
-// Securely initialize Firebase Admin using Vercel Environment Variables
+// Securely initialize Firebase Admin using Vercel Environment Variables.
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert({

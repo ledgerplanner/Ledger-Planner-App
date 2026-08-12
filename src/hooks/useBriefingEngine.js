@@ -19,7 +19,7 @@ export const useBriefingEngine = ({
   const [aiBriefing, setAiBriefing] = useState(null);
   const [isFetchingBriefing, setIsFetchingBriefing] = useState(false);
 
-  // === DYNAMIC ALERTS GENERATOR ===
+  // === DYNAMIC ALERTS GENERATOR. ===
   const generateAlerts = () => {
     const currentAlerts = [];
     const today = new Date(); 

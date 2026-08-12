@@ -91,7 +91,7 @@ export default function PaydaySetup({
         </div>
         <div className="p-6 border-t flex gap-3">
           <button onClick={clearPaydayConfig} className={`flex-1 py-4 rounded-2xl font-black text-xs uppercase tracking-widest border transition-all active:scale-95 ${isDarkMode ? "bg-slate-800 border-slate-700 text-white hover:bg-slate-700" : "bg-white border-slate-200 text-slate-900 hover:bg-slate-50"}`}>Clear All</button>
-          <button onClick={savePaydayConfig} className="flex-1 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-md transition-all active:scale-95 flex items-center justify-center gap-2" style={{ backgroundColor: signatureColor }}>Save Engine</button>
+          <button data-tour="payday-btn" onClick={savePaydayConfig} className="flex-1 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-md transition-all active:scale-95 flex items-center justify-center gap-2" style={{ backgroundColor: signatureColor }}>Save Engine</button>
         </div>
       </div>
     </div>

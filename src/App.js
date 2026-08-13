@@ -927,7 +927,7 @@ function LedgerApp() {
             ))}
           </div>
           <div className="mt-auto pt-4 shrink-0">
-            <button onClick={handleOpenQab} className="w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-white font-black uppercase tracking-widest text-xs transition-transform active:scale-95 hover:-translate-y-1" style={{ backgroundColor: signatureColor }}><Plus size={18} /> Quick Add</button>
+            <button data-tour="qab-trigger-btn" onClick={handleOpenQab} className="w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-white font-black uppercase tracking-widest text-xs transition-transform active:scale-95 hover:-translate-y-1" style={{ backgroundColor: signatureColor }}><Plus size={18} /> Quick Add</button>
           </div>
         </div>
 
@@ -1034,7 +1034,7 @@ function LedgerApp() {
           </div>
 
           <div className={`fixed lg:hidden ${isDemoMode ? "bottom-[200px]" : "bottom-28"} right-6 z-50`}>
-            <button onClick={() => { triggerHaptic(20); handleOpenQab(); }} className={`w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg border-4 ${isDarkMode ? "border-[#0F172A]" : "border-white"}`} style={{ backgroundColor: signatureColor }}><Plus size={28} /></button>
+            <button data-tour="qab-trigger-btn" onClick={() => { triggerHaptic(20); handleOpenQab(); }} className={`w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg border-4 ${isDarkMode ? "border-[#0F172A]" : "border-white"}`} style={{ backgroundColor: signatureColor }}><Plus size={28} /></button>
           </div>
 
           {/* RESPONSIVE MOBILE NAVIGATION DOCK */}
@@ -1049,7 +1049,7 @@ function LedgerApp() {
         </div>
 
         {/* === THE CORE MODAL INJECTIONS === */}
-        <OnboardingTour />
+        <OnboardingTour setActiveTab={changeTab} setIsQabOpen={setIsQabOpen} />
         {isQabOpen && <QuickAddModal onClose={() => setIsQabOpen(false)} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} />}
         
         {isNotificationsOpen && <CommandCenter 

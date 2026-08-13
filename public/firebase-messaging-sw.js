@@ -1,15 +1,14 @@
 importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
 
-// === FIREBASE CONFIGURATION ===
-// Replace these placeholders with your Firebase project credentials if needed
+// === OFFICIAL FIREBASE CONFIGURATION ===
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyDRtXAjd-2KpZOlQL-bWrGoz6S3HuK4jDI",
+  authDomain: "ledger-planner-38ab7.firebaseapp.com",
+  projectId: "ledger-planner-38ab7",
+  storageBucket: "ledger-planner-38ab7.firebasestorage.app",
+  messagingSenderId: "624261529539",
+  appId: "1:624261529539:web:80aec4cca266a3a6008776"
 };
 
 // Initialize Firebase inside the background service worker
@@ -19,6 +18,8 @@ const messaging = firebase.messaging();
 
 // === BACKGROUND MESSAGE RECEIVER ===
 messaging.onBackgroundMessage((payload) => {
+  console.log('[firebase-messaging-sw.js] Received background message ', payload);
+
   const notificationTitle = payload.notification?.title || payload.data?.title || "Ledger Planner Update";
   const notificationOptions = {
     body: payload.notification?.body || payload.data?.body || "You have a new alert in your financial vault.",

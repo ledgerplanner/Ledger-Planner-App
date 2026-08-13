@@ -276,8 +276,8 @@ export default function Todo({
         
         <div ref={addTaskRef} data-tour="todo-input" className={`p-4 rounded-[2rem] border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
           <div className="flex gap-2 mb-3">
-            <button onClick={() => setNewTodoType("task")} className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors ${newTodoType === "task" ? "bg-[#1877F2] text-white shadow-md shadow-blue-500/20" : isDarkMode ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-400"}`}>Action</button>
-            <button onClick={() => setNewTodoType("shopping")} className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors ${newTodoType === "shopping" ? "bg-[#10B981] text-white shadow-md shadow-emerald-500/20" : isDarkMode ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-400"}`}>Shopping</button>
+            <button onClick={() => setNewTodoType("task")} className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors ${newTodoType === "task" ? "bg-[#1877F2] text-white shadow-md shadow-blue-500/20" : isDarkMode ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-400"}`}>To-Do</button>
+            <button onClick={() => setNewTodoType("shopping")} className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors ${newTodoType === "shopping" ? "bg-[#10B981] text-white shadow-md shadow-emerald-500/20" : isDarkMode ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-400"}`}>To-Buy</button>
           </div>
           <form onSubmit={executeAddTodo} className="flex items-center gap-2 relative">
             
@@ -309,7 +309,7 @@ export default function Todo({
 
             <input 
               type="text" 
-              placeholder={newTodoType === "task" ? "New Task?" : "Future Purchase?"}
+              placeholder={newTodoType === "task" ? "New To-Do?" : "New To-Buy?"}
               value={newTodoText} 
               onChange={(e) => setNewTodoText(e.target.value)}
               className={`flex-1 min-w-0 py-3 px-4 rounded-xl text-sm font-bold bg-transparent border outline-none transition-colors focus:border-[#1877F2] ${isDarkMode ? "text-white border-slate-700" : "text-slate-900 border-slate-200"}`}
@@ -354,7 +354,7 @@ export default function Todo({
           <section className={`p-4 rounded-[2rem] border shadow-sm animate-fade-in transition-colors ${isDarkMode ? "bg-blue-900/10 border-blue-900/30" : "bg-blue-50/60 border-blue-100"}`}>
             <div className="flex items-center gap-2 mb-4 px-2">
               <Zap size={16} className="text-[#1877F2]" />
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-[#1877F2]">Pending Actions</h3>
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-[#1877F2]">{pendingActions.length} Things To-Do</h3>
             </div>
             <div className="space-y-4 max-h-80 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
               {pendingActions.map(renderTaskCard)}
@@ -370,7 +370,7 @@ export default function Todo({
           <section className={`p-4 rounded-[2rem] border shadow-sm animate-fade-in transition-colors ${isDarkMode ? "bg-emerald-900/10 border-emerald-900/30" : "bg-emerald-50/60 border-emerald-100"}`}>
             <div className="flex items-center gap-2 mb-4 px-2">
               <ShoppingBag size={16} className="text-[#10B981]" />
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-[#10B981]">Pending Shopping</h3>
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-[#10B981]">{pendingShopping.length} Items To-Buy</h3>
             </div>
             <div className="space-y-4 max-h-80 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
               {pendingShopping.map(renderTaskCard)}
@@ -387,7 +387,7 @@ export default function Todo({
             <div className="flex items-center justify-between mb-4 px-2">
               <div className="flex items-center gap-2">
                 <CheckCircle2 size={16} className="text-[#F97316]" />
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-[#F97316]">Completed Tasks</h3>
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-[#F97316]">{completedTasks.length} Completed Task{completedTasks.length !== 1 ? 's' : ''}</h3>
               </div>
               <button 
                 onClick={clearCompletedTodos}
@@ -453,8 +453,8 @@ export default function Todo({
               )}
 
               <div className="flex gap-2">
-               <button onClick={() => setEditTaskData({...editTaskData, type: "task"})} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors ${editTaskData.type === "task" ? "bg-[#1877F2] text-white shadow-md shadow-blue-500/20" : isDarkMode ? "bg-[#0F172A] text-slate-400 border border-slate-700" : "bg-white text-slate-400 border border-slate-200"}`}>Action</button>
-               <button onClick={() => setEditTaskData({...editTaskData, type: "shopping"})} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors ${editTaskData.type === "shopping" ? "bg-[#10B981] text-white shadow-md shadow-emerald-500/20" : isDarkMode ? "bg-[#0F172A] text-slate-400 border border-slate-700" : "bg-white text-slate-400 border border-slate-200"}`}>Shopping</button>
+               <button onClick={() => setEditTaskData({...editTaskData, type: "task"})} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors ${editTaskData.type === "task" ? "bg-[#1877F2] text-white shadow-md shadow-blue-500/20" : isDarkMode ? "bg-[#0F172A] text-slate-400 border border-slate-700" : "bg-white text-slate-400 border border-slate-200"}`}>To-Do</button>
+               <button onClick={() => setEditTaskData({...editTaskData, type: "shopping"})} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors ${editTaskData.type === "shopping" ? "bg-[#10B981] text-white shadow-md shadow-emerald-500/20" : isDarkMode ? "bg-[#0F172A] text-slate-400 border border-slate-700" : "bg-white text-slate-400 border border-slate-200"}`}>To-Buy</button>
              </div>
 
               <div className={`rounded-2xl p-4 border ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>

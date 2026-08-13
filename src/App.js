@@ -181,9 +181,14 @@ function LedgerApp() {
       if (permission === "granted") {
         setIsPushEnabled(true);
         if (messaging && user && !isDemoMode) {
-          const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+          // SURGICAL INJECTION: Explicitly grabbing the registered background worker to hand off to Firebase
+          const registration = await navigator.serviceWorker.ready;
+          const token = await getToken(messaging, { 
+            vapidKey: VAPID_KEY,
+            serviceWorkerRegistration: registration 
+          });
+          
           if (token) {
-            // SURGICAL INJECTION: Changed pushToken to fcmToken to match backend requirements
             await setDoc(doc(db, "users", user.uid), { fcmToken: token, fcmTokenUpdatedAt: serverTimestamp() }, { merge: true });
           }
         }

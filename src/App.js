@@ -85,6 +85,7 @@ function LedgerApp() {
 
   // Modal Visibility Toggles
   const [isQabOpen, setIsQabOpen] = useState(false);
+  const [qabDrawerTab, setQabDrawerTab] = useState("bills");
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isTransferOpen, setIsTransferOpen] = useState(false);
@@ -181,7 +182,6 @@ function LedgerApp() {
       if (permission === "granted") {
         setIsPushEnabled(true);
         if (messaging && user && !isDemoMode) {
-          // SURGICAL INJECTION: Explicitly grabbing the registered background worker to hand off to Firebase
           const registration = await navigator.serviceWorker.ready;
           const token = await getToken(messaging, { 
             vapidKey: VAPID_KEY,
@@ -848,7 +848,7 @@ function LedgerApp() {
             <button onClick={() => { setIsDarkMode(!isDarkMode); setManualThemeOverride(true); triggerHaptic(20); }} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
               {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
             </button>
-            <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-100 text-slate-400"}`} style={{ color: isNotificationsOpen ? signatureColor : undefined }}>
+            <button data-tour="notification-bell" onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-100 text-slate-400"}`} style={{ color: isNotificationsOpen ? signatureColor : undefined }}>
               <Bell size={18} />
               {(constellationBadgeRoute || (!isPushEnabled && !isDemoMode)) && (
                 <span className="absolute top-0 right-0 w-2.5 h-2.5 rounded-full border-[1.5px] animate-pulse bg-red-500 border-red-500"></span>
@@ -862,7 +862,7 @@ function LedgerApp() {
           </div>
 
           <div className="flex items-center gap-2 relative z-30">
-            <button onClick={() => setIsSettingsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-100 text-slate-400"}`} style={{ color: isSettingsOpen ? signatureColor : undefined }}>
+            <button data-tour="settings-btn" onClick={() => setIsSettingsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-100 text-slate-400"}`} style={{ color: isSettingsOpen ? signatureColor : undefined }}>
               <SettingsIcon size={18} />
             </button>
             <button onClick={handleLogout} className={`h-10 px-3.5 rounded-full flex items-center justify-center gap-2 border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-red-400 hover:bg-red-900/30" : "bg-white border-slate-100 text-red-500 hover:bg-red-50"}`}>
@@ -1049,8 +1049,8 @@ function LedgerApp() {
         </div>
 
         {/* === THE CORE MODAL INJECTIONS === */}
-        <OnboardingTour setActiveTab={changeTab} setIsQabOpen={setIsQabOpen} />
-        {isQabOpen && <QuickAddModal onClose={() => setIsQabOpen(false)} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} />}
+        <OnboardingTour setActiveTab={changeTab} setIsQabOpen={setIsQabOpen} setQabDrawerTab={setQabDrawerTab} />
+        {isQabOpen && <QuickAddModal onClose={() => setIsQabOpen(false)} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} forcedTab={qabDrawerTab} />}
         
         {isNotificationsOpen && <CommandCenter 
           setIsNotificationsOpen={setIsNotificationsOpen} 

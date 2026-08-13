@@ -38,14 +38,26 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
 
   const dateInputRef = useRef(null);
 
-  // EXPANDED UTILITY EMOJI MASTER ARRAY
+  // SUPERCHARGED UTILITY EMOJI MASTER ARRAY (89 EMOJIS)
   const categoryEmojis = [
-    "🎯", "💰", "🏦", "📈", "🐖", "💎", "💳", "🚀",
-    "🏠", "🔑", "⚡", "💧", "📶", "🔌", "🗑️", "🛡️",
-    "🛒", "🍕", "☕", "🍔", "🍷",
-    "🚗", "⛽", "🛠️", "🚕", "🅿️", "✈️", "⛵",
-    "💊", "🏋️", "💇", "🛍️", "📦", "🍿", "🎮", "🎸",
-    "👶", "🐶", "🐾", "🎓", "💍", "🎁", "🧳", "🏖️"
+    // Finance & Banking
+    "💲", "💵", "💰", "🏦", "🏧", "💸", "💳", "💎", "📈", "🐖", "🧾", "🪙", "📊",
+    // Stores & Shopping
+    "🏪", "🛒", "🛍️", "📦", "🏷️", "🏬", "🎁",
+    // Official & Legal
+    "⚖️", "🛡️", "🏛️", "🏢", "🔒", "🔐", "📄", "📮", "💼", "📜",
+    // Housing, Utilities & Household
+    "🏠", "🌳", "🌲", "🔑", "⚡", "💧", "📶", "🔌", "🗑️", "🛋️", "🛏️", "🧹",
+    // Auto & Transport
+    "🚗", "⛽", "🛠️", "🚕", "🅿️", "✈️", "⛵", "🚌", "🚲", "🧳",
+    // Food & Dining
+    "🍕", "☕", "🍔", "🍷", "🍺", "🌮", "🍦", "🍩",
+    // Health & Self-Care
+    "💊", "🏋️", "💇", "🩺", "🧘", "🧼",
+    // Tech & Entertainment
+    "🍿", "🎮", "🎸", "📱", "💻", "🎧", "📺", "🎟️", "🎵",
+    // Life & Living
+    "👶", "🐶", "🐾", "🎓", "💍", "🏖️", "🎯", "🚀"
   ];
 
   const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;

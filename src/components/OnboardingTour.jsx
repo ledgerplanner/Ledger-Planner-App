@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { ChevronRight, ChevronLeft, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useLedger } from '../context/LedgerContext';
@@ -30,6 +30,7 @@ const TOUR_STEPS = [
     target: 'qab-bill',
     tab: 'home',
     openQab: true,
+    qabTab: 'bills',
     title: 'Cash Defense (Bills)',
     text: "Plug in your recurring obligations—rent, utilities, or credit cards. We'll track due dates so you never get hit with late fees.",
   },
@@ -38,6 +39,7 @@ const TOUR_STEPS = [
     target: 'qab-expense',
     tab: 'home',
     openQab: true,
+    qabTab: 'transactions',
     title: 'Variable Spend (Expenses)',
     text: "Log daily variable purchases like groceries or dining out on the fly to keep your liquid buffer accurate.",
   },
@@ -46,12 +48,34 @@ const TOUR_STEPS = [
     target: 'qab-income',
     tab: 'home',
     openQab: true,
+    qabTab: 'income',
     title: 'Capital Inflow (Income)',
     text: "Got side hustle cash, client invoices, or a bonus? Log extra incoming funds here to instantly expand your runway.",
+  },
+  {
+    id: '7',
+    target: 'todo-input',
+    tab: 'todo',
+    title: 'Action Command (To-Do)',
+    text: "Keep your operational focus razor-sharp. Organize financial errands, pending calls, or reminders right inside your vault.",
+  },
+  {
+    id: '8',
+    target: 'notification-bell',
+    tab: 'home',
+    title: 'Command Center',
+    text: "Your central intelligence hub. Tap the bell anytime for critical system briefings, overdue alerts, and live AI guidance.",
+  },
+  {
+    id: '9',
+    target: 'settings-btn',
+    tab: 'home',
+    title: 'Settings Vault',
+    text: "Personalize your system. Customize theme palettes, switch currency presets, manage subscription status, or export master ledgers.",
   }
 ];
 
-export default function OnboardingTour({ setActiveTab, setIsQabOpen }) {
+export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawerTab }) {
   const { 
     isTourActive, 
     currentTourStep, 
@@ -63,12 +87,12 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen }) {
   } = useLedger();
 
   const [targetRect, setTargetRect] = useState(null);
+  const lastScrolledStep = useRef(null);
 
-  // String-safe matching against context step state
   const activeStepIndex = TOUR_STEPS.findIndex(step => String(step.id) === String(currentTourStep));
   const activeStep = TOUR_STEPS[activeStepIndex];
 
-  // Route tabs and modals automatically when steps change
+  // Route tabs, modals, and internal QAB tabs automatically
   useEffect(() => {
     if (!isTourActive || !activeStep) return;
 
@@ -79,13 +103,16 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen }) {
     if (setIsQabOpen) {
       if (activeStep.openQab) {
         setIsQabOpen(true);
-      } else if (activeStep.id === '3_QAB_TRIGGER') {
+        if (activeStep.qabTab && setQabDrawerTab) {
+          setQabDrawerTab(activeStep.qabTab);
+        }
+      } else {
         setIsQabOpen(false);
       }
     }
-  }, [isTourActive, activeStep, setActiveTab, setIsQabOpen]);
+  }, [isTourActive, activeStep, setActiveTab, setIsQabOpen, setQabDrawerTab]);
 
-  // Locate the target element and scroll it into view
+  // Precise Target Calculation without infinite scrolling loops
   const updateSpotlight = useCallback(() => {
     if (!activeStep) return;
 
@@ -93,9 +120,12 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen }) {
     if (element) {
       const rect = element.getBoundingClientRect();
       
-      // Auto-scroll if target is off-screen
-      if (rect.top < 0 || rect.bottom > window.innerHeight) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Smooth scroll ONLY ONCE per step transition to eliminate bouncing
+      if (lastScrolledStep.current !== activeStep.id) {
+        if (rect.top < 0 || rect.bottom > window.innerHeight) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        lastScrolledStep.current = activeStep.id;
       }
 
       setTargetRect({
@@ -115,7 +145,7 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen }) {
       window.addEventListener('resize', updateSpotlight);
       window.addEventListener('scroll', updateSpotlight, true);
 
-      const interval = setInterval(updateSpotlight, 200);
+      const interval = setInterval(updateSpotlight, 150);
       return () => {
         window.removeEventListener('resize', updateSpotlight);
         window.removeEventListener('scroll', updateSpotlight, true);
@@ -151,27 +181,58 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen }) {
 
   if (!isTourActive || !activeStep) return null;
 
-  // Smart Flip Logic: Calculate if floating card should go above or below the target
   const isTargetInBottomHalf = targetRect && targetRect.top > window.innerHeight / 2;
+
+  // Dynamic Highlight Ring Colors matching QAB Tabs
+  let highlightBorderColor = signatureColor;
+  if (activeStep.qabTab === 'transactions') highlightBorderColor = '#F97316'; // Orange
+  if (activeStep.qabTab === 'income') highlightBorderColor = '#10B981'; // Green
 
   return (
     <div className="fixed inset-0 z-[9999] pointer-events-none">
       
-      {/* Blurred Backdrop & Cut-out Spotlight */}
-      {targetRect ? (
+      {/* SVG Mask: Crisp Unblurred Cut-out Window over Blurred Background */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none">
+        <defs>
+          <mask id="tour-spotlight-mask">
+            <rect x="0" y="0" width="100%" height="100%" fill="white" />
+            {targetRect && (
+              <rect
+                x={targetRect.left - 6}
+                y={targetRect.top - 6}
+                width={targetRect.width + 12}
+                height={targetRect.height + 12}
+                rx="16"
+                ry="16"
+                fill="black"
+              />
+            )}
+          </mask>
+        </defs>
+        <rect
+          x="0"
+          y="0"
+          width="100%"
+          height="100%"
+          fill="rgba(15, 23, 42, 0.75)"
+          mask="url(#tour-spotlight-mask)"
+          className="backdrop-blur-md pointer-events-auto"
+        />
+      </svg>
+
+      {/* Glowing Cut-out Border Frame */}
+      {targetRect && (
         <div 
-          className="absolute rounded-2xl transition-all duration-300 ease-out backdrop-blur-sm"
+          className="absolute rounded-2xl transition-all duration-300 ease-out pointer-events-none"
           style={{
-            top: targetRect.top - 8,
-            left: targetRect.left - 8,
-            width: targetRect.width + 16,
-            height: targetRect.height + 16,
-            boxShadow: '0 0 0 9999px rgba(15, 23, 42, 0.75)',
-            border: `2px solid ${signatureColor}`,
+            top: targetRect.top - 6,
+            left: targetRect.left - 6,
+            width: targetRect.width + 12,
+            height: targetRect.height + 12,
+            border: `3px solid ${highlightBorderColor}`,
+            boxShadow: `0 0 20px ${highlightBorderColor}88`,
           }}
         />
-      ) : (
-        <div className="absolute inset-0 bg-slate-900/75 backdrop-blur-sm transition-opacity duration-300 pointer-events-auto" />
       )}
 
       {/* Floating Intelligence Card */}
@@ -225,7 +286,7 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen }) {
                     : 'w-1.5 opacity-30'
                 }`}
                 style={{
-                  backgroundColor: i === activeStepIndex ? signatureColor : isDarkMode ? '#FFFFFF' : '#64748B'
+                  backgroundColor: i === activeStepIndex ? highlightBorderColor : isDarkMode ? '#FFFFFF' : '#64748B'
                 }}
               />
             ))}
@@ -246,7 +307,7 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen }) {
             <button 
               onClick={handleNext}
               className="flex items-center gap-1.5 px-4 py-2 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all active:scale-95 shadow-md"
-              style={{ backgroundColor: signatureColor }}
+              style={{ backgroundColor: highlightBorderColor }}
             >
               {activeStepIndex === TOUR_STEPS.length - 1 ? 'Finish' : 'Next'}
               {activeStepIndex !== TOUR_STEPS.length - 1 && <ChevronRight size={14} />}

@@ -17,18 +17,9 @@ firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
 // === BACKGROUND MESSAGE RECEIVER ===
+// Native FCM handles notification rendering to avoid duplicate alerts.
 messaging.onBackgroundMessage((payload) => {
-  console.log('[firebase-messaging-sw.js] Received background message ', payload);
-
-  const notificationTitle = payload.notification?.title || payload.data?.title || "Ledger Planner Update";
-  const notificationOptions = {
-    body: payload.notification?.body || payload.data?.body || "You have a new alert in your financial vault.",
-    icon: payload.notification?.icon || payload.data?.icon || "/login-logo.png",
-    badge: "/login-logo.png",
-    data: payload.data || {}
-  };
-
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  console.log('[firebase-messaging-sw.js] Background message received:', payload);
 });
 
 // === NOTIFICATION CLICK & NAVIGATION RELAY ===

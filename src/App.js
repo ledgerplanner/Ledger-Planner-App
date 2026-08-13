@@ -183,7 +183,8 @@ function LedgerApp() {
         if (messaging && user && !isDemoMode) {
           const token = await getToken(messaging, { vapidKey: VAPID_KEY });
           if (token) {
-            await setDoc(doc(db, "users", user.uid), { pushToken: token, pushTokenUpdatedAt: serverTimestamp() }, { merge: true });
+            // SURGICAL INJECTION: Changed pushToken to fcmToken to match backend requirements
+            await setDoc(doc(db, "users", user.uid), { fcmToken: token, fcmTokenUpdatedAt: serverTimestamp() }, { merge: true });
           }
         }
         openGlobalAction("Notifications On", "The structural system channel bridges are live.", "Close", false, () => closeGlobalAction(), true);

@@ -145,8 +145,8 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
       window.addEventListener('resize', updateSpotlight);
       window.addEventListener('scroll', updateSpotlight, true);
 
-      // Rapid polling sequence to catch dynamic DOM mounts
-      const interval = setInterval(updateSpotlight, 100);
+      // Micro-polling sequence (50ms) to snap target immediately on mount
+      const interval = setInterval(updateSpotlight, 50);
       return () => {
         window.removeEventListener('resize', updateSpotlight);
         window.removeEventListener('scroll', updateSpotlight, true);
@@ -189,25 +189,29 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
   if (activeStep.qabTab === 'transactions') highlightBorderColor = '#F97316'; // Orange
   if (activeStep.qabTab === 'income') highlightBorderColor = '#10B981'; // Green
 
+  // Fallback Cutout Coordinates if target isn't painted yet
+  const cutoutLeft = targetRect ? targetRect.left - 6 : (window.innerWidth / 2) - 150;
+  const cutoutTop = targetRect ? targetRect.top - 6 : (window.innerHeight / 2) - 50;
+  const cutoutWidth = targetRect ? targetRect.width + 12 : 300;
+  const cutoutHeight = targetRect ? targetRect.height + 12 : 100;
+
   return (
     <div className="fixed inset-0 z-[9999] pointer-events-none">
       
-      {/* SVG Mask: Unblurred Cut-out Window over Blurred Background */}
+      {/* SVG Mask with Guaranteed Cutout Window */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none">
         <defs>
           <mask id="tour-spotlight-mask">
             <rect x="0" y="0" width="100%" height="100%" fill="white" />
-            {targetRect && (
-              <rect
-                x={targetRect.left - 6}
-                y={targetRect.top - 6}
-                width={targetRect.width + 12}
-                height={targetRect.height + 12}
-                rx="16"
-                ry="16"
-                fill="black"
-              />
-            )}
+            <rect
+              x={cutoutLeft}
+              y={cutoutTop}
+              width={cutoutWidth}
+              height={cutoutHeight}
+              rx="16"
+              ry="16"
+              fill="black"
+            />
           </mask>
         </defs>
         <rect
@@ -222,21 +226,19 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
       </svg>
 
       {/* Glowing Cut-out Border Frame */}
-      {targetRect && (
-        <div 
-          className="absolute rounded-2xl transition-all duration-300 ease-out pointer-events-none"
-          style={{
-            top: targetRect.top - 6,
-            left: targetRect.left - 6,
-            width: targetRect.width + 12,
-            height: targetRect.height + 12,
-            border: `3px solid ${highlightBorderColor}`,
-            boxShadow: `0 0 20px ${highlightBorderColor}88`,
-          }}
-        />
-      )}
+      <div 
+        className="absolute rounded-2xl transition-all duration-300 ease-out pointer-events-none"
+        style={{
+          top: cutoutTop,
+          left: cutoutLeft,
+          width: cutoutWidth,
+          height: cutoutHeight,
+          border: `3px solid ${highlightBorderColor}`,
+          boxShadow: `0 0 20px ${highlightBorderColor}88`,
+        }}
+      />
 
-      {/* Floating Intelligence Card - Center Fallback if Target Pending */}
+      {/* Floating Intelligence Card */}
       <div 
         className={`absolute pointer-events-auto transition-all duration-300 ease-out rounded-3xl p-6 shadow-2xl max-w-sm w-[90%] md:w-[360px] border ${
           isDarkMode ? "bg-[#1E293B] border-slate-700 text-white" : "bg-white border-slate-100 text-slate-900"

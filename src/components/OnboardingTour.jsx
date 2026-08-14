@@ -88,7 +88,7 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
 
   const [targetRect, setTargetRect] = useState(null);
   const [isTargetReady, setIsTargetReady] = useState(false);
-  const lastScrolledStep = useRef(null);
+  const hasScrolledForStep = useRef(null);
 
   const activeStepIndex = TOUR_STEPS.findIndex(step => String(step.id) === String(currentTourStep));
   const activeStep = TOUR_STEPS[activeStepIndex];
@@ -116,7 +116,7 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
     }
   }, [isTourActive, activeStep, setActiveTab, setIsQabOpen, setQabDrawerTab]);
 
-  // Target Element Spotter with Smooth Single-Scroll Logic
+  // Target Element Spotter with Single-Scroll Lock
   const updateSpotlight = useCallback(() => {
     if (!activeStep) return;
 
@@ -124,12 +124,10 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
     if (element) {
       const rect = element.getBoundingClientRect();
       
-      // Smooth scroll ONLY ONCE per step transition
-      if (lastScrolledStep.current !== activeStep.id) {
-        if (rect.top < 0 || rect.bottom > window.innerHeight) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-        lastScrolledStep.current = activeStep.id;
+      // Scroll exactly ONCE when entering a new step to eliminate jumping/bouncing
+      if (hasScrolledForStep.current !== activeStep.id) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        hasScrolledForStep.current = activeStep.id;
       }
 
       setTargetRect({
@@ -151,8 +149,7 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
       window.addEventListener('resize', updateSpotlight);
       window.addEventListener('scroll', updateSpotlight, true);
 
-      // Micro-polling sequence (50ms) to snap target immediately on mount
-      const interval = setInterval(updateSpotlight, 50);
+      const interval = setInterval(updateSpotlight, 100);
       return () => {
         window.removeEventListener('resize', updateSpotlight);
         window.removeEventListener('scroll', updateSpotlight, true);
@@ -198,7 +195,7 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
   return (
     <div className="fixed inset-0 z-[9999] pointer-events-none">
       
-      {/* SVG Mask with Failsafe Opacity (Only shows blur/darken when target element is found) */}
+      {/* SVG Mask with Smooth Fade-In */}
       <svg className={`absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-300 ${isTargetReady ? "opacity-100" : "opacity-0"}`}>
         <defs>
           <mask id="tour-spotlight-mask">
@@ -242,7 +239,7 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
         />
       )}
 
-      {/* Floating Intelligence Card (Always visible and interactive) */}
+      {/* Floating Intelligence Card */}
       <div 
         className={`absolute pointer-events-auto transition-all duration-300 ease-out rounded-3xl p-6 shadow-2xl max-w-sm w-[90%] md:w-[360px] border ${
           isDarkMode ? "bg-[#1E293B] border-slate-700 text-white" : "bg-white border-slate-100 text-slate-900"

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { 
   X, User, CreditCard, RefreshCw, AlertCircle, Trash2, LogOut, 
   ChevronRight, Sparkles, Globe, Palette, Shield, Check, HelpCircle, Briefcase,
-  Download, FileText, ChevronLeft, TrendingUp, Compass
+  Download, FileText, ChevronLeft, TrendingUp, Compass, PlayCircle
 } from "lucide-react";
 
 import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
@@ -160,7 +160,7 @@ export default function Settings({
             <div className="animate-fade-in space-y-2">
               
               {/* 1. ACCOUNT STATUS CARD (STANDALONE AT TOP) */}
-              <div className={`p-5 rounded-[2rem] border relative overflow-hidden bg-gradient-to-br transition-all duration-300 mb-2 ${
+              <div className={`p-5 rounded-[2rem] border relative overflow-hidden bg-gradient-to-br transition-all duration-300 mb-6 ${
                 isDarkMode 
                   ? "from-slate-900 via-slate-800 to-black border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.5)]" 
                   : "from-white via-slate-50 to-slate-100 border-slate-200 shadow-[0_12px_24px_rgba(0,0,0,0.08)]"
@@ -188,42 +188,18 @@ export default function Settings({
                 </div>
               </div>
 
-              {/* DIVIDER */}
-              <div className="py-2 my-2">
-                <div className={`border-t ${isDarkMode ? "border-slate-800" : "border-slate-300"}`}></div>
-              </div>
-
-              {/* 2. WELCOME TO LEDGER PLANNER CARD (WALKTHROUGH TRIGGER ABOVE PROFILE) */}
-              <div className={`p-5 rounded-[2rem] border relative overflow-hidden bg-gradient-to-br transition-all duration-300 mb-3 ${
-                isDarkMode 
-                  ? "from-slate-900 via-slate-800 to-black border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.5)]" 
-                  : "from-white via-slate-50 to-slate-100 border-slate-200 shadow-[0_12px_24px_rgba(0,0,0,0.08)]"
-              }`}>
-                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 blur-2xl rounded-full pointer-events-none"></div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className={`text-[9px] font-black uppercase tracking-widest block mb-0.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Welcome Tour, Tutorials</span>
-                    <p className={`text-base font-black ${isDarkMode ? "text-white" : "text-slate-900"}`}>Welcome to Ledger Planner!</p>
-                    <p className={`text-[10px] font-bold mt-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Interactive setup walkthrough</p>
-                  </div>
-                  <button 
-                    onClick={() => {
-                      setIsSettingsOpen(false);
-                      if (startTour) startTour();
-                    }}
-                    className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all active:scale-95 shadow-sm flex items-center gap-1.5 text-white`}
-                    style={{ backgroundColor: signatureColor }}
-                  >
-                    <Compass size={14} strokeWidth={2.5} /> Start
-                  </button>
-                </div>
-              </div>
-
               <h4 className={`text-[10px] font-black uppercase tracking-widest px-2 pb-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                 Ledger Planner Settings
               </h4>
 
               {/* 3. DIRECTORY ROWS */}
+              <DirectoryRow 
+                icon={PlayCircle} 
+                title="Tutorials" 
+                description="Setup, More Tutorials Coming Soon..." 
+                colorClass="text-pink-500" 
+                targetView="tutorials" 
+              />
               <DirectoryRow 
                 icon={User} 
                 title="Profile" 
@@ -254,6 +230,40 @@ export default function Settings({
                 colorClass="text-emerald-500" 
                 targetView="security" 
               />
+            </div>
+          )}
+
+          {activeView === "tutorials" && (
+            <div className="animate-slide-up space-y-4">
+              <h4 className={`text-[14px] font-black uppercase tracking-widest px-2 mb-2 flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                <PlayCircle size={16} strokeWidth={2.5} className="text-pink-500" /> Tutorials
+              </h4>
+
+              <div className={`p-4 rounded-2xl border transition-all ${isDarkMode ? "bg-slate-800/40 border-slate-700/50" : "bg-white border-slate-200 shadow-sm"}`}>
+                <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                  👋 WELCOME TO LEDGER PLANNER
+                </label>
+                <div className="flex flex-col gap-2.5">
+                  <button 
+                    onClick={() => {
+                      setIsSettingsOpen(false);
+                      if (startTour) startTour();
+                    }}
+                    className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                    style={{ backgroundColor: signatureColor }}
+                  >
+                    <Compass size={14} strokeWidth={2.5} /> START SETUP TUTORIAL
+                  </button>
+                </div>
+              </div>
+
+              <div className={`border-t ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
+
+              <div className={`p-6 rounded-[2rem] border border-dashed flex items-center justify-center text-center transition-all ${isDarkMode ? "bg-slate-800/20 border-slate-700" : "bg-slate-50/50 border-slate-200"}`}>
+                <p className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
+                  More video and GIF tutorials coming soon...
+                </p>
+              </div>
             </div>
           )}
 

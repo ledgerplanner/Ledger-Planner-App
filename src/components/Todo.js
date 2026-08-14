@@ -354,7 +354,9 @@ export default function Todo({
           <section className={`p-4 rounded-[2rem] border shadow-sm animate-fade-in transition-colors ${isDarkMode ? "bg-blue-900/10 border-blue-900/30" : "bg-blue-50/60 border-blue-100"}`}>
             <div className="flex items-center gap-2 mb-4 px-2">
               <Zap size={16} className="text-[#1877F2]" />
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-[#1877F2]">{pendingActions.length} Things To-Do</h3>
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-[#1877F2]">
+                {pendingActions.length} {pendingActions.length === 1 ? "Thing" : "Things"} To-Do
+              </h3>
             </div>
             <div className="space-y-4 max-h-80 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
               {pendingActions.map(renderTaskCard)}
@@ -370,7 +372,9 @@ export default function Todo({
           <section className={`p-4 rounded-[2rem] border shadow-sm animate-fade-in transition-colors ${isDarkMode ? "bg-emerald-900/10 border-emerald-900/30" : "bg-emerald-50/60 border-emerald-100"}`}>
             <div className="flex items-center gap-2 mb-4 px-2">
               <ShoppingBag size={16} className="text-[#10B981]" />
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-[#10B981]">{pendingShopping.length} Items To-Buy</h3>
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-[#10B981]">
+                {pendingShopping.length} {pendingShopping.length === 1 ? "Item" : "Items"} To-Buy
+              </h3>
             </div>
             <div className="space-y-4 max-h-80 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
               {pendingShopping.map(renderTaskCard)}
@@ -387,7 +391,9 @@ export default function Todo({
             <div className="flex items-center justify-between mb-4 px-2">
               <div className="flex items-center gap-2">
                 <CheckCircle2 size={16} className="text-[#F97316]" />
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-[#F97316]">{completedTasks.length} Completed Task{completedTasks.length !== 1 ? 's' : ''}</h3>
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-[#F97316]">
+                  {completedTasks.length} Completed Task{completedTasks.length === 1 ? "" : "s"}
+                </h3>
               </div>
               <button 
                 onClick={clearCompletedTodos}

@@ -112,7 +112,7 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
     }
   }, [isTourActive, activeStep, setActiveTab, setIsQabOpen, setQabDrawerTab]);
 
-  // Precise Target Calculation without infinite scrolling loops
+  // Target Element Spotter with Smooth Single-Scroll Logic
   const updateSpotlight = useCallback(() => {
     if (!activeStep) return;
 
@@ -120,7 +120,7 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
     if (element) {
       const rect = element.getBoundingClientRect();
       
-      // Smooth scroll ONLY ONCE per step transition to eliminate bouncing
+      // Smooth scroll ONLY ONCE per step transition to prevent bouncing
       if (lastScrolledStep.current !== activeStep.id) {
         if (rect.top < 0 || rect.bottom > window.innerHeight) {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -145,7 +145,8 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
       window.addEventListener('resize', updateSpotlight);
       window.addEventListener('scroll', updateSpotlight, true);
 
-      const interval = setInterval(updateSpotlight, 150);
+      // Rapid polling sequence to catch dynamic DOM mounts
+      const interval = setInterval(updateSpotlight, 100);
       return () => {
         window.removeEventListener('resize', updateSpotlight);
         window.removeEventListener('scroll', updateSpotlight, true);
@@ -191,7 +192,7 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
   return (
     <div className="fixed inset-0 z-[9999] pointer-events-none">
       
-      {/* SVG Mask: Crisp Unblurred Cut-out Window over Blurred Background (Pointer Events Disabled to Prevent Lock) */}
+      {/* SVG Mask: Unblurred Cut-out Window over Blurred Background */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none">
         <defs>
           <mask id="tour-spotlight-mask">
@@ -235,7 +236,7 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
         />
       )}
 
-      {/* Floating Intelligence Card */}
+      {/* Floating Intelligence Card - Center Fallback if Target Pending */}
       <div 
         className={`absolute pointer-events-auto transition-all duration-300 ease-out rounded-3xl p-6 shadow-2xl max-w-sm w-[90%] md:w-[360px] border ${
           isDarkMode ? "bg-[#1E293B] border-slate-700 text-white" : "bg-white border-slate-100 text-slate-900"

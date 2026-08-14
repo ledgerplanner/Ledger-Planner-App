@@ -191,7 +191,7 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
   return (
     <div className="fixed inset-0 z-[9999] pointer-events-none">
       
-      {/* SVG Mask: Crisp Unblurred Cut-out Window over Blurred Background */}
+      {/* SVG Mask: Crisp Unblurred Cut-out Window over Blurred Background (Pointer Events Disabled to Prevent Lock) */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none">
         <defs>
           <mask id="tour-spotlight-mask">
@@ -216,7 +216,7 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
           height="100%"
           fill="rgba(15, 23, 42, 0.75)"
           mask="url(#tour-spotlight-mask)"
-          className="backdrop-blur-md pointer-events-auto"
+          className="backdrop-blur-md pointer-events-none"
         />
       </svg>
 

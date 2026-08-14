@@ -87,6 +87,7 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
   } = useLedger();
 
   const [targetRect, setTargetRect] = useState(null);
+  const [isTargetReady, setIsTargetReady] = useState(false);
   const lastScrolledStep = useRef(null);
 
   const activeStepIndex = TOUR_STEPS.findIndex(step => String(step.id) === String(currentTourStep));
@@ -95,6 +96,9 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
   // Route tabs, modals, and internal QAB tabs automatically
   useEffect(() => {
     if (!isTourActive || !activeStep) return;
+
+    setIsTargetReady(false);
+    setTargetRect(null);
 
     if (activeStep.tab && setActiveTab) {
       setActiveTab(activeStep.tab);
@@ -120,7 +124,7 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
     if (element) {
       const rect = element.getBoundingClientRect();
       
-      // Smooth scroll ONLY ONCE per step transition to prevent bouncing
+      // Smooth scroll ONLY ONCE per step transition
       if (lastScrolledStep.current !== activeStep.id) {
         if (rect.top < 0 || rect.bottom > window.innerHeight) {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -134,8 +138,10 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
         width: rect.width,
         height: rect.height,
       });
+      setIsTargetReady(true);
     } else {
       setTargetRect(null);
+      setIsTargetReady(false);
     }
   }, [activeStep]);
 
@@ -189,29 +195,25 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
   if (activeStep.qabTab === 'transactions') highlightBorderColor = '#F97316'; // Orange
   if (activeStep.qabTab === 'income') highlightBorderColor = '#10B981'; // Green
 
-  // Fallback Cutout Coordinates if target isn't painted yet
-  const cutoutLeft = targetRect ? targetRect.left - 6 : (window.innerWidth / 2) - 150;
-  const cutoutTop = targetRect ? targetRect.top - 6 : (window.innerHeight / 2) - 50;
-  const cutoutWidth = targetRect ? targetRect.width + 12 : 300;
-  const cutoutHeight = targetRect ? targetRect.height + 12 : 100;
-
   return (
     <div className="fixed inset-0 z-[9999] pointer-events-none">
       
-      {/* SVG Mask with Guaranteed Cutout Window */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none">
+      {/* SVG Mask with Failsafe Opacity (Only shows blur/darken when target element is found) */}
+      <svg className={`absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-300 ${isTargetReady ? "opacity-100" : "opacity-0"}`}>
         <defs>
           <mask id="tour-spotlight-mask">
             <rect x="0" y="0" width="100%" height="100%" fill="white" />
-            <rect
-              x={cutoutLeft}
-              y={cutoutTop}
-              width={cutoutWidth}
-              height={cutoutHeight}
-              rx="16"
-              ry="16"
-              fill="black"
-            />
+            {targetRect && (
+              <rect
+                x={targetRect.left - 6}
+                y={targetRect.top - 6}
+                width={targetRect.width + 12}
+                height={targetRect.height + 12}
+                rx="16"
+                ry="16"
+                fill="black"
+              />
+            )}
           </mask>
         </defs>
         <rect
@@ -226,33 +228,35 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
       </svg>
 
       {/* Glowing Cut-out Border Frame */}
-      <div 
-        className="absolute rounded-2xl transition-all duration-300 ease-out pointer-events-none"
-        style={{
-          top: cutoutTop,
-          left: cutoutLeft,
-          width: cutoutWidth,
-          height: cutoutHeight,
-          border: `3px solid ${highlightBorderColor}`,
-          boxShadow: `0 0 20px ${highlightBorderColor}88`,
-        }}
-      />
+      {targetRect && isTargetReady && (
+        <div 
+          className="absolute rounded-2xl transition-all duration-300 ease-out pointer-events-none"
+          style={{
+            top: targetRect.top - 6,
+            left: targetRect.left - 6,
+            width: targetRect.width + 12,
+            height: targetRect.height + 12,
+            border: `3px solid ${highlightBorderColor}`,
+            boxShadow: `0 0 20px ${highlightBorderColor}88`,
+          }}
+        />
+      )}
 
-      {/* Floating Intelligence Card */}
+      {/* Floating Intelligence Card (Always visible and interactive) */}
       <div 
         className={`absolute pointer-events-auto transition-all duration-300 ease-out rounded-3xl p-6 shadow-2xl max-w-sm w-[90%] md:w-[360px] border ${
           isDarkMode ? "bg-[#1E293B] border-slate-700 text-white" : "bg-white border-slate-100 text-slate-900"
         }`}
         style={{
-          top: targetRect 
+          top: targetRect && isTargetReady
             ? isTargetInBottomHalf 
               ? Math.max(16, targetRect.top - 240) 
               : targetRect.top + targetRect.height + 20
             : '50%',
-          left: targetRect 
+          left: targetRect && isTargetReady 
             ? Math.max(16, Math.min(window.innerWidth - 376, targetRect.left)) 
             : '50%',
-          transform: targetRect ? 'none' : 'translate(-50%, -50%)'
+          transform: (targetRect && isTargetReady) ? 'none' : 'translate(-50%, -50%)'
         }}
       >
         <div className="flex items-center justify-between mb-3">

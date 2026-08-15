@@ -309,7 +309,7 @@ export default function Todo({
 
             <input 
               type="text" 
-              placeholder={newTodoType === "task" ? "New To-Do?" : "New To-Buy?"}
+              placeholder={newTodoType === "task" ? "New To-Do Task?" : "New To-Buy Task?"}
               value={newTodoText} 
               onChange={(e) => setNewTodoText(e.target.value)}
               className={`flex-1 min-w-0 py-3 px-4 rounded-xl text-sm font-bold bg-transparent border outline-none transition-colors focus:border-[#1877F2] ${isDarkMode ? "text-white border-slate-700" : "text-slate-900 border-slate-200"}`}

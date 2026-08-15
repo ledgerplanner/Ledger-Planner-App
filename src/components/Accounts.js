@@ -495,8 +495,7 @@ export default function Accounts({
           </div>
         )}
 
-        {/* SURGICAL SPOTLIGHT ANCHOR: Entire All Accounts Section Container */}
-        <div data-tour="add-account-btn" className="space-y-4">
+        <div className="space-y-4">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">All Accounts</h3>
           <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
             {liquidAccounts.length === 0 ? (
@@ -651,7 +650,8 @@ export default function Accounts({
   
         <div className="flex flex-col gap-3">
           <div className="grid grid-cols-2 gap-3">
-            <button onClick={() => setIsAddAccountOpen(true)} className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#10B981] text-white shadow-emerald-900/20" : "bg-[#10B981] text-white shadow-emerald-500/30"}`}>
+            {/* SURGICAL SPOTLIGHT ANCHOR: Placed directly on the Add Account button */}
+            <button data-tour="add-account-btn" onClick={() => setIsAddAccountOpen(true)} className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#10B981] text-white shadow-emerald-900/20" : "bg-[#10B981] text-white shadow-emerald-500/30"}`}>
               <PlusCircle size={18} /> Add Account
             </button>
             <button onClick={() => setIsTransferOpen(true)} className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex flex-col items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isDarkMode ? "bg-[#1877F2] text-white shadow-blue-900/20" : "bg-[#1877F2] text-white shadow-blue-500/30"}`}>

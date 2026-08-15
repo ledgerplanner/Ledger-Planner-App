@@ -88,12 +88,11 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
 
   const [targetRect, setTargetRect] = useState(null);
   const [isTargetReady, setIsTargetReady] = useState(false);
-  const hasScrolledForStep = useRef(null);
 
   const activeStepIndex = TOUR_STEPS.findIndex(step => String(step.id) === String(currentTourStep));
   const activeStep = TOUR_STEPS[activeStepIndex];
 
-  // Route tabs, modals, and internal QAB tabs automatically
+  // 1. Route tabs, modals, and internal QAB tabs automatically on step change
   useEffect(() => {
     if (!isTourActive || !activeStep) return;
 
@@ -116,7 +115,21 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
     }
   }, [isTourActive, activeStep, setActiveTab, setIsQabOpen, setQabDrawerTab]);
 
-  // Target Element Spotter with Single-Scroll Lock
+  // 2. Perform a SINGLE clean scroll when entering each step (NO infinite bouncing)
+  useEffect(() => {
+    if (!isTourActive || !activeStep) return;
+
+    const scrollTimer = setTimeout(() => {
+      const element = document.querySelector(`[data-tour="${activeStep.target}"]`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 200);
+
+    return () => clearTimeout(scrollTimer);
+  }, [isTourActive, activeStep?.id, activeStep?.target]);
+
+  // 3. Read Coordinates Passively (Zero Scrolling Calls in Scanner)
   const updateSpotlight = useCallback(() => {
     if (!activeStep) return;
 
@@ -124,12 +137,6 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
     if (element) {
       const rect = element.getBoundingClientRect();
       
-      // Scroll exactly ONCE when entering a new step to eliminate jumping/bouncing
-      if (hasScrolledForStep.current !== activeStep.id) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        hasScrolledForStep.current = activeStep.id;
-      }
-
       setTargetRect({
         top: rect.top,
         left: rect.left,
@@ -185,7 +192,10 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
 
   if (!isTourActive || !activeStep) return null;
 
-  const isTargetInBottomHalf = targetRect && targetRect.top > window.innerHeight / 2;
+  // Viewport-safe calculations
+  const windowHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+  const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
+  const isTargetInBottomHalf = targetRect && targetRect.top > windowHeight / 2;
 
   // Dynamic Highlight Ring Colors matching QAB Tabs
   let highlightBorderColor = signatureColor;
@@ -248,10 +258,10 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
           top: targetRect && isTargetReady
             ? isTargetInBottomHalf 
               ? Math.max(16, targetRect.top - 240) 
-              : targetRect.top + targetRect.height + 20
+              : Math.min(windowHeight - 260, targetRect.top + targetRect.height + 20)
             : '50%',
           left: targetRect && isTargetReady 
-            ? Math.max(16, Math.min(window.innerWidth - 376, targetRect.left)) 
+            ? Math.max(16, Math.min(windowWidth - 376, targetRect.left)) 
             : '50%',
           transform: (targetRect && isTargetReady) ? 'none' : 'translate(-50%, -50%)'
         }}

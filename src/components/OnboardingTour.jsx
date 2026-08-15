@@ -88,7 +88,7 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
 
   const [targetRect, setTargetRect] = useState(null);
   const [isTargetReady, setIsTargetReady] = useState(false);
-  const stepProcessedRef = useRef(null);
+  const activeStepIdRef = useRef(null);
 
   const activeStepIndex = TOUR_STEPS.findIndex(step => String(step.id) === String(currentTourStep));
   const activeStep = TOUR_STEPS[activeStepIndex];
@@ -97,7 +97,7 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
   useEffect(() => {
     if (!isTourActive || !activeStep) return;
 
-    stepProcessedRef.current = null;
+    activeStepIdRef.current = activeStep.id;
     setIsTargetReady(false);
     setTargetRect(null);
 
@@ -117,15 +117,12 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
     }
   }, [isTourActive, activeStep, setActiveTab, setIsQabOpen, setQabDrawerTab]);
 
-  // Direct, single-pass element locator with zero listener recursion
-  const locateTarget = useCallback(() => {
-    if (!activeStep || stepProcessedRef.current === activeStep.id) return;
+  // Position calculation and viewport lock
+  const updateTargetCoordinates = useCallback(() => {
+    if (!activeStep) return;
 
     const element = document.querySelector(`[data-tour="${activeStep.target}"]`);
     if (element) {
-      // Direct scroll into view without animated fight
-      element.scrollIntoView({ behavior: 'auto', block: 'center' });
-
       const rect = element.getBoundingClientRect();
       if (rect.width > 0 && rect.height > 0) {
         setTargetRect({
@@ -135,21 +132,71 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
           height: Math.round(rect.height),
         });
         setIsTargetReady(true);
-        stepProcessedRef.current = activeStep.id;
       }
     }
   }, [activeStep]);
 
+  // 2-Phase Scroll & Reveal
   useEffect(() => {
     if (!isTourActive || !activeStep) return;
 
-    // Single delayed inspection after DOM route settle
-    const settleTimer = setTimeout(() => {
-      locateTarget();
-    }, 450);
+    const revealTimer = setTimeout(() => {
+      const element = document.querySelector(`[data-tour="${activeStep.target}"]`);
+      if (!element) return;
 
-    return () => clearTimeout(settleTimer);
-  }, [isTourActive, activeStep, locateTarget]);
+      const rect = element.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+
+      // Check if element is hidden outside the visible screen
+      const isOffscreen = rect.top < 0 || rect.bottom > viewportHeight;
+
+      if (isOffscreen) {
+        // Find scrollable container parent or fallback to standard scroll
+        let parent = element.parentElement;
+        let scrollableParent = null;
+        while (parent && parent !== document.body) {
+          const overflowY = window.getComputedStyle(parent).overflowY;
+          if (overflowY === 'auto' || overflowY === 'scroll') {
+            scrollableParent = parent;
+            break;
+          }
+          parent = parent.parentElement;
+        }
+
+        if (scrollableParent) {
+          const parentRect = scrollableParent.getBoundingClientRect();
+          const targetScrollTop = scrollableParent.scrollTop + (rect.top - parentRect.top) - (parentRect.height / 2) + (rect.height / 2);
+          scrollableParent.scrollTo({
+            top: Math.max(0, targetScrollTop),
+            behavior: 'smooth'
+          });
+        } else {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // Snap coordinates after scroll settles
+        setTimeout(() => {
+          updateTargetCoordinates();
+        }, 350);
+      } else {
+        updateTargetCoordinates();
+      }
+    }, 400);
+
+    return () => clearTimeout(revealTimer);
+  }, [isTourActive, activeStep?.id, activeStep?.target, updateTargetCoordinates]);
+
+  // Handle window resizing
+  useEffect(() => {
+    if (!isTourActive) return;
+
+    const handleResize = () => {
+      updateTargetCoordinates();
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isTourActive, updateTargetCoordinates]);
 
   const fireConfetti = () => {
     confetti({
@@ -190,7 +237,7 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
   return (
     <div className="fixed inset-0 z-[9999] pointer-events-none">
       
-      {/* SVG Mask */}
+      {/* Dimmed & Blurred SVG Backdrop Mask */}
       <svg className={`absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-300 ${isTargetReady ? "opacity-100" : "opacity-0"}`}>
         <defs>
           <mask id="tour-spotlight-mask">
@@ -213,28 +260,28 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
           y="0"
           width="100%"
           height="100%"
-          fill="rgba(15, 23, 42, 0.75)"
+          fill="rgba(15, 23, 42, 0.78)"
           mask="url(#tour-spotlight-mask)"
-          className="backdrop-blur-md pointer-events-none"
+          className="backdrop-blur-sm pointer-events-none"
         />
       </svg>
 
-      {/* Glowing Cut-out Border Frame */}
+      {/* Spotlight Border Cutout */}
       {targetRect && isTargetReady && (
         <div 
-          className="absolute rounded-2xl pointer-events-none"
+          className="absolute rounded-2xl pointer-events-none transition-all duration-300"
           style={{
             top: targetRect.top - 6,
             left: targetRect.left - 6,
             width: targetRect.width + 12,
             height: targetRect.height + 12,
             border: `3px solid ${highlightBorderColor}`,
-            boxShadow: `0 0 20px ${highlightBorderColor}88`,
+            boxShadow: `0 0 24px ${highlightBorderColor}99`,
           }}
         />
       )}
 
-      {/* Floating Intelligence Card */}
+      {/* Floating Tutorial Card */}
       <div 
         className={`absolute pointer-events-auto rounded-3xl p-6 shadow-2xl max-w-sm w-[90%] md:w-[360px] border transition-all duration-300 ${
           isDarkMode ? "bg-[#1E293B] border-slate-700 text-white" : "bg-white border-slate-100 text-slate-900"
@@ -274,7 +321,7 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
         </p>
 
         <div className="flex items-center justify-between">
-          {/* Progress Indicators */}
+          {/* Step Progress Indicators */}
           <div className="flex gap-1.5">
             {TOUR_STEPS.map((_, i) => (
               <div 
@@ -291,7 +338,7 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
             ))}
           </div>
 
-          {/* Controls */}
+          {/* Action Controls */}
           <div className="flex gap-2">
             {activeStepIndex > 0 && (
               <button 

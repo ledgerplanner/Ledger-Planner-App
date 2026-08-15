@@ -88,7 +88,6 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
 
   const [targetRect, setTargetRect] = useState(null);
   const [isTargetReady, setIsTargetReady] = useState(false);
-  const stepLockedRef = useRef(false);
 
   const activeStepIndex = TOUR_STEPS.findIndex(step => String(step.id) === String(currentTourStep));
   const activeStep = TOUR_STEPS[activeStepIndex];
@@ -97,7 +96,6 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
   useEffect(() => {
     if (!isTourActive || !activeStep) return;
 
-    stepLockedRef.current = false;
     setIsTargetReady(false);
     setTargetRect(null);
 
@@ -117,9 +115,9 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
     }
   }, [isTourActive, activeStep, setActiveTab, setIsQabOpen, setQabDrawerTab]);
 
-  // Lock-and-Freeze Coordinate Reader: Once locked, it stays perfectly still
-  const lockSpotlightPosition = useCallback(() => {
-    if (!activeStep || stepLockedRef.current) return;
+  // Read target dimensions
+  const updateSpotlight = useCallback(() => {
+    if (!activeStep) return;
 
     const element = document.querySelector(`[data-tour="${activeStep.target}"]`);
     if (element) {
@@ -133,35 +131,42 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
           height: Math.round(rect.height),
         });
         setIsTargetReady(true);
-        stepLockedRef.current = true; // Lock position to eliminate any feedback loops
       }
     }
   }, [activeStep]);
 
+  // Single smooth scroll on step entrance + coordinates lock
   useEffect(() => {
     if (!isTourActive || !activeStep) return;
 
-    // Fast polling until element is mounted and locked, then halts completely
-    const pollInterval = setInterval(() => {
-      if (!stepLockedRef.current) {
-        lockSpotlightPosition();
-      } else {
-        clearInterval(pollInterval);
+    const scrollTimer = setTimeout(() => {
+      const element = document.querySelector(`[data-tour="${activeStep.target}"]`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
-    }, 50);
+      
+      // Update coordinates after the smooth scroll finishes settling
+      const snapTimer = setTimeout(() => {
+        updateSpotlight();
+      }, 400);
 
-    const handleResize = () => {
-      stepLockedRef.current = false;
-      lockSpotlightPosition();
-    };
+      return () => clearTimeout(snapTimer);
+    }, 250);
 
-    window.addEventListener('resize', handleResize);
+    return () => clearTimeout(scrollTimer);
+  }, [isTourActive, activeStep?.id, activeStep?.target, updateSpotlight]);
 
-    return () => {
-      clearInterval(pollInterval);
-      window.removeEventListener('resize', handleResize);
-    };
-  }, [isTourActive, activeStep, lockSpotlightPosition]);
+  useEffect(() => {
+    if (isTourActive) {
+      window.addEventListener('resize', updateSpotlight);
+      window.addEventListener('scroll', updateSpotlight, true);
+
+      return () => {
+        window.removeEventListener('resize', updateSpotlight);
+        window.removeEventListener('scroll', updateSpotlight, true);
+      };
+    }
+  }, [isTourActive, updateSpotlight]);
 
   const fireConfetti = () => {
     confetti({
@@ -203,7 +208,7 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
     <div className="fixed inset-0 z-[9999] pointer-events-none">
       
       {/* SVG Mask */}
-      <svg className={`absolute inset-0 w-full h-full pointer-events-none ${isTargetReady ? "opacity-100" : "opacity-0"}`}>
+      <svg className={`absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-300 ${isTargetReady ? "opacity-100" : "opacity-0"}`}>
         <defs>
           <mask id="tour-spotlight-mask">
             <rect x="0" y="0" width="100%" height="100%" fill="white" />
@@ -234,7 +239,7 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
       {/* Glowing Cut-out Border Frame */}
       {targetRect && isTargetReady && (
         <div 
-          className="absolute rounded-2xl pointer-events-none"
+          className="absolute rounded-2xl pointer-events-none transition-all duration-300"
           style={{
             top: targetRect.top - 6,
             left: targetRect.left - 6,
@@ -246,9 +251,9 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
         />
       )}
 
-      {/* Static Floating Intelligence Card */}
+      {/* Floating Intelligence Card */}
       <div 
-        className={`absolute pointer-events-auto rounded-3xl p-6 shadow-2xl max-w-sm w-[90%] md:w-[360px] border ${
+        className={`absolute pointer-events-auto rounded-3xl p-6 shadow-2xl max-w-sm w-[90%] md:w-[360px] border transition-all duration-300 ${
           isDarkMode ? "bg-[#1E293B] border-slate-700 text-white" : "bg-white border-slate-100 text-slate-900"
         }`}
         style={{

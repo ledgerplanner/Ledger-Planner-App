@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { ChevronRight, ChevronLeft, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useLedger } from '../context/LedgerContext';
@@ -135,14 +135,13 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
     }
   }, [activeStep]);
 
-  // Reliable Multi-Container Scrolling & Snap Engine
+  // Wait 500ms for child chart animations to finish, then execute scroll
   useEffect(() => {
     if (!isTourActive || !activeStep) return;
 
     const scrollTimer = setTimeout(() => {
       const element = document.querySelector(`[data-tour="${activeStep.target}"]`);
       if (element) {
-        // Find closest scrollable ancestor (if any)
         let parent = element.parentElement;
         let scrollableParent = null;
         while (parent && parent !== document.body) {
@@ -168,13 +167,12 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
         }
       }
       
-      // Update coordinates after the scroll finishes settling
       const snapTimer = setTimeout(() => {
         updateSpotlight();
       }, 400);
 
       return () => clearTimeout(snapTimer);
-    }, 250);
+    }, 500);
 
     return () => clearTimeout(scrollTimer);
   }, [isTourActive, activeStep?.id, activeStep?.target, updateSpotlight]);

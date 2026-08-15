@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { ChevronRight, ChevronLeft, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useLedger } from '../context/LedgerContext';
@@ -88,6 +88,7 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
 
   const [targetRect, setTargetRect] = useState(null);
   const [isTargetReady, setIsTargetReady] = useState(false);
+  const stepProcessedRef = useRef(null);
 
   const activeStepIndex = TOUR_STEPS.findIndex(step => String(step.id) === String(currentTourStep));
   const activeStep = TOUR_STEPS[activeStepIndex];
@@ -96,6 +97,7 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
   useEffect(() => {
     if (!isTourActive || !activeStep) return;
 
+    stepProcessedRef.current = null;
     setIsTargetReady(false);
     setTargetRect(null);
 
@@ -115,14 +117,16 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
     }
   }, [isTourActive, activeStep, setActiveTab, setIsQabOpen, setQabDrawerTab]);
 
-  // Read target dimensions
-  const updateSpotlight = useCallback(() => {
-    if (!activeStep) return;
+  // Direct, single-pass element locator with zero listener recursion
+  const locateTarget = useCallback(() => {
+    if (!activeStep || stepProcessedRef.current === activeStep.id) return;
 
     const element = document.querySelector(`[data-tour="${activeStep.target}"]`);
     if (element) {
+      // Direct scroll into view without animated fight
+      element.scrollIntoView({ behavior: 'auto', block: 'center' });
+
       const rect = element.getBoundingClientRect();
-      
       if (rect.width > 0 && rect.height > 0) {
         setTargetRect({
           top: Math.round(rect.top),
@@ -131,63 +135,21 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
           height: Math.round(rect.height),
         });
         setIsTargetReady(true);
+        stepProcessedRef.current = activeStep.id;
       }
     }
   }, [activeStep]);
 
-  // Wait 500ms for child chart animations to finish, then execute scroll
   useEffect(() => {
     if (!isTourActive || !activeStep) return;
 
-    const scrollTimer = setTimeout(() => {
-      const element = document.querySelector(`[data-tour="${activeStep.target}"]`);
-      if (element) {
-        let parent = element.parentElement;
-        let scrollableParent = null;
-        while (parent && parent !== document.body) {
-          const overflowY = window.getComputedStyle(parent).overflowY;
-          if (overflowY === 'auto' || overflowY === 'scroll') {
-            scrollableParent = parent;
-            break;
-          }
-          parent = parent.parentElement;
-        }
+    // Single delayed inspection after DOM route settle
+    const settleTimer = setTimeout(() => {
+      locateTarget();
+    }, 450);
 
-        if (scrollableParent) {
-          const parentRect = scrollableParent.getBoundingClientRect();
-          const elementRect = element.getBoundingClientRect();
-          const targetScrollTop = scrollableParent.scrollTop + (elementRect.top - parentRect.top) - (parentRect.height / 2) + (elementRect.height / 2);
-          
-          scrollableParent.scrollTo({
-            top: Math.max(0, targetScrollTop),
-            behavior: 'smooth'
-          });
-        } else {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }
-      
-      const snapTimer = setTimeout(() => {
-        updateSpotlight();
-      }, 400);
-
-      return () => clearTimeout(snapTimer);
-    }, 500);
-
-    return () => clearTimeout(scrollTimer);
-  }, [isTourActive, activeStep?.id, activeStep?.target, updateSpotlight]);
-
-  useEffect(() => {
-    if (isTourActive) {
-      window.addEventListener('resize', updateSpotlight);
-      window.addEventListener('scroll', updateSpotlight, true);
-
-      return () => {
-        window.removeEventListener('resize', updateSpotlight);
-        window.removeEventListener('scroll', updateSpotlight, true);
-      };
-    }
-  }, [isTourActive, updateSpotlight]);
+    return () => clearTimeout(settleTimer);
+  }, [isTourActive, activeStep, locateTarget]);
 
   const fireConfetti = () => {
     confetti({
@@ -260,7 +222,7 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
       {/* Glowing Cut-out Border Frame */}
       {targetRect && isTargetReady && (
         <div 
-          className="absolute rounded-2xl pointer-events-none transition-all duration-300"
+          className="absolute rounded-2xl pointer-events-none"
           style={{
             top: targetRect.top - 6,
             left: targetRect.left - 6,

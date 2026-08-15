@@ -88,14 +88,16 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
 
   const [targetRect, setTargetRect] = useState(null);
   const [isTargetReady, setIsTargetReady] = useState(false);
+  const isTransitioningRef = useRef(false);
 
   const activeStepIndex = TOUR_STEPS.findIndex(step => String(step.id) === String(currentTourStep));
   const activeStep = TOUR_STEPS[activeStepIndex];
 
-  // 1. Route tabs, modals, and internal QAB tabs automatically on step change
+  // Route tabs, modals, and internal QAB tabs automatically on step change
   useEffect(() => {
     if (!isTourActive || !activeStep) return;
 
+    isTransitioningRef.current = true;
     setIsTargetReady(false);
     setTargetRect(null);
 
@@ -113,51 +115,53 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
         setIsQabOpen(false);
       }
     }
-  }, [isTourActive, activeStep, setActiveTab, setIsQabOpen, setQabDrawerTab]);
 
-  // 2. Perform a SINGLE clean scroll when entering each step (NO infinite bouncing)
-  useEffect(() => {
-    if (!isTourActive || !activeStep) return;
-
-    const scrollTimer = setTimeout(() => {
+    // Allow entrance CSS animations to completely settle before calculating coordinates
+    const transitionTimer = setTimeout(() => {
+      isTransitioningRef.current = false;
       const element = document.querySelector(`[data-tour="${activeStep.target}"]`);
       if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
-    }, 200);
+    }, 300);
 
-    return () => clearTimeout(scrollTimer);
-  }, [isTourActive, activeStep?.id, activeStep?.target]);
+    return () => clearTimeout(transitionTimer);
+  }, [isTourActive, activeStep, setActiveTab, setIsQabOpen, setQabDrawerTab]);
 
-  // 3. Read Coordinates Passively (Zero Scrolling Calls in Scanner)
+  // Stable Coordinate Reader
   const updateSpotlight = useCallback(() => {
-    if (!activeStep) return;
+    if (!activeStep || isTransitioningRef.current) return;
 
     const element = document.querySelector(`[data-tour="${activeStep.target}"]`);
     if (element) {
       const rect = element.getBoundingClientRect();
       
-      setTargetRect({
-        top: rect.top,
-        left: rect.left,
-        width: rect.width,
-        height: rect.height,
-      });
-      setIsTargetReady(true);
-    } else {
-      setTargetRect(null);
-      setIsTargetReady(false);
+      // Ensure element actually has rendered dimensions
+      if (rect.width > 0 && rect.height > 0) {
+        setTargetRect({
+          top: rect.top,
+          left: rect.left,
+          width: rect.width,
+          height: rect.height,
+        });
+        setIsTargetReady(true);
+        return;
+      }
     }
+    
+    // Fallback: If not ready yet, keep safe default
+    setIsTargetReady(false);
   }, [activeStep]);
 
   useEffect(() => {
     if (isTourActive) {
-      updateSpotlight();
+      const initialTimer = setTimeout(updateSpotlight, 350);
       window.addEventListener('resize', updateSpotlight);
       window.addEventListener('scroll', updateSpotlight, true);
 
-      const interval = setInterval(updateSpotlight, 100);
+      const interval = setInterval(updateSpotlight, 200);
       return () => {
+        clearTimeout(initialTimer);
         window.removeEventListener('resize', updateSpotlight);
         window.removeEventListener('scroll', updateSpotlight, true);
         clearInterval(interval);
@@ -192,15 +196,14 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
 
   if (!isTourActive || !activeStep) return null;
 
-  // Viewport-safe calculations
   const windowHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
   const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
   const isTargetInBottomHalf = targetRect && targetRect.top > windowHeight / 2;
 
   // Dynamic Highlight Ring Colors matching QAB Tabs
   let highlightBorderColor = signatureColor;
-  if (activeStep.qabTab === 'transactions') highlightBorderColor = '#F97316'; // Orange
-  if (activeStep.qabTab === 'income') highlightBorderColor = '#10B981'; // Green
+  if (activeStep.qabTab === 'transactions') highlightBorderColor = '#F97316';
+  if (activeStep.qabTab === 'income') highlightBorderColor = '#10B981';
 
   return (
     <div className="fixed inset-0 z-[9999] pointer-events-none">
@@ -257,11 +260,11 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
         style={{
           top: targetRect && isTargetReady
             ? isTargetInBottomHalf 
-              ? Math.max(16, targetRect.top - 240) 
+              ? Math.max(20, targetRect.top - 240) 
               : Math.min(windowHeight - 260, targetRect.top + targetRect.height + 20)
             : '50%',
           left: targetRect && isTargetReady 
-            ? Math.max(16, Math.min(windowWidth - 376, targetRect.left)) 
+            ? Math.max(20, Math.min(windowWidth - 380, targetRect.left)) 
             : '50%',
           transform: (targetRect && isTargetReady) ? 'none' : 'translate(-50%, -50%)'
         }}

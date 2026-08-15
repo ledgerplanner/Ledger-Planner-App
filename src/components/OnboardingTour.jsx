@@ -86,20 +86,19 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
     isDarkMode = true
   } = useLedger();
 
-  const [targetRect, setTargetRect] = useState(null);
-  const [isTargetReady, setIsTargetReady] = useState(false);
-  const activeStepIdRef = useRef(null);
+  const [spotlightRect, setSpotlightRect] = useState(null);
+  const [isReady, setIsReady] = useState(false);
+  const stepTimerRef = useRef(null);
 
-  const activeStepIndex = TOUR_STEPS.findIndex(step => String(step.id) === String(currentTourStep));
-  const activeStep = TOUR_STEPS[activeStepIndex];
+  const activeIndex = TOUR_STEPS.findIndex(s => String(s.id) === String(currentTourStep));
+  const activeStep = TOUR_STEPS[activeIndex];
 
-  // Route tabs, modals, and internal QAB tabs automatically on step change
+  // Route page tabs and open/close drawer automatically
   useEffect(() => {
     if (!isTourActive || !activeStep) return;
 
-    activeStepIdRef.current = activeStep.id;
-    setIsTargetReady(false);
-    setTargetRect(null);
+    setIsReady(false);
+    setSpotlightRect(null);
 
     if (activeStep.tab && setActiveTab) {
       setActiveTab(activeStep.tab);
@@ -117,99 +116,53 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
     }
   }, [isTourActive, activeStep, setActiveTab, setIsQabOpen, setQabDrawerTab]);
 
-  // Position calculation and viewport lock
-  const updateTargetCoordinates = useCallback(() => {
+  // Clean single-pass coordinate capture
+  const captureTargetRect = useCallback(() => {
     if (!activeStep) return;
 
-    const element = document.querySelector(`[data-tour="${activeStep.target}"]`);
-    if (element) {
-      const rect = element.getBoundingClientRect();
+    const el = document.querySelector(`[data-tour="${activeStep.target}"]`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+      const rect = el.getBoundingClientRect();
       if (rect.width > 0 && rect.height > 0) {
-        setTargetRect({
+        setSpotlightRect({
           top: Math.round(rect.top),
           left: Math.round(rect.left),
           width: Math.round(rect.width),
-          height: Math.round(rect.height),
+          height: Math.round(rect.height)
         });
-        setIsTargetReady(true);
+        setIsReady(true);
       }
     }
   }, [activeStep]);
 
-  // 2-Phase Scroll & Reveal
+  // Lock position after route transition settles
   useEffect(() => {
     if (!isTourActive || !activeStep) return;
 
-    const revealTimer = setTimeout(() => {
-      const element = document.querySelector(`[data-tour="${activeStep.target}"]`);
-      if (!element) return;
+    if (stepTimerRef.current) clearTimeout(stepTimerRef.current);
 
-      const rect = element.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
+    stepTimerRef.current = setTimeout(() => {
+      captureTargetRect();
+    }, 280);
 
-      // Check if element is hidden outside the visible screen
-      const isOffscreen = rect.top < 0 || rect.bottom > viewportHeight;
-
-      if (isOffscreen) {
-        // Find scrollable container parent or fallback to standard scroll
-        let parent = element.parentElement;
-        let scrollableParent = null;
-        while (parent && parent !== document.body) {
-          const overflowY = window.getComputedStyle(parent).overflowY;
-          if (overflowY === 'auto' || overflowY === 'scroll') {
-            scrollableParent = parent;
-            break;
-          }
-          parent = parent.parentElement;
-        }
-
-        if (scrollableParent) {
-          const parentRect = scrollableParent.getBoundingClientRect();
-          const targetScrollTop = scrollableParent.scrollTop + (rect.top - parentRect.top) - (parentRect.height / 2) + (rect.height / 2);
-          scrollableParent.scrollTo({
-            top: Math.max(0, targetScrollTop),
-            behavior: 'smooth'
-          });
-        } else {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-
-        // Snap coordinates after scroll settles
-        setTimeout(() => {
-          updateTargetCoordinates();
-        }, 350);
-      } else {
-        updateTargetCoordinates();
-      }
-    }, 400);
-
-    return () => clearTimeout(revealTimer);
-  }, [isTourActive, activeStep?.id, activeStep?.target, updateTargetCoordinates]);
-
-  // Handle window resizing
-  useEffect(() => {
-    if (!isTourActive) return;
-
-    const handleResize = () => {
-      updateTargetCoordinates();
+    return () => {
+      if (stepTimerRef.current) clearTimeout(stepTimerRef.current);
     };
+  }, [isTourActive, activeStep?.id, captureTargetRect]);
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [isTourActive, updateTargetCoordinates]);
-
-  const fireConfetti = () => {
+  const fireCelebration = () => {
     confetti({
       particleCount: 80,
-      spread: 60,
+      spread: 65,
       origin: { y: 0.6 },
       colors: [signatureColor, '#10B981', '#F97316']
     });
   };
 
   const handleNext = () => {
-    fireConfetti();
-    if (activeStepIndex === TOUR_STEPS.length - 1) {
+    fireCelebration();
+    if (activeIndex === TOUR_STEPS.length - 1) {
       if (setIsQabOpen) setIsQabOpen(false);
       skipTour();
     } else {
@@ -218,36 +171,36 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
   };
 
   const handlePrev = () => {
-    if (activeStepIndex > 0) {
-      advanceTour(TOUR_STEPS[activeStepIndex - 1].id);
+    if (activeIndex > 0) {
+      advanceTour(TOUR_STEPS[activeIndex - 1].id);
     }
   };
 
   if (!isTourActive || !activeStep) return null;
 
-  const windowHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
-  const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
-  const isTargetInBottomHalf = targetRect && targetRect.top > windowHeight / 2;
+  const winHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+  const winWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
+  const isLowerHalf = spotlightRect && spotlightRect.top > winHeight / 2;
 
-  // Dynamic Highlight Ring Colors matching QAB Tabs
-  let highlightBorderColor = signatureColor;
-  if (activeStep.qabTab === 'transactions') highlightBorderColor = '#F97316';
-  if (activeStep.qabTab === 'income') highlightBorderColor = '#10B981';
+  // Dynamic Theme Colors matching active QAB drawer category
+  let ringColor = signatureColor;
+  if (activeStep.qabTab === 'transactions') ringColor = '#F97316';
+  if (activeStep.qabTab === 'income') ringColor = '#10B981';
 
   return (
-    <div className="fixed inset-0 z-[9999] pointer-events-none">
+    <div className="fixed inset-0 z-[99999] pointer-events-none">
       
       {/* Dimmed & Blurred SVG Backdrop Mask */}
-      <svg className={`absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-300 ${isTargetReady ? "opacity-100" : "opacity-0"}`}>
+      <svg className={`absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-300 ${isReady ? "opacity-100" : "opacity-0"}`}>
         <defs>
-          <mask id="tour-spotlight-mask">
+          <mask id="gold-spotlight-mask">
             <rect x="0" y="0" width="100%" height="100%" fill="white" />
-            {targetRect && (
+            {spotlightRect && (
               <rect
-                x={targetRect.left - 6}
-                y={targetRect.top - 6}
-                width={targetRect.width + 12}
-                height={targetRect.height + 12}
+                x={spotlightRect.left - 6}
+                y={spotlightRect.top - 6}
+                width={spotlightRect.width + 12}
+                height={spotlightRect.height + 12}
                 rx="16"
                 ry="16"
                 fill="black"
@@ -261,22 +214,22 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
           width="100%"
           height="100%"
           fill="rgba(15, 23, 42, 0.78)"
-          mask="url(#tour-spotlight-mask)"
+          mask="url(#gold-spotlight-mask)"
           className="backdrop-blur-sm pointer-events-none"
         />
       </svg>
 
-      {/* Spotlight Border Cutout */}
-      {targetRect && isTargetReady && (
+      {/* Illuminated Cutout Frame */}
+      {spotlightRect && isReady && (
         <div 
           className="absolute rounded-2xl pointer-events-none transition-all duration-300"
           style={{
-            top: targetRect.top - 6,
-            left: targetRect.left - 6,
-            width: targetRect.width + 12,
-            height: targetRect.height + 12,
-            border: `3px solid ${highlightBorderColor}`,
-            boxShadow: `0 0 24px ${highlightBorderColor}99`,
+            top: spotlightRect.top - 6,
+            left: spotlightRect.left - 6,
+            width: spotlightRect.width + 12,
+            height: spotlightRect.height + 12,
+            border: `3px solid ${ringColor}`,
+            boxShadow: `0 0 24px ${ringColor}99`,
           }}
         />
       )}
@@ -284,23 +237,23 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
       {/* Floating Tutorial Card */}
       <div 
         className={`absolute pointer-events-auto rounded-3xl p-6 shadow-2xl max-w-sm w-[90%] md:w-[360px] border transition-all duration-300 ${
-          isDarkMode ? "bg-[#1E293B] border-slate-700 text-white" : "bg-white border-slate-100 text-slate-900"
+          isDarkMode ? "bg-[#1E293B] border-slate-700 text-white shadow-[0_20px_50px_rgba(0,0,0,0.6)]" : "bg-white border-slate-100 text-slate-900 shadow-[0_20px_50px_rgba(0,0,0,0.15)]"
         }`}
         style={{
-          top: targetRect && isTargetReady
-            ? isTargetInBottomHalf 
-              ? Math.max(20, targetRect.top - 240) 
-              : Math.min(windowHeight - 260, targetRect.top + targetRect.height + 20)
+          top: spotlightRect && isReady
+            ? isLowerHalf 
+              ? Math.max(24, spotlightRect.top - 235) 
+              : Math.min(winHeight - 250, spotlightRect.top + spotlightRect.height + 20)
             : '50%',
-          left: targetRect && isTargetReady 
-            ? Math.max(20, Math.min(windowWidth - 380, targetRect.left)) 
+          left: spotlightRect && isReady 
+            ? Math.max(24, Math.min(winWidth - 384, spotlightRect.left)) 
             : '50%',
-          transform: (targetRect && isTargetReady) ? 'none' : 'translate(-50%, -50%)'
+          transform: (spotlightRect && isReady) ? 'none' : 'translate(-50%, -50%)'
         }}
       >
         <div className="flex items-center justify-between mb-3">
           <span className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
-            Step {activeStepIndex + 1} of {TOUR_STEPS.length}
+            Step {activeIndex + 1} of {TOUR_STEPS.length}
           </span>
           <button 
             onClick={() => { if (setIsQabOpen) setIsQabOpen(false); skipTour(); }} 
@@ -321,26 +274,24 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
         </p>
 
         <div className="flex items-center justify-between">
-          {/* Step Progress Indicators */}
+          {/* Progress Dots */}
           <div className="flex gap-1.5">
             {TOUR_STEPS.map((_, i) => (
               <div 
                 key={i} 
                 className={`h-1.5 rounded-full transition-all duration-300 ${
-                  i === activeStepIndex 
-                    ? 'w-5' 
-                    : 'w-1.5 opacity-30'
+                  i === activeIndex ? 'w-5' : 'w-1.5 opacity-30'
                 }`}
                 style={{
-                  backgroundColor: i === activeStepIndex ? highlightBorderColor : isDarkMode ? '#FFFFFF' : '#64748B'
+                  backgroundColor: i === activeIndex ? ringColor : isDarkMode ? '#FFFFFF' : '#64748B'
                 }}
               />
             ))}
           </div>
 
-          {/* Action Controls */}
+          {/* Controls */}
           <div className="flex gap-2">
-            {activeStepIndex > 0 && (
+            {activeIndex > 0 && (
               <button 
                 onClick={handlePrev}
                 className={`p-2 rounded-xl transition-colors ${
@@ -353,10 +304,10 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
             <button 
               onClick={handleNext}
               className="flex items-center gap-1.5 px-4 py-2 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all active:scale-95 shadow-md"
-              style={{ backgroundColor: highlightBorderColor }}
+              style={{ backgroundColor: ringColor }}
             >
-              {activeStepIndex === TOUR_STEPS.length - 1 ? 'Finish' : 'Next'}
-              {activeStepIndex !== TOUR_STEPS.length - 1 && <ChevronRight size={14} />}
+              {activeIndex === TOUR_STEPS.length - 1 ? 'Finish' : 'Next'}
+              {activeIndex !== TOUR_STEPS.length - 1 && <ChevronRight size={14} />}
             </button>
           </div>
         </div>

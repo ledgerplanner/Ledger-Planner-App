@@ -495,9 +495,9 @@ export default function Accounts({
           </div>
         )}
 
-        <div className="space-y-4">
-          {/* SURGICAL INJECTION: data-tour tag anchored directly to top section header for Step 1 */}
-          <h3 data-tour="add-account-btn" className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">All Accounts</h3>
+        {/* SURGICAL SPOTLIGHT ANCHOR: Entire All Accounts Section Container */}
+        <div data-tour="add-account-btn" className="space-y-4">
+          <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">All Accounts</h3>
           <div className={`rounded-[2rem] p-4 border shadow-sm ${isDarkMode ? "bg-[#1E293B] border-slate-800" : "bg-white border-slate-50"}`}>
             {liquidAccounts.length === 0 ? (
                 <p className="text-center text-xs font-bold text-slate-400 py-6">No liquid accounts added.</p>

@@ -135,17 +135,40 @@ export default function OnboardingTour({ setActiveTab, setIsQabOpen, setQabDrawe
     }
   }, [activeStep]);
 
-  // Single smooth scroll on step entrance + coordinates lock
+  // Reliable Multi-Container Scrolling & Snap Engine
   useEffect(() => {
     if (!isTourActive || !activeStep) return;
 
     const scrollTimer = setTimeout(() => {
       const element = document.querySelector(`[data-tour="${activeStep.target}"]`);
       if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Find closest scrollable ancestor (if any)
+        let parent = element.parentElement;
+        let scrollableParent = null;
+        while (parent && parent !== document.body) {
+          const overflowY = window.getComputedStyle(parent).overflowY;
+          if (overflowY === 'auto' || overflowY === 'scroll') {
+            scrollableParent = parent;
+            break;
+          }
+          parent = parent.parentElement;
+        }
+
+        if (scrollableParent) {
+          const parentRect = scrollableParent.getBoundingClientRect();
+          const elementRect = element.getBoundingClientRect();
+          const targetScrollTop = scrollableParent.scrollTop + (elementRect.top - parentRect.top) - (parentRect.height / 2) + (elementRect.height / 2);
+          
+          scrollableParent.scrollTo({
+            top: Math.max(0, targetScrollTop),
+            behavior: 'smooth'
+          });
+        } else {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
       }
       
-      // Update coordinates after the smooth scroll finishes settling
+      // Update coordinates after the scroll finishes settling
       const snapTimer = setTimeout(() => {
         updateSpotlight();
       }, 400);

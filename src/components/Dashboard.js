@@ -70,7 +70,7 @@ export default function Dashboard({
   const todayParts = [todayForMath.getFullYear(), todayForMath.getMonth(), todayForMath.getDate()];
   const todayMidnightMillis = new Date(todayParts[0], todayParts[1], todayParts[2]).getTime();
 
-  // === PAYDAY INTERVAL RANGE ENGINE SYSTEM (GAPLESS CONTINUOUS COVERAGE) ===
+  // === PAYDAY INTERVAL RANGE ENGINE SYSTEM ===
   const freq = paydayConfig?.frequency || "Weekly";
   let allowedPaydays = [];
   
@@ -95,21 +95,18 @@ export default function Dashboard({
       .sort((a, b) => a.millis - b.millis);
 
     activePaydaysWithDates.forEach((pd, idx) => {
-      // SURGICAL FIX: Payday 1 start anchors to today (todayMidnightMillis) so pre-payday bills aren't orphaned
       const startMillis = idx === 0 ? todayMidnightMillis : paydayWindows[activePaydaysWithDates[idx - 1].key].end + 1;
       let endMillis = 0;
 
       if (idx < activePaydaysWithDates.length - 1) {
         endMillis = activePaydaysWithDates[idx + 1].millis - 1;
       } else {
-        // SURGICAL FIX: Smart Early-Warning Runway dynamically locked to frequency length
         let lastDateObj = new Date(pd.date.split("-")[0], parseInt(pd.date.split("-")[1], 10) - 1, pd.date.split("-")[2]);
         if (freq === "Weekly") lastDateObj.setDate(lastDateObj.getDate() + 7);
         else if (freq === "Bi-Weekly") lastDateObj.setDate(lastDateObj.getDate() + 14);
         else if (freq === "Semi-Monthly") lastDateObj.setDate(lastDateObj.getDate() + 15);
         else lastDateObj.setMonth(lastDateObj.getMonth() + 1);
         
-        // Ensure final window always covers at least the end of the active month
         const endOfMonthObj = new Date(currentYearIdx, currentMonthIdx + 1, 0);
         if (lastDateObj.getTime() < endOfMonthObj.getTime()) {
           lastDateObj = endOfMonthObj;
@@ -145,8 +142,19 @@ export default function Dashboard({
       }
     }
 
-    // SURGICAL FIX: Deleted the loose fail-safe block. Far-future bills (Oct 27) now correctly return null.
     return null;
+  };
+
+  const isCurrentMonthBill = (bill) => {
+    if (bill.isOverdue || bill.payday === "Due Now") return true;
+    if (!bill.rawDate) return false;
+    const parts = bill.rawDate.split("-");
+    if (parts.length === 3) {
+      const bMonth = parseInt(parts[1], 10) - 1;
+      const bYear = parseInt(parts[0], 10);
+      return bMonth === currentMonthIdx && bYear === currentYearIdx;
+    }
+    return false;
   };
 
   const billsByRunwayGroup = { "Due Now": [] };
@@ -194,19 +202,7 @@ export default function Dashboard({
   // === DASHBOARD FINANCIAL ENGINE ===
   const currentMonthBillsTotal = bills.reduce((sum, bill) => {
     if (bill.isPaid) return sum;
-    let include = false;
-    if (bill.rawDate) {
-      const parts = bill.rawDate.split("-");
-      if (parts.length === 3) {
-        const bMonth = parseInt(parts[1], 10) - 1;
-        const bYear = parseInt(parts[0], 10);
-        if (bMonth === currentMonthIdx && bYear === currentYearIdx) {
-          include = true;
-        }
-      }
-    }
-    if (bill.isOverdue) include = true;
-    return include ? sum + (Number(bill.amount) || 0) : sum;
+    return isCurrentMonthBill(bill) ? sum + (Number(bill.amount) || 0) : sum;
   }, 0);
 
   const safeToSpend = totalIncomeBalance - currentMonthBillsTotal;
@@ -216,20 +212,7 @@ export default function Dashboard({
   let currentMonthSettledBillsCount = 0;
 
   bills.forEach((bill) => {
-    let includeInMonth = false;
-    if (bill.rawDate) {
-      const parts = bill.rawDate.split("-");
-      if (parts.length === 3) {
-        const bMonth = parseInt(parts[1], 10) - 1;
-        const bYear = parseInt(parts[0], 10);
-        if (bMonth === currentMonthIdx && bYear === currentYearIdx) {
-          includeInMonth = true;
-        }
-      }
-    }
-    if (bill.isOverdue) includeInMonth = true;
-
-    if (includeInMonth) {
+    if (isCurrentMonthBill(bill)) {
       currentMonthTotalBillsCount++;
       if (bill.isPaid) {
         currentMonthSettledBillsCount++;
@@ -246,7 +229,9 @@ export default function Dashboard({
 
   hzPaydays.forEach((pd) => {
     const groupBills = billsByRunwayGroup[pd] || [];
-    const unpaidTotal = groupBills.filter(b => !b.isPaid).reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+    const unpaidTotal = groupBills
+      .filter(b => !b.isPaid && isCurrentMonthBill(b))
+      .reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
 
     if (isEntrepreneurMode) {
       runningBalance = runningBalance - unpaidTotal;
@@ -422,11 +407,11 @@ export default function Dashboard({
 
       <div className="flex justify-center px-6 mb-5 -mt-2 relative z-10">
          {isEntrepreneurMode ? (
-           <button data-tour="payday-btn" className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#1877F2] shadow-sm" : "bg-white/80 backdrop-blur-md border-slate-200 text-[#1877F2] shadow-[0_4px_20px_rgba(0,0,0,0.03)]"}`}>
+           <button className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#1877F2] shadow-sm" : "bg-white/80 backdrop-blur-md border-slate-200 text-[#1877F2] shadow-[0_4px_20px_rgba(0,0,0,0.03)]"}`}>
              🚀 Entrepreneur Mode Active
            </button>
          ) : (
-           <button data-tour="payday-btn" onClick={() => setIsPaydaySetupOpen(true)} className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border transition-all active:scale-95 ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#1877F2] shadow-sm" : "bg-white/80 backdrop-blur-md border-slate-200 text-[#1877F2] shadow-[0_4px_20px_rgba(0,0,0,0.03)]"}`}>
+           <button onClick={() => setIsPaydaySetupOpen(true)} className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border transition-all active:scale-95 ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#1877F2] shadow-sm" : "bg-white/80 backdrop-blur-md border-slate-200 text-[#1877F2] shadow-[0_4px_20px_rgba(0,0,0,0.03)]"}`}>
              <Settings2 size={18} strokeWidth={2.5} /> Set {currentMonthName}'s Pay Dates & Amounts
            </button>
          )}
@@ -448,8 +433,9 @@ export default function Dashboard({
             if (!isEntrepreneurMode && pd !== "Due Now" && !pdSettings?.date) return null;
 
             const unpaidBills = groupBills.filter(b => !b.isPaid);
+            const currentMonthUnpaidBills = unpaidBills.filter(b => isCurrentMonthBill(b));
             const unpaidCount = unpaidBills.length;
-            const unpaidTotal = unpaidBills.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+            const currentMonthUnpaidTotal = currentMonthUnpaidBills.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
 
             if (pd === "Due Now" && unpaidCount === 0) return null;
 
@@ -522,7 +508,7 @@ export default function Dashboard({
                      <span className={`text-[7px] font-black uppercase tracking-widest mb-0.5 ${isDarkMode ? "text-white" : "text-black"}`}>
                       {unpaidCount === 1 ? `${unpaidCount} Bill Out` : `${unpaidCount} Bills Out`}
                     </span>
-                    <span className="text-[10px] font-black text-[#1877F2]">-{currencySymbol}{unpaidTotal.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
+                    <span className="text-[10px] font-black text-[#1877F2]">-{currencySymbol}{currentMonthUnpaidTotal.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
                   </div>
                 </div>
 
@@ -555,7 +541,12 @@ export default function Dashboard({
             }
 
             const isCollapsed = displayActiveAccordion !== payday;
-            const checkTotal = activeGroupBills.reduce((sum, b) => sum + (Number(b?.amount) || 0), 0);
+            
+            // Strictly total bills belonging to the current month for header accuracy
+            const checkTotal = activeGroupBills
+              .filter(b => isCurrentMonthBill(b))
+              .reduce((sum, b) => sum + (Number(b?.amount) || 0), 0);
+              
             const sortedBills = sortBillsSurgically(activeGroupBills);
 
             let expectedDateStr = "";

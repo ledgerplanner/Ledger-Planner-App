@@ -19,49 +19,6 @@ export const LedgerProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isDemoMode, setIsDemoMode] = useState(false);
 
-  // === ONBOARDING TOUR ENGINE STATE ===
-  const [isTourActive, setIsTourActive] = useState(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("lp_tour_completed");
-      return saved ? !JSON.parse(saved) : false;
-    }
-    return false;
-  });
-
-  const [currentTourStep, setCurrentTourStep] = useState(1);
-
-  const startTour = () => {
-    setCurrentTourStep(1);
-    setIsTourActive(true);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("lp_tour_completed", JSON.stringify(false));
-    }
-  };
-
-  const skipTour = () => {
-    setIsTourActive(false);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("lp_tour_completed", JSON.stringify(true));
-    }
-  };
-
-  const advanceTour = (stepId) => {
-    setCurrentTourStep(stepId);
-  };
-
-  const completeTourStep = (stepId) => {
-    if (stepId === 1) setCurrentTourStep(2);
-    else if (stepId === 2) setCurrentTourStep('3A');
-    else if (stepId === '3A') setCurrentTourStep('3B');
-    else if (stepId === '3B') setCurrentTourStep('3C');
-    else if (stepId === '3C') {
-      setIsTourActive(false);
-      if (typeof window !== "undefined") {
-        localStorage.setItem("lp_tour_completed", JSON.stringify(true));
-      }
-    }
-  };
-
   // === PRIMARY LEDGER DATA ARRAYS ===
   const [bills, setBills] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -174,9 +131,6 @@ export const LedgerProvider = ({ children }) => {
   const value = {
     user, setUser,
     isDemoMode, setIsDemoMode,
-    isTourActive, setIsTourActive,
-    currentTourStep, setCurrentTourStep,
-    startTour, skipTour, advanceTour, completeTourStep,
     bills, setBills,
     transactions, setTransactions,
     accounts, setAccounts,

@@ -34,7 +34,6 @@ import AccountBuilder from "./components/modals/AccountBuilder";
 import PaydaySetup from "./components/modals/PaydaySetup";
 import EditEntryDrawer from "./components/modals/EditEntryDrawer";
 import PaymentModal from "./components/modals/PaymentModal";
-import OnboardingTour from "./components/OnboardingTour";
 
 function LedgerApp() {
   // 1. INITIATE THE BACKGROUND DATA PUMP
@@ -848,7 +847,7 @@ function LedgerApp() {
             <button onClick={() => { setIsDarkMode(!isDarkMode); setManualThemeOverride(true); triggerHaptic(20); }} className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-[#1877F2]" : "bg-white border-slate-100 text-slate-400 hover:text-[#1877F2]"}`}>
               {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
             </button>
-            <button data-tour="notification-bell" onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-100 text-slate-400"}`} style={{ color: isNotificationsOpen ? signatureColor : undefined }}>
+            <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-100 text-slate-400"}`} style={{ color: isNotificationsOpen ? signatureColor : undefined }}>
               <Bell size={18} />
               {(constellationBadgeRoute || (!isPushEnabled && !isDemoMode)) && (
                 <span className="absolute top-0 right-0 w-2.5 h-2.5 rounded-full border-[1.5px] animate-pulse bg-red-500 border-red-500"></span>
@@ -862,7 +861,7 @@ function LedgerApp() {
           </div>
 
           <div className="flex items-center gap-2 relative z-30">
-            <button data-tour="settings-btn" onClick={() => setIsSettingsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-100 text-slate-400"}`} style={{ color: isSettingsOpen ? signatureColor : undefined }}>
+            <button onClick={() => setIsSettingsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-100 text-slate-400"}`} style={{ color: isSettingsOpen ? signatureColor : undefined }}>
               <SettingsIcon size={18} />
             </button>
             <button onClick={handleLogout} className={`h-10 px-3.5 rounded-full flex items-center justify-center gap-2 border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-red-400 hover:bg-red-900/30" : "bg-white border-slate-100 text-red-500 hover:bg-red-50"}`}>
@@ -927,7 +926,7 @@ function LedgerApp() {
             ))}
           </div>
           <div className="mt-auto pt-4 shrink-0">
-            <button data-tour="qab-trigger-btn" onClick={handleOpenQab} className="w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-white font-black uppercase tracking-widest text-xs transition-transform active:scale-95 hover:-translate-y-1" style={{ backgroundColor: signatureColor }}><Plus size={18} /> Quick Add</button>
+            <button onClick={handleOpenQab} className="w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-white font-black uppercase tracking-widest text-xs transition-transform active:scale-95 hover:-translate-y-1" style={{ backgroundColor: signatureColor }}><Plus size={18} /> Quick Add</button>
           </div>
         </div>
 
@@ -1034,7 +1033,7 @@ function LedgerApp() {
           </div>
 
           <div className={`fixed lg:hidden ${isDemoMode ? "bottom-[200px]" : "bottom-28"} right-6 z-50`}>
-            <button data-tour="qab-trigger-btn" onClick={() => { triggerHaptic(20); handleOpenQab(); }} className={`w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg border-4 ${isDarkMode ? "border-[#0F172A]" : "border-white"}`} style={{ backgroundColor: signatureColor }}><Plus size={28} /></button>
+            <button onClick={() => { triggerHaptic(20); handleOpenQab(); }} className={`w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg border-4 ${isDarkMode ? "border-[#0F172A]" : "border-white"}`} style={{ backgroundColor: signatureColor }}><Plus size={28} /></button>
           </div>
 
           {/* RESPONSIVE MOBILE NAVIGATION DOCK */}
@@ -1049,7 +1048,6 @@ function LedgerApp() {
         </div>
 
         {/* === THE CORE MODAL INJECTIONS === */}
-        <OnboardingTour setActiveTab={changeTab} setIsQabOpen={setIsQabOpen} setQabDrawerTab={setQabDrawerTab} />
         {isQabOpen && <QuickAddModal onClose={() => setIsQabOpen(false)} triggerHaptic={triggerHaptic} triggerVictory={triggerVictory} forcedTab={qabDrawerTab} />}
         
         {isNotificationsOpen && <CommandCenter 

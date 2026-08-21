@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, ArrowRight, ArrowDown, Search, AlertCircle, CheckCircle2, Calendar as CalendarIcon } from 'lucide-react';
+import { X, ArrowRight, ArrowDown, Search, AlertCircle, CheckCircle2, Calendar as CalendarIcon, BellRing } from 'lucide-react';
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useLedger } from '../../context/LedgerContext';
@@ -23,6 +23,11 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
   const [entryIcon, setEntryIcon] = useState("🧾");
   const [entryCategory, setEntryCategory] = useState("");
   const [entryAccount, setEntryAccount] = useState("");
+  
+  // Bill Reminder Controls (Default ON, 2-day reminder)
+  const [entryHasReminder, setEntryHasReminder] = useState(true);
+  const [entryReminderDays, setEntryReminderDays] = useState(2);
+
   const [entryIsRecurring, setEntryIsRecurring] = useState(false);
   const [entryIsInstallment, setEntryIsInstallment] = useState(false);
   const [entryTotalAmount, setEntryTotalAmount] = useState("");
@@ -132,7 +137,8 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
 
   const closeQab = () => {
     setQabStep(1); setInputValue("0"); setEntryName(""); setEntryDate(""); setEntryIcon("🧾");
-    setEntryCategory(""); setEntryAccount(""); setEntryIsRecurring(false); setEntryIsInstallment(false);
+    setEntryCategory(""); setEntryAccount(""); setEntryHasReminder(true); setEntryReminderDays(2);
+    setEntryIsRecurring(false); setEntryIsInstallment(false);
     setEntryTotalAmount(""); setEntryPaidAmount(""); setIsCategorySelectorOpen(false); setIsIconSelectorOpen(false);
     setCategorySearchQuery(""); setCustomCategoryInput("");
     onClose();
@@ -183,6 +189,8 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
         payday: calculatePaydayGroup(entryDate),
         isPaid: false,
         isOverdue: false,
+        hasReminder: entryHasReminder,
+        reminderDays: entryHasReminder ? Number(entryReminderDays) : 0,
         isRecurring: entryIsRecurring,
         isInstallment: entryIsInstallment,
         totalAmount: entryIsInstallment ? parseFloat(entryTotalAmount) || 0 : 0,
@@ -242,7 +250,7 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
   const qabActiveText = drawerTab === "bills" ? "text-[#1877F2]" : drawerTab === "income" ? "text-[#10B981]" : "text-[#F97316]";
   const qabActiveBg = drawerTab === "bills" ? "bg-[#1877F2]" : drawerTab === "income" ? "bg-[#10B981]" : "bg-[#F97316]";
   const qabActiveShadow = drawerTab === "bills" ? "shadow-[0_8px_16px_rgba(24,119,242,0.3)]" : drawerTab === "income" ? "shadow-[0_8px_16px_rgba(16,185,129,0.3)]" : "shadow-[0_8px_16px_rgba(249,115,22,0.3)]";
-  const qabActiveLabel = drawerTab === "bills" ? "New Bill" : drawerTab === "income" ? "New Income" : "New Expense";
+  const qabActiveLabel = drawerTab === "bills" ? "New Bill" : drawerTab === "income" ? "Add Income" : "New Expense";
   const qabParsedInput = parseFloat(String(inputValue).replace(/\s+/g, ""));
   const isQabAmountValid = !isNaN(qabParsedInput) && (drawerTab === "bills" ? qabParsedInput >= 0 : qabParsedInput > 0);
   
@@ -292,9 +300,9 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
           {qabStep === 1 ? (
             <div className="p-4 flex flex-col space-y-2 h-auto">
               <div className={`flex p-1 rounded-xl ${isDarkMode ? "bg-slate-800" : "bg-slate-100"}`}>
-                <button data-tour="qab-bill" onClick={() => { triggerHaptic(20); setDrawerTab("bills"); setInputValue("0"); }} className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${drawerTab === "bills" ? "text-white shadow-sm" : isDarkMode ? "text-slate-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`} style={{ backgroundColor: drawerTab === "bills" ? signatureColor : undefined }}>Bill</button>
-                <button data-tour="qab-expense" onClick={() => { triggerHaptic(20); setDrawerTab("transactions"); setInputValue("0"); }} className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${drawerTab === "transactions" ? "bg-[#F97316] text-white shadow-sm" : isDarkMode ? "text-slate-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>Expense</button>
-                <button data-tour="qab-income" onClick={() => { triggerHaptic(20); setDrawerTab("income"); setInputValue("0"); }} className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${drawerTab === "income" ? "bg-[#10B981] text-white shadow-sm" : isDarkMode ? "text-slate-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>Income</button>
+                <button onClick={() => { triggerHaptic(20); setDrawerTab("bills"); setInputValue("0"); }} className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${drawerTab === "bills" ? "text-white shadow-sm" : isDarkMode ? "text-slate-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`} style={{ backgroundColor: drawerTab === "bills" ? signatureColor : undefined }}>Bill</button>
+                <button onClick={() => { triggerHaptic(20); setDrawerTab("transactions"); setInputValue("0"); }} className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${drawerTab === "transactions" ? "bg-[#F97316] text-white shadow-sm" : isDarkMode ? "text-slate-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>Expense</button>
+                <button onClick={() => { triggerHaptic(20); setDrawerTab("income"); setInputValue("0"); }} className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${drawerTab === "income" ? "bg-[#10B981] text-white shadow-sm" : isDarkMode ? "text-slate-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>Income</button>
               </div>
               
               <div className="text-center relative flex justify-center items-center py-2">
@@ -402,19 +410,55 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
                       <input type="date" ref={dateInputRef} value={entryDate} onChange={(e) => setEntryDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 pointer-events-none" />
                     </div>
                   </div>
-                  <div className="space-y-3 pt-1 border-t border-slate-100 dark:border-slate-800">
+
+                  <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    
+                    {/* BILL REMINDER SECTION */}
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <BellRing size={13} style={{ color: signatureColor }} />
+                          <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Bill Reminder</span>
+                        </div>
+                        <button onClick={() => { triggerHaptic(20); setEntryHasReminder(!entryHasReminder); }} className="w-12 h-6 rounded-full transition-colors relative bg-slate-300 dark:bg-slate-700" style={{ backgroundColor: entryHasReminder ? signatureColor : undefined }}>
+                          <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${entryHasReminder ? "translate-x-7" : "translate-x-1"}`}></div>
+                        </button>
+                      </div>
+
+                      {entryHasReminder && (
+                        <div className="flex items-center justify-between pl-5 pr-1 py-1">
+                          <span className={`text-[10px] font-bold uppercase tracking-wider ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Alert Window</span>
+                          <select 
+                            value={entryReminderDays} 
+                            onChange={(e) => setEntryReminderDays(Number(e.target.value))}
+                            className={`text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-xl border outline-none cursor-pointer transition-colors ${
+                              isDarkMode ? "bg-slate-800 border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                            }`}
+                          >
+                            <option value={0}>Same Day</option>
+                            <option value={1}>1 Day Before</option>
+                            <option value={2}>2 Days Before (Default)</option>
+                            <option value={3}>3 Days Before</option>
+                            <option value={7}>1 Week Before</option>
+                          </select>
+                        </div>
+                      )}
+                    </div>
+
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Recurring Bill</span>
                       <button onClick={() => { triggerHaptic(20); setEntryIsRecurring(!entryIsRecurring); }} className="w-12 h-6 rounded-full transition-colors relative bg-slate-300 dark:bg-slate-700" style={{ backgroundColor: entryIsRecurring ? signatureColor : undefined }}>
                         <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${entryIsRecurring ? "translate-x-7" : "translate-x-1"}`}></div>
                       </button>
                     </div>
+
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Installment Plan</span>
                       <button onClick={() => { triggerHaptic(20); setEntryIsInstallment(!entryIsInstallment); }} className="w-12 h-6 rounded-full transition-colors relative bg-slate-300 dark:bg-slate-700" style={{ backgroundColor: entryIsInstallment ? signatureColor : undefined }}>
                         <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${entryIsInstallment ? "translate-x-7" : "translate-x-1"}`}></div>
                       </button>
                     </div>
+
                     {entryIsInstallment && (
                       <div className="grid grid-cols-2 gap-3 animate-fade-in mt-1">
                         <div className="relative">

@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { X, Bell, AlertCircle, CheckCircle2, TrendingUp, Sparkles } from 'lucide-react';
+import { X, Bell, AlertCircle, CheckCircle2, TrendingUp, Sparkles, BellRing, Calendar } from 'lucide-react';
 import { useLedger } from '../../context/LedgerContext';
 import { useBriefingEngine } from '../../hooks/useBriefingEngine';
 
 export default function CommandCenter({
   setIsNotificationsOpen,
   needsRefresh,
-  dynamicBills,
+  dynamicBills = [],
   changeTab,
   handleOpenPaydaySetup,
   userName,
@@ -18,11 +18,11 @@ export default function CommandCenter({
   hasConsumedPMBriefing,
   isDemoMode
 }) {
-  const { user, isDarkMode, signatureColor } = useLedger();
+  const { user, isDarkMode, signatureColor, currencySymbol = "$" } = useLedger();
 
   const [isAiBannerDismissed, setIsAiBannerDismissed] = useState(false);
 
-  const { activeAlerts, briefingData, hasUnreadBriefing } = useBriefingEngine({
+  const { activeAlerts = [], briefingData, hasUnreadBriefing } = useBriefingEngine({
     needsRefresh,
     dynamicBills,
     changeTab,
@@ -46,6 +46,51 @@ export default function CommandCenter({
     return bdayStr === todayStr;
   }, [user]);
 
+  // LIVE BILL REMINDER DETECTION ENGINE
+  const reminderAlerts = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayMillis = today.getTime();
+
+    return dynamicBills.filter(bill => {
+      if (bill.isPaid || !bill.rawDate) return false;
+      
+      const hasReminderSet = bill.hasReminder !== false;
+      const reminderDays = bill.reminderDays !== undefined ? Number(bill.reminderDays) : 2;
+      
+      const parts = bill.rawDate.split("-");
+      if (parts.length !== 3) return false;
+      const billDate = new Date(parts[0], parseInt(parts[1], 10) - 1, parts[2]);
+      billDate.setHours(0, 0, 0, 0);
+      const billMillis = billDate.getTime();
+
+      const diffDays = Math.round((billMillis - todayMillis) / (1000 * 60 * 60 * 24));
+      
+      return hasReminderSet && diffDays >= 0 && diffDays <= reminderDays;
+    }).map(bill => {
+      const parts = bill.rawDate.split("-");
+      const billDate = new Date(parts[0], parseInt(parts[1], 10) - 1, parts[2]);
+      billDate.setHours(0, 0, 0, 0);
+      const diffDays = Math.round((billDate.getTime() - todayMillis) / (1000 * 60 * 60 * 24));
+      
+      let timingText = "Due Today";
+      if (diffDays === 1) timingText = "Due Tomorrow";
+      else if (diffDays > 1) timingText = `Due in ${diffDays} Days`;
+
+      return {
+        id: `reminder_${bill.id}`,
+        title: `Upcoming: ${bill.name}`,
+        message: `${currencySymbol}${(Number(bill.amount) || 0).toFixed(2)} due on ${bill.fullDate || bill.rawDate}.`,
+        time: timingText,
+        icon: <BellRing size={16} className="text-amber-500" />,
+        action: () => {
+          setIsNotificationsOpen(false);
+          if (changeTab) changeTab('bills');
+        }
+      };
+    });
+  }, [dynamicBills, currencySymbol, setIsNotificationsOpen, changeTab]);
+
   const onDismissAI = () => {
     setIsAiBannerDismissed(true);
     if (typeof handleDismissAIBriefing === 'function') {
@@ -56,6 +101,8 @@ export default function CommandCenter({
   const aiData = briefingData?.data;
   const isLoadingAI = briefingData?.isLoading;
   const isAM = briefingData?.isAM;
+
+  const allAlerts = [...reminderAlerts, ...activeAlerts];
 
   return (
     <div className="fixed inset-0 z-[120] flex justify-end">
@@ -157,7 +204,7 @@ export default function CommandCenter({
             </div>
           )}
 
-          {activeAlerts.length === 0 && !isBirthdayToday && (!aiData || isAiBannerDismissed) ? (
+          {allAlerts.length === 0 && !isBirthdayToday && (!aiData || isAiBannerDismissed) ? (
             <div className="text-center py-20 opacity-100 flex flex-col items-center justify-center h-full">
               <div className="p-4 rounded-full bg-emerald-50 mb-4 dark:bg-emerald-900/20">
                 <CheckCircle2 size={36} className="text-[#10B981] drop-shadow-sm" />
@@ -167,7 +214,7 @@ export default function CommandCenter({
             </div>
           ) : (
             <div className="space-y-3">
-              {activeAlerts.map(alert => (
+              {allAlerts.map(alert => (
                 <div key={alert.id} onClick={alert.action} className={`p-4 rounded-2xl border cursor-pointer transition-transform active:scale-[0.98] ${isDarkMode ? "bg-slate-800/40 border-slate-700/60 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50 hover:border-slate-200"}`}>
                     <div className="flex gap-3">
                       <div className={`p-2.5 rounded-xl self-start ${isDarkMode ? "bg-slate-900" : "bg-slate-50"}`}>

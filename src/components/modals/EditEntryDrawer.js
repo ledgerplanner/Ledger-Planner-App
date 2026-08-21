@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Edit2, Calendar as CalendarIcon, ArrowDown, Trash2, CheckCircle2 } from 'lucide-react';
+import { X, Edit2, Calendar as CalendarIcon, ArrowDown, Trash2, CheckCircle2, BellRing } from 'lucide-react';
 import { useLedger } from '../../context/LedgerContext';
 import { db } from '../../firebase';
 import { doc, deleteDoc, updateDoc } from 'firebase/firestore';
@@ -44,6 +44,17 @@ export default function EditEntryDrawer({
     return "text-[#1877F2]";
   };
 
+  const getReminderLabel = (entry) => {
+    if (entry.hasReminder === false) return "Off";
+    const days = entry.reminderDays !== undefined ? Number(entry.reminderDays) : 2;
+    if (days === 0) return "Same Day";
+    if (days === 1) return "1 Day Before";
+    if (days === 2) return "2 Days Before";
+    if (days === 3) return "3 Days Before";
+    if (days === 7) return "1 Week Before";
+    return `${days} Days Before`;
+  };
+
   return (
     <div className="fixed inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeEntryDrawer}></div>
@@ -57,7 +68,30 @@ export default function EditEntryDrawer({
             <h3 className={`font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{isEditingEntry ? "Edit Entry" : "Entry Details"}</h3>
           </div>
           <div className="flex items-center gap-2">
-            {!isEditingEntry && (<button onClick={() => { setIsEditingEntry(true); setEditEntryData({ name: selectedEntry.name, amount: (selectedEntry.amount || 0).toFixed(2), category: selectedEntry.category, icon: selectedEntry.icon, rawDate: selectedEntry.rawDate || "", isRecurring: selectedEntry.isRecurring || false, isInstallment: selectedEntry.isInstallment || false, totalAmount: (selectedEntry.totalAmount || 0).toFixed(2) || "", paidAmount: (selectedEntry.paidAmount || 0).toFixed(2) || "", accountId: selectedEntry.accountId || "" }); }} className={closeButtonClass}><Edit2 size={16} /></button>)}
+            {!isEditingEntry && (
+              <button 
+                onClick={() => { 
+                  setIsEditingEntry(true); 
+                  setEditEntryData({ 
+                    name: selectedEntry.name, 
+                    amount: (selectedEntry.amount || 0).toFixed(2), 
+                    category: selectedEntry.category, 
+                    icon: selectedEntry.icon, 
+                    rawDate: selectedEntry.rawDate || "", 
+                    hasReminder: selectedEntry.hasReminder !== false,
+                    reminderDays: selectedEntry.reminderDays !== undefined ? Number(selectedEntry.reminderDays) : 2,
+                    isRecurring: selectedEntry.isRecurring || false, 
+                    isInstallment: selectedEntry.isInstallment || false, 
+                    totalAmount: (selectedEntry.totalAmount || 0).toFixed(2) || "", 
+                    paidAmount: (selectedEntry.paidAmount || 0).toFixed(2) || "", 
+                    accountId: selectedEntry.accountId || "" 
+                  }); 
+                }} 
+                className={closeButtonClass}
+              >
+                <Edit2 size={16} />
+              </button>
+            )}
             <button onClick={closeEntryDrawer} className={closeButtonClass}><X size={18} /></button>
           </div>
         </div>
@@ -83,6 +117,15 @@ export default function EditEntryDrawer({
                   <div className={`flex justify-between py-2 border-b ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
                     <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Type</span>
                     <span className={`text-xs font-black ${selectedEntry.type === "Income" ? "text-[#10B981]" : "text-[#F97316]"}`}>{selectedEntry.type}</span>
+                  </div>
+                )}
+                {selectedEntry.fullDate !== undefined && (
+                  <div className={`flex justify-between py-2 border-b ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Bill Reminder</span>
+                    <span className={`text-xs font-black flex items-center gap-1.5 ${selectedEntry.hasReminder !== false ? "text-[#10B981]" : "text-slate-400"}`}>
+                      <BellRing size={12} />
+                      {getReminderLabel(selectedEntry)}
+                    </span>
                   </div>
                 )}
                 {selectedEntry.payday && (
@@ -160,18 +203,57 @@ export default function EditEntryDrawer({
                       </div>
                     </div>
                     <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+                      
+                      {/* BILL REMINDER SECTION */}
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <BellRing size={13} style={{ color: signatureColor }} />
+                            <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Bill Reminder</span>
+                          </div>
+                          <button 
+                            onClick={() => { setEditEntryData({...editEntryData, hasReminder: !editEntryData.hasReminder}); }} 
+                            className="w-12 h-6 rounded-full transition-colors relative bg-slate-300 dark:bg-slate-700" 
+                            style={{ backgroundColor: editEntryData.hasReminder ? signatureColor : undefined }}
+                          >
+                            <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${editEntryData.hasReminder ? "translate-x-7" : "translate-x-1"}`}></div>
+                          </button>
+                        </div>
+
+                        {editEntryData.hasReminder && (
+                          <div className="flex items-center justify-between pl-5 pr-1 py-1">
+                            <span className={`text-[10px] font-bold uppercase tracking-wider ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Alert Window</span>
+                            <select 
+                              value={editEntryData.reminderDays !== undefined ? editEntryData.reminderDays : 2} 
+                              onChange={(e) => setEditEntryData({...editEntryData, reminderDays: Number(e.target.value)})}
+                              className={`text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-xl border outline-none cursor-pointer transition-colors ${
+                                isDarkMode ? "bg-slate-800 border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                              }`}
+                            >
+                              <option value={0}>Same Day</option>
+                              <option value={1}>1 Day Before</option>
+                              <option value={2}>2 Days Before</option>
+                              <option value={3}>3 Days Before</option>
+                              <option value={7}>1 Week Before</option>
+                            </select>
+                          </div>
+                        )}
+                      </div>
+
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Recurring Bill</span>
                         <button onClick={() => { setEditEntryData({...editEntryData, isRecurring: !editEntryData.isRecurring}); }} className="w-12 h-6 rounded-full transition-colors relative bg-slate-300 dark:bg-slate-700" style={{ backgroundColor: editEntryData.isRecurring ? signatureColor : undefined }}>
                             <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${editEntryData.isRecurring ? "translate-x-7" : "translate-x-1"}`}></div>
                         </button>
                       </div>
+
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Installment Plan</span>
                         <button onClick={() => { setEditEntryData({...editEntryData, isInstallment: !editEntryData.isInstallment}); }} className="w-12 h-6 rounded-full transition-colors relative bg-slate-300 dark:bg-slate-700" style={{ backgroundColor: editEntryData.isInstallment ? signatureColor : undefined }}>
                             <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${editEntryData.isInstallment ? "translate-x-7" : "translate-x-1"}`}></div>
                         </button>
                       </div>
+
                       {editEntryData.isInstallment && (
                         <div className="grid grid-cols-2 gap-3 animate-fade-in mt-1">
                            <div className="relative">

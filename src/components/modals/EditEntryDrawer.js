@@ -23,14 +23,26 @@ export default function EditEntryDrawer({
   const { user, bills, setBills, transactions, setTransactions, modernCategories, currencySymbol = "$" } = useLedger();
   const [isIconSelectorOpen, setIsIconSelectorOpen] = useState(false);
   
-  // EXPANDED UTILITY EMOJI MASTER ARRAY
+  // EXPANDED UTILITY EMOJI MASTER ARRAY FULLY SYNCED WITH QAB
   const categoryEmojis = [
-    "🎯", "💰", "🏦", "📈", "🐖", "💎", "💳", "🚀",
-    "🏠", "🔑", "⚡", "💧", "📶", "🔌", "🗑️", "🛡️",
-    "🛒", "🍕", "☕", "🍔", "🍷",
-    "🚗", "⛽", "🛠️", "🚕", "🅿️", "✈️", "⛵",
-    "💊", "🏋️", "💇", "🛍️", "📦", "🍿", "🎮", "🎸",
-    "👶", "🐶", "🐾", "🎓", "💍", "🎁", "🧳", "🏖️"
+    // Finance & Banking
+    "💲", "💵", "💰", "🏦", "🏧", "💸", "💳", "💎", "📈", "🐖", "🧾", "🪙", "📊", "💱",
+    // Stores & Shopping
+    "🏪", "🛒", "🛍️", "📦", "🏷️", "🏬", "🎁",
+    // Official, Business & Legal
+    "⚖️", "🛡️", "🏛️", "🏢", "💼", "🔒", "🔐", "📄", "📮", "📜",
+    // Housing, Utilities & Household
+    "🏠", "🏡", "🔑", "⚡", "💡", "💧", "📶", "🔌", "🗑️", "🛋️", "🛏️", "🧹", "🌳", "🌲",
+    // Auto, Parking, Transit & Travel
+    "🅿️", "🚗", "⛽", "🛠️", "🧰", "🚕", "🚌", "🚆", "🛵", "🚲", "🛣️", "✈️", "⛵", "⚓", "🧳",
+    // Tech, AI, Cloud & Subscriptions
+    "☁️", "🤖", "💻", "🖥️", "📱", "📡", "🌐", "💾", "🔋", "🎧", "📺", "🎮", "🍿", "🎟️", "🎵", "🎸",
+    // Food & Dining
+    "🍕", "☕", "🍔", "🌮", "🍷", "🍺", "🍦", "🍩",
+    // Health, Wellness & Safety
+    "💊", "🏋️", "💇", "🩺", "🧘", "🧼", "🧯",
+    // Life & Living
+    "👶", "🐶", "🐾", "🎓", "💍", "🏖️", "🎯", "🚀"
   ];
   
   const categoriesToRender = modernCategories;
@@ -78,7 +90,7 @@ export default function EditEntryDrawer({
                     category: selectedEntry.category, 
                     icon: selectedEntry.icon, 
                     rawDate: selectedEntry.rawDate || "", 
-                    hasReminder: selectedEntry.hasReminder !== false,
+                    hasReminder: selectedEntry.hasReminder === true,
                     reminderDays: selectedEntry.reminderDays !== undefined ? Number(selectedEntry.reminderDays) : 2,
                     isRecurring: selectedEntry.isRecurring || false, 
                     isInstallment: selectedEntry.isInstallment || false, 
@@ -122,7 +134,7 @@ export default function EditEntryDrawer({
                 {selectedEntry.fullDate !== undefined && (
                   <div className={`flex justify-between py-2 border-b ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}>
                     <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Bill Reminder</span>
-                    <span className={`text-xs font-black flex items-center gap-1.5 ${selectedEntry.hasReminder !== false ? "text-[#10B981]" : "text-slate-400"}`}>
+                    <span className={`text-xs font-black flex items-center gap-1.5 ${selectedEntry.hasReminder === true ? "text-[#10B981]" : "text-slate-400"}`}>
                       <BellRing size={12} />
                       {getReminderLabel(selectedEntry)}
                     </span>

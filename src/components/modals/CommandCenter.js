@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { X, Bell, AlertCircle, CheckCircle2, TrendingUp, Sparkles, BellRing, Calendar } from 'lucide-react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { X, Bell, AlertCircle, CheckCircle2, TrendingUp, Sparkles, BellRing } from 'lucide-react';
 import { useLedger } from '../../context/LedgerContext';
 import { useBriefingEngine } from '../../hooks/useBriefingEngine';
 
@@ -21,8 +21,24 @@ export default function CommandCenter({
   const { user, isDarkMode, signatureColor, currencySymbol = "$" } = useLedger();
 
   const [isAiBannerDismissed, setIsAiBannerDismissed] = useState(false);
+  const [dismissedAlertKeys, setDismissedAlertKeys] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('lp_dismissed_reminders');
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  });
 
-  const { activeAlerts = [], briefingData, hasUnreadBriefing } = useBriefingEngine({
+  const dismissAlertCard = (e, alertKey) => {
+    e.stopPropagation();
+    const updated = [...dismissedAlertKeys, alertKey];
+    setDismissedAlertKeys(updated);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('lp_dismissed_reminders', JSON.stringify(updated));
+    }
+  };
+
+  const { activeAlerts = [], briefingData } = useBriefingEngine({
     needsRefresh,
     dynamicBills,
     changeTab,
@@ -36,17 +52,25 @@ export default function CommandCenter({
 
   const closeButtonClass = `p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`;
 
-  const isBirthdayToday = useMemo(() => {
-    let bdayStr = "07-02"; 
+  // BIRTHDAY & BIRTHDAY EVE DETECTION ENGINE
+  const birthdayStatus = useMemo(() => {
+    let bdayStr = "08-22";
     if (user?.birthday) {
       bdayStr = user.birthday.length > 5 ? user.birthday.substring(5) : user.birthday;
     }
     const today = new Date();
     const todayStr = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    return bdayStr === todayStr;
+    
+    const tomorrow = new Date();
+    tomorrow.setDate(today.getDate() + 1);
+    const tomorrowStr = `${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+
+    if (bdayStr === todayStr) return "today";
+    if (bdayStr === tomorrowStr) return "eve";
+    return null;
   }, [user]);
 
-  // LIVE BILL REMINDER DETECTION ENGINE
+  // LIVE BILL REMINDER DETECTION & PERSISTENCE ENGINE
   const reminderAlerts = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -66,7 +90,14 @@ export default function CommandCenter({
 
       const diffDays = Math.round((billMillis - todayMillis) / (1000 * 60 * 60 * 24));
       
-      return hasReminderSet && diffDays >= 0 && diffDays <= reminderDays;
+      // Auto-resurface key: encodes bill ID and status phase
+      const statusPhase = diffDays < 0 ? "overdue" : diffDays === 0 ? "due_today" : `upcoming_${diffDays}d`;
+      const reminderUniqueKey = `rem_${bill.id}_${statusPhase}`;
+
+      // If dismissed in this exact phase, suppress; if status phase changes, it resurfaces automatically
+      if (dismissedAlertKeys.includes(reminderUniqueKey)) return false;
+
+      return hasReminderSet && diffDays <= reminderDays;
     }).map(bill => {
       const parts = bill.rawDate.split("-");
       const billDate = new Date(parts[0], parseInt(parts[1], 10) - 1, parts[2]);
@@ -74,22 +105,33 @@ export default function CommandCenter({
       const diffDays = Math.round((billDate.getTime() - todayMillis) / (1000 * 60 * 60 * 24));
       
       let timingText = "Due Today";
-      if (diffDays === 1) timingText = "Due Tomorrow";
-      else if (diffDays > 1) timingText = `Due in ${diffDays} Days`;
+      let statusPhase = "due_today";
+      if (diffDays < 0) {
+        timingText = "Overdue";
+        statusPhase = "overdue";
+      } else if (diffDays === 1) {
+        timingText = "Due Tomorrow";
+        statusPhase = "upcoming_1d";
+      } else if (diffDays > 1) {
+        timingText = `Due in ${diffDays} Days`;
+        statusPhase = `upcoming_${diffDays}d`;
+      }
+
+      const reminderUniqueKey = `rem_${bill.id}_${statusPhase}`;
 
       return {
-        id: `reminder_${bill.id}`,
-        title: `Upcoming: ${bill.name}`,
-        message: `${currencySymbol}${(Number(bill.amount) || 0).toFixed(2)} due on ${bill.fullDate || bill.rawDate}.`,
+        id: reminderUniqueKey,
+        title: bill.name,
+        message: `${currencySymbol}${(Number(bill.amount) || 0).toFixed(2)} due on ${bill.fullDate || bill.rawDate}`,
         time: timingText,
-        icon: <BellRing size={16} className="text-amber-500" />,
+        icon: <BellRing size={18} style={{ color: signatureColor }} />,
         action: () => {
           setIsNotificationsOpen(false);
           if (changeTab) changeTab('bills');
         }
       };
     });
-  }, [dynamicBills, currencySymbol, setIsNotificationsOpen, changeTab]);
+  }, [dynamicBills, currencySymbol, setIsNotificationsOpen, changeTab, dismissedAlertKeys, signatureColor]);
 
   const onDismissAI = () => {
     setIsAiBannerDismissed(true);
@@ -121,7 +163,7 @@ export default function CommandCenter({
         
         <div className="p-6 overflow-y-auto space-y-4 flex-1 hide-scrollbar">
           
-          {isBirthdayToday && (
+          {birthdayStatus === "today" && (
             <div className="p-4 rounded-2xl shadow-lg relative overflow-hidden bg-gradient-to-r from-blue-500 via-orange-500 to-emerald-500">
               <div className={`absolute inset-0.5 rounded-xl ${isDarkMode ? "bg-slate-900/90" : "bg-white/95"}`}></div>
               <div className="relative z-10 flex gap-3 items-center">
@@ -132,6 +174,22 @@ export default function CommandCenter({
                   </p>
                   <p className={`text-[10px] font-bold leading-snug mt-1 ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
                     We at Ledger Planner wish you many more!
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {birthdayStatus === "eve" && (
+            <div className={`p-4 rounded-2xl border shadow-sm relative overflow-hidden ${isDarkMode ? "bg-blue-900/20 border-blue-500/30" : "bg-blue-50/70 border-blue-200"}`}>
+              <div className="flex gap-3 items-center">
+                <div className="p-2.5 text-2xl drop-shadow-sm self-start">🎂</div>
+                <div className="flex-1 min-w-0 py-1">
+                  <p className="font-black text-xs uppercase tracking-wide truncate text-[#1877F2]">
+                    Tomorrow is your Birthday, {userName}!
+                  </p>
+                  <p className={`text-[10px] font-bold leading-snug mt-1 ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
+                    The Ledger Planner team is ready to celebrate with you!
                   </p>
                 </div>
               </div>
@@ -204,7 +262,7 @@ export default function CommandCenter({
             </div>
           )}
 
-          {allAlerts.length === 0 && !isBirthdayToday && (!aiData || isAiBannerDismissed) ? (
+          {allAlerts.length === 0 && !birthdayStatus && (!aiData || isAiBannerDismissed) ? (
             <div className="text-center py-20 opacity-100 flex flex-col items-center justify-center h-full">
               <div className="p-4 rounded-full bg-emerald-50 mb-4 dark:bg-emerald-900/20">
                 <CheckCircle2 size={36} className="text-[#10B981] drop-shadow-sm" />
@@ -215,19 +273,43 @@ export default function CommandCenter({
           ) : (
             <div className="space-y-3">
               {allAlerts.map(alert => (
-                <div key={alert.id} onClick={alert.action} className={`p-4 rounded-2xl border cursor-pointer transition-transform active:scale-[0.98] ${isDarkMode ? "bg-slate-800/40 border-slate-700/60 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50 hover:border-slate-200"}`}>
-                    <div className="flex gap-3">
-                      <div className={`p-2.5 rounded-xl self-start ${isDarkMode ? "bg-slate-900" : "bg-slate-50"}`}>
-                        {alert.icon}
+                <div 
+                  key={alert.id} 
+                  onClick={alert.action} 
+                  className={`p-4 rounded-2xl border cursor-pointer transition-all active:scale-[0.98] ${isDarkMode ? "bg-slate-800/40 border-slate-700/60 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50 hover:border-slate-200"}`}
+                >
+                  <div className="flex gap-3">
+                    <div className={`p-2.5 rounded-xl self-start shrink-0 ${isDarkMode ? "bg-blue-900/20 border border-blue-500/30" : "bg-blue-50 border border-blue-100"}`}>
+                      {alert.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2 mb-0.5">
+                        <p className={`font-black text-xs uppercase tracking-wide truncate ${isDarkMode ? "text-white" : "text-slate-900"}`}>{alert.title}</p>
+                        <button 
+                          onClick={(e) => dismissAlertCard(e, alert.id)}
+                          className={`p-1 rounded-full shrink-0 transition-colors ${isDarkMode ? "text-slate-500 hover:text-white hover:bg-slate-700" : "text-slate-400 hover:text-slate-900 hover:bg-slate-100"}`}
+                          title="Dismiss Alert"
+                        >
+                          <X size={13} strokeWidth={2.5} />
+                        </button>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <p className={`font-black text-xs uppercase tracking-wide truncate ${isDarkMode ? "text-white" : "text-slate-900"}`}>{alert.title}</p>
-                          <span className={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md ${alert.type === 'danger' ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"}`}>{alert.time}</span>
-                        </div>
-                        <p className={`text-[10px] font-bold leading-snug ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{alert.message}</p>
+                      
+                      <p className={`text-[10px] font-bold leading-snug mb-2.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{alert.message}</p>
+                      
+                      {/* Consistent Bottom Timing Pill */}
+                      <div className="flex items-center">
+                        <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border ${
+                          alert.time === 'Overdue'
+                            ? "bg-red-500/10 text-red-500 border-red-500/20"
+                            : isDarkMode 
+                              ? "bg-blue-900/30 text-[#1877F2] border-blue-500/30" 
+                              : "bg-blue-50 text-[#1877F2] border-blue-200"
+                        }`}>
+                          {alert.time}
+                        </span>
                       </div>
                     </div>
+                  </div>
                 </div>
               ))}
             </div>

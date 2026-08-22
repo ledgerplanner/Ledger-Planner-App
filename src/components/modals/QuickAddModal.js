@@ -24,8 +24,8 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
   const [entryCategory, setEntryCategory] = useState("");
   const [entryAccount, setEntryAccount] = useState("");
   
-  // Bill Reminder Controls (Default ON, 2-day reminder)
-  const [entryHasReminder, setEntryHasReminder] = useState(true);
+  // Bill Reminder Controls (Default OFF)
+  const [entryHasReminder, setEntryHasReminder] = useState(false);
   const [entryReminderDays, setEntryReminderDays] = useState(2);
 
   const [entryIsRecurring, setEntryIsRecurring] = useState(false);
@@ -137,7 +137,7 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
 
   const closeQab = () => {
     setQabStep(1); setInputValue("0"); setEntryName(""); setEntryDate(""); setEntryIcon("🧾");
-    setEntryCategory(""); setEntryAccount(""); setEntryHasReminder(true); setEntryReminderDays(2);
+    setEntryCategory(""); setEntryAccount(""); setEntryHasReminder(false); setEntryReminderDays(2);
     setEntryIsRecurring(false); setEntryIsInstallment(false);
     setEntryTotalAmount(""); setEntryPaidAmount(""); setIsCategorySelectorOpen(false); setIsIconSelectorOpen(false);
     setCategorySearchQuery(""); setCustomCategoryInput("");

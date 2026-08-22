@@ -114,30 +114,24 @@ export default function Accounts({
     if (i === 0) {
       historicalCalculatedMap[key] = netWorth;
     } else {
-      if (isDemoMode) {
-        const variance = 1 - (Math.random() * (0.06 - 0.02) + 0.02);
-        currentCalcNW = currentCalcNW * variance;
-        historicalCalculatedMap[key] = currentCalcNW;
-      } else {
-        const monthAheadDate = new Date(today.getFullYear(), today.getMonth() - (i - 1), 1);
-        const txsInMonthAhead = transactions.filter(tx => {
-          let d = new Date(tx.rawDate || tx.date || today);
-          if (d.getFullYear() === 2001) d.setFullYear(today.getFullYear()); 
-          return d.getMonth() === monthAheadDate.getMonth() && d.getFullYear() === monthAheadDate.getFullYear();
-        });
-        
-        const netCashFlowMonthAhead = txsInMonthAhead.reduce((sum, tx) => {
-          return sum + (tx.type === "Income" ? Number(tx.amount) : -Number(tx.amount));
-        }, 0);
-        
-        currentCalcNW -= netCashFlowMonthAhead;
-        
-        let displayVal = currentCalcNW;
-        if (targetDate.getFullYear() < inceptionDate.getFullYear() || (targetDate.getFullYear() === inceptionDate.getFullYear() && targetDate.getMonth() < inceptionDate.getMonth())) {
-          displayVal = 0;
-        }
-        historicalCalculatedMap[key] = displayVal;
+      const monthAheadDate = new Date(today.getFullYear(), today.getMonth() - (i - 1), 1);
+      const txsInMonthAhead = transactions.filter(tx => {
+        let d = new Date(tx.rawDate || tx.date || today);
+        if (d.getFullYear() === 2001) d.setFullYear(today.getFullYear()); 
+        return d.getMonth() === monthAheadDate.getMonth() && d.getFullYear() === monthAheadDate.getFullYear();
+      });
+      
+      const netCashFlowMonthAhead = txsInMonthAhead.reduce((sum, tx) => {
+        return sum + (tx.type === "Income" ? Number(tx.amount) : -Number(tx.amount));
+      }, 0);
+      
+      currentCalcNW -= netCashFlowMonthAhead;
+      
+      let displayVal = currentCalcNW;
+      if (targetDate.getFullYear() < inceptionDate.getFullYear() || (targetDate.getFullYear() === inceptionDate.getFullYear() && targetDate.getMonth() < inceptionDate.getMonth())) {
+        displayVal = 0;
       }
+      historicalCalculatedMap[key] = displayVal;
     }
   }
 
@@ -471,7 +465,6 @@ export default function Accounts({
                 )}
               </a>
 
-              {/* 70% Width Borderless Bureau Logos */}
               <div className="mt-6 pt-5 border-t border-slate-500/20 flex flex-col items-center w-full relative z-10">
                 <span className={`text-[10px] sm:text-[11px] font-black uppercase tracking-[0.25em] mb-4 opacity-60 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                   Verified Data Partners
@@ -505,7 +498,6 @@ export default function Accounts({
                 {liquidAccounts.map((acc) => {
                     const isZero = Number(acc.balance) === 0;
                     const isNegative = acc.balance < 0;
-                    const isPositive = acc.balance > 0;
                     return (
                     <div key={acc.id} className={`flex flex-col p-4 rounded-[1.5rem] border shadow-sm transition-all ${isDarkMode ? "bg-slate-800/50 border-slate-700 hover:bg-slate-800" : "bg-white border-slate-100 hover:bg-slate-50"}`}>
                         
@@ -567,7 +559,6 @@ export default function Accounts({
                     const progressPct = Math.min((balanceAmt / targetAmt) * 100, 100);
                     
                     const isZero = balanceAmt === 0;
-                    const isPositive = balanceAmt > 0;
                     const isNegative = balanceAmt < 0;
   
                     if (!goal.hasCelebratedOnce && isComplete) {

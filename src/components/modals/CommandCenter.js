@@ -1,5 +1,5 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { X, Bell, AlertCircle, CheckCircle2, TrendingUp, Sparkles, BellRing } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { X, Bell, CheckCircle2, BellRing } from 'lucide-react';
 import { useLedger } from '../../context/LedgerContext';
 import { useBriefingEngine } from '../../hooks/useBriefingEngine';
 
@@ -212,9 +212,10 @@ export default function CommandCenter({
                 ? "bg-gradient-to-br from-slate-900 to-[#0A0F1C] border-[#D4AF37]/30 shadow-[0_8px_30px_rgba(212,175,55,0.08)]" 
                 : "bg-gradient-to-br from-[#FFFAF0] to-white border-[#D4AF37]/40 shadow-[0_8px_30px_rgba(212,175,55,0.15)]"
             }`}>
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="text-3xl leading-none select-none shrink-0 drop-shadow-sm">🤖</div>
                 <h4 className="font-black uppercase tracking-widest text-[11px] text-[#D4AF37]">
-                  {isAM ? "🤖 GENERATING AI MORNING BRIEFING..." : "🤖 COMPILING AI EVENING RECAP..."}
+                  {isAM ? "GENERATING AI MORNING BRIEFING..." : "COMPILING AI EVENING RECAP..."}
                 </h4>
               </div>
               <div className="space-y-3">
@@ -233,28 +234,33 @@ export default function CommandCenter({
             }`}>
               <div className="absolute top-[-20%] right-[-10%] w-40 h-40 bg-[#D4AF37]/20 blur-3xl rounded-full pointer-events-none"></div>
               
-              <div className="flex justify-between items-center mb-3 relative z-10">
-                <div className="flex items-center gap-2">
-                  <h4 className="font-black uppercase tracking-widest text-[11px] text-[#D4AF37]">
-                    {isAM ? "🤖 AI MORNING BRIEFING" : "🤖 AI EVENING RECAP"}
+              <div className="flex items-start gap-3 mb-2.5 relative z-10">
+                <div className="text-3xl leading-none select-none shrink-0 drop-shadow-sm">
+                  🤖
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-black uppercase tracking-widest text-[11px] text-[#D4AF37]">
+                      {isAM ? "AI MORNING BRIEFING" : "AI EVENING RECAP"}
+                    </h4>
+                    <button 
+                      onClick={onDismissAI}
+                      className={`p-1 rounded-full transition-colors ${
+                        isDarkMode 
+                          ? "text-slate-400 hover:text-white hover:bg-slate-800" 
+                          : "text-slate-400 hover:text-slate-900 hover:bg-slate-100"
+                      }`}
+                    >
+                      <X size={13} strokeWidth={3} />
+                    </button>
+                  </div>
+                  <h4 className={`text-sm font-black tracking-tight mt-0.5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                    {aiData.title}
                   </h4>
                 </div>
-                <button 
-                  onClick={onDismissAI}
-                  className={`p-1 rounded-full transition-colors ${
-                    isDarkMode 
-                      ? "text-slate-400 hover:text-white hover:bg-slate-800" 
-                      : "text-slate-400 hover:text-slate-900 hover:bg-slate-100"
-                  }`}
-                >
-                  <X size={13} strokeWidth={3} />
-                </button>
               </div>
               
-              <div className="relative z-10 space-y-2.5">
-                <h4 className={`text-sm font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                  {aiData.title}
-                </h4>
+              <div className="relative z-10">
                 <p className={`text-[11px] font-bold leading-relaxed ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
                   {aiData.body}
                 </p>
@@ -296,7 +302,6 @@ export default function CommandCenter({
                       
                       <p className={`text-[10px] font-bold leading-snug mb-2.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{alert.message}</p>
                       
-                      {/* Consistent Bottom Timing Pill */}
                       <div className="flex items-center">
                         <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border ${
                           alert.time === 'Overdue'

@@ -1,9 +1,10 @@
 // src/demoData.js
 
-// DYNAMIC DATE HELPER: Automatically anchors demo sandbox to the live current year & month
+// DYNAMIC DATE ENGINE: Automatically anchors demo sandbox to the live current day, month & year
 const now = new Date();
 const currentYear = now.getFullYear();
 const currentMonth = now.getMonth(); // 0-indexed (e.g. 7 = August)
+const currentDay = now.getDate(); // Exact active day for guaranteed "TODAY" match
 
 const formatIso = (year, monthIdx, day) => {
   const m = String(monthIdx + 1).padStart(2, "0");
@@ -236,9 +237,9 @@ export const demoBills = [
     isPaid: false,
     isOverdue: false,
     payday: "Due Now",
-    rawDate: formatIso(currentYear, currentMonth, 22),
-    date: 22,
-    fullDate: formatDisplayDate(currentYear, currentMonth, 22),
+    rawDate: formatIso(currentYear, currentMonth, Math.min(28, currentDay + 1)),
+    date: Math.min(28, currentDay + 1),
+    fullDate: formatDisplayDate(currentYear, currentMonth, Math.min(28, currentDay + 1)),
     icon: "💧",
     category: "Water / Trash",
     hasReminder: true,
@@ -251,9 +252,9 @@ export const demoBills = [
     isPaid: false,
     isOverdue: false,
     payday: "Due Now",
-    rawDate: formatIso(currentYear, currentMonth, 23),
-    date: 23,
-    fullDate: formatDisplayDate(currentYear, currentMonth, 23),
+    rawDate: formatIso(currentYear, currentMonth, Math.min(28, currentDay + 2)),
+    date: Math.min(28, currentDay + 2),
+    fullDate: formatDisplayDate(currentYear, currentMonth, Math.min(28, currentDay + 2)),
     icon: "🛒",
     category: "Groceries",
     hasReminder: false
@@ -389,64 +390,66 @@ export const demoBills = [
 ];
 
 // ==========================================
-// 4. TRANSACTIONS FEED (HISTORICAL & CURRENT LIVE AUDIT)
+// 4. TRANSACTIONS FEED (DYNAMIC TODAY + MULTI-CATEGORY INFLOWS + HISTORICAL ROLLERCOASTER)
 // ==========================================
 export const demoTransactions = [
-  // --- Current Month Active Live Receipts ---
+  // --- GUARANTEED TODAY TRANSACTIONS (Matches active day exact) ---
   {
-    id: "t_cur_1",
-    name: "Kroger (Short North)",
-    amount: 92.40,
+    id: "t_today_1",
+    name: "Kroger (Short North Fresh Market)",
+    amount: 68.40,
     type: "Expense",
-    date: `${formatDisplayDate(currentYear, currentMonth, 22)}, 3:45 PM`,
-    rawDate: formatIso(currentYear, currentMonth, 22),
+    date: `${formatDisplayDate(currentYear, currentMonth, currentDay)}, 2:15 PM`,
+    rawDate: formatIso(currentYear, currentMonth, currentDay),
     icon: "🛒",
     category: "Groceries",
     accountId: "acc1"
   },
   {
-    id: "t_cur_2",
-    name: "Speedway (High St)",
+    id: "t_today_2",
+    name: "Fox in the Snow (Italian Village)",
+    amount: 12.50,
+    type: "Expense",
+    date: `${formatDisplayDate(currentYear, currentMonth, currentDay)}, 9:30 AM`,
+    rawDate: formatIso(currentYear, currentMonth, currentDay),
+    icon: "☕",
+    category: "Dining Out",
+    accountId: "acc1"
+  },
+
+  // --- Current Month Active Live Receipts ---
+  {
+    id: "t_cur_1",
+    name: "Speedway (High St Fuel)",
     amount: 38.50,
     type: "Expense",
-    date: `${formatDisplayDate(currentYear, currentMonth, 21)}, 8:15 AM`,
-    rawDate: formatIso(currentYear, currentMonth, 21),
+    date: `${formatDisplayDate(currentYear, currentMonth, Math.max(1, currentDay - 1))}, 8:15 AM`,
+    rawDate: formatIso(currentYear, currentMonth, Math.max(1, currentDay - 1)),
     icon: "⛽",
     category: "Gas / Fuel",
     accountId: "acc4"
   },
   {
-    id: "t_cur_3",
+    id: "t_cur_2",
     name: "Employer Payroll Direct Deposit",
     amount: 950.00,
     type: "Income",
-    date: `${formatDisplayDate(currentYear, currentMonth, 21)}, 6:00 AM`,
-    rawDate: formatIso(currentYear, currentMonth, 21),
+    date: `${formatDisplayDate(currentYear, currentMonth, Math.max(1, currentDay - 1))}, 6:00 AM`,
+    rawDate: formatIso(currentYear, currentMonth, Math.max(1, currentDay - 1)),
     icon: "💻",
     category: "Primary Salary",
     accountId: "acc1"
   },
   {
-    id: "t_cur_4",
-    name: "Condado Tacos",
+    id: "t_cur_3",
+    name: "Condado Tacos (Short North)",
     amount: 32.75,
     type: "Expense",
-    date: `${formatDisplayDate(currentYear, currentMonth, 19)}, 7:20 PM`,
-    rawDate: formatIso(currentYear, currentMonth, 19),
+    date: `${formatDisplayDate(currentYear, currentMonth, Math.max(1, currentDay - 3))}, 7:20 PM`,
+    rawDate: formatIso(currentYear, currentMonth, Math.max(1, currentDay - 3)),
     icon: "🌮",
     category: "Dining Out",
     accountId: "acc4"
-  },
-  {
-    id: "t_cur_5",
-    name: "Fox in the Snow Cafe",
-    amount: 14.25,
-    type: "Expense",
-    date: `${formatDisplayDate(currentYear, currentMonth, 18)}, 10:10 AM`,
-    rawDate: formatIso(currentYear, currentMonth, 18),
-    icon: "☕",
-    category: "Dining Out",
-    accountId: "acc1"
   },
 
   // --- Settled Bill Records (Linked to Paid Bills) ---
@@ -571,10 +574,14 @@ export const demoTransactions = [
     isBillPayment: true
   },
 
-  // --- Historical Months (Jan - Jul) for Trendline Visuals ---
+  // ==========================================
+  // MULTI-CATEGORY INFLOW SOURCES & TRENDLINE PEAKS/VALLEYS (JAN - JUL)
+  // ==========================================
+  
+  // --- JULY (Summer Peak Rebound) ---
   {
-    id: "h_jul_1",
-    name: "Employer Payroll",
+    id: "h_jul_inc_1",
+    name: "Primary Salary",
     amount: 3800.00,
     type: "Income",
     date: formatDisplayDate(currentYear, 6, 15),
@@ -584,9 +591,20 @@ export const demoTransactions = [
     accountId: "acc1"
   },
   {
-    id: "h_jul_2",
+    id: "h_jul_inc_2",
+    name: "Freelance UI & Web Retainer",
+    amount: 850.00,
+    type: "Income",
+    date: formatDisplayDate(currentYear, 6, 20),
+    rawDate: formatIso(currentYear, 6, 20),
+    icon: "🎨",
+    category: "Side Hustle & Freelance",
+    accountId: "acc1"
+  },
+  {
+    id: "h_jul_exp_1",
     name: "Red White & BOOM / Summer Festival",
-    amount: 420.00,
+    amount: 340.00,
     type: "Expense",
     date: formatDisplayDate(currentYear, 6, 4),
     rawDate: formatIso(currentYear, 6, 4),
@@ -594,9 +612,11 @@ export const demoTransactions = [
     category: "Entertainment",
     accountId: "acc4"
   },
+
+  // --- JUNE (Vacation & Road Trip Valley) ---
   {
-    id: "h_jun_1",
-    name: "Employer Payroll",
+    id: "h_jun_inc_1",
+    name: "Primary Salary",
     amount: 3800.00,
     type: "Income",
     date: formatDisplayDate(currentYear, 5, 15),
@@ -606,19 +626,43 @@ export const demoTransactions = [
     accountId: "acc1"
   },
   {
-    id: "h_jun_2",
-    name: "Easton Town Center Shopping",
-    amount: 285.50,
+    id: "h_jun_inc_2",
+    name: "Vanguard Quarterly Dividend Yield",
+    amount: 145.00,
+    type: "Income",
+    date: formatDisplayDate(currentYear, 5, 28),
+    rawDate: formatIso(currentYear, 5, 28),
+    icon: "📈",
+    category: "Dividends & Capital Gains",
+    accountId: "acc3"
+  },
+  {
+    id: "h_jun_exp_1",
+    name: "Lake Erie Summer Getaway & Hotel",
+    amount: 1850.00,
     type: "Expense",
     date: formatDisplayDate(currentYear, 5, 18),
     rawDate: formatIso(currentYear, 5, 18),
+    icon: "🏖️",
+    category: "Travel & Vacations",
+    accountId: "acc1"
+  },
+  {
+    id: "h_jun_exp_2",
+    name: "Easton Town Center Shopping",
+    amount: 420.00,
+    type: "Expense",
+    date: formatDisplayDate(currentYear, 5, 22),
+    rawDate: formatIso(currentYear, 5, 22),
     icon: "🛍️",
     category: "Shopping",
     accountId: "acc4"
   },
+
+  // --- MAY (Steady Ascent) ---
   {
-    id: "h_may_1",
-    name: "Employer Payroll",
+    id: "h_may_inc_1",
+    name: "Primary Salary",
     amount: 3800.00,
     type: "Income",
     date: formatDisplayDate(currentYear, 4, 15),
@@ -628,9 +672,20 @@ export const demoTransactions = [
     accountId: "acc1"
   },
   {
-    id: "h_may_2",
-    name: "Home Depot (Yard & Household)",
-    amount: 165.00,
+    id: "h_may_inc_2",
+    name: "Chase Sapphire Cashback Rewards",
+    amount: 95.00,
+    type: "Income",
+    date: formatDisplayDate(currentYear, 4, 25),
+    rawDate: formatIso(currentYear, 4, 25),
+    icon: "💳",
+    category: "Cashback & Bonuses",
+    accountId: "acc1"
+  },
+  {
+    id: "h_may_exp_1",
+    name: "Home Depot (Patio & Home Essentials)",
+    amount: 410.00,
     type: "Expense",
     date: formatDisplayDate(currentYear, 4, 10),
     rawDate: formatIso(currentYear, 4, 10),
@@ -638,9 +693,11 @@ export const demoTransactions = [
     category: "Home Improvement",
     accountId: "acc1"
   },
+
+  // --- APRIL (Spring Climb) ---
   {
-    id: "h_apr_1",
-    name: "Employer Payroll",
+    id: "h_apr_inc_1",
+    name: "Primary Salary",
     amount: 3800.00,
     type: "Income",
     date: formatDisplayDate(currentYear, 3, 15),
@@ -650,9 +707,33 @@ export const demoTransactions = [
     accountId: "acc1"
   },
   {
-    id: "h_mar_1",
+    id: "h_apr_inc_2",
+    name: "Etsy Digital Art Sales",
+    amount: 320.00,
+    type: "Income",
+    date: formatDisplayDate(currentYear, 3, 22),
+    rawDate: formatIso(currentYear, 3, 22),
+    icon: "✨",
+    category: "Side Hustle & Freelance",
+    accountId: "acc1"
+  },
+  {
+    id: "h_apr_exp_1",
+    name: "Spring Auto Tune-up & Tires",
+    amount: 620.00,
+    type: "Expense",
+    date: formatDisplayDate(currentYear, 3, 18),
+    rawDate: formatIso(currentYear, 3, 18),
+    icon: "🚗",
+    category: "Auto Loan / Maintenance",
+    accountId: "acc1"
+  },
+
+  // --- MARCH (Massive Tax Refund Spike) ---
+  {
+    id: "h_mar_inc_1",
     name: "IRS Federal Tax Refund",
-    amount: 1450.00,
+    amount: 2450.00,
     type: "Income",
     date: formatDisplayDate(currentYear, 2, 20),
     rawDate: formatIso(currentYear, 2, 20),
@@ -661,8 +742,8 @@ export const demoTransactions = [
     accountId: "acc1"
   },
   {
-    id: "h_mar_2",
-    name: "Employer Payroll",
+    id: "h_mar_inc_2",
+    name: "Primary Salary",
     amount: 3800.00,
     type: "Income",
     date: formatDisplayDate(currentYear, 2, 15),
@@ -672,25 +753,84 @@ export const demoTransactions = [
     accountId: "acc1"
   },
   {
-    id: "h_feb_1",
-    name: "Employer Payroll",
-    amount: 3800.00,
+    id: "h_mar_inc_3",
+    name: "Q1 Corporate Performance Bonus",
+    amount: 1200.00,
     type: "Income",
-    date: formatDisplayDate(currentYear, 1, 15),
-    rawDate: formatIso(currentYear, 1, 15),
-    icon: "💻",
-    category: "Primary Salary",
+    date: formatDisplayDate(currentYear, 2, 30),
+    rawDate: formatIso(currentYear, 2, 30),
+    icon: "🏆",
+    category: "Bonuses & Tips",
     accountId: "acc1"
   },
   {
-    id: "h_jan_1",
-    name: "Employer Payroll",
+    id: "h_mar_exp_1",
+    name: "Routine Bills & Living Expenses",
+    amount: 1420.00,
+    type: "Expense",
+    date: formatDisplayDate(currentYear, 2, 12),
+    rawDate: formatIso(currentYear, 2, 12),
+    icon: "🧾",
+    category: "Rent / Mortgage",
+    accountId: "acc1"
+  },
+
+  // --- FEBRUARY (Career Transition / Hard Valley Dip - $0 Salary) ---
+  {
+    id: "h_feb_inc_1",
+    name: "Ohio Job Placement Consulting",
+    amount: 350.00,
+    type: "Income",
+    date: formatDisplayDate(currentYear, 1, 20),
+    rawDate: formatIso(currentYear, 1, 20),
+    icon: "💼",
+    category: "Consulting & Advisory",
+    accountId: "acc1"
+  },
+  {
+    id: "h_feb_exp_1",
+    name: "Essential Rent & Winter Heat",
+    amount: 1950.00,
+    type: "Expense",
+    date: formatDisplayDate(currentYear, 1, 5),
+    rawDate: formatIso(currentYear, 1, 5),
+    icon: "🏠",
+    category: "Rent / Mortgage",
+    accountId: "acc1"
+  },
+
+  // --- JANUARY (Initial Baseline Starting Point) ---
+  {
+    id: "h_jan_inc_1",
+    name: "Primary Salary",
     amount: 3800.00,
     type: "Income",
     date: formatDisplayDate(currentYear, 0, 15),
     rawDate: formatIso(currentYear, 0, 15),
     icon: "💻",
     category: "Primary Salary",
+    accountId: "acc1"
+  },
+  {
+    id: "h_jan_inc_2",
+    name: "New Year Sign-On Retainer",
+    amount: 500.00,
+    type: "Income",
+    date: formatDisplayDate(currentYear, 0, 5),
+    rawDate: formatIso(currentYear, 0, 5),
+    icon: "🤝",
+    category: "Bonuses & Tips",
+    accountId: "acc1"
+  },
+  {
+    id: "h_jan_exp_1",
+    name: "Post-Holiday Catch-up Bills",
+    amount: 1650.00,
+    type: "Expense",
+    date: formatDisplayDate(currentYear, 0, 12),
+    rawDate: formatIso(currentYear, 0, 12),
+    icon: "💳",
+    category: "Credit Card Payment",
     accountId: "acc1"
   }
 ];

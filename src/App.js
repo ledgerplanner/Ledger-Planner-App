@@ -311,7 +311,6 @@ function LedgerApp() {
     if (bill.isInstallment) {
       const newPaidAmt = (bill.paidAmount || 0) + amountToPay;
       if (newPaidAmt < (bill.totalAmount || 0) && !paymentModalConfig.isPayInFull) {
-        // Halt Execution: Stage this data to prompt config and wait for "Route to Payday"
         triggerHaptic(50); 
         setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false });
         setInstallmentPromptConfig({ isOpen: true, billId: bill.id, nextDate: "", amountToPay: amountToPay, accountId: targetAcc.id });
@@ -378,7 +377,6 @@ function LedgerApp() {
           if (localBillDate.getTime() === todayLocal.getTime()) updatePayload.payday = "Due Now";
       }
 
-      // SURGICAL INJECTION: Save reminder config to payload
       updatePayload.hasReminder = editEntryData.hasReminder !== undefined ? editEntryData.hasReminder : true;
       updatePayload.reminderDays = editEntryData.hasReminder ? (Number(editEntryData.reminderDays) || 2) : 0;
 
@@ -906,7 +904,7 @@ function LedgerApp() {
 
   return (
     <div onContextMenu={(e) => e.preventDefault()} className={`h-screen overflow-hidden w-full font-sans relative flex transition-colors duration-500 select-none pt-0 [-webkit-touch-callout:none] ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
-      {/* SURGICAL INJECTION: Signature Top Chrome Edge for Desktop */}
+      {/* Signature Top Chrome Edge for Desktop */}
       <div className="hidden md:block absolute top-0 left-0 w-full h-1.5 z-[200]" style={{ backgroundColor: signatureColor }}></div>
       <div className={`w-full h-screen relative flex flex-col lg:flex-row transition-colors duration-500 overflow-hidden ${isDarkMode ? "bg-[#0F172A]" : "bg-[#F8FAFC]"}`}>
         
@@ -936,7 +934,7 @@ function LedgerApp() {
 
         {/* PRIMARY VIEWPORT ROUTER */}
         <div className="flex-1 flex flex-col relative h-full overflow-hidden">
-          <div className={`flex-1 overflow-y-auto hide-scrollbar lg:pb-0 ${isDemoMode ? "pb-[220px]" : "pb-28"}`} ref={scrollRef} onScroll={handleScroll}>
+          <div className="flex-1 overflow-y-auto hide-scrollbar pb-32" ref={scrollRef} onScroll={handleScroll}>
             {activeTab === "home" && (
               <Dashboard 
                 userName={userNameDisplay} 
@@ -1036,12 +1034,12 @@ function LedgerApp() {
             )}
           </div>
 
-          <div className={`fixed lg:hidden ${isDemoMode ? "bottom-[200px]" : "bottom-28"} right-6 z-50`}>
+          <div className="fixed lg:hidden bottom-28 right-6 z-50">
             <button onClick={() => { triggerHaptic(20); handleOpenQab(); }} className={`w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg border-4 ${isDarkMode ? "border-[#0F172A]" : "border-white"}`} style={{ backgroundColor: signatureColor }}><Plus size={28} /></button>
           </div>
 
           {/* RESPONSIVE MOBILE NAVIGATION DOCK */}
-          <div className={`lg:hidden fixed ${isDemoMode ? "bottom-[120px]" : "bottom-0"} left-0 w-full backdrop-blur-md border-t px-2 h-[88px] pb-4 pt-2 flex justify-between items-center z-[100] ${isDarkMode ? "bg-[#1E293B]/95 border-slate-800" : "bg-white/95 border-slate-100"}`}>
+          <div className={`lg:hidden fixed bottom-0 left-0 w-full backdrop-blur-md border-t px-2 h-[88px] pb-4 pt-2 flex justify-between items-center z-[100] ${isDarkMode ? "bg-[#1E293B]/95 border-slate-800" : "bg-white/95 border-slate-100"}`}>
             {[{ id: "home", icon: Home, label: "Home" }, { id: "accounts", icon: Wallet, label: "Accounts" }, { id: "bills", icon: CalendarIcon, label: "Bills" }, { id: "activity", icon: CreditCard, label: "Activity" }, { id: "todo", icon: CheckSquare, label: "To-Do" }].map((tab) => (
               <button key={tab.id} onClick={() => changeTab(tab.id)} className="flex-1 flex flex-col items-center justify-center gap-1 group h-full">
                 <tab.icon size={30} strokeWidth={2} className="transition-all duration-300" style={{ color: activeTab === tab.id ? signatureColor : isDarkMode ? "#FFFFFF" : "#64748B" }} />
@@ -1136,7 +1134,7 @@ function LedgerApp() {
                 <h3 className={`font-black uppercase tracking-widest text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Next Installment</h3>
                 <button onClick={() => setInstallmentPromptConfig({ isOpen: false, billId: null, nextDate: "", amountToPay: 0, accountId: "" })} className={`p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`}><X size={18}/></button>
               </div>
-              <div className={`p-6 space-y-6 ${isDemoMode ? "pb-[140px] lg:pb-6" : ""}`}>
+              <div className="p-6 space-y-6">
                 <div className="text-center">
                   <h2 className={`text-lg font-black mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Payment Logged!</h2>
                   <p className="text-xs font-bold text-slate-500">When is your next payment due?</p>
@@ -1146,7 +1144,6 @@ function LedgerApp() {
                    <div className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors overflow-visible ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
                      <span className={`font-bold text-base pointer-events-none ${!installmentPromptConfig.nextDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{installmentPromptConfig.nextDate ? formatDisplayDate(installmentPromptConfig.nextDate) : "mm/dd/yyyy"}</span>
                      <CalendarIcon size={18} className="shrink-0 pointer-events-none" style={{ color: signatureColor }} />
-                     {/* SURGICAL INJECTION: Input spans entire container for seamless viewport selection */}
                      <input type="date" value={installmentPromptConfig.nextDate} onChange={(e) => setInstallmentPromptConfig({...installmentPromptConfig, nextDate: e.target.value})} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer" />
                    </div>
                 </div>
@@ -1158,30 +1155,29 @@ function LedgerApp() {
 
         {isSettingsOpen && (
           <Settings 
-            userName={userNameDisplay}
+            userName={userNameDisplay} 
             user={user} 
-            isDarkMode={isDarkMode}
-            setIsDarkMode={setIsDarkMode}
-            setIsSettingsOpen={setIsSettingsOpen}
-            handleRolloverMonth={handleRolloverMonth}
-            handleFactoryReset={handleFactoryReset}
-            resetConfirm={resetConfirm}
-            setResetConfirm={setResetConfirm}
-            isDemoMode={isDemoMode}
-            openGlobalAction={openGlobalAction}
-            signatureColor={signatureColor}
-            setSignatureColor={setSignatureColor}
-            currentCurrency={currentCurrency}
-            setCurrentCurrency={setCurrentCurrency}
-            handleUpdateDisplayName={handleUpdateDisplayName}
+            isDarkMode={isDarkMode} 
+            setIsDarkMode={setIsDarkMode} 
+            setIsSettingsOpen={setIsSettingsOpen} 
+            handleRolloverMonth={handleRolloverMonth} 
+            handleFactoryReset={handleFactoryReset} 
+            resetConfirm={resetConfirm} 
+            setResetConfirm={setResetConfirm} 
+            isDemoMode={isDemoMode} 
+            openGlobalAction={openGlobalAction} 
+            signatureColor={signatureColor} 
+            setSignatureColor={setSignatureColor} 
+            currentCurrency={currentCurrency} 
+            setCurrentCurrency={setCurrentCurrency} 
+            handleUpdateDisplayName={handleUpdateDisplayName} 
             isEntrepreneurMode={isEntrepreneurMode} 
-            setIsEntrepreneurMode={setIsEntrepreneurMode}
+            setIsEntrepreneurMode={setIsEntrepreneurMode} 
             handleExportData={handleExportData} 
             triggerVictory={triggerVictory} 
           />
         )}
 
-        {/* SURGICAL INJECTION: Official branding logo centered in global action alert blocks */}
         {globalActionConfig.isOpen && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center px-4">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeGlobalAction}></div>

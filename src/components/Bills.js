@@ -330,9 +330,9 @@ export default function Bills({
             </div>
           )}
 
-          {/* Pill 2: Total Paid (Glides Right, No Pulse, Red if $0, Green if > $0) */}
+          {/* Pill 2: Total Paid (Slate Gray if $0, Emerald Green if > $0) */}
           <div 
-            className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transform transition-all duration-[600ms] delay-[300ms] ${isMounted ? "translate-x-0 opacity-100" : "-translate-x-12 opacity-0"} ${annualPaid === 0 ? (isDarkMode ? 'bg-red-500/10 border-red-900/50 text-red-500' : 'bg-red-50 border-red-200 text-red-500') : (isDarkMode ? 'bg-emerald-500/10 border-emerald-900/50 text-[#10B981]' : 'bg-emerald-50 border-emerald-200 text-[#10B981]')}`}
+            className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between shadow-sm transform transition-all duration-[600ms] delay-[300ms] ${isMounted ? "translate-x-0 opacity-100" : "-translate-x-12 opacity-0"} ${annualPaid === 0 ? (isDarkMode ? 'bg-slate-500/10 border-slate-700/80 text-[#64748B]' : 'bg-slate-50 border-slate-200 text-[#64748B]') : (isDarkMode ? 'bg-emerald-500/10 border-emerald-900/50 text-[#10B981]' : 'bg-emerald-50 border-emerald-200 text-[#10B981]')}`}
             style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
           >
             <span className="text-[10px] font-black uppercase tracking-widest">
@@ -1053,7 +1053,7 @@ export default function Bills({
                         <Edit2 size={16} strokeWidth={2.5} />
                       </button>
                     </div>
-    
+  
                     {/* STANDARD 3-LEVEL LAYOUT FOR SETTLED */}
                     {/* LEVEL 2 */}
                     <div className="flex items-center justify-between w-full mb-4">

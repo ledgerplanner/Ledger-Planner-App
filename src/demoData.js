@@ -50,9 +50,9 @@ export const demoPaydayConfig = {
 };
 
 // ==========================================
-// 3. BILLS & PLANS (20 TOTAL: 10 PAID / 50% GAUGE)
+// 3. BILLS & PLANS (CURRENT ACTIVE + HISTORICAL MONTHLY OVERVIEWS)
 // ==========================================
-export const demoBills = [
+const currentMonthBills = [
   // --- 10 PAID BILLS (Past Paydays 1 & 2) ---
   {
     id: "b1",
@@ -396,6 +396,44 @@ export const demoBills = [
     hasReminder: false
   }
 ];
+
+// --- HISTORICAL SETTLED BILLS (Generates 100% Paid Overviews for Jan – Jul) ---
+const historicalBills = [];
+const pastMonthTemplates = [
+  { name: "Short North Apartment Rent", amount: 1275.00, icon: "🏠", category: "Rent / Mortgage", day: 1 },
+  { name: "AEP Ohio (Electric)", amount: 114.50, icon: "⚡", category: "Electric / Gas", day: 4 },
+  { name: "Columbia Gas of Ohio", amount: 62.00, icon: "🔥", category: "Electric / Gas", day: 6 },
+  { name: "Spectrum Internet", amount: 79.99, icon: "📶", category: "Internet / Wi-Fi", day: 7 },
+  { name: "Progressive Auto Insurance", amount: 112.00, icon: "🚗", category: "Auto Loan / Maintenance", day: 7 },
+  { name: "Auto Loan Note", amount: 295.00, icon: "🚘", category: "Auto Loan / Maintenance", day: 20 },
+  { name: "Student Loan", amount: 165.00, icon: "🎓", category: "Debt Payoff", day: 22 },
+  { name: "Verizon Wireless", amount: 82.00, icon: "📱", category: "Phone / Mobile", day: 24 }
+];
+
+for (let m = 0; m < currentMonth; m++) {
+  pastMonthTemplates.forEach((tmpl, idx) => {
+    historicalBills.push({
+      id: `hb_${m}_${idx}`,
+      name: tmpl.name,
+      amount: tmpl.amount,
+      isPaid: true,
+      isOverdue: false,
+      payday: "Payday 1",
+      rawDate: formatIso(currentYear, m, tmpl.day),
+      date: tmpl.day,
+      fullDate: formatDisplayDate(currentYear, m, tmpl.day),
+      icon: tmpl.icon,
+      category: tmpl.category,
+      hasReminder: false,
+      paidAmount: tmpl.amount,
+      linkedTxId: `tx_hist_${m}_${idx}`,
+      paidFromAccountId: "acc1",
+      settledDate: formatDisplayDate(currentYear, m, tmpl.day)
+    });
+  });
+}
+
+export const demoBills = [...currentMonthBills, ...historicalBills];
 
 // ==========================================
 // 4. TRANSACTIONS FEED (DYNAMIC TODAY + MULTI-CATEGORY INFLOWS + ROLLERCOASTER TRENDLINE)

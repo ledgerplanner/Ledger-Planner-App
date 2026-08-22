@@ -1,15 +1,23 @@
 // src/demoData.js
 
-// DYNAMIC DATE ENGINE: Automatically anchors demo sandbox to the live current day, month & year
+// DYNAMIC DATE ENGINE: Anchors demo sandbox to the live local date
 const now = new Date();
 const currentYear = now.getFullYear();
 const currentMonth = now.getMonth(); // 0-indexed (e.g. 7 = August)
 const currentDay = now.getDate(); // Exact active day for guaranteed "TODAY" match
 
+// Helper to format local date strings (YYYY-MM-DD)
 const formatIso = (year, monthIdx, day) => {
   const m = String(monthIdx + 1).padStart(2, "0");
   const d = String(day).padStart(2, "0");
   return `${year}-${m}-${d}`;
+};
+
+// Helper for local timestamps with explicit midday time to avoid UTC timezone offsets
+const formatIsoToday = (year, monthIdx, day) => {
+  const m = String(monthIdx + 1).padStart(2, "0");
+  const d = String(day).padStart(2, "0");
+  return `${year}-${m}-${d}T12:00:00`;
 };
 
 const formatDisplayDate = (year, monthIdx, day) => {
@@ -390,17 +398,17 @@ export const demoBills = [
 ];
 
 // ==========================================
-// 4. TRANSACTIONS FEED (DYNAMIC TODAY + MULTI-CATEGORY INFLOWS + HISTORICAL ROLLERCOASTER)
+// 4. TRANSACTIONS FEED (DYNAMIC TODAY + MULTI-CATEGORY INFLOWS + ROLLERCOASTER TRENDLINE)
 // ==========================================
 export const demoTransactions = [
-  // --- GUARANTEED TODAY TRANSACTIONS (Matches active day exact) ---
+  // --- GUARANTEED TODAY TRANSACTIONS ---
   {
     id: "t_today_1",
     name: "Kroger (Short North Fresh Market)",
     amount: 68.40,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, currentDay)}, 2:15 PM`,
-    rawDate: formatIso(currentYear, currentMonth, currentDay),
+    rawDate: formatIsoToday(currentYear, currentMonth, currentDay),
     icon: "🛒",
     category: "Groceries",
     accountId: "acc1"
@@ -411,7 +419,7 @@ export const demoTransactions = [
     amount: 12.50,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, currentDay)}, 9:30 AM`,
-    rawDate: formatIso(currentYear, currentMonth, currentDay),
+    rawDate: formatIsoToday(currentYear, currentMonth, currentDay),
     icon: "☕",
     category: "Dining Out",
     accountId: "acc1"
@@ -424,7 +432,7 @@ export const demoTransactions = [
     amount: 38.50,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, Math.max(1, currentDay - 1))}, 8:15 AM`,
-    rawDate: formatIso(currentYear, currentMonth, Math.max(1, currentDay - 1)),
+    rawDate: formatIsoToday(currentYear, currentMonth, Math.max(1, currentDay - 1)),
     icon: "⛽",
     category: "Gas / Fuel",
     accountId: "acc4"
@@ -435,7 +443,7 @@ export const demoTransactions = [
     amount: 950.00,
     type: "Income",
     date: `${formatDisplayDate(currentYear, currentMonth, Math.max(1, currentDay - 1))}, 6:00 AM`,
-    rawDate: formatIso(currentYear, currentMonth, Math.max(1, currentDay - 1)),
+    rawDate: formatIsoToday(currentYear, currentMonth, Math.max(1, currentDay - 1)),
     icon: "💻",
     category: "Primary Salary",
     accountId: "acc1"
@@ -446,7 +454,7 @@ export const demoTransactions = [
     amount: 32.75,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, Math.max(1, currentDay - 3))}, 7:20 PM`,
-    rawDate: formatIso(currentYear, currentMonth, Math.max(1, currentDay - 3)),
+    rawDate: formatIsoToday(currentYear, currentMonth, Math.max(1, currentDay - 3)),
     icon: "🌮",
     category: "Dining Out",
     accountId: "acc4"
@@ -459,7 +467,7 @@ export const demoTransactions = [
     amount: 82.00,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, 14)}, 9:00 AM`,
-    rawDate: formatIso(currentYear, currentMonth, 14),
+    rawDate: formatIsoToday(currentYear, currentMonth, 14),
     icon: "📱",
     category: "Phone / Mobile",
     accountId: "acc1",
@@ -471,7 +479,7 @@ export const demoTransactions = [
     amount: 16.99,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, 14)}, 8:30 AM`,
-    rawDate: formatIso(currentYear, currentMonth, 14),
+    rawDate: formatIsoToday(currentYear, currentMonth, 14),
     icon: "🎵",
     category: "Streaming (Netflix/Hulu)",
     accountId: "acc1",
@@ -483,7 +491,7 @@ export const demoTransactions = [
     amount: 15.99,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, 13)}, 8:00 AM`,
-    rawDate: formatIso(currentYear, currentMonth, 13),
+    rawDate: formatIsoToday(currentYear, currentMonth, 13),
     icon: "🍿",
     category: "Streaming (Netflix/Hulu)",
     accountId: "acc1",
@@ -495,7 +503,7 @@ export const demoTransactions = [
     amount: 24.99,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, 12)}, 7:30 AM`,
-    rawDate: formatIso(currentYear, currentMonth, 12),
+    rawDate: formatIsoToday(currentYear, currentMonth, 12),
     icon: "🏋️",
     category: "Health & Fitness",
     accountId: "acc1",
@@ -507,7 +515,7 @@ export const demoTransactions = [
     amount: 85.00,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, 10)}, 8:00 AM`,
-    rawDate: formatIso(currentYear, currentMonth, 10),
+    rawDate: formatIsoToday(currentYear, currentMonth, 10),
     icon: "🅿️",
     category: "Auto Loan / Maintenance",
     accountId: "acc1",
@@ -519,7 +527,7 @@ export const demoTransactions = [
     amount: 112.00,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, 7)}, 8:00 AM`,
-    rawDate: formatIso(currentYear, currentMonth, 7),
+    rawDate: formatIsoToday(currentYear, currentMonth, 7),
     icon: "🚗",
     category: "Auto Loan / Maintenance",
     accountId: "acc1",
@@ -531,7 +539,7 @@ export const demoTransactions = [
     amount: 79.99,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, 7)}, 8:00 AM`,
-    rawDate: formatIso(currentYear, currentMonth, 7),
+    rawDate: formatIsoToday(currentYear, currentMonth, 7),
     icon: "📶",
     category: "Internet / Wi-Fi",
     accountId: "acc1",
@@ -543,7 +551,7 @@ export const demoTransactions = [
     amount: 58.00,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, 6)}, 8:00 AM`,
-    rawDate: formatIso(currentYear, currentMonth, 6),
+    rawDate: formatIsoToday(currentYear, currentMonth, 6),
     icon: "🔥",
     category: "Electric / Gas",
     accountId: "acc1",
@@ -555,7 +563,7 @@ export const demoTransactions = [
     amount: 118.00,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, 4)}, 8:00 AM`,
-    rawDate: formatIso(currentYear, currentMonth, 4),
+    rawDate: formatIsoToday(currentYear, currentMonth, 4),
     icon: "⚡",
     category: "Electric / Gas",
     accountId: "acc1",
@@ -567,7 +575,7 @@ export const demoTransactions = [
     amount: 1275.00,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, 1)}, 8:00 AM`,
-    rawDate: formatIso(currentYear, currentMonth, 1),
+    rawDate: formatIsoToday(currentYear, currentMonth, 1),
     icon: "🏠",
     category: "Rent / Mortgage",
     accountId: "acc1",
@@ -575,17 +583,17 @@ export const demoTransactions = [
   },
 
   // ==========================================
-  // MULTI-CATEGORY INFLOW SOURCES & TRENDLINE PEAKS/VALLEYS (JAN - JUL)
+  // MULTI-CATEGORY INFLOWS & HISTORICAL CALCULATION
   // ==========================================
   
-  // --- JULY (Summer Peak Rebound) ---
+  // --- JULY (Summer Rebound Peak) ---
   {
     id: "h_jul_inc_1",
     name: "Primary Salary",
     amount: 3800.00,
     type: "Income",
     date: formatDisplayDate(currentYear, 6, 15),
-    rawDate: formatIso(currentYear, 6, 15),
+    rawDate: formatIsoToday(currentYear, 6, 15),
     icon: "💻",
     category: "Primary Salary",
     accountId: "acc1"
@@ -596,31 +604,31 @@ export const demoTransactions = [
     amount: 850.00,
     type: "Income",
     date: formatDisplayDate(currentYear, 6, 20),
-    rawDate: formatIso(currentYear, 6, 20),
+    rawDate: formatIsoToday(currentYear, 6, 20),
     icon: "🎨",
     category: "Side Hustle & Freelance",
     accountId: "acc1"
   },
   {
     id: "h_jul_exp_1",
-    name: "Red White & BOOM / Summer Festival",
-    amount: 340.00,
+    name: "Summer Living & Utility Outflows",
+    amount: 1400.00,
     type: "Expense",
     date: formatDisplayDate(currentYear, 6, 4),
-    rawDate: formatIso(currentYear, 6, 4),
+    rawDate: formatIsoToday(currentYear, 6, 4),
     icon: "🎆",
     category: "Entertainment",
     accountId: "acc4"
   },
 
-  // --- JUNE (Vacation & Road Trip Valley) ---
+  // --- JUNE (Vacation Outflow Valley) ---
   {
     id: "h_jun_inc_1",
     name: "Primary Salary",
     amount: 3800.00,
     type: "Income",
     date: formatDisplayDate(currentYear, 5, 15),
-    rawDate: formatIso(currentYear, 5, 15),
+    rawDate: formatIsoToday(currentYear, 5, 15),
     icon: "💻",
     category: "Primary Salary",
     accountId: "acc1"
@@ -631,7 +639,7 @@ export const demoTransactions = [
     amount: 145.00,
     type: "Income",
     date: formatDisplayDate(currentYear, 5, 28),
-    rawDate: formatIso(currentYear, 5, 28),
+    rawDate: formatIsoToday(currentYear, 5, 28),
     icon: "📈",
     category: "Dividends & Capital Gains",
     accountId: "acc3"
@@ -639,10 +647,10 @@ export const demoTransactions = [
   {
     id: "h_jun_exp_1",
     name: "Lake Erie Summer Getaway & Hotel",
-    amount: 1850.00,
+    amount: 2150.00,
     type: "Expense",
     date: formatDisplayDate(currentYear, 5, 18),
-    rawDate: formatIso(currentYear, 5, 18),
+    rawDate: formatIsoToday(currentYear, 5, 18),
     icon: "🏖️",
     category: "Travel & Vacations",
     accountId: "acc1"
@@ -650,10 +658,10 @@ export const demoTransactions = [
   {
     id: "h_jun_exp_2",
     name: "Easton Town Center Shopping",
-    amount: 420.00,
+    amount: 620.00,
     type: "Expense",
     date: formatDisplayDate(currentYear, 5, 22),
-    rawDate: formatIso(currentYear, 5, 22),
+    rawDate: formatIsoToday(currentYear, 5, 22),
     icon: "🛍️",
     category: "Shopping",
     accountId: "acc4"
@@ -666,7 +674,7 @@ export const demoTransactions = [
     amount: 3800.00,
     type: "Income",
     date: formatDisplayDate(currentYear, 4, 15),
-    rawDate: formatIso(currentYear, 4, 15),
+    rawDate: formatIsoToday(currentYear, 4, 15),
     icon: "💻",
     category: "Primary Salary",
     accountId: "acc1"
@@ -677,7 +685,7 @@ export const demoTransactions = [
     amount: 95.00,
     type: "Income",
     date: formatDisplayDate(currentYear, 4, 25),
-    rawDate: formatIso(currentYear, 4, 25),
+    rawDate: formatIsoToday(currentYear, 4, 25),
     icon: "💳",
     category: "Cashback & Bonuses",
     accountId: "acc1"
@@ -685,23 +693,23 @@ export const demoTransactions = [
   {
     id: "h_may_exp_1",
     name: "Home Depot (Patio & Home Essentials)",
-    amount: 410.00,
+    amount: 750.00,
     type: "Expense",
     date: formatDisplayDate(currentYear, 4, 10),
-    rawDate: formatIso(currentYear, 4, 10),
+    rawDate: formatIsoToday(currentYear, 4, 10),
     icon: "🛠️",
     category: "Home Improvement",
     accountId: "acc1"
   },
 
-  // --- APRIL (Spring Climb) ---
+  // --- APRIL (Spring Inflow Climb) ---
   {
     id: "h_apr_inc_1",
     name: "Primary Salary",
     amount: 3800.00,
     type: "Income",
     date: formatDisplayDate(currentYear, 3, 15),
-    rawDate: formatIso(currentYear, 3, 15),
+    rawDate: formatIsoToday(currentYear, 3, 15),
     icon: "💻",
     category: "Primary Salary",
     accountId: "acc1"
@@ -712,101 +720,101 @@ export const demoTransactions = [
     amount: 320.00,
     type: "Income",
     date: formatDisplayDate(currentYear, 3, 22),
-    rawDate: formatIso(currentYear, 3, 22),
+    rawDate: formatIsoToday(currentYear, 3, 22),
     icon: "✨",
     category: "Side Hustle & Freelance",
     accountId: "acc1"
   },
   {
+    id: "h_apr_inc_3",
+    name: "Reimbursement & Stipend",
+    amount: 180.00,
+    type: "Income",
+    date: formatDisplayDate(currentYear, 3, 28),
+    rawDate: formatIsoToday(currentYear, 3, 28),
+    icon: "🪙",
+    category: "Other Income",
+    accountId: "acc1"
+  },
+  {
     id: "h_apr_exp_1",
-    name: "Spring Auto Tune-up & Tires",
+    name: "Spring Auto Maintenance",
     amount: 620.00,
     type: "Expense",
     date: formatDisplayDate(currentYear, 3, 18),
-    rawDate: formatIso(currentYear, 3, 18),
+    rawDate: formatIsoToday(currentYear, 3, 18),
     icon: "🚗",
     category: "Auto Loan / Maintenance",
     accountId: "acc1"
   },
 
-  // --- MARCH (Massive Tax Refund Spike) ---
+  // --- MARCH ($0.00 VALLEY - Exact Net Delta Zeroes Out Balance) ---
   {
     id: "h_mar_inc_1",
     name: "IRS Federal Tax Refund",
     amount: 2450.00,
     type: "Income",
     date: formatDisplayDate(currentYear, 2, 20),
-    rawDate: formatIso(currentYear, 2, 20),
+    rawDate: formatIsoToday(currentYear, 2, 20),
     icon: "💵",
     category: "Tax Refund",
     accountId: "acc1"
   },
   {
     id: "h_mar_inc_2",
-    name: "Primary Salary",
-    amount: 3800.00,
-    type: "Income",
-    date: formatDisplayDate(currentYear, 2, 15),
-    rawDate: formatIso(currentYear, 2, 15),
-    icon: "💻",
-    category: "Primary Salary",
-    accountId: "acc1"
-  },
-  {
-    id: "h_mar_inc_3",
-    name: "Q1 Corporate Performance Bonus",
+    name: "Q1 Performance Bonus",
     amount: 1200.00,
     type: "Income",
     date: formatDisplayDate(currentYear, 2, 30),
-    rawDate: formatIso(currentYear, 2, 30),
+    rawDate: formatIsoToday(currentYear, 2, 30),
     icon: "🏆",
     category: "Bonuses & Tips",
     accountId: "acc1"
   },
   {
     id: "h_mar_exp_1",
-    name: "Routine Bills & Living Expenses",
-    amount: 1420.00,
+    name: "Emergency Medical & Major Repair Deduction",
+    amount: 11000.00,
     type: "Expense",
     date: formatDisplayDate(currentYear, 2, 12),
-    rawDate: formatIso(currentYear, 2, 12),
-    icon: "🧾",
-    category: "Rent / Mortgage",
+    rawDate: formatIsoToday(currentYear, 2, 12),
+    icon: "🏥",
+    category: "Medical & Healthcare",
     accountId: "acc1"
   },
 
-  // --- FEBRUARY (Career Transition / Hard Valley Dip - $0 Salary) ---
+  // --- FEBRUARY ($0.00 VALLEY - Career Transition / Layoff) ---
   {
     id: "h_feb_inc_1",
-    name: "Ohio Job Placement Consulting",
+    name: "Ohio Advisory Retainer",
     amount: 350.00,
     type: "Income",
     date: formatDisplayDate(currentYear, 1, 20),
-    rawDate: formatIso(currentYear, 1, 20),
+    rawDate: formatIsoToday(currentYear, 1, 20),
     icon: "💼",
     category: "Consulting & Advisory",
     accountId: "acc1"
   },
   {
     id: "h_feb_exp_1",
-    name: "Essential Rent & Winter Heat",
-    amount: 1950.00,
+    name: "Emergency Reserve Outflow Drainage",
+    amount: 350.00,
     type: "Expense",
     date: formatDisplayDate(currentYear, 1, 5),
-    rawDate: formatIso(currentYear, 1, 5),
+    rawDate: formatIsoToday(currentYear, 1, 5),
     icon: "🏠",
     category: "Rent / Mortgage",
     accountId: "acc1"
   },
 
-  // --- JANUARY (Initial Baseline Starting Point) ---
+  // --- JANUARY (Baseline Beginning of Year Record) ---
   {
     id: "h_jan_inc_1",
     name: "Primary Salary",
     amount: 3800.00,
     type: "Income",
     date: formatDisplayDate(currentYear, 0, 15),
-    rawDate: formatIso(currentYear, 0, 15),
+    rawDate: formatIsoToday(currentYear, 0, 15),
     icon: "💻",
     category: "Primary Salary",
     accountId: "acc1"
@@ -817,7 +825,7 @@ export const demoTransactions = [
     amount: 500.00,
     type: "Income",
     date: formatDisplayDate(currentYear, 0, 5),
-    rawDate: formatIso(currentYear, 0, 5),
+    rawDate: formatIsoToday(currentYear, 0, 5),
     icon: "🤝",
     category: "Bonuses & Tips",
     accountId: "acc1"
@@ -828,7 +836,7 @@ export const demoTransactions = [
     amount: 1650.00,
     type: "Expense",
     date: formatDisplayDate(currentYear, 0, 12),
-    rawDate: formatIso(currentYear, 0, 12),
+    rawDate: formatIsoToday(currentYear, 0, 12),
     icon: "💳",
     category: "Credit Card Payment",
     accountId: "acc1"
@@ -850,6 +858,6 @@ export const demoTodos = [
   { id: "td6", text: "Target (Graceland): Household essentials & HVAC filters", priority: 4, type: "shopping", isCompleted: true },
   { id: "td7", text: "Kroger on High St: Weekly meal prep & fresh groceries", priority: 5, type: "shopping", isCompleted: false },
   { id: "td8", text: "Giant Eagle Market District: Specialty coffee beans", priority: 3, type: "shopping", isCompleted: false },
-  { id: "td9", text: "Costco (Polaris): Paper goods & sparkling water bulk pack", priority: 2, type: "shopping", isCompleted: false },
+  { id: "td9", text: "Costco (Polaris): Paper goods & bulk household items", priority: 2, type: "shopping", isCompleted: false },
   { id: "td10", text: "Easton Town Center: Pick up birthday gift", priority: 1, type: "shopping", isCompleted: false }
 ];

@@ -378,6 +378,10 @@ function LedgerApp() {
           if (localBillDate.getTime() === todayLocal.getTime()) updatePayload.payday = "Due Now";
       }
 
+      // SURGICAL INJECTION: Save reminder config to payload
+      updatePayload.hasReminder = editEntryData.hasReminder !== undefined ? editEntryData.hasReminder : true;
+      updatePayload.reminderDays = editEntryData.hasReminder ? (Number(editEntryData.reminderDays) || 2) : 0;
+
       updatePayload.isRecurring = editEntryData.isRecurring || false;
       updatePayload.isInstallment = editEntryData.isInstallment || false;
       if (editEntryData.isInstallment) {
@@ -981,7 +985,7 @@ function LedgerApp() {
               <Bills 
                 userName={userNameDisplay} 
                 bills={dynamicBills} 
-                paydayConfig={paydayConfig}
+                paydayConfig={paydayConfig} 
                 isDarkMode={isDarkMode} 
                 renderHeroShell={renderHeroShell} 
                 accounts={accounts} 

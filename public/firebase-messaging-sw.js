@@ -17,9 +17,21 @@ firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
 // === BACKGROUND MESSAGE RECEIVER ===
-// Native FCM handles notification rendering to avoid duplicate alerts.
+// Ensures visual delivery for both data-only and notification payloads
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Background message received:', payload);
+
+  const notificationTitle = payload.notification?.title || payload.data?.title || 'Ledger Planner';
+  const notificationOptions = {
+    body: payload.notification?.body || payload.data?.body || 'You have a new update in your financial vault.',
+    icon: payload.notification?.icon || payload.data?.icon || '/login-logo.png',
+    badge: '/login-logo.png',
+    data: payload.data || {},
+    tag: payload.data?.tag || `lp-notification-${Date.now()}`,
+    renotify: true
+  };
+
+  return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 // === NOTIFICATION CLICK & NAVIGATION RELAY ===
@@ -27,23 +39,25 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
   const clickData = event.notification.data || {};
+  const targetUrl = clickData.url || '/';
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      // Focus existing open window if available and send the payload data
+      // If a window is already open, focus and navigate it
       for (let i = 0; i < windowClients.length; i++) {
         const client = windowClients[i];
-        if ('focus' in client) {
-          client.focus();
-          client.postMessage({
-            data: clickData
-          });
-          return;
+        if (client.url && 'focus' in client) {
+          client.postMessage({ data: clickData });
+          if ('navigate' in client) {
+            client.navigate(targetUrl);
+          }
+          return client.focus();
         }
       }
-      // Open a fresh window if the application is currently closed
+
+      // If the app is fully closed, launch a new window
       if (clients.openWindow) {
-        return clients.openWindow('/');
+        return clients.openWindow(targetUrl);
       }
     })
   );

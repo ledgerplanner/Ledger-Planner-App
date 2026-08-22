@@ -14,7 +14,7 @@ const formatIso = (year, monthIdx, day) => {
 };
 
 // Helper for local timestamps with explicit midday time to avoid UTC timezone offsets
-const formatIsoToday = (year, monthIdx, day) => {
+const formatIsoMidday = (year, monthIdx, day) => {
   const m = String(monthIdx + 1).padStart(2, "0");
   const d = String(day).padStart(2, "0");
   return `${year}-${m}-${d}T12:00:00`;
@@ -50,7 +50,7 @@ export const demoPaydayConfig = {
 };
 
 // ==========================================
-// 3. BILLS & PLANS (CURRENT ACTIVE + HISTORICAL MONTHLY OVERVIEWS)
+// 3. BILLS & PLANS (CURRENT ACTIVE + FULL VERTICAL ARCHITECTURE FOR JAN - JUL)
 // ==========================================
 const currentMonthBills = [
   // --- 10 PAID BILLS (Past Paydays 1 & 2) ---
@@ -397,47 +397,138 @@ const currentMonthBills = [
   }
 ];
 
-// --- HISTORICAL SETTLED BILLS (Generates 100% Paid Overviews for Jan – Jul) ---
+// --- HISTORICAL BILLS (Maps across Payday 1, 2, 3, 4 with seasonal variance for Jan - Jul) ---
 const historicalBills = [];
-const pastMonthTemplates = [
-  { name: "Short North Apartment Rent", amount: 1275.00, icon: "🏠", category: "Rent / Mortgage", day: 1 },
-  { name: "AEP Ohio (Electric)", amount: 114.50, icon: "⚡", category: "Electric / Gas", day: 4 },
-  { name: "Columbia Gas of Ohio", amount: 62.00, icon: "🔥", category: "Electric / Gas", day: 6 },
-  { name: "Spectrum Internet", amount: 79.99, icon: "📶", category: "Internet / Wi-Fi", day: 7 },
-  { name: "Progressive Auto Insurance", amount: 112.00, icon: "🚗", category: "Auto Loan / Maintenance", day: 7 },
-  { name: "Auto Loan Note", amount: 295.00, icon: "🚘", category: "Auto Loan / Maintenance", day: 20 },
-  { name: "Student Loan", amount: 165.00, icon: "🎓", category: "Debt Payoff", day: 22 },
-  { name: "Verizon Wireless", amount: 82.00, icon: "📱", category: "Phone / Mobile", day: 24 }
+
+const pastMonthConfigs = [
+  { monthIdx: 0, rent: 1250, aep: 142, gas: 118, netflix: 15.99, spotify: 16.99, gym: 24.99, auto: 295, student: 165, card: 85, water: 42 }, // Jan
+  { monthIdx: 1, rent: 1250, aep: 138, gas: 124, netflix: 15.99, spotify: 16.99, gym: 24.99, auto: 295, student: 165, card: 70, water: 44 }, // Feb
+  { monthIdx: 2, rent: 1250, aep: 110, gas: 88,  netflix: 15.99, spotify: 16.99, gym: 24.99, auto: 295, student: 165, card: 60, water: 46 }, // Mar
+  { monthIdx: 3, rent: 1275, aep: 96,  gas: 64,  netflix: 15.99, spotify: 16.99, gym: 24.99, auto: 295, student: 165, card: 95, water: 45 }, // Apr
+  { monthIdx: 4, rent: 1275, aep: 104, gas: 52,  netflix: 15.99, spotify: 16.99, gym: 24.99, auto: 295, student: 165, card: 65, water: 48 }, // May
+  { monthIdx: 5, rent: 1275, aep: 135, gas: 42,  netflix: 15.99, spotify: 16.99, gym: 24.99, auto: 295, student: 165, card: 120, water: 50 }, // Jun
+  { monthIdx: 6, rent: 1275, aep: 148, gas: 38,  netflix: 15.99, spotify: 16.99, gym: 24.99, auto: 295, student: 165, card: 110, water: 52 }  // Jul
 ];
 
-for (let m = 0; m < currentMonth; m++) {
-  pastMonthTemplates.forEach((tmpl, idx) => {
-    historicalBills.push({
-      id: `hb_${m}_${idx}`,
-      name: tmpl.name,
-      amount: tmpl.amount,
-      isPaid: true,
-      isOverdue: false,
-      payday: "Payday 1",
-      rawDate: formatIso(currentYear, m, tmpl.day),
-      date: tmpl.day,
-      fullDate: formatDisplayDate(currentYear, m, tmpl.day),
-      icon: tmpl.icon,
-      category: tmpl.category,
-      hasReminder: false,
-      paidAmount: tmpl.amount,
-      linkedTxId: `tx_hist_${m}_${idx}`,
-      paidFromAccountId: "acc1",
-      settledDate: formatDisplayDate(currentYear, m, tmpl.day)
+pastMonthConfigs.forEach(cfg => {
+  if (cfg.monthIdx < currentMonth) {
+    const m = cfg.monthIdx;
+    const billsForMonth = [
+      // Payday 1
+      { name: "Short North Apartment Rent", amount: cfg.rent, payday: "Payday 1", day: 1, icon: "🏠", cat: "Rent / Mortgage" },
+      { name: "AEP Ohio (Electric)", amount: cfg.aep, payday: "Payday 1", day: 4, icon: "⚡", cat: "Electric / Gas" },
+      { name: "Columbia Gas of Ohio", amount: cfg.gas, payday: "Payday 1", day: 6, icon: "🔥", cat: "Electric / Gas" },
+      
+      // Payday 2
+      { name: "Spectrum Internet", amount: 79.99, payday: "Payday 2", day: 8, icon: "📶", cat: "Internet / Wi-Fi" },
+      { name: "Progressive Auto Insurance", amount: 112.00, payday: "Payday 2", day: 10, icon: "🚗", cat: "Auto Loan / Maintenance" },
+      { name: "Planet Fitness (Grandview)", amount: cfg.gym, payday: "Payday 2", day: 12, icon: "🏋️", cat: "Health & Fitness" },
+      { name: "Netflix Premium", amount: cfg.netflix, payday: "Payday 2", day: 14, icon: "🍿", cat: "Streaming (Netflix/Hulu)" },
+      
+      // Payday 3
+      { name: "Auto Loan", amount: cfg.auto, payday: "Payday 3", day: 18, icon: "🚘", cat: "Auto Loan / Maintenance" },
+      { name: "Spotify Family", amount: cfg.spotify, payday: "Payday 3", day: 20, icon: "🎵", cat: "Streaming (Netflix/Hulu)" },
+      { name: "City of Columbus Water", amount: cfg.water, payday: "Payday 3", day: 21, icon: "💧", cat: "Water / Trash" },
+
+      // Payday 4
+      { name: "Student Loan (FedLoan)", amount: cfg.student, payday: "Payday 4", day: 25, icon: "🎓", cat: "Debt Payoff" },
+      { name: "Chase Freedom Payment", amount: cfg.card, payday: "Payday 4", day: 27, icon: "💳", cat: "Credit Card Payment" },
+      { name: "Verizon Wireless", amount: 82.00, payday: "Payday 4", day: 28, icon: "📱", cat: "Phone / Mobile" }
+    ];
+
+    billsForMonth.forEach((b, idx) => {
+      historicalBills.push({
+        id: `hb_${m}_${idx}`,
+        name: b.name,
+        amount: b.amount,
+        isPaid: true,
+        isOverdue: false,
+        payday: b.payday,
+        rawDate: formatIso(currentYear, m, b.day),
+        date: b.day,
+        fullDate: formatDisplayDate(currentYear, m, b.day),
+        icon: b.icon,
+        category: b.cat,
+        hasReminder: false,
+        paidAmount: b.amount,
+        linkedTxId: `tx_hist_b_${m}_${idx}`,
+        paidFromAccountId: "acc1",
+        settledDate: formatDisplayDate(currentYear, m, b.day)
+      });
     });
-  });
-}
+  }
+});
 
 export const demoBills = [...currentMonthBills, ...historicalBills];
 
 // ==========================================
-// 4. TRANSACTIONS FEED (DYNAMIC TODAY + MULTI-CATEGORY INFLOWS + ROLLERCOASTER TRENDLINE)
+// 4. TRANSACTIONS FEED (DYNAMIC TODAY + HISTORICAL MONTHLY PAYROLLS & SETTLEMENTS)
 // ==========================================
+const historicalTransactions = [];
+
+// Populate 4 weekly payroll deposits + extra income sources for Jan - Jul to feed the Overview Cards & Leaderboard
+const pastMonthIncomes = [
+  { m: 0, salary: 950, extra: [{ name: "New Year Sign-On Retainer", amt: 500, day: 5, cat: "Bonuses & Tips", icon: "🤝" }] },
+  { m: 1, salary: 0,   extra: [{ name: "Ohio Advisory Retainer", amt: 350, day: 20, cat: "Consulting & Advisory", icon: "💼" }] },
+  { m: 2, salary: 950, extra: [{ name: "IRS Federal Tax Refund", amt: 2450, day: 20, cat: "Tax Refund", icon: "💵" }, { name: "Q1 Performance Bonus", amt: 1200, day: 30, cat: "Bonuses & Tips", icon: "🏆" }] },
+  { m: 3, salary: 950, extra: [{ name: "Etsy Digital Art Sales", amt: 320, day: 22, cat: "Side Hustle & Freelance", icon: "✨" }, { name: "Reimbursement & Stipend", amt: 180, day: 28, cat: "Other Income", icon: "🪙" }] },
+  { m: 4, salary: 950, extra: [{ name: "Chase Sapphire Cashback", amt: 95, day: 25, cat: "Cashback & Bonuses", icon: "💳" }] },
+  { m: 5, salary: 950, extra: [{ name: "Vanguard Dividend Yield", amt: 145, day: 28, cat: "Dividends & Capital Gains", icon: "📈" }] },
+  { m: 6, salary: 950, extra: [{ name: "Freelance UI Retainer", amt: 850, day: 20, cat: "Side Hustle & Freelance", icon: "🎨" }] }
+];
+
+pastMonthIncomes.forEach(incCfg => {
+  if (incCfg.m < currentMonth) {
+    // 4 Weekly Salary Paydays
+    if (incCfg.salary > 0) {
+      [7, 14, 21, 28].forEach((pDay, pIdx) => {
+        historicalTransactions.push({
+          id: `h_pay_${incCfg.m}_${pIdx}`,
+          name: "Employer Payroll Direct Deposit",
+          amount: incCfg.salary,
+          type: "Income",
+          date: `${formatDisplayDate(currentYear, incCfg.m, pDay)}, 6:00 AM`,
+          rawDate: formatIsoMidday(currentYear, incCfg.m, pDay),
+          icon: "💻",
+          category: "Primary Salary",
+          accountId: "acc1"
+        });
+      });
+    }
+
+    // Additional categorized income streams
+    incCfg.extra.forEach((ext, eIdx) => {
+      historicalTransactions.push({
+        id: `h_ext_${incCfg.m}_${eIdx}`,
+        name: ext.name,
+        amount: ext.amt,
+        type: "Income",
+        date: `${formatDisplayDate(currentYear, incCfg.m, ext.day)}, 11:00 AM`,
+        rawDate: formatIsoMidday(currentYear, incCfg.m, ext.day),
+        icon: ext.icon,
+        category: ext.cat,
+        accountId: "acc1"
+      });
+    });
+  }
+});
+
+// Link historical settled bill transactions so expense sums balance out
+historicalBills.forEach(hb => {
+  historicalTransactions.push({
+    id: hb.linkedTxId,
+    name: hb.name,
+    amount: hb.amount,
+    type: "Expense",
+    date: `${hb.fullDate}, 8:00 AM`,
+    rawDate: formatIsoMidday(currentYear, new Date(hb.rawDate).getMonth(), hb.date),
+    icon: hb.icon,
+    category: hb.category,
+    accountId: hb.paidFromAccountId,
+    isBillPayment: true
+  });
+});
+
 export const demoTransactions = [
   // --- GUARANTEED TODAY TRANSACTIONS ---
   {
@@ -446,7 +537,7 @@ export const demoTransactions = [
     amount: 68.40,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, currentDay)}, 2:15 PM`,
-    rawDate: formatIsoToday(currentYear, currentMonth, currentDay),
+    rawDate: formatIsoMidday(currentYear, currentMonth, currentDay),
     icon: "🛒",
     category: "Groceries",
     accountId: "acc1"
@@ -457,7 +548,7 @@ export const demoTransactions = [
     amount: 12.50,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, currentDay)}, 9:30 AM`,
-    rawDate: formatIsoToday(currentYear, currentMonth, currentDay),
+    rawDate: formatIsoMidday(currentYear, currentMonth, currentDay),
     icon: "☕",
     category: "Dining Out",
     accountId: "acc1"
@@ -470,7 +561,7 @@ export const demoTransactions = [
     amount: 38.50,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, Math.max(1, currentDay - 1))}, 8:15 AM`,
-    rawDate: formatIsoToday(currentYear, currentMonth, Math.max(1, currentDay - 1)),
+    rawDate: formatIsoMidday(currentYear, currentMonth, Math.max(1, currentDay - 1)),
     icon: "⛽",
     category: "Gas / Fuel",
     accountId: "acc4"
@@ -481,7 +572,7 @@ export const demoTransactions = [
     amount: 950.00,
     type: "Income",
     date: `${formatDisplayDate(currentYear, currentMonth, Math.max(1, currentDay - 1))}, 6:00 AM`,
-    rawDate: formatIsoToday(currentYear, currentMonth, Math.max(1, currentDay - 1)),
+    rawDate: formatIsoMidday(currentYear, currentMonth, Math.max(1, currentDay - 1)),
     icon: "💻",
     category: "Primary Salary",
     accountId: "acc1"
@@ -492,20 +583,20 @@ export const demoTransactions = [
     amount: 32.75,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, Math.max(1, currentDay - 3))}, 7:20 PM`,
-    rawDate: formatIsoToday(currentYear, currentMonth, Math.max(1, currentDay - 3)),
+    rawDate: formatIsoMidday(currentYear, currentMonth, Math.max(1, currentDay - 3)),
     icon: "🌮",
     category: "Dining Out",
     accountId: "acc4"
   },
 
-  // --- Settled Bill Records (Linked to Paid Bills) ---
+  // --- Current Month Settled Bill Records ---
   {
     id: "tx_demo_verizon",
     name: "Verizon Wireless",
     amount: 82.00,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, 14)}, 9:00 AM`,
-    rawDate: formatIsoToday(currentYear, currentMonth, 14),
+    rawDate: formatIsoMidday(currentYear, currentMonth, 14),
     icon: "📱",
     category: "Phone / Mobile",
     accountId: "acc1",
@@ -517,7 +608,7 @@ export const demoTransactions = [
     amount: 16.99,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, 14)}, 8:30 AM`,
-    rawDate: formatIsoToday(currentYear, currentMonth, 14),
+    rawDate: formatIsoMidday(currentYear, currentMonth, 14),
     icon: "🎵",
     category: "Streaming (Netflix/Hulu)",
     accountId: "acc1",
@@ -529,7 +620,7 @@ export const demoTransactions = [
     amount: 15.99,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, 13)}, 8:00 AM`,
-    rawDate: formatIsoToday(currentYear, currentMonth, 13),
+    rawDate: formatIsoMidday(currentYear, currentMonth, 13),
     icon: "🍿",
     category: "Streaming (Netflix/Hulu)",
     accountId: "acc1",
@@ -541,7 +632,7 @@ export const demoTransactions = [
     amount: 24.99,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, 12)}, 7:30 AM`,
-    rawDate: formatIsoToday(currentYear, currentMonth, 12),
+    rawDate: formatIsoMidday(currentYear, currentMonth, 12),
     icon: "🏋️",
     category: "Health & Fitness",
     accountId: "acc1",
@@ -553,7 +644,7 @@ export const demoTransactions = [
     amount: 85.00,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, 10)}, 8:00 AM`,
-    rawDate: formatIsoToday(currentYear, currentMonth, 10),
+    rawDate: formatIsoMidday(currentYear, currentMonth, 10),
     icon: "🅿️",
     category: "Auto Loan / Maintenance",
     accountId: "acc1",
@@ -565,7 +656,7 @@ export const demoTransactions = [
     amount: 112.00,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, 7)}, 8:00 AM`,
-    rawDate: formatIsoToday(currentYear, currentMonth, 7),
+    rawDate: formatIsoMidday(currentYear, currentMonth, 7),
     icon: "🚗",
     category: "Auto Loan / Maintenance",
     accountId: "acc1",
@@ -577,7 +668,7 @@ export const demoTransactions = [
     amount: 79.99,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, 7)}, 8:00 AM`,
-    rawDate: formatIsoToday(currentYear, currentMonth, 7),
+    rawDate: formatIsoMidday(currentYear, currentMonth, 7),
     icon: "📶",
     category: "Internet / Wi-Fi",
     accountId: "acc1",
@@ -589,7 +680,7 @@ export const demoTransactions = [
     amount: 58.00,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, 6)}, 8:00 AM`,
-    rawDate: formatIsoToday(currentYear, currentMonth, 6),
+    rawDate: formatIsoMidday(currentYear, currentMonth, 6),
     icon: "🔥",
     category: "Electric / Gas",
     accountId: "acc1",
@@ -601,7 +692,7 @@ export const demoTransactions = [
     amount: 118.00,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, 4)}, 8:00 AM`,
-    rawDate: formatIsoToday(currentYear, currentMonth, 4),
+    rawDate: formatIsoMidday(currentYear, currentMonth, 4),
     icon: "⚡",
     category: "Electric / Gas",
     accountId: "acc1",
@@ -613,272 +704,14 @@ export const demoTransactions = [
     amount: 1275.00,
     type: "Expense",
     date: `${formatDisplayDate(currentYear, currentMonth, 1)}, 8:00 AM`,
-    rawDate: formatIsoToday(currentYear, currentMonth, 1),
+    rawDate: formatIsoMidday(currentYear, currentMonth, 1),
     icon: "🏠",
     category: "Rent / Mortgage",
     accountId: "acc1",
     isBillPayment: true
   },
 
-  // ==========================================
-  // MULTI-CATEGORY INFLOWS & HISTORICAL CALCULATION
-  // ==========================================
-  
-  // --- JULY (Summer Rebound Peak) ---
-  {
-    id: "h_jul_inc_1",
-    name: "Primary Salary",
-    amount: 3800.00,
-    type: "Income",
-    date: formatDisplayDate(currentYear, 6, 15),
-    rawDate: formatIsoToday(currentYear, 6, 15),
-    icon: "💻",
-    category: "Primary Salary",
-    accountId: "acc1"
-  },
-  {
-    id: "h_jul_inc_2",
-    name: "Freelance UI & Web Retainer",
-    amount: 850.00,
-    type: "Income",
-    date: formatDisplayDate(currentYear, 6, 20),
-    rawDate: formatIsoToday(currentYear, 6, 20),
-    icon: "🎨",
-    category: "Side Hustle & Freelance",
-    accountId: "acc1"
-  },
-  {
-    id: "h_jul_exp_1",
-    name: "Summer Living & Utility Outflows",
-    amount: 1400.00,
-    type: "Expense",
-    date: formatDisplayDate(currentYear, 6, 4),
-    rawDate: formatIsoToday(currentYear, 6, 4),
-    icon: "🎆",
-    category: "Entertainment",
-    accountId: "acc4"
-  },
-
-  // --- JUNE (Vacation Outflow Valley) ---
-  {
-    id: "h_jun_inc_1",
-    name: "Primary Salary",
-    amount: 3800.00,
-    type: "Income",
-    date: formatDisplayDate(currentYear, 5, 15),
-    rawDate: formatIsoToday(currentYear, 5, 15),
-    icon: "💻",
-    category: "Primary Salary",
-    accountId: "acc1"
-  },
-  {
-    id: "h_jun_inc_2",
-    name: "Vanguard Quarterly Dividend Yield",
-    amount: 145.00,
-    type: "Income",
-    date: formatDisplayDate(currentYear, 5, 28),
-    rawDate: formatIsoToday(currentYear, 5, 28),
-    icon: "📈",
-    category: "Dividends & Capital Gains",
-    accountId: "acc3"
-  },
-  {
-    id: "h_jun_exp_1",
-    name: "Lake Erie Summer Getaway & Hotel",
-    amount: 2150.00,
-    type: "Expense",
-    date: formatDisplayDate(currentYear, 5, 18),
-    rawDate: formatIsoToday(currentYear, 5, 18),
-    icon: "🏖️",
-    category: "Travel & Vacations",
-    accountId: "acc1"
-  },
-  {
-    id: "h_jun_exp_2",
-    name: "Easton Town Center Shopping",
-    amount: 620.00,
-    type: "Expense",
-    date: formatDisplayDate(currentYear, 5, 22),
-    rawDate: formatIsoToday(currentYear, 5, 22),
-    icon: "🛍️",
-    category: "Shopping",
-    accountId: "acc4"
-  },
-
-  // --- MAY (Steady Ascent) ---
-  {
-    id: "h_may_inc_1",
-    name: "Primary Salary",
-    amount: 3800.00,
-    type: "Income",
-    date: formatDisplayDate(currentYear, 4, 15),
-    rawDate: formatIsoToday(currentYear, 4, 15),
-    icon: "💻",
-    category: "Primary Salary",
-    accountId: "acc1"
-  },
-  {
-    id: "h_may_inc_2",
-    name: "Chase Sapphire Cashback Rewards",
-    amount: 95.00,
-    type: "Income",
-    date: formatDisplayDate(currentYear, 4, 25),
-    rawDate: formatIsoToday(currentYear, 4, 25),
-    icon: "💳",
-    category: "Cashback & Bonuses",
-    accountId: "acc1"
-  },
-  {
-    id: "h_may_exp_1",
-    name: "Home Depot (Patio & Home Essentials)",
-    amount: 750.00,
-    type: "Expense",
-    date: formatDisplayDate(currentYear, 4, 10),
-    rawDate: formatIsoToday(currentYear, 4, 10),
-    icon: "🛠️",
-    category: "Home Improvement",
-    accountId: "acc1"
-  },
-
-  // --- APRIL (Spring Inflow Climb) ---
-  {
-    id: "h_apr_inc_1",
-    name: "Primary Salary",
-    amount: 3800.00,
-    type: "Income",
-    date: formatDisplayDate(currentYear, 3, 15),
-    rawDate: formatIsoToday(currentYear, 3, 15),
-    icon: "💻",
-    category: "Primary Salary",
-    accountId: "acc1"
-  },
-  {
-    id: "h_apr_inc_2",
-    name: "Etsy Digital Art Sales",
-    amount: 320.00,
-    type: "Income",
-    date: formatDisplayDate(currentYear, 3, 22),
-    rawDate: formatIsoToday(currentYear, 3, 22),
-    icon: "✨",
-    category: "Side Hustle & Freelance",
-    accountId: "acc1"
-  },
-  {
-    id: "h_apr_inc_3",
-    name: "Reimbursement & Stipend",
-    amount: 180.00,
-    type: "Income",
-    date: formatDisplayDate(currentYear, 3, 28),
-    rawDate: formatIsoToday(currentYear, 3, 28),
-    icon: "🪙",
-    category: "Other Income",
-    accountId: "acc1"
-  },
-  {
-    id: "h_apr_exp_1",
-    name: "Spring Auto Maintenance",
-    amount: 620.00,
-    type: "Expense",
-    date: formatDisplayDate(currentYear, 3, 18),
-    rawDate: formatIsoToday(currentYear, 3, 18),
-    icon: "🚗",
-    category: "Auto Loan / Maintenance",
-    accountId: "acc1"
-  },
-
-  // --- MARCH ($0.00 VALLEY - Exact Net Delta Zeroes Out Balance) ---
-  {
-    id: "h_mar_inc_1",
-    name: "IRS Federal Tax Refund",
-    amount: 2450.00,
-    type: "Income",
-    date: formatDisplayDate(currentYear, 2, 20),
-    rawDate: formatIsoToday(currentYear, 2, 20),
-    icon: "💵",
-    category: "Tax Refund",
-    accountId: "acc1"
-  },
-  {
-    id: "h_mar_inc_2",
-    name: "Q1 Performance Bonus",
-    amount: 1200.00,
-    type: "Income",
-    date: formatDisplayDate(currentYear, 2, 30),
-    rawDate: formatIsoToday(currentYear, 2, 30),
-    icon: "🏆",
-    category: "Bonuses & Tips",
-    accountId: "acc1"
-  },
-  {
-    id: "h_mar_exp_1",
-    name: "Emergency Medical & Major Repair Deduction",
-    amount: 11000.00,
-    type: "Expense",
-    date: formatDisplayDate(currentYear, 2, 12),
-    rawDate: formatIsoToday(currentYear, 2, 12),
-    icon: "🏥",
-    category: "Medical & Healthcare",
-    accountId: "acc1"
-  },
-
-  // --- FEBRUARY ($0.00 VALLEY - Career Transition / Layoff) ---
-  {
-    id: "h_feb_inc_1",
-    name: "Ohio Advisory Retainer",
-    amount: 350.00,
-    type: "Income",
-    date: formatDisplayDate(currentYear, 1, 20),
-    rawDate: formatIsoToday(currentYear, 1, 20),
-    icon: "💼",
-    category: "Consulting & Advisory",
-    accountId: "acc1"
-  },
-  {
-    id: "h_feb_exp_1",
-    name: "Emergency Reserve Outflow Drainage",
-    amount: 350.00,
-    type: "Expense",
-    date: formatDisplayDate(currentYear, 1, 5),
-    rawDate: formatIsoToday(currentYear, 1, 5),
-    icon: "🏠",
-    category: "Rent / Mortgage",
-    accountId: "acc1"
-  },
-
-  // --- JANUARY (Baseline Beginning of Year Record) ---
-  {
-    id: "h_jan_inc_1",
-    name: "Primary Salary",
-    amount: 3800.00,
-    type: "Income",
-    date: formatDisplayDate(currentYear, 0, 15),
-    rawDate: formatIsoToday(currentYear, 0, 15),
-    icon: "💻",
-    category: "Primary Salary",
-    accountId: "acc1"
-  },
-  {
-    id: "h_jan_inc_2",
-    name: "New Year Sign-On Retainer",
-    amount: 500.00,
-    type: "Income",
-    date: formatDisplayDate(currentYear, 0, 5),
-    rawDate: formatIsoToday(currentYear, 0, 5),
-    icon: "🤝",
-    category: "Bonuses & Tips",
-    accountId: "acc1"
-  },
-  {
-    id: "h_jan_exp_1",
-    name: "Post-Holiday Catch-up Bills",
-    amount: 1650.00,
-    type: "Expense",
-    date: formatDisplayDate(currentYear, 0, 12),
-    rawDate: formatIsoToday(currentYear, 0, 12),
-    icon: "💳",
-    category: "Credit Card Payment",
-    accountId: "acc1"
-  }
+  ...historicalTransactions
 ];
 
 // ==========================================

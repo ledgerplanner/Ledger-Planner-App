@@ -43,24 +43,24 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
 
   const dateInputRef = useRef(null);
 
-  // SUPERCHARGED UTILITY EMOJI MASTER ARRAY (89 EMOJIS)
+  // EXPANDED UTILITY EMOJI MASTER ARRAY WITH CLOUD, ROBOT, PARKING & MODERN UTILITIES
   const categoryEmojis = [
     // Finance & Banking
-    "💲", "💵", "💰", "🏦", "🏧", "💸", "💳", "💎", "📈", "🐖", "🧾", "🪙", "📊",
+    "💲", "💵", "💰", "🏦", "🏧", "💸", "💳", "💎", "📈", "🐖", "🧾", "🪙", "📊", "💱",
     // Stores & Shopping
     "🏪", "🛒", "🛍️", "📦", "🏷️", "🏬", "🎁",
-    // Official & Legal
-    "⚖️", "🛡️", "🏛️", "🏢", "🔒", "🔐", "📄", "📮", "💼", "📜",
+    // Official, Business & Legal
+    "⚖️", "🛡️", "🏛️", "🏢", "💼", "🔒", "🔐", "📄", "📮", "📜",
     // Housing, Utilities & Household
-    "🏠", "🌳", "🌲", "🔑", "⚡", "💧", "📶", "🔌", "🗑️", "🛋️", "🛏️", "🧹",
-    // Auto & Transport
-    "🚗", "⛽", "🛠️", "🚕", "🅿️", "✈️", "⛵", "🚌", "🚲", "🧳",
+    "🏠", "🏡", "🔑", "⚡", "💡", "💧", "📶", "🔌", "🗑️", "🛋️", "🛏️", "🧹", "🌳", "🌲",
+    // Auto, Parking, Transit & Travel
+    "🅿️", "🚗", "⛽", "🛠️", "🧰", "🚕", "🚌", "🚆", "🛵", "🚲", "🛣️", "✈️", "⛵", "⚓", "🧳",
+    // Tech, AI, Cloud & Subscriptions
+    "☁️", "🤖", "💻", "🖥️", "📱", "📡", "🌐", "💾", "🔋", "🎧", "📺", "🎮", "🍿", "🎟️", "🎵", "🎸",
     // Food & Dining
-    "🍕", "☕", "🍔", "🍷", "🍺", "🌮", "🍦", "🍩",
-    // Health & Self-Care
-    "💊", "🏋️", "💇", "🩺", "🧘", "🧼",
-    // Tech & Entertainment
-    "🍿", "🎮", "🎸", "📱", "💻", "🎧", "📺", "🎟️", "🎵",
+    "🍕", "☕", "🍔", "🌮", "🍷", "🍺", "🍦", "🍩",
+    // Health, Wellness & Safety
+    "💊", "🏋️", "💇", "🩺", "🧘", "🧼", "🧯",
     // Life & Living
     "👶", "🐶", "🐾", "🎓", "💍", "🏖️", "🎯", "🚀"
   ];
@@ -344,7 +344,7 @@ export default function QuickAddModal({ onClose, triggerHaptic, triggerVictory }
                     drawerTab === "income" ? "Enter payer / source..." : 
                     drawerTab === "bills" ? "Enter bill name..." : 
                     "Expense name..."
-                  }
+                  } 
                   className={`w-full pt-6 pb-2 px-5 rounded-2xl border font-bold text-sm focus:outline-none transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white focus:border-slate-500" : "bg-white border-slate-200 text-slate-900 focus:border-slate-400"}`} 
                 />
               </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Search, Edit2, ChevronUp, ChevronDown } from "lucide-react";
 import { useLedger } from "../context/LedgerContext";
 
@@ -16,8 +16,6 @@ export default function Activity({
 }) {
   const { currencySymbol = "$" } = useLedger();
   const [isMounted, setIsMounted] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth());
-  const horizontalScrollRef = useRef(null);
 
   // === UPGRADED SYNCHRONOUS STATE ENGINE (ZERO-FLASH GUARANTEE) ===
   const [userToggledMonths, setUserToggledMonths] = useState({});
@@ -36,92 +34,9 @@ export default function Activity({
   const isSearching = activitySearch.trim() !== "" || activityFilter !== "All";
   const actualIsTodayCollapsed = userToggledToday !== null ? userToggledToday : false;
 
-  const currentYear = new Date().getFullYear();
-  const currentMonthIndex = new Date().getMonth();
-  const monthsData = [
-    { name: "January", short: "Jan", idx: 0 },
-    { name: "February", short: "Feb", idx: 1 },
-    { name: "March", short: "Mar", idx: 2 },
-    { name: "April", short: "Apr", idx: 3 },
-    { name: "May", short: "May", idx: 4 },
-    { name: "June", short: "Jun", idx: 5 },
-    { name: "July", short: "Jul", idx: 6 },
-    { name: "August", short: "Aug", idx: 7 },
-    { name: "September", short: "Sep", idx: 8 },
-    { name: "October", short: "Oct", idx: 9 },
-    { name: "November", short: "Nov", idx: 10 },
-    { name: "December", short: "Dec", idx: 11 }
-  ];
-
   useEffect(() => {
     setIsMounted(true);
-    setSelectedMonth(currentMonthIndex);
-
-    const centerActiveMonthCard = () => {
-      if (horizontalScrollRef.current) {
-        const container = horizontalScrollRef.current;
-        const activeCard = document.getElementById("activity-current-month-anchor");
-        
-        if (activeCard) {
-          const containerWidth = container.clientWidth;
-          const cardLeft = activeCard.offsetLeft;
-          const cardWidth = activeCard.clientWidth;
-          
-          const targetScrollPosition = cardLeft - (containerWidth / 2) + (cardWidth / 2);
-          
-          container.scrollTo({
-            left: Math.max(0, targetScrollPosition),
-            behavior: "smooth"
-          });
-        }
-      }
-    };
-
-    requestAnimationFrame(() => {
-      setTimeout(centerActiveMonthCard, 350);
-    });
-    window.addEventListener("resize", centerActiveMonthCard);
-    
-    return () => {
-      window.removeEventListener("resize", centerActiveMonthCard);
-    };
-  }, [currentMonthIndex]);
-
-  // Monthly breakdown metrics for horizontal overview carousel
-  const getMonthActivityMetrics = (mIdx) => {
-    let pureIn = 0;
-    let rawOut = 0;
-    let ref = 0;
-
-    transactions.forEach(tx => {
-      const d = new Date(tx.rawDate || tx.date || new Date());
-      if (d.getFullYear() === 2001) d.setFullYear(currentYear);
-
-      if (d.getFullYear() === currentYear && d.getMonth() === mIdx) {
-        const isInternalTransfer = tx.category === "Transfers (Venmo/Zelle)" && !tx.isDirectGoalEntry;
-
-        if (tx.type === "Income" && !isInternalTransfer && !tx.isCashOut) {
-          pureIn += Number(tx.amount) || 0;
-        }
-        if (tx.type === "Expense" && !isInternalTransfer) {
-          rawOut += Number(tx.amount) || 0;
-        }
-        if (tx.isRefund) {
-          ref += Number(tx.amount) || 0;
-        }
-      }
-    });
-
-    let finalOut = rawOut - ref;
-    let finalIn = pureIn;
-    if (finalOut < 0) {
-      finalIn += Math.abs(finalOut);
-      finalOut = 0;
-    }
-
-    const net = finalIn - finalOut;
-    return { inflow: finalIn, outflow: finalOut, net };
-  };
+  }, []);
 
   // 1. THE VISUAL FEED ENGINE (Lets everything through for the audit trail)
   const filteredTransactions = transactions.filter(tx => {
@@ -247,6 +162,9 @@ export default function Activity({
     return dateStr.replace(/2001/g, groupYear);
   };
 
+  // ==========================================
+  // EXPENSE REFUND & SPILLOVER PROTOCOL: HERO DATA MASTER
+  // ==========================================
   const pureIncome = transactions
     .filter(t => {
       const isInternalTransfer = t.category === "Transfers (Venmo/Zelle)" && !t.isDirectGoalEntry;
@@ -400,93 +318,6 @@ export default function Activity({
       <div className={`relative z-10 transform transition-all duration-700 delay-150 ease-out ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
         {renderHeroShell(`${userName}'s Activities`, graphicContent)}
       </div>
-
-      <div className={`mx-6 mt-6 mb-4 border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
-
-      {/* 2026 MONTHLY OVERVIEWS SECTION */}
-      <div className="px-6 relative z-10 mb-5">
-        <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2">
-          {currentYear} MONTHLY OVERVIEWS
-        </h3>
-      </div>
-      
-      <div ref={horizontalScrollRef} className="w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-6 relative z-10 pt-2">
-        <div className="flex gap-4 pr-6 pb-2 min-h-[170px] snap-x snap-mandatory">
-          {monthsData.map((m) => {
-            const { inflow, outflow, net } = getMonthActivityMetrics(m.idx);
-            const isSelected = selectedMonth === m.idx;
-            const isCurrentMonth = m.idx === currentMonthIndex;
-
-            let cardBackgroundClass = "";
-            let buttonText = "";
-            let buttonStyleClass = "";
-            let customIdAttribute = null;
-
-            if (isCurrentMonth) {
-              customIdAttribute = "activity-current-month-anchor";
-              if (isSelected) {
-                cardBackgroundClass = isDarkMode ? "bg-blue-900/20 border-blue-500 shadow-md scale-[1.01]" : "bg-blue-50/80 border-blue-300 shadow-[0_4px_20px_rgba(24,119,242,0.15)] scale-[1.01]";
-                buttonText = "SELECTED MONTH";
-                buttonStyleClass = "bg-[#1877F2] text-white shadow-md font-black border border-transparent";
-              } else {
-                cardBackgroundClass = isDarkMode ? "bg-[#1E293B] border-[#1877F2] shadow-[0_0_35px_rgba(24,119,242,0.65)] border-2 scale-[1.01]" : "bg-white border-[#1877F2] shadow-[0_0_30px_rgba(24,119,242,0.45)] border-2 scale-[1.01]";
-                buttonText = "VIEW DETAILS";
-                buttonStyleClass = isDarkMode ? "bg-slate-800/80 hover:bg-slate-800 text-slate-400 border border-slate-700 font-bold shadow-sm" : "bg-slate-50 hover:bg-slate-100 text-slate-500 border border-slate-200 font-bold shadow-sm";
-              }
-            } else {
-              if (isSelected) {
-                cardBackgroundClass = isDarkMode ? "bg-blue-900/20 border-blue-500 shadow-md scale-[1.01]" : "bg-blue-50/80 border-blue-300 shadow-[0_4px_20px_rgba(24,119,242,0.15)] scale-[1.01]";
-                buttonText = "SELECTED MONTH";
-                buttonStyleClass = "bg-[#1877F2] text-white shadow-md font-black border border-transparent";
-              } else {
-                cardBackgroundClass = isDarkMode ? "bg-[#1E293B] border-slate-700 shadow-md" : "bg-white/90 backdrop-blur-sm border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.04)]";
-                buttonText = "SELECT MONTH";
-                buttonStyleClass = isDarkMode ? "bg-slate-800/80 hover:bg-slate-800 text-slate-400 border border-slate-700 font-bold shadow-sm" : "bg-slate-50 hover:bg-slate-100 text-slate-500 border border-slate-200 font-bold shadow-sm";
-              }
-            }
-            
-            return (
-              <div
-                key={m.idx}
-                id={customIdAttribute}
-                onClick={() => setSelectedMonth(m.idx)}
-                className={`shrink-0 w-52 p-5 rounded-[1.75rem] border cursor-pointer active:scale-[0.95] snap-center transition-all flex flex-col justify-between h-44 ${cardBackgroundClass}`}
-              >
-                <div className="flex justify-between items-center w-full">
-                  <h4 className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? "text-[#1877F2]" : "text-slate-400"}`}>{m.name}</h4>
-                  <span className={`text-[9px] font-black uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>{currentYear}</span>
-                </div>
-
-                <div className="text-center pt-1.5 pb-1">
-                  <p className={`text-2xl font-black tracking-tighter leading-none mb-1 ${net >= 0 ? "text-[#10B981]" : "text-red-500"}`}>
-                    {net >= 0 ? "+" : "-"}{currencySymbol}{Math.abs(net).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                  <span className={`text-[8px] font-black uppercase tracking-[0.15em] ${isDarkMode ? "text-white" : "text-slate-900"} leading-none block`}>
-                    NET CASH FLOW
-                  </span>
-                </div>
-
-                <div className={`w-full py-1.5 rounded-xl text-center text-[9px] tracking-wider transition-all uppercase ${buttonStyleClass}`}>
-                  {buttonText}
-                </div>
-
-                <div className="flex justify-between items-end w-full pt-2">
-                  <div className="flex flex-col flex-1">
-                    <span className={`text-[7px] font-black uppercase tracking-widest mb-0.5 ${isDarkMode ? "text-white opacity-40" : "text-black opacity-40"}`}>Inflow</span>
-                    <span className="text-[10px] font-black text-emerald-500">+{currencySymbol}{inflow.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
-                  </div>
-                  <div className="flex flex-col items-end shrink-0">
-                    <span className={`text-[7px] font-black uppercase tracking-widest mb-0.5 ${isDarkMode ? "text-white opacity-40" : "text-black opacity-40"}`}>Outflow</span>
-                    <span className="text-[10px] font-black text-[#F97316]">-{currencySymbol}{outflow.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className={`mx-6 mb-6 border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
 
       <main className="px-6 space-y-6 mt-4">
 

@@ -12,25 +12,27 @@ root.render(
   </StrictMode>
 );
 
-// === PWA OFFLINE ENGINE & FCM NOTIFICATION BRIDGES ===
+// === MASTER PWA OFFLINE ENGINE & FCM PUSH BRIDGE ===
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    // 1. REGISTER PWA OFFLINE VAULT WORKER
-    navigator.serviceWorker.register('/sw.js')
+    navigator.serviceWorker
+      .register('/firebase-messaging-sw.js')
       .then((registration) => {
-        console.log('[Service Worker] Vault secured. Offline routing active. Scope:', registration.scope);
+        // Check for updates periodically when the app is running
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // New update available; smooth refresh applies modern assets
+                console.log('[Service Worker] New Ledger Planner version detected.');
+              }
+            });
+          }
+        });
       })
       .catch((error) => {
-        console.error('[Service Worker] Offline forge failed:', error);
-      });
-
-    // 2. REGISTER FCM BACKGROUND PUSH NOTIFICATION WORKER
-    navigator.serviceWorker.register('/firebase-messaging-sw.js')
-      .then((registration) => {
-        console.log('[FCM Service Worker] Push notification channel live. Scope:', registration.scope);
-      })
-      .catch((error) => {
-        console.error('[FCM Service Worker] Push channel registration failed:', error);
+        console.error('[Service Worker] Master registration failed:', error);
       });
   });
 }

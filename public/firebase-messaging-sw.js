@@ -11,30 +11,95 @@ const firebaseConfig = {
   appId: "1:624261529539:web:80aec4cca266a3a6008776"
 };
 
-// Initialize Firebase inside the background service worker
+// Initialize Firebase inside the master background helper
 firebase.initializeApp(firebaseConfig);
 
 const messaging = firebase.messaging();
 
-// === BACKGROUND MESSAGE RECEIVER ===
-// Ensures visual delivery for both data-only and notification payloads
-messaging.onBackgroundMessage((payload) => {
-  console.log('[firebase-messaging-sw.js] Background message received:', payload);
+// === OFFLINE ENGINE CACHE CONFIGURATION ===
+const CACHE_NAME = 'ledger-planner-vault-v2';
 
-  const notificationTitle = payload.notification?.title || payload.data?.title || 'Ledger Planner';
+const urlsToCache = [
+  '/',
+  '/index.html',
+  '/app-icon.png',
+  '/login-logo.png',
+  '/manifest.json'
+];
+
+// 1. INSTALL & PRE-CACHE CORE ASSETS
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(urlsToCache);
+    })
+  );
+  self.skipWaiting();
+});
+
+// 2. CLEAN UP RETIRED CACHES & CLAIM CONTROL
+self.addEventListener('activate', (event) => {
+  const cacheWhitelist = [CACHE_NAME];
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (!cacheWhitelist.includes(cacheName)) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+  self.clients.claim();
+});
+
+// 3. OFFLINE FETCH ROUTER
+self.addEventListener('fetch', (event) => {
+  if (!event.request.url.startsWith(self.location.origin)) return;
+
+  event.respondWith(
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) return cachedResponse;
+
+      return fetch(event.request).then((networkResponse) => {
+        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+          return networkResponse;
+        }
+        const responseToCache = networkResponse.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, responseToCache);
+        });
+        return networkResponse;
+      });
+    })
+  );
+});
+
+// 4. BACKGROUND MESSAGE RECEIVER (DUPLICATE-PROTECTED)
+messaging.onBackgroundMessage((payload) => {
+  // If the browser already rendered a visual notification payload, do not display a duplicate
+  if (payload.notification && payload.notification.title) {
+    return;
+  }
+
+  const notificationTitle = payload.data?.title || 'Ledger Planner';
+  const notificationBody = payload.data?.body || 'You have a new update in your financial vault.';
+  const notificationTag = payload.data?.tag || payload.data?.billId || 'ledger-planner-alert';
+
   const notificationOptions = {
-    body: payload.notification?.body || payload.data?.body || 'You have a new update in your financial vault.',
-    icon: payload.notification?.icon || payload.data?.icon || '/login-logo.png',
+    body: notificationBody,
+    icon: payload.data?.icon || '/login-logo.png',
     badge: '/login-logo.png',
     data: payload.data || {},
-    tag: payload.data?.tag || `lp-notification-${Date.now()}`,
-    renotify: true
+    tag: notificationTag,
+    renotify: false
   };
 
   return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
-// === NOTIFICATION CLICK & NAVIGATION RELAY ===
+// 5. NOTIFICATION CLICK & NAVIGATION RELAY
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
@@ -43,7 +108,6 @@ self.addEventListener('notificationclick', (event) => {
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      // If a window is already open, focus and navigate it
       for (let i = 0; i < windowClients.length; i++) {
         const client = windowClients[i];
         if (client.url && 'focus' in client) {
@@ -55,7 +119,6 @@ self.addEventListener('notificationclick', (event) => {
         }
       }
 
-      // If the app is fully closed, launch a new window
       if (clients.openWindow) {
         return clients.openWindow(targetUrl);
       }

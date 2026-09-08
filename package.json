@@ -1,17 +1,19 @@
 {
-  "name": "react",
-  "version": "1.0.0",
-  "description": "",
-  "keywords": [],
-  "main": "src/index.tsx",
+  "name": "ledger-planner",
+  "version": "2.0.0",
+  "description": "Ledger Planner - Premium bill and budget tracking application",
+  "private": true,
+  "main": "src/index.js",
   "dependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-scripts": "^5.0.0",
-    "lucide-react": "1.7.0",
+    "ajv": "^8.12.0",
+    "ajv-keywords": "^5.1.0",
+    "canvas-confetti": "^1.9.4",
     "firebase": "^10.10.0",
     "firebase-admin": "^12.0.0",
-    "canvas-confetti": "^1.9.4"
+    "lucide-react": "1.7.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-scripts": "^5.0.0"
   },
   "devDependencies": {
     "@types/react": "19.0.0",

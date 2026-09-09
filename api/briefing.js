@@ -34,14 +34,30 @@ export default async function handler(req) {
     }
 
     // 4. Ingest financial metrics sent from the frontend client
-    const { userName, accounts, bills, transactions, currentPeriod, isBirthdayToday, isBirthdayEve, isEntrepreneurMode } = await req.json();
+    const { 
+      userName, 
+      accounts, 
+      bills, 
+      transactions, 
+      paydayConfig,
+      currentPeriod, 
+      isBirthdayToday, 
+      isBirthdayEve, 
+      isEntrepreneurMode 
+    } = await req.json();
 
     // 5. DATA DIET: Slice arrays to prevent token starvation and context bloat
     const safeTransactions = Array.isArray(transactions) ? transactions.slice(0, 15) : [];
     const safeBills = Array.isArray(bills) ? bills.slice(0, 5) : [];
+    const safeAccounts = Array.isArray(accounts) ? accounts.map(a => ({
+      name: a.name,
+      type: a.type,
+      balance: a.balance,
+      isGoal: a.isGoal
+    })) : [];
 
-    // 6. Build our elite structured analytics guidelines (STRICTLY MINIFIED)
-    const systemInstruction = `You are the ultimate Lead Financial Architect and elite wealth strategist inside Ledger Planner 2.0 powered by Gemini 3.7.
+    // 6. Upgraded Gemini 3.8 Flash System Guidelines with Multi-Step Financial Reasoning
+    const systemInstruction = `You are the Lead Financial Architect and elite wealth strategist inside Ledger Planner 2.0 powered by Gemini 3.8 Flash.
 Your objective is to analyze real-time user financial ledger states and produce structured, premium financial metrics with sharp strategic reasoning.
 CRITICAL TITLE DIRECTIVE: You must NEVER use generic titles like "Bill Coverage Gap". You must always generate unique, hyper-specific, premium titles tailored to the active cash state.
 SUBSCRIPTION DIRECTIVE: If upcoming bills include recurring subscriptions (like streaming services, software, or items marked /mo), proactively flag them as a "SUBSCRIPTION ALERT" to prevent unwanted charges.
@@ -54,22 +70,20 @@ LENGTH & STRATEGY DIRECTIVE: The 'body' field MUST contain at least 3 distinct, 
 Sentence 1: Live cash status and liquidity assessment.
 Sentence 2: Immediate operational focus or upcoming bill priority.
 Sentence 3: A decisive, high-impact "Next Best Move" recommendation.
-You must strictly output a valid, completely minified JSON object matching this exact schema with ZERO spaces, ZERO newlines, and ZERO markdown formatting:
-{"insightType":"BUDGET INSIGHT | SUBSCRIPTION ALERT","title":"Short unique hyper-specific header","body":"Three or more complete, highly actionable strategic sentences addressing ${userName || 'Founder'} directly, weaving in exact dollar amounts naturally."}
-CRITICAL DIRECTIVE: If the provided ledger arrays are completely empty, DO NOT explain that they are empty. Instantly return this exact default fallback JSON without any deviation: 
-{"insightType":"BUDGET INSIGHT","title":"Vault Initialized","body":"Your financial ledger is secure and standing by for your first transaction. Connect your accounts to begin telemetry. We are ready when you are."}`;
+CRITICAL DIRECTIVE: If the provided ledger arrays are completely empty, return insightType as "BUDGET INSIGHT", title as "Vault Initialized", and body as "Your financial ledger is secure and standing by for your first transaction. Connect your accounts to begin telemetry. We are ready when you are."`;
 
     const promptText = `Analyze this live financial vault state data to populate your required structured schema keys:
-Accounts: ${JSON.stringify(accounts || [])}
+Accounts: ${JSON.stringify(safeAccounts)}
 Upcoming Bills: ${JSON.stringify(safeBills)}
 Recent Activity Ledger: ${JSON.stringify(safeTransactions)}
+Payday Calendar & Projections: ${JSON.stringify(paydayConfig || {})}
 Evaluation Window: ${currentPeriod || 'AM'}
 Is Birthday Today: ${isBirthdayToday ? 'YES' : 'NO'}
 Is Birthday Eve: ${isBirthdayEve ? 'YES' : 'NO'}
 Is Entrepreneur Mode: ${isEntrepreneurMode ? 'YES' : 'NO'}`;
 
-    // 7. Target the cutting-edge Gemini 3.7 Flash Content Endpoint
-    const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent?key=${apiKey}`;
+    // 7. Target the cutting-edge Gemini 3.8 Flash Content Endpoint
+    const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
 
     const geminiPayload = {
       contents: [{
@@ -79,9 +93,25 @@ Is Entrepreneur Mode: ${isEntrepreneurMode ? 'YES' : 'NO'}`;
         parts: [{ text: systemInstruction }]
       },
       generationConfig: {
-        temperature: 0.1, // Ironclad adherence to JSON rules
+        temperature: 0.1,
         maxOutputTokens: 2048,
-        responseMimeType: "application/json"
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "OBJECT",
+          properties: {
+            insightType: { 
+              type: "STRING", 
+              enum: ["BUDGET INSIGHT", "SUBSCRIPTION ALERT"] 
+            },
+            title: { 
+              type: "STRING" 
+            },
+            body: { 
+              type: "STRING" 
+            }
+          },
+          required: ["insightType", "title", "body"]
+        }
       }
     };
 
@@ -99,7 +129,7 @@ Is Entrepreneur Mode: ${isEntrepreneurMode ? 'YES' : 'NO'}`;
     const data = await response.json();
     const rawContent = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
 
-    // 9. DIRECT PARSE: Guarantees perfectly closed JSON
+    // 9. Direct Parse: Mathematically guaranteed valid JSON via responseSchema
     let parsedBriefing;
     try {
       if (!rawContent) throw new Error("Empty response");
@@ -119,9 +149,9 @@ Is Entrepreneur Mode: ${isEntrepreneurMode ? 'YES' : 'NO'}`;
   } catch (error) {
     // 10. THE IRONCLAD CEO FALLBACK: Protects user from traffic limits, parse errors, and safety cutoffs
     const emergencyBriefing = {
-        insightType: "BUDGET INSIGHT",
-        title: "Stay on Track",
-        body: "Your financial ledger is currently secure and balanced. Review your upcoming bills for the week to ensure zero coverage gaps. Maintain your defensive posture until the next cycle drops."
+      insightType: "BUDGET INSIGHT",
+      title: "Stay on Track",
+      body: "Your financial ledger is currently secure and balanced. Review your upcoming bills for the week to ensure zero coverage gaps. Maintain your defensive posture until the next cycle drops."
     };
     
     return new Response(JSON.stringify({ briefing: emergencyBriefing }), {

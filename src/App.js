@@ -16,6 +16,7 @@ import { doc, setDoc, serverTimestamp, updateDoc, collection, addDoc, deleteDoc,
 // === CONTEXT & HOOKS ===
 import { LedgerProvider, useLedger } from "./context/LedgerContext";
 import { useLedgerData } from "./hooks/useLedgerData";
+import { useBriefingEngine } from "./hooks/useBriefingEngine";
 
 // === CORE VIEWS ===
 import Login from "./components/Login";
@@ -59,7 +60,6 @@ function LedgerApp() {
   const [manualThemeOverride, setManualThemeOverride] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isScrolled, setIsScrolled] = useState(false);
-  const [aiBriefingText, setAiBriefingText] = useState("");
   const scrollRef = useRef(null);
 
   // === FORT KNOX OFFLINE ENGINE ===
@@ -93,6 +93,10 @@ function LedgerApp() {
   const [isAddGoalOpen, setIsAddGoalOpen] = useState(false);
   const [isPaydaySetupOpen, setIsPaydaySetupOpen] = useState(false);
   const [collapsedPaydays, setCollapsedPaydays] = useState({});
+
+  // Briefing Consumption States
+  const [hasConsumedAMBriefing, setHasConsumedAMBriefing] = useState(false);
+  const [hasConsumedPMBriefing, setHasConsumedPMBriefing] = useState(false);
 
   // Activity States
   const [activitySearch, setActivitySearch] = useState("");
@@ -228,6 +232,37 @@ function LedgerApp() {
     if (!isDemoMode && user) { await setDoc(doc(db, "users", user.uid, "settings", "paydayConfig"), editPaydayConfig); }
     setIsPaydaySetupOpen(false); 
     triggerVictory();
+  };
+
+  const calculatePaydayGroup = (dateString) => {
+    if (!dateString) return "Unscheduled";
+    const billDate = new Date(dateString);
+    if (isNaN(billDate.getTime())) return "Unscheduled";
+
+    const todayLocal = new Date(); todayLocal.setHours(0, 0, 0, 0);
+    const localBillDate = new Date(billDate.getUTCFullYear(), billDate.getUTCMonth(), billDate.getUTCDate());
+    if (localBillDate < todayLocal || localBillDate.getTime() === todayLocal.getTime()) return "Due Now";
+    const activePaydays = [];
+    for (let i = 1; i <= 5; i++) {
+      const pdId = `Payday ${i}`;
+      if (paydayConfig && paydayConfig[pdId] && paydayConfig[pdId].date) {
+        const d = new Date(paydayConfig[pdId].date);
+        if (!isNaN(d.getTime())) activePaydays.push({ id: pdId, date: d });
+      }
+    }
+    if (activePaydays.length === 0) return "Unscheduled";
+    activePaydays.sort((a, b) => a.date - b.date);
+    const lastPayday = activePaydays[activePaydays.length - 1].date;
+    const horizonDate = new Date(lastPayday);
+    horizonDate.setDate(horizonDate.getDate() + 7);
+    if (localBillDate > horizonDate) return "Unscheduled";
+    if (billDate < activePaydays[0].date) return activePaydays[0].id;
+    let assignedPd = activePaydays[0].id;
+    for (let i = 0; i < activePaydays.length; i++) {
+      if (billDate >= activePaydays[i].date) assignedPd = activePaydays[i].id;
+      else break;
+    }
+    return assignedPd;
   };
 
   const handleSaveNextInstallmentDate = async () => {
@@ -635,76 +670,6 @@ function LedgerApp() {
     fetchBirthday();
   }, [user, isDemoMode]);
 
-  // LIVE AI STRATEGIST ROUTING
-  useEffect(() => {
-    if (!user || isDemoMode) return;
-    
-    const fetchAIBriefing = async () => {
-       const now = new Date();
-       const hour = now.getHours();
-       const period = hour >= 5 && hour < 16 ? "AM" : "PM";
-       const dateStr = now.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
-       const cacheKey = `lp_ai_briefing_${user.uid}_${dateStr}_${period}`;
-       
-       const cachedBriefing = localStorage.getItem(cacheKey);
-       if (cachedBriefing) {
-           if (cachedBriefing === "DISMISSED") return;
-           try {
-               setAiBriefingText(JSON.parse(cachedBriefing));
-               return; 
-           } catch (e) {
-               localStorage.removeItem(cacheKey);
-           }
-       }
-
-       try {
-           const distilledAccounts = accounts.map(a => ({ name: a.name, type: a.type, balance: a.balance, isGoal: a.isGoal }));
-           const distilledBills = bills.map(b => ({ name: b.name, amount: b.amount, isPaid: b.isPaid, dueDate: b.fullDate || b.rawDate, isOverdue: b.isOverdue }));
-           const distilledTx = transactions.slice(0, 15).map(t => ({ name: t.name, amount: t.amount, type: t.type, date: t.date }));
-
-           const response = await fetch(`/api/briefing?cb=${Date.now()}`, {
-               method: 'POST',
-               headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({
-                   userName: userNameDisplay,
-                   currentPeriod: period,
-                   accounts: distilledAccounts,
-                   bills: distilledBills,
-                   transactions: distilledTx,
-                   isEntrepreneurMode: isEntrepreneurMode
-               })
-           });
-
-           if (response.ok) {
-               const data = await response.json();
-               if (data.briefing) {
-                   setAiBriefingText(data.briefing);
-                   localStorage.setItem(cacheKey, JSON.stringify(data.briefing));
-               }
-           }
-       } catch (error) {
-           console.error("Failed to establish secure relay link to AI engine:", error);
-       }
-    };
-
-    const timer = setTimeout(() => {
-       fetchAIBriefing();
-    }, 3500);
-
-    return () => clearTimeout(timer);
-  }, [user, isDemoMode, accounts, bills, transactions, userNameDisplay, isEntrepreneurMode]);
-
-  const handleDismissAIBriefing = () => {
-       const now = new Date();
-       const hour = now.getHours();
-       const period = hour >= 5 && hour < 16 ? "AM" : "PM";
-       const dateStr = now.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
-       const cacheKey = `lp_ai_briefing_${user?.uid || 'demo'}_${dateStr}_${period}`;
-       
-       localStorage.setItem(cacheKey, "DISMISSED");
-       setAiBriefingText("");
-  };
-
   useEffect(() => {
     const timer = setInterval(() => {
       const now = new Date();
@@ -776,37 +741,6 @@ function LedgerApp() {
     return dateString;
   };
 
-  const calculatePaydayGroup = (dateString) => {
-    if (!dateString) return "Unscheduled";
-    const billDate = new Date(dateString);
-    if (isNaN(billDate.getTime())) return "Unscheduled";
-
-    const todayLocal = new Date(); todayLocal.setHours(0, 0, 0, 0);
-    const localBillDate = new Date(billDate.getUTCFullYear(), billDate.getUTCMonth(), billDate.getUTCDate());
-    if (localBillDate < todayLocal || localBillDate.getTime() === todayLocal.getTime()) return "Due Now";
-    const activePaydays = [];
-    for (let i = 1; i <= 5; i++) {
-      const pdId = `Payday ${i}`;
-      if (paydayConfig && paydayConfig[pdId] && paydayConfig[pdId].date) {
-        const d = new Date(paydayConfig[pdId].date);
-        if (!isNaN(d.getTime())) activePaydays.push({ id: pdId, date: d });
-      }
-    }
-    if (activePaydays.length === 0) return "Unscheduled";
-    activePaydays.sort((a, b) => a.date - b.date);
-    const lastPayday = activePaydays[activePaydays.length - 1].date;
-    const horizonDate = new Date(lastPayday);
-    horizonDate.setDate(horizonDate.getDate() + 7);
-    if (localBillDate > horizonDate) return "Unscheduled";
-    if (billDate < activePaydays[0].date) return activePaydays[0].id;
-    let assignedPd = activePaydays[0].id;
-    for (let i = 0; i < activePaydays.length; i++) {
-      if (billDate >= activePaydays[i].date) assignedPd = activePaydays[i].id;
-      else break;
-    }
-    return assignedPd;
-  };
-
   const todayForDynamic = new Date(); todayForDynamic.setHours(0, 0, 0, 0);
   const dynamicBills = bills.map(bill => {
     let currentPayday = bill.payday;
@@ -830,6 +764,28 @@ function LedgerApp() {
     return new Date(a.rawDate || 0) - new Date(b.rawDate || 0);
   });
 
+  // === UNIFIED AI BRIEFING & ALERTS STRATEGIST ENGINE ===
+  const { briefingData, hasUnreadBriefing } = useBriefingEngine({
+    needsRefresh,
+    dynamicBills,
+    changeTab,
+    setIsNotificationsOpen,
+    handleOpenPaydaySetup,
+    userName: userNameDisplay,
+    hasConsumedAMBriefing,
+    hasConsumedPMBriefing,
+    formatPaydayDateStr,
+    isEntrepreneurMode
+  });
+
+  const handleDismissAIBriefing = () => {
+    if (briefingData.isAM) {
+      setHasConsumedAMBriefing(true);
+    } else {
+      setHasConsumedPMBriefing(true);
+    }
+  };
+
   const currentLiveBalance = accounts.filter(a => !a.isGoal && (a.type === "Checking" || a.type === "Cash")).reduce((sum, acc) => sum + (acc.balance || 0), 0);
 
   const renderHeroShell = (title, graphicContent) => {
@@ -851,7 +807,7 @@ function LedgerApp() {
             </button>
             <button onClick={() => setIsNotificationsOpen(true)} className={`relative w-10 h-10 rounded-full flex items-center justify-center border transition-colors shadow-sm ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-100 text-slate-400"}`} style={{ color: isNotificationsOpen ? signatureColor : undefined }}>
               <Bell size={18} />
-              {(constellationBadgeRoute || (!isPushEnabled && !isDemoMode)) && (
+              {(constellationBadgeRoute || hasUnreadBriefing || (!isPushEnabled && !isDemoMode)) && (
                 <span className="absolute top-0 right-0 w-2.5 h-2.5 rounded-full border-[1.5px] animate-pulse bg-red-500 border-red-500"></span>
               )}
             </button>
@@ -1062,7 +1018,7 @@ function LedgerApp() {
           formatPaydayDateStr={formatPaydayDateStr} 
           isPushEnabled={isPushEnabled} 
           enablePushNotifications={enablePushNotifications}
-          aiBriefingText={aiBriefingText}
+          aiBriefingText={briefingData.data}
           handleDismissAIBriefing={handleDismissAIBriefing}
           isDemoMode={isDemoMode}
         />}

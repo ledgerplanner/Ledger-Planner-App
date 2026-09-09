@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 
 // 1. Initialize the Master Context Engine
 const LedgerContext = createContext();
@@ -33,21 +33,29 @@ export const LedgerProvider = ({ children }) => {
     "Payday 5": { date: "", income: "" }
   });
 
-  // === GLOBAL PREFERENCES (With Permanent Memory) ===
+  // === GLOBAL PREFERENCES (With Permanent Memory & Crash-Safe Fallbacks) ===
   const [isDarkMode, setIsDarkMode] = useState(false);
   
   const [signatureColor, setSignatureColor] = useState(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("lp_signature_color");
-      if (saved) return saved;
+      try {
+        const saved = localStorage.getItem("lp_signature_color");
+        if (saved) return saved;
+      } catch (e) {
+        console.warn("Storage read error for signature color:", e);
+      }
     }
     return "#1877F2";
   });
 
   const [currentCurrency, setCurrentCurrency] = useState(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("lp_currency");
-      if (saved) return saved;
+      try {
+        const saved = localStorage.getItem("lp_currency");
+        if (saved) return saved;
+      } catch (e) {
+        console.warn("Storage read error for currency:", e);
+      }
     }
     return "USD ($)";
   });
@@ -55,36 +63,52 @@ export const LedgerProvider = ({ children }) => {
   // SYNC THEME & CURRENCY PREFERENCES TO LOCAL STORAGE
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("lp_signature_color", signatureColor);
+      try {
+        localStorage.setItem("lp_signature_color", signatureColor);
+      } catch (e) {
+        console.warn("Storage write error for signature color:", e);
+      }
     }
   }, [signatureColor]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("lp_currency", currentCurrency);
+      try {
+        localStorage.setItem("lp_currency", currentCurrency);
+      } catch (e) {
+        console.warn("Storage write error for currency:", e);
+      }
     }
   }, [currentCurrency]);
 
   // DERIVE DYNAMIC SYMBOL FOR GLOBAL APP-WIDE CONSUMPTION
-  const currencySymbol = (() => {
+  const currencySymbol = useMemo(() => {
     if (currentCurrency.includes("€")) return "€";
     if (currentCurrency.includes("£")) return "£";
     if (currentCurrency.includes("¥")) return "¥";
     return "$";
-  })();
+  }, [currentCurrency]);
 
   // === INJECTED ENTREPRENEUR MODE STATE (With Permanent Memory) ===
   const [isEntrepreneurMode, setIsEntrepreneurMode] = useState(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("lp_entrepreneur_mode");
-      if (saved) return JSON.parse(saved);
+      try {
+        const saved = localStorage.getItem("lp_entrepreneur_mode");
+        if (saved) return JSON.parse(saved);
+      } catch (e) {
+        console.warn("Storage read error for entrepreneur mode:", e);
+      }
     }
     return false;
   });
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("lp_entrepreneur_mode", JSON.stringify(isEntrepreneurMode));
+      try {
+        localStorage.setItem("lp_entrepreneur_mode", JSON.stringify(isEntrepreneurMode));
+      } catch (e) {
+        console.warn("Storage write error for entrepreneur mode:", e);
+      }
     }
   }, [isEntrepreneurMode]);
 
@@ -102,33 +126,76 @@ export const LedgerProvider = ({ children }) => {
     { group: "Other", items: ["Miscellaneous Expense", "Charity / Gifts", "Other"] }
   ]);
 
-  // Memory Notebook Loaders
+  // Memory Notebook Loaders (Crash-Protected)
   const [recentBillCategories, setRecentBillCategories] = useState(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("lp_recent_bill_cat");
-      if (saved) return JSON.parse(saved);
+      try {
+        const saved = localStorage.getItem("lp_recent_bill_cat");
+        if (saved) return JSON.parse(saved);
+      } catch (e) {
+        console.warn("Storage read error for recent bill categories:", e);
+      }
     }
     return [];
   });
   
   const [recentIncomeCategories, setRecentIncomeCategories] = useState(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("lp_recent_inc_cat");
-      if (saved) return JSON.parse(saved);
+      try {
+        const saved = localStorage.getItem("lp_recent_inc_cat");
+        if (saved) return JSON.parse(saved);
+      } catch (e) {
+        console.warn("Storage read error for recent income categories:", e);
+      }
     }
     return [];
   });
   
   const [recentExpenseCategories, setRecentExpenseCategories] = useState(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("lp_recent_exp_cat");
-      if (saved) return JSON.parse(saved);
+      try {
+        const saved = localStorage.getItem("lp_recent_exp_cat");
+        if (saved) return JSON.parse(saved);
+      } catch (e) {
+        console.warn("Storage read error for recent expense categories:", e);
+      }
     }
     return [];
   });
 
-  // === THE GLOBAL NERVOUS SYSTEM PAYLOAD ===
-  const value = {
+  // PERMANENT STORAGE SYNC FOR RECENT CATEGORIES
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("lp_recent_bill_cat", JSON.stringify(recentBillCategories));
+      } catch (e) {
+        console.warn("Storage write error for recent bill categories:", e);
+      }
+    }
+  }, [recentBillCategories]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("lp_recent_inc_cat", JSON.stringify(recentIncomeCategories));
+      } catch (e) {
+        console.warn("Storage write error for recent income categories:", e);
+      }
+    }
+  }, [recentIncomeCategories]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("lp_recent_exp_cat", JSON.stringify(recentExpenseCategories));
+      } catch (e) {
+        console.warn("Storage write error for recent expense categories:", e);
+      }
+    }
+  }, [recentExpenseCategories]);
+
+  // === THE GLOBAL NERVOUS SYSTEM PAYLOAD (OPTIMIZED WITH CACHE) ===
+  const value = useMemo(() => ({
     user, setUser,
     isDemoMode, setIsDemoMode,
     bills, setBills,
@@ -145,7 +212,24 @@ export const LedgerProvider = ({ children }) => {
     recentBillCategories, setRecentBillCategories,
     recentIncomeCategories, setRecentIncomeCategories,
     recentExpenseCategories, setRecentExpenseCategories
-  };
+  }), [
+    user,
+    isDemoMode,
+    bills,
+    transactions,
+    accounts,
+    todos,
+    paydayConfig,
+    isDarkMode,
+    signatureColor,
+    currentCurrency,
+    currencySymbol,
+    isEntrepreneurMode,
+    modernCategories,
+    recentBillCategories,
+    recentIncomeCategories,
+    recentExpenseCategories
+  ]);
 
   return (
     <LedgerContext.Provider value={value}>

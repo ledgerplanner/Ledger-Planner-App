@@ -7,19 +7,28 @@
     <meta name="theme-color" content="#F8FAFC" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0F172A" media="(prefers-color-scheme: dark)" />
     
+    <!-- Mobile Web App & iOS Home Screen Metadata -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Ledger Planner" />
+
+    <!-- Performance & Pre-fetch Hints -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
     <script src="https://cdn.tailwindcss.com"></script>
 
+    <!-- App Manifest & Icons -->
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" type="image/png" href="/app-icon.png" />
+    <link rel="apple-touch-icon" href="/app-icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/app-icon.png" />
 
     <title>Ledger Planner</title>
   </head>
 
-  <body>
+  <body class="bg-[#F8FAFC] dark:bg-[#0F172A] antialiased overflow-hidden select-none m-0 p-0">
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
   </body>

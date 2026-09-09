@@ -26,8 +26,8 @@ export default async function handler(req, res) {
     const usersSnapshot = await db.collection('users').get();
     let sentCount = 0;
 
-    // Upgraded to cutting-edge Gemini 3.7 Flash
-    const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent?key=${apiKey}`;
+    // Upgraded to cutting-edge Gemini 3.8 Flash Content Endpoint
+    const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
     const today = new Date();
     
     // Exact Local Server Hour evaluation for systemic time-blocking
@@ -213,8 +213,8 @@ export default async function handler(req, res) {
         });
       }
 
-      // === 4. EXECUTE AI ENGINE PIPELINE WITH GEMINI 3.7 FLASH ===
-      const systemInstruction = `You are the ultimate Lead Financial Architect and elite wealth strategist inside Ledger Planner 2.0 powered by Gemini 3.7.
+      // === 4. EXECUTE AI ENGINE PIPELINE WITH GEMINI 3.8 FLASH ===
+      const systemInstruction = `You are the Lead Financial Architect and elite wealth strategist inside Ledger Planner 2.0 powered by Gemini 3.8 Flash.
 Your objective is to analyze real-time user financial ledger states and produce structured, premium financial metrics with sharp strategic reasoning.
 CRITICAL TITLE DIRECTIVE: You must NEVER use generic titles like "Bill Coverage Gap". You must always generate unique, hyper-specific, premium titles tailored to the active cash state.
 SUBSCRIPTION DIRECTIVE: If upcoming bills include recurring subscriptions (like streaming services, software, or items marked /mo), proactively flag them as a "SUBSCRIPTION ALERT" to prevent unwanted charges.
@@ -229,15 +229,13 @@ LENGTH DIRECTIVE: The 'body' field MUST contain 3 distinct, high-value sentences
 Sentence 1: Live cash and liquidity status.
 Sentence 2: Immediate priority or upcoming bill focus.
 Sentence 3: A decisive Next Best Move recommendation.
-You must strictly output a valid, completely minified JSON object matching this exact schema with ZERO spaces, ZERO newlines, and ZERO markdown formatting:
-{"insightType":"BUDGET INSIGHT | SUBSCRIPTION ALERT","title":"Short unique hyper-specific header","body":"Three complete, highly actionable strategic sentences addressing ${userName} directly, weaving in any exact metric points naturally."}
-CRITICAL DIRECTIVE: If the provided ledger arrays are completely empty, DO NOT explain that they are empty. Instantly return this exact default fallback JSON without any deviation: 
-{"insightType":"BUDGET INSIGHT","title":"👋 Welcome to Ledger Planner!","body":"Your financial ledger is secure and standing by for you to add your first account. Tap to get started."}`;
+CRITICAL DIRECTIVE: If the provided ledger arrays are completely empty, return insightType as "BUDGET INSIGHT", title as "👋 Welcome to Ledger Planner!", and body as "Your financial ledger is secure and standing by for you to add your first account. Tap to get started."`;
 
       const promptText = `Analyze this live financial vault state data to populate your required structured schema keys:
 Accounts: ${JSON.stringify(accounts)}
 Upcoming Bills: ${JSON.stringify(safeBills)}
 Recent Activity Ledger: ${JSON.stringify(safeTransactions)}
+Payday Calendar: ${JSON.stringify(paydayConfig || {})}
 Evaluation Window: ${period}
 Is Birthday Today: ${isBirthdayToday ? 'YES' : 'NO'}
 Is Birthday Eve: ${isBirthdayEve ? 'YES' : 'NO'}
@@ -249,7 +247,23 @@ Is Entrepreneur Mode: ${isEntrepreneurMode ? 'YES' : 'NO'}`;
         generationConfig: {
           temperature: 0.1,
           maxOutputTokens: 2048,
-          responseMimeType: "application/json"
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "OBJECT",
+            properties: {
+              insightType: {
+                type: "STRING",
+                enum: ["BUDGET INSIGHT", "SUBSCRIPTION ALERT"]
+              },
+              title: {
+                type: "STRING"
+              },
+              body: {
+                type: "STRING"
+              }
+            },
+            required: ["insightType", "title", "body"]
+          }
         }
       };
 

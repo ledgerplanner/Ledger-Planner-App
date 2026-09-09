@@ -32,31 +32,60 @@ export const useLedgerData = () => {
 
     const userRef = doc(db, "users", user.uid);
 
-    // 3. REAL-TIME DATABASE LISTENERS
-    // Surgical Fix: The ...d.data(), id: d.id order forces Firebase's secure ID to override any temporary local ID
-    const unsubAcc = onSnapshot(collection(userRef, "accounts"), (snap) => {
-      setAccounts(snap.docs.map(d => ({ ...d.data(), id: d.id })).filter(a => !a.isArchived));
-    });
-
-    const unsubBills = onSnapshot(collection(userRef, "bills"), (snap) => {
-      setBills(snap.docs.map(d => ({ ...d.data(), id: d.id })));
-    });
-
-    const unsubTxs = onSnapshot(query(collection(userRef, "transactions"), orderBy("createdAt", "desc")), (snap) => {
-      setTransactions(snap.docs.map(d => ({ ...d.data(), id: d.id })));
-    });
-
-    const unsubTodos = onSnapshot(query(collection(userRef, "todos"), orderBy("createdAt", "desc")), (snap) => {
-      setTodos(snap.docs.map(d => ({ ...d.data(), id: d.id })));
-    });
-
-    const unsubConfig = onSnapshot(doc(db, "users", user.uid, "settings", "paydayConfig"), (docSnap) => {
-      if (docSnap.exists()) {
-        setPaydayConfig({ frequency: "Weekly", ...docSnap.data() });
+    // 3. REAL-TIME DATABASE LISTENERS WITH ERROR BOUNDARIES
+    const unsubAcc = onSnapshot(
+      collection(userRef, "accounts"),
+      (snap) => {
+        setAccounts(snap.docs.map(d => ({ ...d.data(), id: d.id })).filter(a => !a.isArchived));
+      },
+      (error) => {
+        console.error("[useLedgerData] Accounts sync error:", error);
       }
-    });
+    );
 
-    // 4. THE SILENT MIGRATION SCRIPT (Legacy Architecture Consolidation)
+    const unsubBills = onSnapshot(
+      collection(userRef, "bills"),
+      (snap) => {
+        setBills(snap.docs.map(d => ({ ...d.data(), id: d.id })));
+      },
+      (error) => {
+        console.error("[useLedgerData] Bills sync error:", error);
+      }
+    );
+
+    const unsubTxs = onSnapshot(
+      query(collection(userRef, "transactions"), orderBy("createdAt", "desc")),
+      (snap) => {
+        setTransactions(snap.docs.map(d => ({ ...d.data(), id: d.id })));
+      },
+      (error) => {
+        console.error("[useLedgerData] Transactions sync error:", error);
+      }
+    );
+
+    const unsubTodos = onSnapshot(
+      query(collection(userRef, "todos"), orderBy("createdAt", "desc")),
+      (snap) => {
+        setTodos(snap.docs.map(d => ({ ...d.data(), id: d.id })));
+      },
+      (error) => {
+        console.error("[useLedgerData] Todos sync error:", error);
+      }
+    );
+
+    const unsubConfig = onSnapshot(
+      doc(db, "users", user.uid, "settings", "paydayConfig"),
+      (docSnap) => {
+        if (docSnap.exists()) {
+          setPaydayConfig({ frequency: "Weekly", ...docSnap.data() });
+        }
+      },
+      (error) => {
+        console.error("[useLedgerData] Payday config sync error:", error);
+      }
+    );
+
+    // 4. THE SILENT MIGRATION SCRIPT (Clean Immutable Copy)
     const executeSilentMigration = async () => {
       try {
         const legacyFlatData = localStorage.getItem("lp_custom_categories_flat");
@@ -64,14 +93,16 @@ export const useLedgerData = () => {
           const parsedStrings = JSON.parse(legacyFlatData);
           if (Array.isArray(parsedStrings) && parsedStrings.length > 0) {
             setModernCategories(prev => {
-              const duplicatedMatrix = [...prev];
-              const targetBucket = duplicatedMatrix.find(g => g.group === "Other");
-              if (targetBucket) {
+              return prev.map(groupObj => {
+                if (groupObj.group !== "Other") return groupObj;
+                const updatedItems = [...groupObj.items];
                 parsedStrings.forEach(str => {
-                  if (!targetBucket.items.includes(str)) targetBucket.items.push(str);
+                  if (!updatedItems.includes(str)) {
+                    updatedItems.push(str);
+                  }
                 });
-              }
-              return duplicatedMatrix;
+                return { ...groupObj, items: updatedItems };
+              });
             });
             localStorage.removeItem("lp_custom_categories_flat");
           }

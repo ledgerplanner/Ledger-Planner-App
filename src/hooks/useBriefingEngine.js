@@ -19,8 +19,8 @@ export const useBriefingEngine = ({
   const [aiBriefing, setAiBriefing] = useState(null);
   const [isFetchingBriefing, setIsFetchingBriefing] = useState(false);
 
-  // === DYNAMIC ALERTS GENERATOR ===
-  const generateAlerts = () => {
+  // === DYNAMIC ALERTS GENERATOR (OPTIMIZED WITH MEMORY CACHE) ===
+  const activeAlerts = useMemo(() => {
     const currentAlerts = [];
     const today = new Date(); 
     today.setHours(0, 0, 0, 0);
@@ -39,7 +39,7 @@ export const useBriefingEngine = ({
     }
 
     // #8. Action Required
-    const actionBills = dynamicBills.filter(b => b.isOverdue || (!b.isPaid && b.payday === "Due Now"));
+    const actionBills = (dynamicBills || []).filter(b => b.isOverdue || (!b.isPaid && b.payday === "Due Now"));
     actionBills.forEach(b => {
       currentAlerts.push({
         id: `action-${b.id}`, 
@@ -54,7 +54,7 @@ export const useBriefingEngine = ({
     });
 
     // #9. Subscription Nudge
-    const upcomingRecurring = dynamicBills.filter(b => !b.isPaid && b.isRecurring && !b.isOverdue && b.payday !== "Due Now" && b.payday !== "Unscheduled");
+    const upcomingRecurring = (dynamicBills || []).filter(b => !b.isPaid && b.isRecurring && !b.isOverdue && b.payday !== "Due Now" && b.payday !== "Unscheduled");
     upcomingRecurring.forEach(b => {
       if (b.rawDate) {
         const bDate = new Date(b.rawDate);
@@ -76,6 +76,7 @@ export const useBriefingEngine = ({
       }
     });
 
+    // Payday calculations
     ["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].forEach(pdId => {
       const config = paydayConfig?.[pdId];
       if (config && config.date) {
@@ -98,7 +99,7 @@ export const useBriefingEngine = ({
           }
 
           // #11. Payday Gap
-          const pdBills = bills.filter(b => b.payday === pdId && !b.isPaid);
+          const pdBills = (bills || []).filter(b => b.payday === pdId && !b.isPaid);
           const pdTotal = pdBills.reduce((sum, b) => sum + (b.amount || 0), 0);
           const pdIncome = parseFloat(config.income) || 0;
           if (pdTotal > pdIncome && pdIncome > 0) {
@@ -117,8 +118,8 @@ export const useBriefingEngine = ({
     });
 
     // #12. Safe Spending Alert
-    const liquidCash = accounts.filter(a => !a.isGoal && (a.type === "Checking" || a.type === "Cash")).reduce((sum, acc) => sum + (acc.balance || 0), 0);
-    const upcomingBills = bills.filter(b => !b.isPaid && !b.isOverdue);
+    const liquidCash = (accounts || []).filter(a => !a.isGoal && (a.type === "Checking" || a.type === "Cash")).reduce((sum, acc) => sum + (acc.balance || 0), 0);
+    const upcomingBills = (bills || []).filter(b => !b.isPaid && !b.isOverdue);
     const upcomingBurn = upcomingBills.reduce((sum, b) => sum + (b.amount || 0), 0);
     const safeToSpend = liquidCash - upcomingBurn;
 
@@ -140,7 +141,7 @@ export const useBriefingEngine = ({
     }
 
     // #13. Transfer Complete
-    const recentTransfers = transactions.filter(tx => tx.category === "Transfers (Venmo/Zelle)" && tx.type === "Income");
+    const recentTransfers = (transactions || []).filter(tx => tx.category === "Transfers (Venmo/Zelle)" && tx.type === "Income");
     if (recentTransfers.length > 0) {
       const latestTransfer = recentTransfers[0];
       currentAlerts.push({
@@ -155,24 +156,22 @@ export const useBriefingEngine = ({
     }
 
     return currentAlerts;
-  };
+  }, [needsRefresh, dynamicBills, bills, accounts, transactions, paydayConfig, setIsNotificationsOpen, changeTab, handleOpenPaydaySetup]);
 
-  // === DYNAMIC AI BRIEFING ENGINE (GEMINI 3.5 FLASH) ===
+  // === DYNAMIC AI BRIEFING ENGINE ===
   const hours = new Date().getHours();
-  // SURGICAL FIX: Shift window runs 5:00 AM (5) through 4:59 PM (16). 5:00 PM (17) triggers PM shift.
   const isAM = hours >= 5 && hours < 17;
   const currentPeriod = isAM ? 'AM' : 'PM';
   const isUnconsumedBriefing = isAM ? !hasConsumedAMBriefing : !hasConsumedPMBriefing;
 
+  // Birthday verification (only triggers if a valid date exists in user profile)
   const isBirthdayToday = useMemo(() => {
-    let bdayStr = "07-02"; 
-    if (user?.birthday) {
-      bdayStr = user.birthday.length > 5 ? user.birthday.substring(5) : user.birthday;
-    }
+    if (!user?.birthday) return false;
+    const bdayStr = user.birthday.length > 5 ? user.birthday.substring(5) : user.birthday;
     const today = new Date();
     const todayStr = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     return bdayStr === todayStr;
-  }, [user]);
+  }, [user?.birthday]);
 
   useEffect(() => {
     const fetchAIBriefing = async () => {
@@ -200,7 +199,7 @@ export const useBriefingEngine = ({
         }
       } catch (error) {
         console.error("AI Briefing Fetch Error:", error);
-        // Ironclad local fallback if network is completely severed
+        // Fallback safety note if connection is interrupted
         setAiBriefing({
           insightType: "BUDGET INSIGHT",
           title: "📋 Stay on Track",
@@ -212,10 +211,10 @@ export const useBriefingEngine = ({
     };
 
     fetchAIBriefing();
-  }, [currentPeriod]); // Only trigger network calls when shifting between morning and evening
+  }, [currentPeriod, accounts, bills, transactions, userName, user?.displayName, isBirthdayToday, isEntrepreneurMode]);
 
   return {
-    activeAlerts: generateAlerts(),
+    activeAlerts,
     briefingData: {
       data: aiBriefing,
       isAM,

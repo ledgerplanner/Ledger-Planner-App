@@ -2,11 +2,10 @@
 // VERCEL SERVERLESS EDGE ROUTE FOR LP 2.0 TWICE-DAILY AI WEALTH STRATEGIST (STRUCTURED ANALYTICS ENGINE)
 
 export const config = {
-  runtime: 'edge', // Utilizing ultra-low latency Edge runtime
+  runtime: 'edge',
 };
 
 export default async function handler(req) {
-  // 1. Handle CORS Preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('OK', {
       status: 200,
@@ -18,7 +17,6 @@ export default async function handler(req) {
     });
   }
 
-  // 2. Restrict to secure POST payloads only
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method Not Allowed' }), {
       status: 405,
@@ -27,13 +25,12 @@ export default async function handler(req) {
   }
 
   try {
-    // 3. Extract the hidden Vercel Vault API Key
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
+      console.error('[LP Briefing Engine] Missing GEMINI_API_KEY in environment variables.');
       throw new Error('System AI Key Configuration Missing');
     }
 
-    // 4. Ingest financial metrics sent from the frontend client
     const { 
       userName, 
       accounts, 
@@ -46,7 +43,6 @@ export default async function handler(req) {
       isEntrepreneurMode 
     } = await req.json();
 
-    // 5. DATA DIET: Slice arrays to prevent token starvation and context bloat
     const safeTransactions = Array.isArray(transactions) ? transactions.slice(0, 15) : [];
     const safeBills = Array.isArray(bills) ? bills.slice(0, 5) : [];
     const safeAccounts = Array.isArray(accounts) ? accounts.map(a => ({
@@ -56,7 +52,6 @@ export default async function handler(req) {
       isGoal: a.isGoal
     })) : [];
 
-    // 6. Upgraded Gemini 3.8 Flash System Guidelines with Multi-Step Financial Reasoning
     const systemInstruction = `You are the Lead Financial Architect and elite wealth strategist inside Ledger Planner 2.0 powered by Gemini 3.8 Flash.
 Your objective is to analyze real-time user financial ledger states and produce structured, premium financial metrics with sharp strategic reasoning.
 CRITICAL TITLE DIRECTIVE: You must NEVER use generic titles like "Bill Coverage Gap". You must always generate unique, hyper-specific, premium titles tailored to the active cash state.
@@ -82,7 +77,6 @@ Is Birthday Today: ${isBirthdayToday ? 'YES' : 'NO'}
 Is Birthday Eve: ${isBirthdayEve ? 'YES' : 'NO'}
 Is Entrepreneur Mode: ${isEntrepreneurMode ? 'YES' : 'NO'}`;
 
-    // 7. Target the cutting-edge Gemini 3.8 Flash Content Endpoint
     const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
 
     const geminiPayload = {
@@ -115,7 +109,6 @@ Is Entrepreneur Mode: ${isEntrepreneurMode ? 'YES' : 'NO'}`;
       }
     };
 
-    // 8. Execute secure background relay operation
     const response = await fetch(geminiEndpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -123,20 +116,20 @@ Is Entrepreneur Mode: ${isEntrepreneurMode ? 'YES' : 'NO'}`;
     });
 
     if (!response.ok) {
-      throw new Error('Google Engine API Fault or Network Cutoff');
+      const errorDetails = await response.text();
+      console.error(`[LP Briefing Engine] Google API error (${response.status}):`, errorDetails);
+      throw new Error(`Google Engine Fault: ${response.status}`);
     }
 
     const data = await response.json();
     const rawContent = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
 
-    // 9. Direct Parse: Mathematically guaranteed valid JSON via responseSchema
-    let parsedBriefing;
-    try {
-      if (!rawContent) throw new Error("Empty response");
-      parsedBriefing = JSON.parse(rawContent);
-    } catch (e) {
-      throw new Error('Final Parse Exception');
+    if (!rawContent) {
+      console.error('[LP Briefing Engine] Google returned empty candidate content.');
+      throw new Error('Empty response from model');
     }
+
+    const parsedBriefing = JSON.parse(rawContent);
 
     return new Response(JSON.stringify({ briefing: parsedBriefing }), {
       status: 200,
@@ -147,7 +140,8 @@ Is Entrepreneur Mode: ${isEntrepreneurMode ? 'YES' : 'NO'}`;
     });
 
   } catch (error) {
-    // 10. THE IRONCLAD CEO FALLBACK: Protects user from traffic limits, parse errors, and safety cutoffs
+    console.error('[LP Briefing Engine Fallback Triggered]:', error.message || error);
+
     const emergencyBriefing = {
       insightType: "BUDGET INSIGHT",
       title: "Stay on Track",

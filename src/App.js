@@ -744,7 +744,7 @@ function LedgerApp() {
       "Log Out",
       true,
       async () => {
-        if (isDemoMode) { window.location.href = "https://ledgerplanner.com";[cite: 10] return; }
+        if (isDemoMode) { window.location.href = "https://ledgerplanner.com"; return; }
         try { await signOut(auth); }
         catch (error) { console.error("Logout forced locally:", error); }
         finally { setUser(null); setActiveTab("home"); closeGlobalAction(); }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Home, Wallet, Calendar as CalendarIcon, CreditCard, CheckSquare,
-  Bell, Moon, Sun, Plus, Settings as SettingsIcon, LogOut, AlertCircle, X, CheckCircle2
+  Bell, Moon, Sun, Plus, Settings as SettingsIcon, LogOut, AlertCircle
 } from "lucide-react";
 
 // === FIREBASE INITIALIZATION ===
@@ -11,12 +11,14 @@ import {
   signInWithEmailAndPassword, createUserWithEmailAndPassword, 
   onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup, updateProfile 
 } from "firebase/auth";
-import { doc, setDoc, serverTimestamp, updateDoc, collection, addDoc, deleteDoc, getDocs, getDoc } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp, updateDoc, collection, addDoc, deleteDoc, getDocs } from "firebase/firestore";
 
 // === CONTEXT & HOOKS ===
 import { LedgerProvider, useLedger } from "./context/LedgerContext";
 import { useLedgerData } from "./hooks/useLedgerData";
 import { useBriefingEngine } from "./hooks/useBriefingEngine";
+import { useExportLedger } from "./hooks/useExportLedger";
+import { useBirthdayEngine } from "./hooks/useBirthdayEngine";
 
 // === CORE VIEWS ===
 import Login from "./components/Login";
@@ -27,7 +29,8 @@ import Activity from "./components/Activity";
 import Todo from "./components/Todo";
 import Settings from "./components/Settings";
 
-// === EXTRACTED MODALS ===
+// === EXTRACTED COMPONENTS & MODALS ===
+import LiveClockHeader from "./components/LiveClockHeader";
 import QuickAddModal from "./components/modals/QuickAddModal";
 import CommandCenter from "./components/modals/CommandCenter";
 import TransferEngine from "./components/modals/TransferEngine";
@@ -35,6 +38,7 @@ import AccountBuilder from "./components/modals/AccountBuilder";
 import PaydaySetup from "./components/modals/PaydaySetup";
 import EditEntryDrawer from "./components/modals/EditEntryDrawer";
 import PaymentModal from "./components/modals/PaymentModal";
+import InstallmentPromptModal from "./components/modals/InstallmentPromptModal";
 
 function LedgerApp() {
   // 1. INITIATE THE BACKGROUND DATA PUMP
@@ -58,7 +62,6 @@ function LedgerApp() {
   const [activeTab, setActiveTab] = useState("home");
   
   const [manualThemeOverride, setManualThemeOverride] = useState(false);
-  const [currentTime, setCurrentTime] = useState(new Date());
   const [isScrolled, setIsScrolled] = useState(false);
   const scrollRef = useRef(null);
 
@@ -168,6 +171,26 @@ function LedgerApp() {
       true
     );
   };
+
+  // === DEDICATED HOOKS INJECTIONS ===
+  useBirthdayEngine({
+    user,
+    isDemoMode,
+    triggerVictory,
+    openGlobalAction
+  });
+
+  const { handleExportData } = useExportLedger({
+    bills,
+    transactions,
+    accounts,
+    isDemoMode,
+    isOnline,
+    triggerHaptic,
+    triggerVictory,
+    openGlobalAction,
+    triggerOfflineLock
+  });
 
   // INTERCEPTED MODAL OPENERS
   const handleOpenQab = () => { if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; } setIsQabOpen(true); };
@@ -287,7 +310,8 @@ function LedgerApp() {
     const parsedNextAmount = parseFloat(installmentPromptConfig.nextAmountDue);
     const finalNextAmount = (!isNaN(parsedNextAmount) && parsedNextAmount >= 0) ? parsedNextAmount : (bill.amount || 0);
     
-    const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+    const now = new Date();
+    const autoTimeStamp = `${now.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
 
     if (isDemoMode) {
       const txId = `tx_demo_${Date.now()}`;
@@ -357,8 +381,9 @@ function LedgerApp() {
     if (!targetAcc) targetAcc = accounts.find(a => !a.isGoal && (a.type === "Checking" || a.type === "Cash")) || accounts[0];
 
     if (!bill || !targetAcc) return;
-    const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
-    const settledDateStamp = currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    const now = new Date();
+    const autoTimeStamp = `${now.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+    const settledDateStamp = now.toLocaleDateString("en-US", { month: "short", day: "numeric" });
     
     const remainingBalance = (bill.totalAmount || 0) - (bill.paidAmount || 0);
     const amountToPay = paymentModalConfig.isPayInFull ? remainingBalance : (bill.amount || 0);
@@ -518,7 +543,11 @@ function LedgerApp() {
       "Delete All",
       true,
       async () => {
-        if (isDemoMode) return;
+        if (isDemoMode) {
+          setTodos(todos.filter(t => !t.isCompleted));
+          triggerHaptic(50);
+          return;
+        }
         const completedTasks = todos.filter(t => t.isCompleted);
         for (const t of completedTasks) await deleteDoc(doc(db, "users", user.uid, "todos", t.id));
         triggerHaptic(50);
@@ -578,57 +607,6 @@ function LedgerApp() {
     }
   };
 
-  const handleExportData = (targetYear) => {
-    if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; }
-    
-    triggerHaptic(50);
-    try {
-      const yearStr = targetYear.toString();
-      let csvContent = "Type,Name,Amount,Category,Date,Status/Account\n";
-      
-      bills.forEach(b => {
-        if (b.rawDate && b.rawDate.startsWith(yearStr)) {
-          const amount = b.amount || 0;
-          const status = b.isPaid ? "Paid" : "Pending";
-          const safeName = (b.name || "Unnamed").replace(/,/g, " "); 
-          const safeCategory = (b.category || "N/A").replace(/,/g, " ");
-          csvContent += `Bill,${safeName},${amount},${safeCategory},${b.rawDate},${status}\n`;
-        }
-      });
-      
-      transactions.forEach(t => {
-        let tYear = new Date().getFullYear();
-        if (t.createdAt && t.createdAt.toDate) {
-          tYear = t.createdAt.toDate().getFullYear();
-        }
-        
-        if (tYear === targetYear || isDemoMode) {
-           const amount = t.amount || 0;
-           const accName = accounts.find(a => a.id === t.accountId)?.name || "Unknown Account";
-           const safeName = (t.name || "Unnamed").replace(/,/g, " ");
-           const safeCategory = (t.category || "N/A").replace(/,/g, " ");
-           const safeDate = (t.date || "N/A").replace(/,/g, " ");
-           const safeAcc = accName.replace(/,/g, " ");
-           csvContent += `Transaction (${t.type}),${safeName},${amount},${safeCategory},${safeDate},${safeAcc}\n`;
-        }
-      });
-
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute("download", `LP_Financial_Vault_${targetYear}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      triggerVictory();
-      openGlobalAction("Export Complete", `Your ${targetYear} historical master ledger has been successfully compiled and downloaded.`, "Close", false, () => {}, true);
-    } catch (error) {
-      console.error("Export Engine failed:", error);
-    }
-  };
-
   // === RETENTION ROUTING CAPTURE ENGINE ===
   useEffect(() => {
     setIsMounted(true);
@@ -668,47 +646,21 @@ function LedgerApp() {
     return () => unsubscribeAuth();
   }, [isMounted, isDemoMode, setUser]);
 
-  // BIRTHDAY CONFETTI ENGINE
+  // CALM TIME MONITOR (Runs once every 60 seconds instead of every second to protect performance)
   useEffect(() => {
-    if (!user || isDemoMode) return;
-    const fetchBirthday = async () => {
-      try {
-        const docSnap = await getDoc(doc(db, "users", user.uid));
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (data.birthday) {
-            const today = new Date();
-            const todayStr = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-            const bdayStr = data.birthday.length > 5 ? data.birthday.substring(5) : data.birthday; 
-            const bdayYear = today.getFullYear();
-            const storageKey = `lp_bday_celebrated_${bdayYear}`;
-            
-            if (bdayStr === todayStr && localStorage.getItem(storageKey) !== "true") {
-              triggerVictory();
-              const activeName = data.firstName || user?.displayName?.split(' ')[0] || "Founder";
-              openGlobalAction("Happy Birthday! 🎂", `Happy Birthday, ${activeName}. We at Ledger Planner wish you many more!`, "Let's Go", false, () => {}, true);
-              localStorage.setItem(storageKey, "true");
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Failed to check birthday status:", err);
-      }
-    };
-    fetchBirthday();
-  }, [user, isDemoMode]);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
+    const checkSchedule = () => {
       const now = new Date();
-      setCurrentTime(now);
       if (!manualThemeOverride) {
         const currentHour = now.getHours();
         setIsDarkMode(currentHour >= 22 || currentHour < 5);
       }
-      if (now.getMonth() !== sessionMonth.current) setNeedsRefresh(true);
-    }, 1000);
-    return () => clearInterval(timer);
+      if (now.getMonth() !== sessionMonth.current) {
+        setNeedsRefresh(true);
+      }
+    };
+    checkSchedule();
+    const interval = setInterval(checkSchedule, 60000);
+    return () => clearInterval(interval);
   }, [manualThemeOverride, setIsDarkMode]);
 
   const handleAuthSubmit = async (e) => {
@@ -751,9 +703,6 @@ function LedgerApp() {
       }
     );
   };
-
-  const getOrdinalNum = (n) => n + (n > 0 ? ['th', 'st', 'nd', 'rd'][(n > 3 && n < 21) || n % 10 > 3 ? 0 : n % 10] : '');
-  const heroDateTimeStr = `${currentTime.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase()}, ${currentTime.toLocaleDateString("en-US", { month: "long" }).toUpperCase()} ${getOrdinalNum(currentTime.getDate()).toUpperCase()}, ${currentTime.getFullYear()} — ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toUpperCase()}`;
 
   const formatPaydayDateStr = (dateString) => {
     if (!dateString) return "TBD";
@@ -860,9 +809,7 @@ function LedgerApp() {
           <h2 title={title || "Overview"} className={`text-3xl font-black tracking-tight leading-tight truncate max-w-full ${isDarkMode ? "text-white" : "text-slate-900"}`}>{title || "Overview"}</h2>
         </div>
         <div className="relative z-10 w-full h-auto opacity-100">{graphicContent}</div>
-        <div className={`relative z-10 pt-4 border-t flex justify-center items-center ${isDarkMode ? "border-slate-800" : "border-slate-50"}`}>
-          <span className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>{heroDateTimeStr}</span>
-        </div>
+        <LiveClockHeader isDarkMode={isDarkMode} />
       </header>
     );
   };
@@ -1110,53 +1057,17 @@ function LedgerApp() {
           />
         )}
 
-        {installmentPromptConfig.isOpen && (
-          <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
-            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setInstallmentPromptConfig({ isOpen: false, billId: null, nextDate: "", amountToPay: 0, nextAmountDue: "", accountId: "" })}></div>
-            <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col transition-colors duration-500 overflow-visible ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
-              <div className="p-6 border-b flex justify-between items-center">
-                <h3 className={`font-black uppercase tracking-widest text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Next Installment</h3>
-                <button onClick={() => setInstallmentPromptConfig({ isOpen: false, billId: null, nextDate: "", amountToPay: 0, nextAmountDue: "", accountId: "" })} className={`p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`}><X size={18}/></button>
-              </div>
-              <div className="p-6 space-y-4">
-                <div className="text-center">
-                  <h2 className={`text-lg font-black mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Payment Logged!</h2>
-                  <p className="text-xs font-bold text-slate-500">When is your next payment due and how much will it be?</p>
-                </div>
-
-                {/* Next Due Date Field */}
-                <div className="relative">
-                   <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest pointer-events-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Next Due Date</label>
-                   <div className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors overflow-visible ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
-                     <span className={`font-bold text-base pointer-events-none ${!installmentPromptConfig.nextDate ? "opacity-0" : isDarkMode ? "text-white" : "text-slate-900"}`}>{installmentPromptConfig.nextDate ? formatDisplayDate(installmentPromptConfig.nextDate) : "mm/dd/yyyy"}</span>
-                     <CalendarIcon size={18} className="shrink-0 pointer-events-none" style={{ color: signatureColor }} />
-                     <input type="date" value={installmentPromptConfig.nextDate} onChange={(e) => setInstallmentPromptConfig({...installmentPromptConfig, nextDate: e.target.value})} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer" />
-                   </div>
-                </div>
-
-                {/* New Amount Due Field */}
-                <div className="relative">
-                   <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest pointer-events-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>New Amount Due</label>
-                   <div className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors overflow-visible ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
-                     <div className="flex items-center gap-1.5 w-full">
-                       <span className={`font-black text-base ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{currencySymbol}</span>
-                       <input 
-                         type="number" 
-                         step="0.01" 
-                         placeholder="0.00"
-                         value={installmentPromptConfig.nextAmountDue} 
-                         onChange={(e) => setInstallmentPromptConfig({ ...installmentPromptConfig, nextAmountDue: e.target.value })} 
-                         className={`w-full font-bold text-base bg-transparent border-none outline-none ${isDarkMode ? "text-white" : "text-slate-900"}`} 
-                       />
-                     </div>
-                   </div>
-                </div>
-
-                <button onClick={handleSaveNextInstallmentDate} disabled={!installmentPromptConfig.nextDate} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all active:scale-95 flex items-center justify-center gap-2 mt-2" style={{ backgroundColor: !installmentPromptConfig.nextDate ? undefined : signatureColor }}><CalendarIcon size={16}/> Route to Payday</button>
-              </div>
-            </div>
-          </div>
-        )}
+        <InstallmentPromptModal
+          isOpen={installmentPromptConfig.isOpen}
+          onClose={() => setInstallmentPromptConfig({ isOpen: false, billId: null, nextDate: "", amountToPay: 0, nextAmountDue: "", accountId: "" })}
+          installmentPromptConfig={installmentPromptConfig}
+          setInstallmentPromptConfig={setInstallmentPromptConfig}
+          handleSaveNextInstallmentDate={handleSaveNextInstallmentDate}
+          formatDisplayDate={formatDisplayDate}
+          signatureColor={signatureColor}
+          currencySymbol={currencySymbol}
+          isDarkMode={isDarkMode}
+        />
 
         {isSettingsOpen && (
           <Settings 

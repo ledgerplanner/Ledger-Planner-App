@@ -45,7 +45,7 @@ function LedgerApp() {
     user, setUser, isDemoMode, setIsDemoMode, 
     accounts, setAccounts, bills, setBills, transactions, setTransactions, todos, setTodos, paydayConfig, setPaydayConfig,
     isDarkMode, setIsDarkMode, signatureColor, setSignatureColor,
-    isEntrepreneurMode, setIsEntrepreneurMode 
+    isEntrepreneurMode, setIsEntrepreneurMode, currencySymbol = "$"
   } = useLedger();
 
   // === DYNAMIC COMPUTATIONS ===
@@ -119,7 +119,7 @@ function LedgerApp() {
   const [isEditingEntry, setIsEditingEntry] = useState(false);
   const [editEntryData, setEditEntryData] = useState({});
   const [paymentModalConfig, setPaymentModalConfig] = useState({ isOpen: false, billId: null, accountId: "", isPayInFull: false });
-  const [installmentPromptConfig, setInstallmentPromptConfig] = useState({ isOpen: false, billId: null, nextDate: "", amountToPay: 0, accountId: "" });
+  const [installmentPromptConfig, setInstallmentPromptConfig] = useState({ isOpen: false, billId: null, nextDate: "", amountToPay: 0, nextAmountDue: "", accountId: "" });
   const [editPaydayConfig, setEditPaydayConfig] = useState(paydayConfig);
   const [currentCurrency, setCurrentCurrency] = useState("USD ($)");
   const [resetConfirm, setResetConfirm] = useState("");
@@ -187,7 +187,7 @@ function LedgerApp() {
         if (messaging && user && !isDemoMode) {
           const registration = await navigator.serviceWorker.ready;
           const token = await getToken(messaging, { 
-            vapidKey: VAPID_KEY,
+            vapidKey: VAPID_KEY, 
             serviceWorkerRegistration: registration 
           });
           
@@ -282,6 +282,10 @@ function LedgerApp() {
     
     const amountToPay = installmentPromptConfig.amountToPay || 0;
     const newPaidAmt = (bill.paidAmount || 0) + amountToPay;
+
+    // Determine the next cycle's scheduled amount
+    const parsedNextAmount = parseFloat(installmentPromptConfig.nextAmountDue);
+    const finalNextAmount = (!isNaN(parsedNextAmount) && parsedNextAmount >= 0) ? parsedNextAmount : (bill.amount || 0);
     
     const autoTimeStamp = `${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
 
@@ -290,15 +294,32 @@ function LedgerApp() {
       setTransactions([{ id: txId, name: bill.name || "Bill", icon: bill.icon || "🧾", amount: amountToPay, date: autoTimeStamp, type: "Expense", category: bill.category || "Bill Payment", accountId: targetAcc.id, isBillPayment: true }, ...transactions]);
       setAccounts(accounts.map(a => a.id === targetAcc.id ? { ...a, balance: (a.balance || 0) - amountToPay } : a));
       
-      setBills(bills.map(b => b.id === bill.id ? { ...b, rawDate: installmentPromptConfig.nextDate, date: sortableDay, fullDate: displayDate, payday: newPayday, isOverdue: false, paidAmount: newPaidAmt } : b));
+      setBills(bills.map(b => b.id === bill.id ? { 
+        ...b, 
+        rawDate: installmentPromptConfig.nextDate, 
+        date: sortableDay, 
+        fullDate: displayDate, 
+        payday: newPayday, 
+        isOverdue: false, 
+        paidAmount: newPaidAmt,
+        amount: finalNextAmount
+      } : b));
     } else {
       const txRef = await addDoc(collection(db, "users", user.uid, "transactions"), { name: bill.name || "Bill", icon: bill.icon || "🧾", amount: amountToPay, date: autoTimeStamp, type: "Expense", category: bill.category || "Bill Payment", accountId: targetAcc.id, isBillPayment: true, createdAt: serverTimestamp() });
       await updateDoc(doc(db, "users", user.uid, "accounts", targetAcc.id), { balance: (targetAcc.balance || 0) - amountToPay });
       
-      await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { rawDate: installmentPromptConfig.nextDate, date: sortableDay, fullDate: displayDate, payday: newPayday, isOverdue: false, paidAmount: newPaidAmt });
+      await updateDoc(doc(db, "users", user.uid, "bills", bill.id), { 
+        rawDate: installmentPromptConfig.nextDate, 
+        date: sortableDay, 
+        fullDate: displayDate, 
+        payday: newPayday, 
+        isOverdue: false, 
+        paidAmount: newPaidAmt,
+        amount: finalNextAmount
+      });
     }
     triggerVictory(); 
-    setInstallmentPromptConfig({ isOpen: false, billId: null, nextDate: "", amountToPay: 0, accountId: "" });
+    setInstallmentPromptConfig({ isOpen: false, billId: null, nextDate: "", amountToPay: 0, nextAmountDue: "", accountId: "" });
   };
 
   const handleBillClick = async (id) => {
@@ -348,7 +369,14 @@ function LedgerApp() {
       if (newPaidAmt < (bill.totalAmount || 0) && !paymentModalConfig.isPayInFull) {
         triggerHaptic(50); 
         setPaymentModalConfig({ isOpen: false, billId: null, accountId: "", isPayInFull: false });
-        setInstallmentPromptConfig({ isOpen: true, billId: bill.id, nextDate: "", amountToPay: amountToPay, accountId: targetAcc.id });
+        setInstallmentPromptConfig({ 
+          isOpen: true, 
+          billId: bill.id, 
+          nextDate: "", 
+          amountToPay: amountToPay, 
+          nextAmountDue: (bill.amount || 0).toString(), 
+          accountId: targetAcc.id 
+        });
         return;
       }
     }
@@ -716,7 +744,7 @@ function LedgerApp() {
       "Log Out",
       true,
       async () => {
-        if (isDemoMode) { window.location.href = "https://ledgerplanner.com"; return; }
+        if (isDemoMode) { window.location.href = "https://ledgerplanner.com";[cite: 10] return; }
         try { await signOut(auth); }
         catch (error) { console.error("Logout forced locally:", error); }
         finally { setUser(null); setActiveTab("home"); closeGlobalAction(); }
@@ -1084,17 +1112,19 @@ function LedgerApp() {
 
         {installmentPromptConfig.isOpen && (
           <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
-            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setInstallmentPromptConfig({ isOpen: false, billId: null, nextDate: "", amountToPay: 0, accountId: "" })}></div>
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setInstallmentPromptConfig({ isOpen: false, billId: null, nextDate: "", amountToPay: 0, nextAmountDue: "", accountId: "" })}></div>
             <div className={`w-full lg:max-w-md rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[130] flex flex-col transition-colors duration-500 overflow-visible ${isDarkMode ? "bg-[#1E293B] border-slate-700" : "bg-white border-slate-100"}`}>
               <div className="p-6 border-b flex justify-between items-center">
                 <h3 className={`font-black uppercase tracking-widest text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>Next Installment</h3>
-                <button onClick={() => setInstallmentPromptConfig({ isOpen: false, billId: null, nextDate: "", amountToPay: 0, accountId: "" })} className={`p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`}><X size={18}/></button>
+                <button onClick={() => setInstallmentPromptConfig({ isOpen: false, billId: null, nextDate: "", amountToPay: 0, nextAmountDue: "", accountId: "" })} className={`p-2 rounded-full transition-colors ${isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`}><X size={18}/></button>
               </div>
-              <div className="p-6 space-y-6">
+              <div className="p-6 space-y-4">
                 <div className="text-center">
                   <h2 className={`text-lg font-black mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Payment Logged!</h2>
-                  <p className="text-xs font-bold text-slate-500">When is your next payment due?</p>
+                  <p className="text-xs font-bold text-slate-500">When is your next payment due and how much will it be?</p>
                 </div>
+
+                {/* Next Due Date Field */}
                 <div className="relative">
                    <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest pointer-events-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>Next Due Date</label>
                    <div className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors overflow-visible ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
@@ -1103,7 +1133,26 @@ function LedgerApp() {
                      <input type="date" value={installmentPromptConfig.nextDate} onChange={(e) => setInstallmentPromptConfig({...installmentPromptConfig, nextDate: e.target.value})} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer" />
                    </div>
                 </div>
-                <button onClick={handleSaveNextInstallmentDate} disabled={!installmentPromptConfig.nextDate} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all active:scale-95 flex items-center justify-center gap-2" style={{ backgroundColor: !installmentPromptConfig.nextDate ? undefined : signatureColor }}><CalendarIcon size={16}/> Route to Payday</button>
+
+                {/* New Amount Due Field */}
+                <div className="relative">
+                   <label className={`absolute left-4 top-2 z-10 text-[9px] font-bold uppercase tracking-widest pointer-events-none ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>New Amount Due</label>
+                   <div className={`relative w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors overflow-visible ${isDarkMode ? "bg-[#0F172A] border-slate-700" : "bg-white border-slate-200"}`}>
+                     <div className="flex items-center gap-1.5 w-full">
+                       <span className={`font-black text-base ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{currencySymbol}</span>
+                       <input 
+                         type="number" 
+                         step="0.01" 
+                         placeholder="0.00"
+                         value={installmentPromptConfig.nextAmountDue} 
+                         onChange={(e) => setInstallmentPromptConfig({ ...installmentPromptConfig, nextAmountDue: e.target.value })} 
+                         className={`w-full font-bold text-base bg-transparent border-none outline-none ${isDarkMode ? "text-white" : "text-slate-900"}`} 
+                       />
+                     </div>
+                   </div>
+                </div>
+
+                <button onClick={handleSaveNextInstallmentDate} disabled={!installmentPromptConfig.nextDate} className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all active:scale-95 flex items-center justify-center gap-2 mt-2" style={{ backgroundColor: !installmentPromptConfig.nextDate ? undefined : signatureColor }}><CalendarIcon size={16}/> Route to Payday</button>
               </div>
             </div>
           </div>
@@ -1185,7 +1234,7 @@ function LedgerApp() {
                     '--tz': `${(Math.random() - 0.5) * 600}px`,
                     '--rx': `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 1440 + 720)}deg`, 
                     '--ry': `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 1440 + 720)}deg`, 
-                    '--rz': `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 720 + 360)}deg`,
+                    '--rz': `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 720 + 360)}deg`, 
                     '--scale': `${Math.random() * 0.6 + 0.6}`
                   }} 
                 />

@@ -54,10 +54,9 @@ export default function CommandCenter({
 
   // BIRTHDAY & BIRTHDAY EVE DETECTION ENGINE
   const birthdayStatus = useMemo(() => {
-    let bdayStr = "08-22";
-    if (user?.birthday) {
-      bdayStr = user.birthday.length > 5 ? user.birthday.substring(5) : user.birthday;
-    }
+    if (!user?.birthday) return null;
+    const bdayStr = user.birthday.length > 5 ? user.birthday.substring(5) : user.birthday;
+
     const today = new Date();
     const todayStr = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     
@@ -68,7 +67,7 @@ export default function CommandCenter({
     if (bdayStr === todayStr) return "today";
     if (bdayStr === tomorrowStr) return "eve";
     return null;
-  }, [user]);
+  }, [user?.birthday]);
 
   // LIVE BILL REMINDER DETECTION & PERSISTENCE ENGINE
   const reminderAlerts = useMemo(() => {
@@ -90,11 +89,9 @@ export default function CommandCenter({
 
       const diffDays = Math.round((billMillis - todayMillis) / (1000 * 60 * 60 * 24));
       
-      // Auto-resurface key: encodes bill ID and status phase
       const statusPhase = diffDays < 0 ? "overdue" : diffDays === 0 ? "due_today" : `upcoming_${diffDays}d`;
       const reminderUniqueKey = `rem_${bill.id}_${statusPhase}`;
 
-      // If dismissed in this exact phase, suppress; if status phase changes, it resurfaces automatically
       if (dismissedAlertKeys.includes(reminderUniqueKey)) return false;
 
       return hasReminderSet && diffDays <= reminderDays;
@@ -136,7 +133,7 @@ export default function CommandCenter({
   const onDismissAI = () => {
     setIsAiBannerDismissed(true);
     if (typeof handleDismissAIBriefing === 'function') {
-       handleDismissAIBriefing();
+      handleDismissAIBriefing();
     }
   };
 

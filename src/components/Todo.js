@@ -167,7 +167,7 @@ export default function Todo({
         </div>
         
         {/* Centered Middle: Task Counter Pill (Glides in from Right) */}
-        <div className={`flex flex-col items-center justify-center mb-5 w-full transform transition-all duration-[800ms] delay-[300ms] ease-out ${isMounted ? "translate-x-0 opacity-100" : "translate-x-12 opacity-0"}`}>
+        <div className={`flex flex-col items-center justify-center mb-1 w-full transform transition-all duration-[800ms] delay-[300ms] ease-out ${isMounted ? "translate-x-0 opacity-100" : "translate-x-12 opacity-0"}`}>
           {isVictoryState ? (
             <div className="px-5 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.3)] animate-pulse">
               <CheckCircle2 size={24} className="text-[#10B981]" />
@@ -183,6 +183,13 @@ export default function Todo({
               </div>
             </div>
           )}
+        </div>
+
+        {/* Dynamic Descriptive Text: "Task Completed" vs "Tasks Completed" */}
+        <div className={`mb-5 text-center pointer-events-none transform transition-all duration-[800ms] delay-[400ms] ease-out ${isMounted ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}>
+          <span className="text-sm font-black uppercase tracking-widest text-[#1877F2]">
+            {totalTasks === 1 ? "TASK COMPLETED" : "TASKS COMPLETED"}
+          </span>
         </div>
 
         {/* Centered Bottom: Dynamic Momentum Badge (Glides up from Bottom) */}
@@ -314,13 +321,13 @@ export default function Todo({
               onChange={(e) => setNewTodoText(e.target.value)}
               className={`flex-1 min-w-0 py-3 px-4 rounded-xl text-sm font-bold bg-transparent border outline-none transition-colors focus:border-[#1877F2] ${isDarkMode ? "text-white border-slate-700" : "text-slate-900 border-slate-200"}`}
             />
-            <button
+            <button 
               type="submit" 
               disabled={!newTodoText.trim()}
               className={`w-12 h-12 shrink-0 rounded-xl flex items-center justify-center transition-all ${!newTodoText.trim() ? "bg-slate-200 text-slate-400" : "bg-[#1877F2] text-white shadow-[0_8px_16px_rgba(24,119,242,0.3)] active:scale-95"}`}
             >
               <Plus size={20} strokeWidth={3} />
-           </button>
+            </button>
           </form>
           
           <div className="flex items-center justify-between mt-4 px-2">
@@ -398,9 +405,9 @@ export default function Todo({
               <button 
                 onClick={clearCompletedTodos}
                 className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all active:scale-95 ${isDarkMode ? "bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30" : "bg-orange-100 text-orange-600 border-orange-200 hover:bg-orange-200"}`}
-               >
+              >
                 Delete All
-               </button>
+              </button>
             </div>
             <div className="space-y-4 max-h-80 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
               {completedTasks.map(renderTaskCard)}
@@ -436,16 +443,16 @@ export default function Todo({
               </div>
 
               <div ref={editTaskRef} className="relative cursor-pointer" onClick={() => {
-                 setIsEditIconSelectorOpen(!isEditIconSelectorOpen);
-                 if (!isEditIconSelectorOpen) {
-                   setTimeout(() => editTaskRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
-                 }
+                  setIsEditIconSelectorOpen(!isEditIconSelectorOpen);
+                  if (!isEditIconSelectorOpen) {
+                    setTimeout(() => editTaskRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
+                  }
               }}>
-                 <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Task Icon</label>
-                 <div className={`w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
-                    <span className="text-xl leading-none">{editTaskData.emoji}</span>
-                    <ArrowDown size={14} className={isDarkMode ? "text-slate-400" : "text-slate-500"} />
-                 </div>
+                  <label className={`absolute left-4 top-2 text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>Task Icon</label>
+                  <div className={`w-full pt-6 pb-2 px-5 rounded-2xl border flex items-center justify-between transition-colors ${isDarkMode ? "bg-[#0F172A] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
+                     <span className="text-xl leading-none">{editTaskData.emoji}</span>
+                     <ArrowDown size={14} className={isDarkMode ? "text-slate-400" : "text-slate-500"} />
+                  </div>
               </div>
 
               {isEditIconSelectorOpen && (
@@ -487,18 +494,18 @@ export default function Todo({
 
               <div className="pt-2 space-y-3">
                <button 
-                 onClick={handleSaveEdit} 
-                 className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"
+                  onClick={handleSaveEdit} 
+                  className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"
                 >
-                 <Save size={16} /> Save Changes
+                  <Save size={16} /> Save Changes
                </button>
                <button 
-                 onClick={handleDeleteTask} 
-                 className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-red-500 shadow-[0_8px_16px_rgba(239,68,68,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"
+                  onClick={handleDeleteTask} 
+                  className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-red-500 shadow-[0_8px_16px_rgba(239,68,68,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"
                 >
-                 <Trash2 size={16} /> Delete Task
+                  <Trash2 size={16} /> Delete Task
                </button>
-             </div>
+              </div>
             </div>
           </div>
         </div>

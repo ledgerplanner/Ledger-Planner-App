@@ -6,7 +6,6 @@ if (!admin.apps.length) {
     credential: admin.credential.cert({
       projectId: process.env.FIREBASE_PROJECT_ID,
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      // Replaces literal '\n' with actual line breaks for the private key
       privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined,
     }),
   });
@@ -17,47 +16,43 @@ const messaging = admin.messaging();
 
 export default async function handler(req, res) {
   try {
-    // 1. Extract the hidden Vercel Vault API Key
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
+      console.error('[LP Cron Engine] Missing GEMINI_API_KEY in environment variables.');
       throw new Error('System AI Key Configuration Missing');
     }
 
     const usersSnapshot = await db.collection('users').get();
     let sentCount = 0;
 
-    // Upgraded to cutting-edge Gemini 3.8 Flash Content Endpoint
     const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
     const today = new Date();
     
-    // Exact Local Server Hour evaluation for systemic time-blocking
+    // Shift window: 5:00 AM (5) through 4:59 PM (16) is AM. 5:00 PM (17) triggers PM shift.
     const currentHour = today.getHours();
-    // Shift window runs 5:00 AM (5) through 4:59 PM (16). 5:00 PM (17) triggers PM shift.
     const isAM = currentHour >= 5 && currentHour < 17;
     const period = isAM ? "AM" : "PM";
 
     today.setHours(0, 0, 0, 0);
     const todayMillis = today.getTime();
     const todayStr = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    const currentDateNumber = today.getDate(); // 1 through 31
+    const currentDateNumber = today.getDate();
     
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     const tomorrowStr = `${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
 
-    // Scan every user in the vault
     for (const userDoc of usersSnapshot.docs) {
       const userData = userDoc.data();
-      const fcmToken = userData.fcmToken || userData.pushToken; // Support uniform fallback naming across layers
+      const fcmToken = userData.fcmToken || userData.pushToken;
       const userName = userData.firstName || userData.name || 'Founder';
       
       const isEntrepreneurMode = userData.isEntrepreneurMode || false;
       const hasSmartCredit = userData.hasSmartCredit || false;
 
-      // If they haven't enabled push notifications, skip them
       if (!fcmToken) continue;
 
-      const pushPayloads = []; // Queue for multiple notifications
+      const pushPayloads = [];
 
       // === 1. HYDRATE USER CONTEXT & BIRTHDAY CALCULATION ===
       let isBirthdayToday = false;
@@ -68,7 +63,7 @@ export default async function handler(req, res) {
         isBirthdayEve = (bdayStr === tomorrowStr);
       }
 
-      // Fetch Payday Config (Settings Subcollection)
+      // Fetch Payday Config
       const paydayDoc = await db.collection(`users/${userDoc.id}/settings`).doc('paydayConfig').get();
       const paydayConfig = paydayDoc.exists ? paydayDoc.data() : null;
 
@@ -79,21 +74,21 @@ export default async function handler(req, res) {
       
       const rawBills = billsSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
       const safeBills = rawBills
-        .sort((a, b) => new Date(a.rawDate) - new Date(b.rawDate))
+        .sort((a, b) => new Date(a.rawDate || 0) - new Date(b.rawDate || 0))
         .slice(0, 5);
 
-      // Fetch Accounts (All)
+      // Fetch Accounts
       const accountsSnapshot = await db.collection(`users/${userDoc.id}/accounts`).get();
       const accounts = accountsSnapshot.docs.map(d => d.data());
 
-      // Fetch Recent Transactions (Limit 15)
+      // Fetch Recent Transactions
       const txSnapshot = await db.collection(`users/${userDoc.id}/transactions`)
         .orderBy('date', 'desc')
         .limit(15)
         .get();
       const safeTransactions = txSnapshot.docs.map(d => d.data());
 
-      // === 2. TRIGGER SWEEP A: OVERDUE & DUE TODAY BILLS (#1) ===
+      // === 2. TRIGGER SWEEP A: OVERDUE & DUE TODAY BILLS ===
       let hasUrgentBill = false;
       let urgentBillName = "A bill";
       
@@ -128,7 +123,7 @@ export default async function handler(req, res) {
         });
       }
 
-      // === 2.5 TRIGGER SWEEP A.5: BILL REMINDERS (CUSTOM WINDOW / 2-DAY DEFAULT) ===
+      // === 2.5 TRIGGER SWEEP A.5: BILL REMINDERS ===
       if (!isBirthdayToday) {
         for (const bill of rawBills) {
           if (bill.rawDate) {
@@ -141,7 +136,6 @@ export default async function handler(req, res) {
               billDate.setHours(0, 0, 0, 0);
               const diffDays = Math.round((billDate.getTime() - todayMillis) / (1000 * 60 * 60 * 24));
 
-              // Triggers only when within the designated reminder window and not yet due today
               if (hasReminderSet && diffDays > 0 && diffDays <= reminderDays) {
                 const dayLabel = diffDays === 1 ? "tomorrow" : `in ${diffDays} days`;
                 pushPayloads.push({
@@ -162,7 +156,7 @@ export default async function handler(req, res) {
         }
       }
 
-      // === 3. TRIGGER SWEEP B: 1-DAY PAYDAY REMINDER (#2) ===
+      // === 3. TRIGGER SWEEP B: PAYDAY EVE REMINDER ===
       let isPaydayTomorrow = false;
       if (paydayConfig && !isEntrepreneurMode) {
         ["Payday 1", "Payday 2", "Payday 3", "Payday 4", "Payday 5"].forEach(pdId => {
@@ -191,7 +185,7 @@ export default async function handler(req, res) {
         });
       }
 
-      // === 3.5 TRIGGER SWEEP B.5: SMART CREDIT PROMO WITH GUARDRAILS (#6) ===
+      // === 3.5 TRIGGER SWEEP B.5: SMART CREDIT PROMO ===
       const isPromoDay = currentDateNumber === 1 || currentDateNumber === 15;
       const liquidCash = accounts.filter(a => !a.isGoal && (a.type === "Checking" || a.type === "Cash")).reduce((sum, acc) => sum + (acc.balance || 0), 0);
       const upcomingBillsBurn = rawBills.reduce((sum, b) => sum + (b.amount || 0), 0);
@@ -213,29 +207,29 @@ export default async function handler(req, res) {
         });
       }
 
-      // === 4. EXECUTE AI ENGINE PIPELINE WITH GEMINI 3.8 FLASH ===
+      // === 4. EXECUTE AI PIPELINE ===
       const systemInstruction = `You are the Lead Financial Architect and elite wealth strategist inside Ledger Planner 2.0 powered by Gemini 3.8 Flash.
 Your objective is to analyze real-time user financial ledger states and produce structured, premium financial metrics with sharp strategic reasoning.
 CRITICAL TITLE DIRECTIVE: You must NEVER use generic titles like "Bill Coverage Gap". You must always generate unique, hyper-specific, premium titles tailored to the active cash state.
 SUBSCRIPTION DIRECTIVE: If upcoming bills include recurring subscriptions (like streaming services, software, or items marked /mo), proactively flag them as a "SUBSCRIPTION ALERT" to prevent unwanted charges.
 BIRTHDAY DIRECTIVES:
-* If "Is Birthday Today" is YES: Open with an elite, celebratory birthday message addressing ${userName} directly.
-* If "Is Birthday Eve" is YES: Open with an exciting Birthday Eve acknowledgment addressing ${userName} directly.
+* If "Is Birthday Today" is YES: Open with an elite, celebratory birthday message addressing ${userName} directly before reviewing runway.
+* If "Is Birthday Eve" is YES: Open with an exciting Birthday Eve acknowledgment addressing ${userName} directly, ensuring peace of mind ahead of their celebration.
 ENTREPRENEUR DIRECTIVE: If "Is Entrepreneur Mode" is YES, pivot context completely. Do not advise that a standard payday or W-2 payroll deposit is upcoming. Focus entirely on variable client collections, business overhead tracking, and protecting cash runway consistency.
 TIMING STRATEGY DIRECTIVE: 
 * If Evaluation Window is AM, focus on Morning Outlook: capital multiplication, liquidity runway, upcoming obligations, and a high-impact Next Best Move.
 * If Evaluation Window is PM, focus on Evening Recap: defensive runway containment, guarding net worth parameters, and end-of-day reconciliation.
-LENGTH DIRECTIVE: The 'body' field MUST contain 3 distinct, high-value sentences:
-Sentence 1: Live cash and liquidity status.
-Sentence 2: Immediate priority or upcoming bill focus.
-Sentence 3: A decisive Next Best Move recommendation.
-CRITICAL DIRECTIVE: If the provided ledger arrays are completely empty, return insightType as "BUDGET INSIGHT", title as "👋 Welcome to Ledger Planner!", and body as "Your financial ledger is secure and standing by for you to add your first account. Tap to get started."`;
+LENGTH DIRECTIVE: The 'body' field MUST contain at least 3 distinct, high-value sentences:
+Sentence 1: Live cash status and liquidity assessment.
+Sentence 2: Immediate operational focus or upcoming bill priority.
+Sentence 3: A decisive, high-impact "Next Best Move" recommendation.
+CRITICAL DIRECTIVE: If the provided ledger arrays are completely empty, return insightType as "BUDGET INSIGHT", title as "Vault Initialized", and body as "Your financial ledger is secure and standing by for your first transaction. Connect your accounts to begin telemetry. We are ready when you are."`;
 
       const promptText = `Analyze this live financial vault state data to populate your required structured schema keys:
 Accounts: ${JSON.stringify(accounts)}
 Upcoming Bills: ${JSON.stringify(safeBills)}
 Recent Activity Ledger: ${JSON.stringify(safeTransactions)}
-Payday Calendar: ${JSON.stringify(paydayConfig || {})}
+Payday Calendar & Projections: ${JSON.stringify(paydayConfig || {})}
 Evaluation Window: ${period}
 Is Birthday Today: ${isBirthdayToday ? 'YES' : 'NO'}
 Is Birthday Eve: ${isBirthdayEve ? 'YES' : 'NO'}
@@ -276,7 +270,10 @@ Is Entrepreneur Mode: ${isEntrepreneurMode ? 'YES' : 'NO'}`;
           body: JSON.stringify(geminiPayload),
         });
 
-        if (response.ok) {
+        if (!response.ok) {
+          const errText = await response.text();
+          console.error(`[LP Cron Engine] Google API error (${response.status}) for user ${userDoc.id}:`, errText);
+        } else {
           const data = await response.json();
           const rawContent = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
           if (rawContent) {
@@ -284,7 +281,7 @@ Is Entrepreneur Mode: ${isEntrepreneurMode ? 'YES' : 'NO'}`;
           }
         }
       } catch (aiError) {
-        console.error(`AI Generation Failed for user ${userDoc.id}:`, aiError);
+        console.error(`[LP Cron Engine] AI generation exception for user ${userDoc.id}:`, aiError);
       }
 
       // === 5. THE IRONCLAD CEO FALLBACK ===
@@ -306,25 +303,25 @@ Is Entrepreneur Mode: ${isEntrepreneurMode ? 'YES' : 'NO'}`;
         } else if (isEmptyAccount) {
           parsedBriefing = {
             insightType: "BUDGET INSIGHT",
-            title: "👋 Welcome to Ledger Planner!",
-            body: "Your financial ledger is secure and standing by for you to add your first account. Tap to get started."
+            title: "Vault Initialized",
+            body: "Your financial ledger is secure and standing by for your first transaction. Connect your accounts to begin telemetry. We are ready when you are."
           };
         } else {
           parsedBriefing = {
             insightType: "BUDGET INSIGHT",
-            title: "📋 Stay on Track",
-            body: "Review your upcoming bills for the week to ensure your ledger remains perfectly balanced."
+            title: "Stay on Track",
+            body: "Your financial ledger is currently secure and balanced. Review your upcoming bills for the week to ensure zero coverage gaps. Maintain your defensive posture until the next cycle drops."
           };
         }
       }
 
-      // === 6. PERSIST THE PAYLOAD TO FIRESTORE ===
+      // === 6. PERSIST TO FIRESTORE ===
       await db.collection('users').doc(userDoc.id).update({
         aiBriefingText: JSON.stringify(parsedBriefing),
         lastBriefingTime: admin.firestore.FieldValue.serverTimestamp()
       });
 
-      // === 7. TRIGGER SWEEP C: DYNAMIC AI BRIEFING NOTIFICATION (AM ONLY) ===
+      // === 7. DISPATCH DYNAMIC AI NOTIFICATION (AM ONLY) ===
       if (isAM) {
         pushPayloads.push({
           token: fcmToken,
@@ -341,20 +338,20 @@ Is Entrepreneur Mode: ${isEntrepreneurMode ? 'YES' : 'NO'}`;
         });
       }
 
-      // === 8. DISPATCH ALL QUEUED NOTIFICATIONS (WITH DEDUPLICATION / UNIQUE TAGS) ===
+      // === 8. DISPATCH QUEUED NOTIFICATIONS ===
       for (const payload of pushPayloads) {
         try {
           await messaging.send(payload);
           sentCount++;
         } catch (msgErr) {
-          console.error(`Failed to send push payload to ${userDoc.id}:`, msgErr);
+          console.error(`[LP Cron Engine] Push dispatch error for user ${userDoc.id}:`, msgErr);
         }
       }
     }
     
     res.status(200).json({ success: true, messagesSent: sentCount });
   } catch (error) {
-    console.error("Cron Engine Failure:", error);
+    console.error("[LP Cron Engine Critical Failure]:", error);
     res.status(500).json({ error: error.message });
   }
 }

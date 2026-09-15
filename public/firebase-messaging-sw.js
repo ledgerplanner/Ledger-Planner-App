@@ -54,9 +54,15 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// 3. OFFLINE FETCH ROUTER
+// 3. OFFLINE FETCH ROUTER (PROTECTED AGAINST POST & API CACHING)
 self.addEventListener('fetch', (event) => {
+  // Only intercept requests originating from this app
   if (!event.request.url.startsWith(self.location.origin)) return;
+
+  // Never intercept or cache non-GET requests (e.g. POST AI briefings) or API routes
+  if (event.request.method !== 'GET' || event.request.url.includes('/api/')) {
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {

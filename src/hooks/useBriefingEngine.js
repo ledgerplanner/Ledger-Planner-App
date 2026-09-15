@@ -164,13 +164,22 @@ export const useBriefingEngine = ({
   const currentPeriod = isAM ? 'AM' : 'PM';
   const isUnconsumedBriefing = isAM ? !hasConsumedAMBriefing : !hasConsumedPMBriefing;
 
-  // Birthday verification (only triggers if a valid date exists in user profile)
-  const isBirthdayToday = useMemo(() => {
-    if (!user?.birthday) return false;
+  // Birthday & Birthday Eve verification
+  const { isBirthdayToday, isBirthdayEve } = useMemo(() => {
+    if (!user?.birthday) return { isBirthdayToday: false, isBirthdayEve: false };
     const bdayStr = user.birthday.length > 5 ? user.birthday.substring(5) : user.birthday;
+    
     const today = new Date();
     const todayStr = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    return bdayStr === todayStr;
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = `${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+    
+    return {
+      isBirthdayToday: bdayStr === todayStr,
+      isBirthdayEve: bdayStr === tomorrowStr
+    };
   }, [user?.birthday]);
 
   useEffect(() => {
@@ -185,8 +194,10 @@ export const useBriefingEngine = ({
             accounts,
             bills,
             transactions,
+            paydayConfig,
             currentPeriod,
             isBirthdayToday,
+            isBirthdayEve,
             isEntrepreneurMode
           })
         });
@@ -199,7 +210,6 @@ export const useBriefingEngine = ({
         }
       } catch (error) {
         console.error("AI Briefing Fetch Error:", error);
-        // Fallback safety note if connection is interrupted
         setAiBriefing({
           insightType: "BUDGET INSIGHT",
           title: "📋 Stay on Track",
@@ -211,7 +221,7 @@ export const useBriefingEngine = ({
     };
 
     fetchAIBriefing();
-  }, [currentPeriod, accounts, bills, transactions, userName, user?.displayName, isBirthdayToday, isEntrepreneurMode]);
+  }, [currentPeriod, accounts, bills, transactions, paydayConfig, userName, user?.displayName, isBirthdayToday, isBirthdayEve, isEntrepreneurMode]);
 
   return {
     activeAlerts,
@@ -221,6 +231,6 @@ export const useBriefingEngine = ({
       isUnconsumed: isUnconsumedBriefing,
       isLoading: isFetchingBriefing
     },
-    hasUnreadBriefing: isUnconsumedBriefing && !!aiBriefing
+    hasUnreadBriefing: isUnconsumedBriefing && !aiBriefing
   };
 };

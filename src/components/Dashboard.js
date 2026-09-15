@@ -405,23 +405,24 @@ export default function Dashboard({
         {renderHeroShell(greetingStr, graphicContent)}
       </div>
 
-      <div className="flex justify-center px-6 mb-5 -mt-2 relative z-10">
-         {isEntrepreneurMode ? (
-           <button className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#1877F2] shadow-sm" : "bg-white/80 backdrop-blur-md border-slate-200 text-[#1877F2] shadow-[0_4px_20px_rgba(0,0,0,0.03)]"}`}>
-             🚀 Entrepreneur Mode Active
-           </button>
-         ) : (
-           <button onClick={() => setIsPaydaySetupOpen(true)} className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border transition-all active:scale-95 ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#1877F2] shadow-sm" : "bg-white/80 backdrop-blur-md border-slate-200 text-[#1877F2] shadow-[0_4px_20px_rgba(0,0,0,0.03)]"}`}>
-             <Settings2 size={18} strokeWidth={2.5} /> Set {currentMonthName}'s Pay Dates & Amounts
-           </button>
-         )}
-      </div>
-
       <div className={`mx-6 mb-5 border-t relative z-10 ${isDarkMode ? "border-[#FFFFFF]" : "border-slate-300"}`}></div>
+      
       <div className="px-6 relative z-10">
         <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-2 mb-4">
           {isEntrepreneurMode ? `${currentMonthName}'s Projected Weekly Runway` : `${currentMonthName}'s Projected Pay Schedule`}
         </h3>
+        
+        <div className="flex justify-center mb-5">
+          {isEntrepreneurMode ? (
+            <button className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border transition-all ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#1877F2] shadow-sm" : "bg-white/80 backdrop-blur-md border-slate-200 text-[#1877F2] shadow-[0_4px_20px_rgba(0,0,0,0.03)]"}`}>
+              🚀 Entrepreneur Mode Active
+            </button>
+          ) : (
+            <button onClick={() => setIsPaydaySetupOpen(true)} className={`w-full max-w-sm py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border transition-all active:scale-95 ${isDarkMode ? "bg-[#1E293B] border-slate-700 text-[#1877F2] shadow-sm" : "bg-white/80 backdrop-blur-md border-slate-200 text-[#1877F2] shadow-[0_4px_20px_rgba(0,0,0,0.03)]"}`}>
+              <Settings2 size={18} strokeWidth={2.5} /> Set {currentMonthName}'s Pay Dates & Amounts
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="w-full overflow-x-auto hide-scrollbar pl-6 pr-6 mb-6 relative z-10">
@@ -623,7 +624,7 @@ export default function Dashboard({
                                           </span>
                                           {isNextMonthBill && !bill?.isOverdue && bill?.payday !== "Due Now" && (
                                             <span className="text-[10px] min-[360px]:text-xs font-black uppercase tracking-wider text-[#1877F2]">
-                                              NEXT MONTH
+                                               NEXT MONTH
                                             </span>
                                           )}
                                         </div>
@@ -675,7 +676,7 @@ export default function Dashboard({
                                           </span>
                                           {isNextMonthBill && !bill?.isOverdue && bill?.payday !== "Due Now" && (
                                             <span className="text-[10px] min-[360px]:text-xs font-black uppercase tracking-wider text-[#1877F2]">
-                                              NEXT MONTH
+                                               NEXT MONTH
                                             </span>
                                           )}
                                         </div>

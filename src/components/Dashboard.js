@@ -70,6 +70,24 @@ export default function Dashboard({
   const todayParts = [todayForMath.getFullYear(), todayForMath.getMonth(), todayForMath.getDate()];
   const todayMidnightMillis = new Date(todayParts[0], todayParts[1], todayParts[2]).getTime();
 
+  // === TOMORROW ENGINE (FOR DUE TOMORROW PILL) ===
+  const tomorrowObj = new Date(todayForMath);
+  tomorrowObj.setDate(tomorrowObj.getDate() + 1);
+  const tomorrowMidnightMillis = new Date(tomorrowObj.getFullYear(), tomorrowObj.getMonth(), tomorrowObj.getDate()).getTime();
+
+  const dueTomorrowTotal = bills.reduce((sum, bill) => {
+    if (bill.isPaid || !bill.rawDate) return sum;
+    const parts = bill.rawDate.split("-");
+    if (parts.length === 3) {
+      const bDate = new Date(parts[0], parseInt(parts[1], 10) - 1, parts[2]);
+      const bMidnight = new Date(bDate.getFullYear(), bDate.getMonth(), bDate.getDate()).getTime();
+      if (bMidnight === tomorrowMidnightMillis) {
+        return sum + (Number(bill.amount) || 0);
+      }
+    }
+    return sum;
+  }, 0);
+
   // === PAYDAY INTERVAL RANGE ENGINE SYSTEM ===
   const freq = paydayConfig?.frequency || "Weekly";
   let allowedPaydays = [];
@@ -340,6 +358,7 @@ export default function Dashboard({
         </div>
         
         <div className="w-full space-y-2 mt-1">
+          {/* 1. MY BALANCE PILL */}
           <div 
             className={`w-full py-3 px-4 rounded-xl border flex items-center justify-between transform transition-all duration-[600ms] delay-[200ms] ${isMounted ? "translate-x-0 opacity-100" : "-translate-x-12 opacity-0"} ${getPillStyle(totalIncomeBalance)}`}
             style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
@@ -355,6 +374,25 @@ export default function Dashboard({
             </span>
           </div>
 
+          {/* 2. DUE TOMORROW PILL (CONDITIONALLY RENDERED ONLY WHEN > $0.00) */}
+          {dueTomorrowTotal > 0 && (
+            <div 
+              className={`w-full py-3 px-4 rounded-xl border flex items-center justify-between transform transition-all duration-[600ms] delay-[250ms] ${isMounted ? "translate-x-0 opacity-100" : "-translate-x-12 opacity-0"} ${isDarkMode ? "bg-blue-900/20 border-blue-500/40 text-[#1877F2] shadow-[0_0_15px_rgba(24,119,242,0.15)]" : "bg-blue-50 border-blue-200 text-[#1877F2] shadow-[0_0_15px_rgba(24,119,242,0.12)]"}`}
+              style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
+            >
+              <div className="flex items-center gap-2">
+                <div className="animate-pulse shrink-0 w-2 h-2 rounded-full bg-[#1877F2]"></div>
+                <span className="text-[10px] font-black uppercase tracking-widest">
+                  Due Tomorrow
+                </span>
+              </div>
+              <span className="text-xl font-black leading-none">
+                {currencySymbol}{dueTomorrowTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+          )}
+
+          {/* 3. SAFE TO SPEND PILL */}
           <div 
             className={`w-full py-3 px-4 rounded-xl border flex items-center justify-between transform transition-all duration-[600ms] delay-[300ms] ${isMounted ? "translate-x-0 opacity-100" : "translate-x-12 opacity-0"} ${getPillStyle(safeToSpend)}`}
             style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}

@@ -28,14 +28,13 @@ const formatDisplayDate = (year, monthIdx, day) => {
 // ==========================================
 // 1. ACCOUNTS & SAVINGS GOALS (REALISTIC COLUMBUS ARCHETYPE)
 // ==========================================
-// Note: Investment and Goal accounts are flagged with isGoal: true so they do NOT distort liquid checking
 export const demoAccounts = [
   { id: "acc1", name: "Huntington Checking", type: "Checking", balance: 2450.50, icon: "🏦" },
   { id: "acc2", name: "Cash Reserve", type: "Cash", balance: 400.00, icon: "💵" },
   { id: "acc3", name: "Emergency High-Yield Savings", type: "Savings", balance: 4850.00, isGoal: true, icon: "📈" },
   { id: "acc4", name: "Chase Freedom Unlimited", type: "Credit", balance: -312.40, icon: "💳" },
   { id: "acc5", name: "Fidelity 401(k)", type: "Investment", balance: 18400.00, isGoal: true, icon: "🌴" },
-  { id: "acc6", name: "2019 Cadillac XTS", type: "Goal", balance: 6200.00, targetAmount: 14500.00, isGoal: true, icon: "🚘" }
+  { id: "acc6", name: "2019 Cadillac XTS", type: "Goal", balance: 6800.00, targetAmount: 14500.00, isGoal: true, icon: "🚘" }
 ];
 
 // ==========================================
@@ -51,7 +50,7 @@ export const demoPaydayConfig = {
 };
 
 // ==========================================
-// 3. BILLS & PLANS (EXACT 50% PAID RATIO: 6 PAID / 6 UNPAID ACROSS ALL 4 WEEKS)
+// 3. BILLS & PLANS (EXACT 50% RATIO: 6 PAID / 6 UNPAID ACROSS ALL 4 WEEKS)
 // ==========================================
 const currentMonthBills = [
   // --- WEEK 1 / PAYDAY 1 (PAID: 3/3) ---
@@ -266,18 +265,18 @@ const currentMonthBills = [
   }
 ];
 
-// --- HISTORICAL BILLS (FOR PAST MONTH NAVIGATION & REPORTING) ---
+// --- HISTORICAL BILL CONFIGURATIONS (JAN - AUG) ---
 const historicalBills = [];
 
 const pastMonthConfigs = [
-  { monthIdx: 0, rent: 1150, aep: 138, gas: 110, stream: 32.98, gym: 24.99, auto: 285, student: 145, card: 90, water: 54 }, // Jan
-  { monthIdx: 1, rent: 1150, aep: 132, gas: 118, stream: 32.98, gym: 24.99, auto: 285, student: 145, card: 75, water: 52 }, // Feb
-  { monthIdx: 2, rent: 1150, aep: 105, gas: 82,  stream: 32.98, gym: 24.99, auto: 285, student: 145, card: 65, water: 55 }, // Mar
-  { monthIdx: 3, rent: 1150, aep: 92,  gas: 60,  stream: 32.98, gym: 24.99, auto: 285, student: 145, card: 85, water: 56 }, // Apr
-  { monthIdx: 4, rent: 1150, aep: 98,  gas: 48,  stream: 32.98, gym: 24.99, auto: 285, student: 145, card: 70, water: 58 }, // May
-  { monthIdx: 5, rent: 1150, aep: 125, gas: 38,  stream: 32.98, gym: 24.99, auto: 285, student: 145, card: 115, water: 57 }, // Jun
-  { monthIdx: 6, rent: 1150, aep: 142, gas: 34,  stream: 32.98, gym: 24.99, auto: 285, student: 145, card: 105, water: 58 }, // Jul
-  { monthIdx: 7, rent: 1150, aep: 135, gas: 36,  stream: 32.98, gym: 24.99, auto: 285, student: 145, card: 95, water: 56 }  // Aug
+  { monthIdx: 0, rent: 1150, aep: 146, gas: 122, stream: 32.98, gym: 24.99, auto: 285, student: 145, card: 120, water: 54 }, // Jan: Post-holiday winter pinch
+  { monthIdx: 1, rent: 1150, aep: 138, gas: 116, stream: 32.98, gym: 24.99, auto: 285, student: 145, card: 80,  water: 52 }, // Feb: Recovering
+  { monthIdx: 2, rent: 1150, aep: 104, gas: 84,  stream: 32.98, gym: 24.99, auto: 285, student: 145, card: 70,  water: 55 }, // Mar: Strong spring
+  { monthIdx: 3, rent: 1150, aep: 92,  gas: 58,  stream: 32.98, gym: 24.99, auto: 285, student: 145, card: 85,  water: 56 }, // Apr: Moderate
+  { monthIdx: 4, rent: 1150, aep: 98,  gas: 46,  stream: 32.98, gym: 24.99, auto: 285, student: 145, card: 160, water: 58 }, // May: Car maintenance dip
+  { monthIdx: 5, rent: 1150, aep: 130, gas: 38,  stream: 32.98, gym: 24.99, auto: 285, student: 145, card: 95,  water: 57 }, // Jun: Rising AC utility
+  { monthIdx: 6, rent: 1150, aep: 148, gas: 34,  stream: 32.98, gym: 24.99, auto: 285, student: 145, card: 90,  water: 58 }, // Jul: Summer surge
+  { monthIdx: 7, rent: 1150, aep: 135, gas: 36,  stream: 32.98, gym: 24.99, auto: 285, student: 145, card: 75,  water: 56 }  // Aug: Balanced
 ];
 
 pastMonthConfigs.forEach(cfg => {
@@ -324,28 +323,65 @@ pastMonthConfigs.forEach(cfg => {
 export const demoBills = [...currentMonthBills, ...historicalBills];
 
 // ==========================================
-// 4. TRANSACTIONS FEED (CLEAN TRI-COLOR LIVE PALETTE)
+// 4. TRANSACTIONS & CASH FLOW ENGINE (CREATING DYNAMIC PEAKS & VALLEYS)
 // ==========================================
 const historicalTransactions = [];
 
-pastMonthConfigs.forEach(incCfg => {
-  if (incCfg.monthIdx < currentMonth) {
+// Realistic Monthly Inflow Profiles for Visual Rhythm:
+// - Jan: Valley (Base payroll, tight budget)
+// - Feb: Modest recovery
+// - Mar: PEAK (Federal Tax Refund +$1,850 + Q1 Bonus)
+// - Apr: Steady
+// - May: VALLEY (Dip from reduced hours & car repairs)
+// - Jun: Climbing
+// - Jul: PEAK (Ohio summer freelance UI project +$950)
+// - Aug: Solid normalized plateau
+const historicalInflowProfiles = [
+  { m: 0, weeklyPay: 850, extra: [] }, // Jan ($3,400)
+  { m: 1, weeklyPay: 850, extra: [{ name: "Market Research Honorarium", amt: 175, day: 18, cat: "Side Hustle & Freelance", icon: "🪙" }] }, // Feb ($3,575)
+  { m: 2, weeklyPay: 850, extra: [{ name: "IRS Federal Tax Refund", amt: 1850, day: 19, cat: "Tax Refund", icon: "💵" }, { name: "Q1 Team Milestone Bonus", amt: 600, day: 30, cat: "Bonuses & Tips", icon: "🏆" }] }, // Mar ($5,850 - HUGE PEAK)
+  { m: 3, weeklyPay: 850, extra: [{ name: "Reimbursement & Stipend", amt: 120, day: 22, cat: "Other Income", icon: "✨" }] }, // Apr ($3,520)
+  { m: 4, weeklyPay: 700, extra: [] }, // May ($2,800 - VALLEY: Unpaid personal days)
+  { m: 5, weeklyPay: 850, extra: [{ name: "Chase Sapphire Cashback", amt: 145, day: 25, cat: "Cashback & Bonuses", icon: "💳" }] }, // Jun ($3,545)
+  { m: 6, weeklyPay: 850, extra: [{ name: "Freelance Creative Retainer", amt: 950, day: 15, cat: "Side Hustle & Freelance", icon: "🎨" }] }, // Jul ($4,350 - SUMMER SURGE)
+  { m: 7, weeklyPay: 850, extra: [{ name: "Vanguard Dividend Yield", amt: 110, day: 28, cat: "Dividends & Capital Gains", icon: "📈" }] } // Aug ($3,510)
+];
+
+historicalInflowProfiles.forEach(profile => {
+  if (profile.m < currentMonth) {
+    // 4 Weekly Deposits
     [7, 14, 21, 28].forEach((pDay, pIdx) => {
       historicalTransactions.push({
-        id: `h_pay_${incCfg.monthIdx}_${pIdx}`,
+        id: `h_pay_${profile.m}_${pIdx}`,
         name: "Employer Payroll Direct Deposit",
-        amount: 850.00,
+        amount: profile.weeklyPay,
         type: "Income",
-        date: `${formatDisplayDate(currentYear, incCfg.monthIdx, pDay)}, 6:00 AM`,
-        rawDate: formatIsoMidday(currentYear, incCfg.monthIdx, pDay),
+        date: `${formatDisplayDate(currentYear, profile.m, pDay)}, 6:00 AM`,
+        rawDate: formatIsoMidday(currentYear, profile.m, pDay),
         icon: "💻",
         category: "Primary Salary",
+        accountId: "acc1"
+      });
+    });
+
+    // Peak Inflow Events
+    profile.extra.forEach((ext, eIdx) => {
+      historicalTransactions.push({
+        id: `h_ext_${profile.m}_${eIdx}`,
+        name: ext.name,
+        amount: ext.amt,
+        type: "Income",
+        date: `${formatDisplayDate(currentYear, profile.m, ext.day)}, 11:00 AM`,
+        rawDate: formatIsoMidday(currentYear, profile.m, ext.day),
+        icon: ext.icon,
+        category: ext.cat,
         accountId: "acc1"
       });
     });
   }
 });
 
+// Link historical settled bill transactions so expense lines mirror bill outlays
 historicalBills.forEach(hb => {
   historicalTransactions.push({
     id: hb.linkedTxId,
@@ -362,6 +398,20 @@ historicalBills.forEach(hb => {
 });
 
 export const demoTransactions = [
+  // --- GOAL VAULT CONTRIBUTION (PROOF OF SAVINGS PROGRESS) ---
+  {
+    id: "tx_goal_cadillac",
+    name: "Transfer to 2019 Cadillac XTS Vault",
+    amount: 150.00,
+    type: "Expense",
+    date: `${formatDisplayDate(currentYear, currentMonth, currentDay)}, 11:15 AM`,
+    rawDate: formatIsoMidday(currentYear, currentMonth, currentDay),
+    icon: "🚘",
+    category: "Savings Goal Transfer",
+    accountId: "acc1",
+    isDirectGoalEntry: true
+  },
+
   // --- RECENT GREEN INFLOW (+) ---
   {
     id: "t_today_inflow",
@@ -436,7 +486,7 @@ export const demoTransactions = [
     accountId: "acc4"
   },
 
-  // --- SETTLED MONTHLY FIXED BILLS (FOR ACTIVITY EXPANSION) ---
+  // --- SETTLED MONTHLY FIXED BILLS (FOR RECENT ACTIVITY HISTORY) ---
   {
     id: "tx_demo_prog",
     name: "Progressive Auto Insurance",
@@ -493,15 +543,15 @@ export const demoTransactions = [
 // 5. TO-DO LIST (10 ITEMS: 5 TASKS / 5 SHOPPING)
 // ==========================================
 export const demoTodos = [
-  { id: "td1", text: "Transfer $100 to 2019 Cadillac XTS fund", priority: 5, type: "task", isCompleted: true },
+  { id: "td1", text: "Stash $150 into 2019 Cadillac XTS Vault", priority: 5, type: "task", isCompleted: true },
   { id: "td2", text: "Review AEP Ohio electric statement before Payday 3", priority: 4, type: "task", isCompleted: false },
-  { id: "td3", text: "Verify Huntington automated checking buffer", priority: 3, type: "task", isCompleted: false },
+  { id: "td3", text: "Verify Huntington checking cash buffer", priority: 3, type: "task", isCompleted: false },
   { id: "td4", text: "Schedule routine oil change at Byers Dublin", priority: 2, type: "task", isCompleted: false },
-  { id: "td5", text: "Verify Fidelity 401(k) employer match percentage", priority: 1, type: "task", isCompleted: false },
+  { id: "td5", text: "Confirm Fidelity 401(k) company match allocation", priority: 1, type: "task", isCompleted: false },
 
-  { id: "td6", text: "Target (Graceland): Household essentials & air filters", priority: 4, type: "shopping", isCompleted: true },
+  { id: "td6", text: "Target (Graceland): Household cleaning & air filters", priority: 4, type: "shopping", isCompleted: true },
   { id: "td7", text: "Kroger on High St: Weekly meal prep & fresh groceries", priority: 5, type: "shopping", isCompleted: false },
-  { id: "td8", text: "Giant Eagle Market District: Specialty coffee beans", priority: 3, type: "shopping", isCompleted: false },
-  { id: "td9", text: "Costco (Polaris): Paper goods & bulk household items", priority: 2, type: "shopping", isCompleted: false },
+  { id: "td8", text: "Giant Eagle Market District: Whole bean espresso blend", priority: 3, type: "shopping", isCompleted: false },
+  { id: "td9", text: "Costco (Polaris): Paper goods & bulk household supplies", priority: 2, type: "shopping", isCompleted: false },
   { id: "td10", text: "Easton Town Center: Pick up birthday gift", priority: 1, type: "shopping", isCompleted: false }
 ];

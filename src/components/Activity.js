@@ -31,7 +31,8 @@ export default function Activity({
     setUserToggledToday(null);
   }
 
-  const isSearching = activitySearch.trim() !== "" || activityFilter !== "All";
+  // Strictly expand all months ONLY when an active search query is being typed
+  const isTypingSearch = activitySearch && activitySearch.trim() !== "";
   const actualIsTodayCollapsed = userToggledToday !== null ? userToggledToday : false;
 
   useEffect(() => {
@@ -476,8 +477,9 @@ export default function Activity({
                 </div>
               )}
 
-              {groupedTransactions.map((group, index) => {
-                const isDefaultCollapsed = isSearching ? false : (index !== 0 || todayTransactions.length > 0);
+              {groupedTransactions.map((group) => {
+                // Strict rule: ALL historical months default to collapsed unless actively searching text
+                const isDefaultCollapsed = !isTypingSearch;
                 const isCollapsed = userToggledMonths[group.label] !== undefined 
                   ? userToggledMonths[group.label] 
                   : isDefaultCollapsed;

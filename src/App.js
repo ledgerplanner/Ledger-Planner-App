@@ -70,7 +70,7 @@ function LedgerApp() {
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
+    const handleOffline = () => setIsOffline(false);
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
     return () => {
@@ -325,7 +325,7 @@ function LedgerApp() {
         fullDate: displayDate, 
         payday: newPayday, 
         isOverdue: false, 
-        paidAmount: newPaidAmt,
+        paidAmount: newPaidAmt, 
         amount: finalNextAmount
       } : b));
     } else {
@@ -338,7 +338,7 @@ function LedgerApp() {
         fullDate: displayDate, 
         payday: newPayday, 
         isOverdue: false, 
-        paidAmount: newPaidAmt,
+        paidAmount: newPaidAmt, 
         amount: finalNextAmount
       });
     }
@@ -509,9 +509,21 @@ function LedgerApp() {
   const handleAddTodo = async (e, emojiPayload = "📝") => {
     e.preventDefault();
     if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; }
-    if (!user || !newTodoText.trim()) return;
+    if (!newTodoText.trim()) return;
+
     try {
-      if (!isDemoMode) {
+      if (isDemoMode) {
+        const newDemoItem = {
+          id: `td_demo_${Date.now()}`,
+          text: newTodoText.trim(),
+          priority: newTodoPriority,
+          type: newTodoType,
+          emoji: emojiPayload,
+          isCompleted: false
+        };
+        setTodos([newDemoItem, ...todos]);
+      } else {
+        if (!user) return;
         await addDoc(collection(db, "users", user.uid, "todos"), {
           text: newTodoText.trim(),
           priority: newTodoPriority,
@@ -523,8 +535,10 @@ function LedgerApp() {
       }
       triggerVictory();
       setNewTodoText("");
-      newTodoPriority !== 3 && setNewTodoPriority(3);
-    } catch (error) { console.error("Error adding todo:", error); }
+      if (newTodoPriority !== 3) setNewTodoPriority(3);
+    } catch (error) { 
+      console.error("Error adding todo:", error); 
+    }
   };
 
   const toggleTodoStatus = async (todoId) => {
@@ -532,7 +546,13 @@ function LedgerApp() {
     triggerHaptic(20);
     const todo = todos.find(t => t.id === todoId);
     if (!todo) return;
-    if (!isDemoMode) await updateDoc(doc(db, "users", user.uid, "todos", todoId), { isCompleted: !todo.isCompleted });
+
+    if (isDemoMode) {
+      setTodos(prev => prev.map(t => t.id === todoId ? { ...t, isCompleted: !t.isCompleted } : t));
+    } else {
+      if (!user) return;
+      await updateDoc(doc(db, "users", user.uid, "todos", todoId), { isCompleted: !todo.isCompleted });
+    }
   };
 
   const clearCompletedTodos = () => {
@@ -893,7 +913,7 @@ function LedgerApp() {
                 userName={userNameDisplay} 
                 accounts={accounts} 
                 transactions={transactions} 
-                paydayConfig={paydayConfig}
+                paydayConfig={paydayConfig} 
                 isEntrepreneurMode={isEntrepreneurMode}
                 isDarkMode={isDarkMode} 
                 setIsTransferOpen={handleOpenTransfer}
@@ -1141,8 +1161,8 @@ function LedgerApp() {
                     '--peak-x': `${peakX}px`, 
                     '--peak-y': `${peakY}px`, 
                     '--end-x': `${endX}px`, 
-                    '--end-y': `${endY}px`,
-                    '--tz': `${(Math.random() - 0.5) * 600}px`,
+                    '--end-y': `${endY}px`, 
+                    '--tz': `${(Math.random() - 0.5) * 600}px`, 
                     '--rx': `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 1440 + 720)}deg`, 
                     '--ry': `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 1440 + 720)}deg`, 
                     '--rz': `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 720 + 360)}deg`, 

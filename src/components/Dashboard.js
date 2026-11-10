@@ -262,7 +262,10 @@ export default function Dashboard({
       }
       let income = 0;
       if (pd !== "Due Now") {
-        income = Number(pdSettings.income) || 0;
+        const pdMillis = parseLocalDate(pdSettings.date);
+        // Auto-zero expected pay if the payday date has arrived or passed
+        const hasPaydayArrived = pdMillis > 0 && pdMillis <= todayMidnightMillis;
+        income = hasPaydayArrived ? 0 : (Number(pdSettings.income) || 0);
       }
       runningBalance = runningBalance + income - unpaidTotal;
       hzBalances[pd] = runningBalance;
@@ -488,7 +491,9 @@ export default function Dashboard({
               else if (pd === "Week 3") expectedDateStr = "DAYS 15-21";
               else if (pd === "Week 4") expectedDateStr = `Days 22-${lastDayOfMonth}`;
             } else {
-              totalExpectedIncome = Number(pdSettings.income) || 0;
+              const pdMillis = parseLocalDate(pdSettings.date);
+              const hasPaydayArrived = pdMillis > 0 && pdMillis <= todayMidnightMillis;
+              totalExpectedIncome = hasPaydayArrived ? 0 : (Number(pdSettings.income) || 0);
               expectedDateStr = pd === "Due Now" ? "ACTION REQ" : formatPaydayDateStr(pdSettings.date).toUpperCase();
             }
 

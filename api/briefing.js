@@ -52,13 +52,13 @@ export default async function handler(req) {
       isGoal: a.isGoal
     })) : [];
 
-    const systemInstruction = `You are the Lead Financial Architect and elite wealth strategist inside Ledger Planner 2.0 powered by Gemini 3.8 Flash.
+    const systemInstruction = `You are the Lead Financial Architect and elite wealth strategist inside Ledger Planner 2.0.
 Your objective is to analyze real-time user financial ledger states and produce structured, premium financial metrics with sharp strategic reasoning.
 CRITICAL TITLE DIRECTIVE: You must NEVER use generic titles like "Bill Coverage Gap". You must always generate unique, hyper-specific, premium titles tailored to the active cash state.
 SUBSCRIPTION DIRECTIVE: If upcoming bills include recurring subscriptions (like streaming services, software, or items marked /mo), proactively flag them as a "SUBSCRIPTION ALERT" to prevent unwanted charges.
 BIRTHDAY DIRECTIVES:
-* If "Is Birthday Today" is YES: Open with an elite, celebratory birthday message addressing ${userName || 'Founder'} directly before reviewing runway.
-* If "Is Birthday Eve" is YES: Open with an exciting Birthday Eve acknowledgment addressing ${userName || 'Founder'} directly, ensuring peace of mind ahead of their celebration.
+- If "Is Birthday Today" is YES: Open with an elite, celebratory birthday message addressing ${userName || 'Founder'} directly before reviewing runway.
+- If "Is Birthday Eve" is YES: Open with an exciting Birthday Eve acknowledgment addressing ${userName || 'Founder'} directly, ensuring peace of mind ahead of their celebration.
 ENTREPRENEUR DIRECTIVE: If "Is Entrepreneur Mode" is YES, pivot context completely. Do not advise that a standard payday or W-2 payroll deposit is upcoming. Focus entirely on variable client collections, business overhead tracking, and protecting cash runway consistency.
 EVALUATION WINDOW DIRECTIVE: If Evaluation Window is AM, focus on the Morning Outlook (upcoming bills, daily budget limit, paydays). If PM, focus on the Evening Recap (spending highlights, budget impact, staying on track).
 LENGTH & STRATEGY DIRECTIVE: The 'body' field MUST contain at least 3 distinct, high-value sentences:
@@ -77,7 +77,7 @@ Is Birthday Today: ${isBirthdayToday ? 'YES' : 'NO'}
 Is Birthday Eve: ${isBirthdayEve ? 'YES' : 'NO'}
 Is Entrepreneur Mode: ${isEntrepreneurMode ? 'YES' : 'NO'}`;
 
-    const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
+    const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
     const geminiPayload = {
       contents: [{
@@ -87,8 +87,7 @@ Is Entrepreneur Mode: ${isEntrepreneurMode ? 'YES' : 'NO'}`;
         parts: [{ text: systemInstruction }]
       },
       generationConfig: {
-        temperature: 0.1,
-        maxOutputTokens: 2048,
+        maxOutputTokens: 4096,
         responseMimeType: "application/json",
         responseSchema: {
           type: "OBJECT",
@@ -122,14 +121,19 @@ Is Entrepreneur Mode: ${isEntrepreneurMode ? 'YES' : 'NO'}`;
     }
 
     const data = await response.json();
-    const rawContent = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+    const parts = data?.candidates?.[0]?.content?.parts || [];
+    
+    // Locate the text part containing our JSON object
+    const textPart = parts.find(p => p.text && p.text.trim().startsWith('{')) || parts[parts.length - 1];
+    const rawContent = textPart?.text?.trim() || "";
 
     if (!rawContent) {
       console.error('[LP Briefing Engine] Google returned empty candidate content.');
       throw new Error('Empty response from model');
     }
 
-    const parsedBriefing = JSON.parse(rawContent);
+    const cleanJson = rawContent.replace(/^```json\s*/i, '').replace(/\s*```$/, '').trim();
+    const parsedBriefing = JSON.parse(cleanJson);
 
     return new Response(JSON.stringify({ briefing: parsedBriefing }), {
       status: 200,

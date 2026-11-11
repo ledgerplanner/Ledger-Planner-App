@@ -70,7 +70,7 @@ function LedgerApp() {
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOffline(false);
+    const handleOffline = () => setIsOnline(false);
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
     return () => {
@@ -126,6 +126,9 @@ function LedgerApp() {
   const [editPaydayConfig, setEditPaydayConfig] = useState(paydayConfig);
   const [currentCurrency, setCurrentCurrency] = useState("USD ($)");
   const [resetConfirm, setResetConfirm] = useState("");
+  const [isResetting, setIsResetting] = useState(false);
+  const [resetProgress, setResetProgress] = useState(0);
+  const [resetStatusText, setResetStatusText] = useState("");
 
   // Push Notifications
   const [isPushEnabled, setIsPushEnabled] = useState(() => {
@@ -577,18 +580,67 @@ function LedgerApp() {
 
   const handleFactoryReset = async () => {
     if (!isOnline && !isDemoMode) { triggerOfflineLock(); return; }
-    if (resetConfirm !== "RESET" || isDemoMode) return;
+    if (resetConfirm !== "RESET" || isDemoMode || isResetting) return;
     try {
-      const collectionsToWipe = ["transactions", "bills", "accounts", "todos"];
+      setIsResetting(true);
+      setResetProgress(5);
+      setResetStatusText("Scanning ledger records...");
+
+      const collectionsToWipe = [
+        { name: "transactions", label: "Clearing Activity History..." },
+        { name: "bills", label: "Clearing Bills & Schedules..." },
+        { name: "accounts", label: "Clearing Accounts & Goals..." },
+        { name: "todos", label: "Clearing To-Do List..." }
+      ];
+
+      // Gather all document snapshots first to calculate accurate item-by-item progress
+      const snapshots = [];
+      let totalDocs = 0;
+
       for (const col of collectionsToWipe) {
-        const querySnapshot = await getDocs(collection(db, "users", user.uid, col));
-        const deletePromises = querySnapshot.docs.map(document => deleteDoc(doc(db, "users", user.uid, col, document.id)));
-        await Promise.all(deletePromises);
+        const snap = await getDocs(collection(db, "users", user.uid, col.name));
+        snapshots.push({ ...col, docs: snap.docs });
+        totalDocs += snap.docs.length;
       }
+
+      if (totalDocs === 0) {
+        setResetProgress(50);
+        setResetStatusText("Finalizing clean slate...");
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } else {
+        let deletedCount = 0;
+        for (const group of snapshots) {
+          if (group.docs.length > 0) {
+            setResetStatusText(group.label);
+            for (const document of group.docs) {
+              await deleteDoc(doc(db, "users", user.uid, group.name, document.id));
+              deletedCount++;
+              const pct = Math.min(95, Math.round(10 + (deletedCount / totalDocs) * 85));
+              setResetProgress(pct);
+            }
+          }
+        }
+      }
+
+      setResetProgress(100);
+      setResetStatusText("Ledger Reset Complete!");
+      setTransactions([]);
+      setBills([]);
+      setAccounts([]);
+      setTodos([]);
       setResetConfirm("");
       triggerVictory();
+
+      setTimeout(() => {
+        setIsResetting(false);
+        setResetProgress(0);
+        setResetStatusText("");
+      }, 1400);
     } catch (error) {
       console.error("Factory reset failed:", error);
+      setIsResetting(false);
+      setResetProgress(0);
+      setResetStatusText("");
     }
   };
 
@@ -1100,6 +1152,9 @@ function LedgerApp() {
             handleFactoryReset={handleFactoryReset} 
             resetConfirm={resetConfirm} 
             setResetConfirm={setResetConfirm} 
+            isResetting={isResetting}
+            resetProgress={resetProgress}
+            resetStatusText={resetStatusText}
             isDemoMode={isDemoMode} 
             openGlobalAction={openGlobalAction} 
             signatureColor={signatureColor} 
@@ -1115,81 +1170,4 @@ function LedgerApp() {
         )}
 
         {globalActionConfig.isOpen && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center px-4">
-            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeGlobalAction}></div>
-            <div className={`relative w-full max-w-sm p-6 rounded-[2rem] shadow-2xl animate-slide-up ${isDarkMode ? "bg-[#1E293B] border border-slate-700" : "bg-white border border-slate-100"}`}>
-              <div className="flex flex-col items-center text-center">
-                <div className={`w-16 h-16 rounded-full flex items-center justify-center p-0.5 border mb-4 shrink-0 ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
-                  <img src="/login-logo.png" alt="Ledger Planner" className="w-full h-full object-cover rounded-full" />
-                </div>
-                <h3 className={`text-lg font-black uppercase tracking-widest mb-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{globalActionConfig.title}</h3>
-                <p className={`text-sm font-bold leading-relaxed mb-6 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{globalActionConfig.message}</p>
-                <div className="flex gap-3 w-full">
-                  {!globalActionConfig.isAlertOnly && (
-                    <button onClick={closeGlobalAction} className={`flex-1 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-colors ${isDarkMode ? "bg-slate-800 text-slate-300 hover:bg-slate-700" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>Cancel</button>
-                  )}
-                  <button onClick={executeGlobalAction} className={`flex-1 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest text-white shadow-lg transition-transform active:scale-95 ${globalActionConfig.isDestructive ? "bg-red-500 shadow-[0_8px_16px_rgba(239,68,68,0.3)]" : "bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)]"}`} style={{ backgroundColor: !globalActionConfig.isDestructive ? signatureColor : undefined }}>{globalActionConfig.confirmText}</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {showConfetti && (
-         <div className="fixed inset-0 z-[200] pointer-events-none flex items-center justify-center overflow-hidden" style={{ perspective: '1000px' }}>
-            {[...Array(132)].map((_, i) => {
-              const colors = [signatureColor, '#10B981', '#F97316'];
-              const isStrip = Math.random() > 0.6;
-              const peakX = (Math.random() - 0.5) * 1000;
-              const peakY = -(Math.random() * 400 + 200); 
-              const endX = peakX + (Math.random() - 0.5) * 500; 
-              const endY = 800 + Math.random() * 300; 
-
-              return (
-                <div 
-                  key={i} 
-                  className="absolute animate-[confettiFall_ease-out_forwards]" 
-                  style={{ 
-                    backgroundColor: colors[Math.floor(Math.random() * colors.length)], 
-                    left: '50%', top: '60%',
-                    width: isStrip ? '8px' : '12px', height: isStrip ? '24px' : '12px',
-                    borderRadius: Math.random() > 0.5 && !isStrip ? '50%' : '2px',
-                    transformStyle: 'preserve-3d',
-                    animationDuration: `${Math.random() * 1.5 + 3.7}s`,
-                    animationDelay: `${Math.random() * 0.3}s`,
-                    animationTimingFunction: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)', 
-                    '--peak-x': `${peakX}px`, 
-                    '--peak-y': `${peakY}px`, 
-                    '--end-x': `${endX}px`, 
-                    '--end-y': `${endY}px`, 
-                    '--tz': `${(Math.random() - 0.5) * 600}px`, 
-                    '--rx': `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 1440 + 720)}deg`, 
-                    '--ry': `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 1440 + 720)}deg`, 
-                    '--rz': `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 720 + 360)}deg`, 
-                    '--scale': `${Math.random() * 0.6 + 0.6}`
-                  }} 
-                />
-              )
-            })}
-            <style>{`
-              @keyframes confettiFall { 
-                0% { transform: translate3d(-50%, -50%, 0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(0); opacity: 1; } 
-                15% { transform: translate3d(calc(-50% + var(--peak-x)), calc(-50% + var(--peak-y)), var(--tz)) rotateX(calc(var(--rx) * 0.15)) rotateY(calc(var(--ry) * 0.15)) rotateZ(calc(var(--rz) * 0.15)) scale(var(--scale)); opacity: 1; } 
-                80% { opacity: 1; }
-                100% { transform: translate3d(calc(-50% + var(--end-x)), calc(-50% + var(--end-y)), var(--tz)) rotateX(var(--rx)) rotateY(var(--ry)) rotateZ(var(--rz)) scale(var(--scale)); opacity: 0; } 
-              }
-            `}</style>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-export default function AppWrapper() {
-  return (
-    <LedgerProvider>
-      <LedgerApp />
-    </LedgerProvider>
-  );
-}
+          <div className="fixed inset-0 z-

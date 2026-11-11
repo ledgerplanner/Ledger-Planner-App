@@ -19,6 +19,9 @@ export default function Settings({
   handleFactoryReset,
   resetConfirm,
   setResetConfirm,
+  isResetting = false,
+  resetProgress = 0,
+  resetStatusText = "",
   isDemoMode,
   openGlobalAction,
   signatureColor = "#1877F2",
@@ -129,7 +132,7 @@ export default function Settings({
 
   return (
     <div className="absolute inset-0 z-[120] flex items-end lg:items-center lg:justify-center">
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsSettingsOpen(false)}></div>
+      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => !isResetting && setIsSettingsOpen(false)}></div>
       
       <div className={`w-full lg:max-w-md h-[90vh] rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-[0_15px_40px_rgba(0,0,0,0.3)] relative z-[130] flex flex-col overflow-hidden border ${
         isDarkMode ? "bg-[#0F172A] border-slate-800" : "bg-[#F8FAFC] border-slate-100"
@@ -143,11 +146,11 @@ export default function Settings({
               <Shield size={16} style={{ color: signatureColor }} strokeWidth={2.5} /> Settings Vault
             </h3>
           ) : (
-            <button onClick={() => setActiveView("main")} className={`flex items-center gap-1.5 text-xs font-black uppercase tracking-widest transition-colors ${isDarkMode ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"}`}>
+            <button onClick={() => !isResetting && setActiveView("main")} disabled={isResetting} className={`flex items-center gap-1.5 text-xs font-black uppercase tracking-widest transition-colors ${isDarkMode ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"} ${isResetting ? "opacity-50 cursor-not-allowed" : ""}`}>
               <ChevronLeft size={16} strokeWidth={2.5} /> Back to Settings Vault
             </button>
           )}
-          <button onClick={() => setIsSettingsOpen(false)} className={closeButtonClass}>
+          <button onClick={() => !isResetting && setIsSettingsOpen(false)} disabled={isResetting} className={`${closeButtonClass} ${isResetting ? "opacity-50 cursor-not-allowed" : ""}`}>
             <X size={18} strokeWidth={2.5} />
           </button>
         </div>
@@ -595,32 +598,58 @@ export default function Settings({
                   type="text"
                   placeholder="TYPE RESET"
                   value={resetConfirm}
+                  disabled={isResetting}
                   onChange={(e) => setResetConfirm(e.target.value)}
                   className={`w-full py-3.5 px-4 rounded-xl font-black text-xs tracking-widest text-center uppercase focus:outline-none transition-all border mb-3 ${
                     isDarkMode 
                       ? "bg-[#0F172A] border-slate-700/80 text-white focus:border-red-500" 
                       : "bg-white border-slate-200 text-slate-900 focus:border-red-400 shadow-inner"
-                  }`}
+                  } ${isResetting ? "opacity-50 cursor-not-allowed" : ""}`}
                 />
-                <button
-                  onClick={() => {
-                    openGlobalAction(
-                      "Factory Reset", 
-                      "Are you absolutely certain you want to permanently wipe all tracking ledgers? This action cannot be undone.", 
-                      "Execute Wipe", 
-                      true, 
-                      handleFactoryReset
-                    );
-                  }}
-                  disabled={resetConfirm !== "RESET"}
-                  className={`w-full py-3.5 rounded-xl font-black text-xs uppercase tracking-widest text-white transition-all border border-transparent flex items-center justify-center gap-2 ${
-                    resetConfirm === "RESET" 
-                      ? "bg-red-600 shadow-[0_6px_16px_rgba(220,38,38,0.3)] active:scale-[0.98] hover:bg-red-700" 
-                      : "bg-slate-300 dark:bg-slate-800 text-slate-400 cursor-not-allowed opacity-50 shadow-none"
-                  }`}
-                >
-                  <Trash2 size={14} strokeWidth={2.5} /> RESET MY LEDGER
-                </button>
+
+                {isResetting ? (
+                  <div className={`w-full p-4 rounded-xl border transition-all ${
+                    isDarkMode ? "bg-[#0F172A] border-red-900/50" : "bg-white border-red-200 shadow-sm"
+                  }`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <RefreshCw size={13} className="text-red-500 animate-spin shrink-0" strokeWidth={2.5} />
+                        <span className={`text-[10px] font-black uppercase tracking-widest truncate ${isDarkMode ? "text-slate-200" : "text-slate-800"}`}>
+                          {resetStatusText || "Wiping System..."}
+                        </span>
+                      </div>
+                      <span className="text-[11px] font-black text-red-500 shrink-0">
+                        {resetProgress}%
+                      </span>
+                    </div>
+                    <div className={`w-full h-2.5 rounded-full overflow-hidden border ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-slate-100 border-slate-200"}`}>
+                      <div 
+                        className="h-full bg-red-600 transition-all duration-300 ease-out shadow-[0_0_12px_rgba(220,38,38,0.6)]"
+                        style={{ width: `${Math.max(5, Math.min(resetProgress, 100))}%` }}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      openGlobalAction(
+                        "Factory Reset", 
+                        "Are you absolutely certain you want to permanently wipe all tracking ledgers? This action cannot be undone.", 
+                        "Execute Wipe", 
+                        true, 
+                        handleFactoryReset
+                      );
+                    }}
+                    disabled={resetConfirm !== "RESET"}
+                    className={`w-full py-3.5 rounded-xl font-black text-xs uppercase tracking-widest text-white transition-all border border-transparent flex items-center justify-center gap-2 ${
+                      resetConfirm === "RESET" 
+                        ? "bg-red-600 shadow-[0_6px_16px_rgba(220,38,38,0.3)] active:scale-[0.98] hover:bg-red-700" 
+                        : "bg-slate-300 dark:bg-slate-800 text-slate-400 cursor-not-allowed opacity-50 shadow-none"
+                    }`}
+                  >
+                    <Trash2 size={14} strokeWidth={2.5} /> RESET MY LEDGER
+                  </button>
+                )}
               </div>
 
             </div>

@@ -53,7 +53,7 @@ function LedgerApp() {
   } = useLedger();
 
   // === DYNAMIC COMPUTATIONS ===
-  const userNameDisplay = isDemoMode ? "Aaron" : user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || "Founder";
+  const userNameDisplay = isDemoMode ? "Aaron" : user?.displayName?.split(" ")[0] || user?.email?.split("@")[0] || "Founder";
 
   // === LOCAL UI & ROUTING STATE ===
   const [isMounted, setIsMounted] = useState(false);
@@ -66,16 +66,16 @@ function LedgerApp() {
   const scrollRef = useRef(null);
 
   // === FORT KNOX OFFLINE ENGINE ===
-  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  const [isOnline, setIsOnline] = useState(typeof navigator !== "undefined" ? navigator.onLine : true);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
   }, []);
 
@@ -593,7 +593,6 @@ function LedgerApp() {
         { name: "todos", label: "Clearing To-Do List..." }
       ];
 
-      // Gather all document snapshots first to calculate accurate item-by-item progress
       const snapshots = [];
       let totalDocs = 0;
 
@@ -655,7 +654,7 @@ function LedgerApp() {
         if (b.rawDate) {
           const d = new Date(b.rawDate);
           d.setUTCMonth(d.getUTCMonth() + 1);
-          const nextDate = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+          const nextDate = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
           await updateDoc(doc(db, "users", user.uid, "bills", b.id), { 
             rawDate: nextDate, date: d.getUTCDate(), fullDate: d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }), isPaid: false, paidAmount: b.isInstallment ? b.paidAmount : 0, settledDate: null
           });
@@ -718,7 +717,7 @@ function LedgerApp() {
     return () => unsubscribeAuth();
   }, [isMounted, isDemoMode, setUser]);
 
-  // CALM TIME MONITOR (Runs once every 60 seconds instead of every second to protect performance)
+  // CALM TIME MONITOR
   useEffect(() => {
     const checkSchedule = () => {
       const now = new Date();
@@ -1170,4 +1169,74 @@ function LedgerApp() {
         )}
 
         {globalActionConfig.isOpen && (
-          <div className="fixed inset-0 z-
+          <div className="fixed inset-0 z-[200] flex items-center justify-center px-4">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeGlobalAction}></div>
+            <div className={`relative w-full max-w-sm p-6 rounded-[2rem] shadow-2xl animate-slide-up ${isDarkMode ? "bg-[#1E293B] border border-slate-700" : "bg-white border border-slate-100"}`}>
+              <div className="flex flex-col items-center text-center">
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center p-0.5 border mb-4 shrink-0 ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                  <img src="/login-logo.png" alt="Ledger Planner" className="w-full h-full object-cover rounded-full" />
+                </div>
+                <h3 className={`text-lg font-black uppercase tracking-widest mb-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{globalActionConfig.title}</h3>
+                <p className={`text-sm font-bold leading-relaxed mb-6 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{globalActionConfig.message}</p>
+                <div className="flex gap-3 w-full">
+                  {!globalActionConfig.isAlertOnly && (
+                    <button onClick={closeGlobalAction} className={`flex-1 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-colors ${isDarkMode ? "bg-slate-800 text-slate-300 hover:bg-slate-700" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>Cancel</button>
+                  )}
+                  <button onClick={executeGlobalAction} className={`flex-1 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest text-white shadow-lg transition-transform active:scale-95 ${globalActionConfig.isDestructive ? "bg-red-500 shadow-[0_8px_16px_rgba(239,68,68,0.3)]" : "bg-[#1877F2] shadow-[0_8px_16px_rgba(24,119,242,0.3)]"}`} style={{ backgroundColor: !globalActionConfig.isDestructive ? signatureColor : undefined }}>{globalActionConfig.confirmText}</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showConfetti && (
+          <div className="fixed inset-0 z-[200] pointer-events-none flex items-center justify-center overflow-hidden" style={{ perspective: "1000px" }}>
+            {[...Array(132)].map((_, i) => {
+              const colors = [signatureColor, "#10B981", "#F97316"];
+              const isStrip = Math.random() > 0.6;
+              const peakX = (Math.random() - 0.5) * 1000;
+              const peakY = -(Math.random() * 400 + 200);
+              const endX = peakX + (Math.random() - 0.5) * 500;
+              const endY = 800 + Math.random() * 300;
+
+              return (
+                <div 
+                  key={i} 
+                  className="absolute animate-[confettiFall_ease-out_forwards]" 
+                  style={{ 
+                    backgroundColor: colors[Math.floor(Math.random() * colors.length)], 
+                    left: "50%", top: "60%",
+                    width: isStrip ? "8px" : "12px", height: isStrip ? "24px" : "12px",
+                    borderRadius: Math.random() > 0.5 && !isStrip ? "50%" : "2px",
+                    transformStyle: "preserve-3d",
+                    animationDuration: `${Math.random() * 1.5 + 3.7}s`,
+                    animationDelay: `${Math.random() * 0.3}s`,
+                    animationTimingFunction: "cubic-bezier(0.25, 0.46, 0.45, 0.94)", 
+                    "--peak-x": `${peakX}px`, 
+                    "--peak-y": `${peakY}px`, 
+                    "--end-x": `${endX}px`, 
+                    "--end-y": `${endY}px`, 
+                    "--tz": `${(Math.random() - 0.5) * 600}px`, 
+                    "--rx": `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 1440 + 720)}deg`, 
+                    "--ry": `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 1440 + 720)}deg`, 
+                    "--rz": `${(Math.random() > 0.5 ? 1 : -1) * (Math.random() * 720 + 360)}deg`, 
+                    "--scale": `${Math.random() * 0.6 + 0.6}`
+                  }} 
+                />
+              );
+            })}
+            <style>{"@keyframes confettiFall { 0% { transform: translate3d(-50%, -50%, 0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(0); opacity: 1; } 15% { transform: translate3d(calc(-50% + var(--peak-x)), calc(-50% + var(--peak-y)), var(--tz)) rotateX(calc(var(--rx) * 0.15)) rotateY(calc(var(--ry) * 0.15)) rotateZ(calc(var(--rz) * 0.15)) scale(var(--scale)); opacity: 1; } 80% { opacity: 1; } 100% { transform: translate3d(calc(-50% + var(--end-x)), calc(-50% + var(--end-y)), var(--tz)) rotateX(var(--rx)) rotateY(var(--ry)) rotateZ(var(--rz)) scale(var(--scale)); opacity: 0; } }"}</style>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function AppWrapper() {
+  return (
+    <LedgerProvider>
+      <LedgerApp />
+    </LedgerProvider>
+  );
+}

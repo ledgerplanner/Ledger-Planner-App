@@ -234,62 +234,97 @@ export default function Accounts({
   const createTaperedSpline = (data, maxVal) => {
     if (data.length < 2) return "";
 
+    const n = data.length;
     const basePoints = data.map((d, i) => {
-      const x = (i / (data.length - 1)) * 100;
+      const x = (i / (n - 1)) * 100;
       const normalizedVal = Math.abs(d.val) / (maxVal || 1);
       const y = 90 - (normalizedVal * 80);
       return { x, y };
     });
 
-    const segments = 50; 
+    // Calculate smooth natural slopes across all data points
+    const dx = [];
+    const dy = [];
+    const slopes = [];
+    for (let i = 0; i < n - 1; i++) {
+      dx[i] = basePoints[i + 1].x - basePoints[i].x;
+      dy[i] = basePoints[i + 1].y - basePoints[i].y;
+      slopes[i] = dy[i] / (dx[i] || 1);
+    }
+
+    const tangents = new Array(n).fill(0);
+    tangents[0] = slopes[0];
+    tangents[n - 1] = slopes[n - 2];
+
+    for (let i = 1; i < n - 1; i++) {
+      if (slopes[i - 1] * slopes[i] <= 0) {
+        tangents[i] = 0;
+      } else {
+        tangents[i] = (slopes[i - 1] + slopes[i]) / 2;
+      }
+    }
+
+    for (let i = 0; i < n - 1; i++) {
+      if (Math.abs(slopes[i]) < 1e-6) {
+        tangents[i] = 0;
+        tangents[i + 1] = 0;
+      } else {
+        const a = tangents[i] / slopes[i];
+        const b = tangents[i + 1] / slopes[i];
+        const s = a * a + b * b;
+        if (s > 9) {
+          const tau = 3 / Math.sqrt(s);
+          tangents[i] = tau * a * slopes[i];
+          tangents[i + 1] = tau * b * slopes[i];
+        }
+      }
+    }
+
+    const totalSamples = Math.max(160, (n - 1) * 28);
     const interpolated = [];
 
-    for (let i = 0; i <= segments; i++) {
-      const t = i / segments;
-      const globalX = t * 100;
-      
-      let p0Idx = Math.floor(t * (basePoints.length - 1));
-      if (p0Idx >= basePoints.length - 1) p0Idx = basePoints.length - 2;
-      
-      const p0 = basePoints[p0Idx];
-      const p1 = basePoints[p0Idx + 1];
-      const segmentWidth = 100 / (basePoints.length - 1);
-      const localT = (globalX - p0.x) / segmentWidth;
+    for (let i = 0; i <= totalSamples; i++) {
+      const tGlobal = i / totalSamples;
+      const globalX = tGlobal * 100;
 
-      const cpX = p0.x + (p1.x - p0.x) / 2;
-      
-      const x = Math.pow(1 - localT, 3) * p0.x + 
-                3 * Math.pow(1 - localT, 2) * localT * cpX + 
-                3 * (1 - localT) * Math.pow(localT, 2) * cpX + 
-                Math.pow(localT, 3) * p1.x;
+      let idx = Math.floor(tGlobal * (n - 1));
+      if (idx >= n - 1) idx = n - 2;
 
-      const y = Math.pow(1 - localT, 3) * p0.y + 
-                3 * Math.pow(1 - localT, 2) * localT * p0.y + 
-                3 * (1 - localT) * Math.pow(localT, 2) * p1.y + 
-                Math.pow(localT, 3) * p1.y;
+      const p0 = basePoints[idx];
+      const p1 = basePoints[idx + 1];
+      const h = p1.x - p0.x || 1;
+      const t = (globalX - p0.x) / h;
+      const t2 = t * t;
+      const t3 = t2 * t;
 
-      interpolated.push({ x, y });
+      const h00 = 2 * t3 - 3 * t2 + 1;
+      const h10 = t3 - 2 * t2 + t;
+      const h01 = -2 * t3 + 3 * t2;
+      const h11 = t3 - t2;
+
+      const y = h00 * p0.y + h10 * h * tangents[idx] + h01 * p1.y + h11 * h * tangents[idx + 1];
+      interpolated.push({ x: globalX, y: Math.max(4, Math.min(96, y)) });
     }
 
     const topPoints = [];
     const bottomPoints = [];
 
     interpolated.forEach((p, i) => {
-      const progress = i / segments;
+      const progress = i / totalSamples;
       const thickness = Math.sin(progress * Math.PI) * 2.2;
       topPoints.push({ x: p.x, y: p.y - thickness });
       bottomPoints.push({ x: p.x, y: p.y + thickness });
     });
 
-    let topPath = `M ${topPoints[0].x} ${topPoints[0].y} `;
+    let topPath = `M ${topPoints[0].x.toFixed(2)} ${topPoints[0].y.toFixed(2)} `;
     for (let i = 1; i < topPoints.length; i++) {
-      topPath += `L ${topPoints[i].x} ${topPoints[i].y} `;
+      topPath += `L ${topPoints[i].x.toFixed(2)} ${topPoints[i].y.toFixed(2)} `;
     }
 
     const revBottom = [...bottomPoints].reverse();
-    let bottomPath = `L ${revBottom[0].x} ${revBottom[0].y} `;
+    let bottomPath = `L ${revBottom[0].x.toFixed(2)} ${revBottom[0].y.toFixed(2)} `;
     for (let i = 1; i < revBottom.length; i++) {
-      bottomPath += `L ${revBottom[i].x} ${revBottom[i].y} `;
+      bottomPath += `L ${revBottom[i].x.toFixed(2)} ${revBottom[i].y.toFixed(2)} `;
     }
 
     return `${topPath} ${bottomPath} Z`;
